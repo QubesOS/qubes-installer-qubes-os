@@ -1,4 +1,4 @@
-%define release_name Moniker
+%define release_name R1
 %define dist_version 1
 %define fedora_base_version 13
 
@@ -16,7 +16,6 @@ Provides:	redhat-release = %{fedora_base_version}-%{release}
 Provides:	system-release = %{version}-%{release}
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
-Conflicts:	fedora-release
 
 %description
 Qubes release files such as yum configs and various /etc/ files that
