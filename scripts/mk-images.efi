@@ -189,7 +189,7 @@ prepareEfiTree() {
 
     artpkg=$(repoquery --qf "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}" -c $yumconf --whatprovides ${brandpkgname}-logos | grep -v generic-logos | head -1)
     if [ -z "$artpkg" ]; then
-       argpkg="generic-logos"
+       artpkg="generic-logos"
     fi
 
     ydcmd="yumdownloader -c ${yumconf} ${artpkg}"
