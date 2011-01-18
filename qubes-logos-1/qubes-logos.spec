@@ -12,7 +12,6 @@ Obsoletes: redhat-logos
 Provides: fedora-logos = 13-%{release}
 Provides: redhat-logos = 13-%{release}
 Provides: system-logos = %{version}-%{release}
-Conflicts: fedora-logos
 Conflicts: kdebase <= 3.1.5
 Conflicts: anaconda-images <= 10
 Conflicts: redhat-artwork <= 5.0.5
