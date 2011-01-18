@@ -1,0 +1,6569 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Fedora Localization Project\n"
+"Report-Msgid-Bugs-To: anaconda-devel-list@redhat.com\n"
+"POT-Creation-Date: 2010-05-12 13:54-0500\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Victor Ibragimov <victor.ibragimov@gmail.com>\n"
+"Language-Team: Tajik Fedora & Software Localization Team <victor."
+"ibragimov@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Tajik\n"
+"X-Poedit-Country: TAJIKISTAN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: anaconda:339
+#, fuzzy
+msgid "Press <enter> for a shell"
+msgstr "Номро барои нусхаи аслӣ ворид кунед"
+
+#: anaconda:354 rescue.py:340 rescue.py:366 rescue.py:379 rescue.py:462
+#: rescue.py:474 text.py:656 loader/cdinstall.c:228 loader/cdinstall.c:232
+#: loader/cdinstall.c:248 loader/cdinstall.c:251 loader/cdinstall.c:427
+#: loader/cdinstall.c:431 loader/cdinstall.c:504 loader/dirbrowser.c:128
+#: loader/driverdisk.c:266 loader/driverdisk.c:422 loader/driverdisk.c:460
+#: loader/driverdisk.c:491 loader/driverdisk.c:526 loader/driverdisk.c:542
+#: loader/driverdisk.c:554 loader/driverdisk.c:562 loader/driverdisk.c:722
+#: loader/driverdisk.c:761 loader/driverselect.c:78 loader/driverselect.c:178
+#: loader/hdinstall.c:115 loader/hdinstall.c:257 loader/hdinstall.c:315
+#: loader/hdinstall.c:349 loader/hdinstall.c:421 loader/hdinstall.c:464
+#: loader/hdinstall.c:477 loader/kbd.c:119 loader/kickstart.c:132
+#: loader/kickstart.c:142 loader/kickstart.c:184 loader/kickstart.c:189
+#: loader/kickstart.c:296 loader/kickstart.c:328 loader/kickstart.c:510
+#: loader/lang.c:114 loader/lang.c:372 loader/loader.c:429 loader/loader.c:465
+#: loader/loader.c:505 loader/loader.c:523 loader/loader.c:540
+#: loader/loader.c:577 loader/loader.c:1191 loader/loader.c:1372
+#: loader/mediacheck.c:46 loader/mediacheck.c:85 loader/mediacheck.c:92
+#: loader/mediacheck.c:101 loader/method.c:277 loader/method.c:351
+#: loader/modules.c:381 loader/modules.c:397 loader/net.c:579 loader/net.c:950
+#: loader/net.c:1558 loader/net.c:1579 loader/net.c:1851 loader/net.c:1870
+#: loader/net.c:1882 loader/nfsinstall.c:91 loader/nfsinstall.c:279
+#: loader/nfsinstall.c:296 loader/nfsinstall.c:366 loader/telnetd.c:92
+#: loader/urlinstall.c:137 loader/urlinstall.c:159 loader/urlinstall.c:221
+#: loader/urlinstall.c:372 loader/urlinstall.c:383 loader/urlinstall.c:390
+#: loader/urls.c:258 loader/urls.c:329 loader/urls.c:335
+#: textw/constants_text.py:44
+msgid "OK"
+msgstr "OK"
+
+#: anaconda:361
+msgid ""
+"You do not have enough RAM to use the graphical installer.  Starting text "
+"mode."
+msgstr ""
+
+#: anaconda:616
+#, fuzzy
+msgid "Starting graphical installation."
+msgstr "Оғози сабткунии графикӣ..."
+
+#: anaconda:1038
+msgid "Would you like to use VNC?"
+msgstr "Оё VNC*ро истифода мебаред?"
+
+#: anaconda:1039
+msgid ""
+"Text mode provides a limited set of installation options.  It does not allow "
+"you to specify your own partitioning layout or package selections.  Would "
+"you like to use VNC mode instead?"
+msgstr ""
+
+#: anaconda:1065
+#, fuzzy
+msgid "Graphical installation is not available. Starting text mode."
+msgstr "Сабткунии графикӣ дастнорас аст... Оғози ҳолати матнӣ."
+
+#: anaconda:1073
+msgid "DISPLAY variable not set. Starting text mode."
+msgstr ""
+
+#: backend.py:148
+#, python-format
+msgid "Upgrading %s\n"
+msgstr "Навсозии %s\n"
+
+#: backend.py:150
+#, python-format
+msgid "Installing %s\n"
+msgstr "Сабткунии %s\n"
+
+#: backend.py:163
+msgid "Copying File"
+msgstr "Нусхабардории файл"
+
+#: backend.py:164
+msgid "Transferring install image to hard drive"
+msgstr ""
+
+#: backend.py:174
+msgid ""
+"An error occurred transferring the install image to your hard drive.  This "
+"is often cause by damaged or low quality media."
+msgstr ""
+
+#: backend.py:178
+msgid ""
+"An error occurred transferring the install image to your hard drive. You are "
+"probably out of disk space."
+msgstr ""
+
+#: backend.py:182 image.py:288 livecd.py:198 livecd.py:440
+#: partIntfHelpers.py:237 text.py:354 text.py:358 yuminstall.py:416
+#: yuminstall.py:805 yuminstall.py:923 yuminstall.py:928 yuminstall.py:1202
+#: yuminstall.py:1261 yuminstall.py:1450 yuminstall.py:1472
+#: iw/advanced_storage.py:90 iw/advanced_storage.py:100
+#: iw/advanced_storage.py:176 iw/advanced_storage.py:179
+#: iw/advanced_storage.py:207 iw/autopart_type.py:96 iw/cleardisks_gui.py:43
+#: iw/cleardisks_gui.py:53 iw/filter_gui.py:408 iw/osbootwidget.py:211
+#: iw/osbootwidget.py:220 iw/raid_dialog_gui.py:215 iw/raid_dialog_gui.py:766
+#: iw/raid_dialog_gui.py:805 iw/task_gui.py:69 iw/task_gui.py:170
+#: iw/task_gui.py:317 iw/task_gui.py:464 loader/cdinstall.c:228
+#: loader/cdinstall.c:504 loader/driverdisk.c:266 loader/driverdisk.c:491
+#: loader/driverdisk.c:526 loader/driverdisk.c:554 loader/driverdisk.c:562
+#: loader/driverdisk.c:626 loader/hdinstall.c:115 loader/hdinstall.c:315
+#: loader/hdinstall.c:421 loader/hdinstall.c:464 loader/hdinstall.c:477
+#: loader/kickstart.c:296 loader/lang.c:114 loader/loader.c:429
+#: loader/loader.c:540 loader/loader.c:1191 loader/mediacheck.c:46
+#: loader/mediacheck.c:85 loader/mediacheck.c:92 loader/method.c:277
+#: loader/method.c:351 loader/nfsinstall.c:279 loader/nfsinstall.c:296
+#: loader/telnetd.c:92 loader/urlinstall.c:137 loader/urlinstall.c:159
+#: loader/urlinstall.c:221 loader/urls.c:329 loader/urls.c:335
+#: storage/__init__.py:213 storage/__init__.py:1792 storage/__init__.py:1879
+#: textw/netconfig_text.py:282 textw/partition_text.py:186
+#: textw/partition_text.py:192 textw/partition_text.py:198
+#: textw/partition_text.py:227 textw/partition_text.py:273
+#: textw/upgrade_text.py:181 textw/upgrade_text.py:188
+msgid "Error"
+msgstr "Хато"
+
+#: bootloader.py:55 bootloader.py:221 bootloader.py:227 gui.py:1154
+#: gui.py:1214 image.py:82 installinterfacebase.py:41 text.py:485 text.py:545
+#: yuminstall.py:1429 yuminstall.py:1635 yuminstall.py:1670
+#: iw/blpasswidget.py:148 iw/upgrade_swap_gui.py:190
+#: iw/upgrade_swap_gui.py:198 iw/upgrade_swap_gui.py:205
+#: textw/upgrade_text.py:193
+msgid "Warning"
+msgstr "Огоҳӣ"
+
+#: bootloader.py:56
+msgid ""
+"Filesystems have already been activated.  You cannot go back past this "
+"point.\n"
+"\n"
+"Would you like to continue with the installation?"
+msgstr ""
+
+#: bootloader.py:60 gui.py:1105 gui.py:1250 gui.py:1465 image.py:91
+#: kickstart.py:156 livecd.py:205 livecd.py:447 packages.py:130 upgrade.py:58
+#: upgrade.py:197 yuminstall.py:257 yuminstall.py:703 yuminstall.py:925
+#: yuminstall.py:930 yuminstall.py:1010 yuminstall.py:1016 yuminstall.py:1170
+#: yuminstall.py:1198 yuminstall.py:1251 yuminstall.py:1437 yuminstall.py:1456
+#: yuminstall.py:1479 storage/__init__.py:100 storage/__init__.py:109
+#: storage/__init__.py:217 storage/__init__.py:1973 storage/dasd.py:139
+msgid "_Exit installer"
+msgstr "_Хуруҷи сабткунанда"
+
+#: bootloader.py:60 image.py:92 image.py:251 kickstart.py:1338
+#: kickstart.py:1377 upgrade.py:58 yuminstall.py:1256 yuminstall.py:1438
+#: iw/partition_gui.py:1606 storage/__init__.py:1974
+msgid "_Continue"
+msgstr "_Давом диҳед"
+
+#: bootloader.py:158
+msgid "Bootloader"
+msgstr ""
+
+#: bootloader.py:158
+#, fuzzy
+msgid "Installing bootloader."
+msgstr "Чопгари %1 танзим шуда истодааст"
+
+#: bootloader.py:222
+msgid ""
+"There was an error installing the bootloader.  The system may not be "
+"bootable."
+msgstr ""
+
+#: bootloader.py:228
+msgid ""
+"No kernel packages were installed on the system.  Bootloader configuration "
+"will not be changed."
+msgstr ""
+
+#: cmdline.py:56
+msgid "Completed"
+msgstr "Тайёр шуд"
+
+#: cmdline.py:64
+#, fuzzy
+msgid "In progress"
+msgstr "Кор рафта истодааст..."
+
+#: cmdline.py:89 gui.py:1245 kickstart.py:1202 kickstart.py:1210
+#: kickstart.py:1248 kickstart.py:1256 text.py:391
+#, python-format
+msgid ""
+"The following error was found while parsing the kickstart configuration "
+"file:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: cmdline.py:101
+msgid ""
+"Command line mode requires all choices to be specified in a kickstart "
+"configuration file."
+msgstr ""
+
+#: cmdline.py:120 cmdline.py:127 cmdline.py:134 cmdline.py:144 cmdline.py:154
+msgid "Can't have a question in command line mode!"
+msgstr ""
+
+#: constants.py:74
+msgid ""
+"An unhandled exception has occurred.  This is most likely a bug.  Please "
+"save a copy of the detailed exception and file a bug report"
+msgstr ""
+
+#: constants.py:80
+#, fuzzy
+msgid " with the provider of this software."
+msgstr "Бурида гузаштан бо ин хати каҷи конусшакл"
+
+#: constants.py:84
+#, fuzzy, python-format
+msgid " against anaconda at %s"
+msgstr "Истодан дар чуқури"
+
+#: gui.py:109
+msgid "An error occurred saving screenshots to disk."
+msgstr ""
+
+#: gui.py:120
+#, fuzzy
+msgid "Screenshots Copied"
+msgstr "Нав карда шуд, нусха карда шуд"
+
+#: gui.py:121
+msgid ""
+"The screenshots have been saved in the directory:\n"
+"\n"
+"\t/root/anaconda-screenshots/\n"
+"\n"
+"You can access these when you reboot and login as root."
+msgstr ""
+
+#: gui.py:164
+#, fuzzy
+msgid "Saving Screenshot"
+msgstr "Нигоҳ куни нашуд."
+
+#: gui.py:165
+#, fuzzy, python-format
+msgid "A screenshot named '%s' has been saved."
+msgstr "Бозии шумо захира карда шудааст."
+
+#: gui.py:168
+#, fuzzy
+msgid "Error Saving Screenshot"
+msgstr "Хатогӣ Ҳангоми Захиракунӣ"
+
+#: gui.py:169
+msgid ""
+"An error occurred while saving the screenshot.  If this occurred during "
+"package installation, you may need to try several times for it to succeed."
+msgstr ""
+
+#: gui.py:561
+msgid "Installation Key"
+msgstr "Калиди сабткунӣ"
+
+#: gui.py:632 text.py:149
+msgid ""
+"Choose a passphrase for the encrypted devices. You will be prompted for this "
+"passphrase during system boot."
+msgstr ""
+
+#: gui.py:651 gui.py:659 text.py:187 text.py:197
+#, fuzzy
+msgid "Error with passphrase"
+msgstr "Su вернул ошибку.\n"
+
+#: gui.py:652 text.py:188
+#, fuzzy
+msgid "The passphrases you entered were different.  Please try again."
+msgstr "Паролҳо баробар наомаданд. Лутфан, боз кӯшиш кунед."
+
+#: gui.py:660
+msgid "The passphrase must be at least eight characters long."
+msgstr ""
+
+#: gui.py:694 text.py:225
+#, python-format
+msgid ""
+"Device %s is encrypted. In order to access the device's contents during "
+"installation you must enter the device's passphrase below."
+msgstr ""
+
+#: gui.py:785 gui.py:1465 partIntfHelpers.py:157 partIntfHelpers.py:342
+#: text.py:100 text.py:101 iw/account_gui.py:131 loader/dirbrowser.c:128
+#: loader/driverdisk.c:423 loader/kickstart.c:328 loader/loader.c:465
+#: loader/loader.c:577 textw/constants_text.py:48
+msgid "Cancel"
+msgstr "Бекор кардан"
+
+#: gui.py:797 gui.py:798 gui.py:914 gui.py:915 ui/anaconda.glade.h:3
+#, fuzzy
+msgid "_Debug"
+msgstr "Ғалатёб"
+
+#: gui.py:1155 text.py:486
+#, python-format
+msgid ""
+"Error processing drive:\n"
+"\n"
+"%(path)s\n"
+"%(size)-0.fMB\n"
+"%(description)s\n"
+"\n"
+"This device may need to be reinitialized.\n"
+"\n"
+"REINITIALIZING WILL CAUSE ALL DATA TO BE LOST!\n"
+"\n"
+"This action may also be applied to all other disks needing reinitialization.%"
+"(details)s"
+msgstr ""
+
+#: gui.py:1164 gui.py:1222 text.py:495 text.py:553
+#, fuzzy
+msgid "_Ignore"
+msgstr "Рад кардан"
+
+#: gui.py:1165 gui.py:1223 text.py:496 text.py:554
+#, fuzzy
+msgid "Ignore _all"
+msgstr "Рад кардан"
+
+#: gui.py:1166 gui.py:1224 text.py:497 text.py:555
+#, fuzzy
+msgid "_Re-initialize"
+msgstr "Танзимоти дастгоҳи лента ҷамъшаванда"
+
+#: gui.py:1167 gui.py:1225 text.py:498 text.py:556
+#, fuzzy
+msgid "Re-ini_tialize all"
+msgstr "Танзимоти дастгоҳи лента ҷамъшаванда"
+
+#: gui.py:1215 text.py:546
+#, python-format
+msgid ""
+"Error processing LVM.\n"
+"There is inconsistent LVM data on %(msg)s.  You can reinitialize all related "
+"PVs (%(pvs)s) which will erase the LVM metadata, or ignore which will "
+"preserve the contents.  This action may also be applied to all other PVs "
+"with inconsistent metadata."
+msgstr ""
+
+#: gui.py:1247 text.py:393
+#, fuzzy
+msgid "Error Parsing Kickstart Config"
+msgstr "kppp: хатогӣ дар гузориши қоидаҳо\n"
+
+#: gui.py:1289
+#, fuzzy
+msgid "default:LTR"
+msgstr "Сатри тасвиркунии нобаён"
+
+#: gui.py:1369 text.py:621
+msgid "Error!"
+msgstr "Хато!"
+
+#: gui.py:1370 text.py:622
+#, python-format
+msgid ""
+"An error occurred when attempting to load an installer interface component.\n"
+"\n"
+"className = %s"
+msgstr ""
+
+#: gui.py:1375 image.py:164 image.py:194 packages.py:328
+#: storage/__init__.py:1791
+msgid "_Exit"
+msgstr "_Хуруҷ"
+
+#: gui.py:1376 image.py:164 image.py:194 livecd.py:205 yuminstall.py:802
+#: yuminstall.py:1198 yuminstall.py:1251 yuminstall.py:1456
+msgid "_Retry"
+msgstr "_Кӯшиши нав"
+
+#: gui.py:1378 storage/partitioning.py:276
+#, fuzzy
+msgid "The system will now reboot."
+msgstr ""
+"\n"
+"Хурӯҷшавӣ аз KWin..."
+
+#: gui.py:1379 image.py:251 packages.py:332 yuminstall.py:1497
+#, fuzzy
+msgid "_Reboot"
+msgstr "перезагрузить"
+
+#: gui.py:1381
+msgid "Exiting"
+msgstr "Хуруҷ мекунад"
+
+#: gui.py:1462 livecd.py:126 text.py:270 upgrade.py:188
+msgid "Exit installer"
+msgstr "Хуруҷи сабткунанда"
+
+#: gui.py:1463
+#, fuzzy
+msgid "Are you sure you wish to exit the installer?"
+msgstr "Дар ҳақиқат мехоҳед, ки навиштаҷоти '%1'-ро нобуд созед?"
+
+#: gui.py:1472
+#, python-format
+msgid "%s Installer"
+msgstr "Сабткунандаи %s"
+
+#: gui.py:1478
+#, fuzzy
+msgid "Unable to load title bar"
+msgstr "Файли аудио бор карда намешавад"
+
+#: gui.py:1540
+msgid "Install Window"
+msgstr "Тирезаи сабт"
+
+#: image.py:83
+#, python-format
+msgid ""
+"The ISO image %s has a size which is not a multiple of 2048 bytes.  This may "
+"mean it was corrupted on transfer to this computer.\n"
+"\n"
+"It is recommended that you exit and abort your installation, but you can "
+"choose to continue if you think this is in error."
+msgstr ""
+
+#: image.py:156
+msgid "Couldn't Mount ISO Source"
+msgstr ""
+
+#: image.py:157
+#, python-format
+msgid ""
+"An error occurred mounting the source device %s.  This may happen if your "
+"ISO images are located on an advanced storage device like LVM or RAID, or if "
+"there was a problem mounting a partition.  Click exit to abort the "
+"installation."
+msgstr ""
+
+#: image.py:185
+msgid "Missing ISO 9660 Image"
+msgstr ""
+
+#: image.py:186
+#, python-format
+msgid ""
+"The installer has tried to mount image #%s, but cannot find it on the hard "
+"drive.\n"
+"\n"
+"Please copy this image to the drive and click Retry.  Click Exit to abort "
+"the installation."
+msgstr ""
+
+#: image.py:241
+#, fuzzy
+msgid "Required Install Media"
+msgstr "Озмоиши медиа..."
+
+#: image.py:242
+#, python-format
+msgid ""
+"The software you have selected to install will require the following %"
+"(productName)s %(productVersion)s discs:\n"
+"\n"
+"%(reqcdstr)s\n"
+"Please have these ready before proceeding with the installation.  If you "
+"need to abort the installation and exit please select \"Reboot\"."
+msgstr ""
+
+#: image.py:251 livecd.py:446 packages.py:332 upgrade.py:196 yuminstall.py:930
+#: yuminstall.py:1016 yuminstall.py:1437 yuminstall.py:1479 yuminstall.py:1497
+#: ui/anaconda.glade.h:2
+msgid "_Back"
+msgstr "_Ақиб"
+
+#: image.py:289
+#, python-format
+msgid ""
+"An error occurred unmounting the disc.  Please make sure you're not "
+"accessing %s from the shell on tty2 and then click OK to retry."
+msgstr ""
+
+#: installclass.py:69
+#, fuzzy
+msgid "Install on System"
+msgstr "Намуди системаи файлҳо:"
+
+#: installinterfacebase.py:42
+#, python-format
+msgid ""
+"Disk %s contains BIOS RAID metadata, but is not part of any recognized BIOS "
+"RAID sets. Ignoring disk %s."
+msgid_plural ""
+"Disks %s contain BIOS RAID metadata, but are not part of any recognized BIOS "
+"RAID sets. Ignoring disks %s."
+msgstr[0] ""
+msgstr[1] ""
+
+#: iutil.py:843
+#, python-format
+msgid ""
+"Error: On open, cannot set reIPL method to %(reipl_type)s (%(filename)s: %(e)"
+"s)"
+msgstr ""
+
+#: iutil.py:854
+#, python-format
+msgid ""
+"Error: On write, cannot set reIPL method to %(reipl_type)s (%(filename)s: %"
+"(e)s)"
+msgstr ""
+
+#: iutil.py:863
+#, python-format
+msgid ""
+"Error: On close, cannot set reIPL method to %(reipl_type)s (%(filename)s: %"
+"(e)s)"
+msgstr ""
+
+#: iutil.py:882
+#, python-format
+msgid "Error: Could not set %(device)s as reIPL device (%(e)s)"
+msgstr ""
+
+#: iutil.py:892
+#, python-format
+msgid "Error: Could not reset loadparm (%s)"
+msgstr ""
+
+#: iutil.py:901
+#, python-format
+msgid "Warning: Could not reset parm (%s)"
+msgstr ""
+
+#: iutil.py:914
+#, python-format
+msgid ""
+"After shutdown, please perform a manual IPL from DASD device %s to continue "
+"installation"
+msgstr ""
+
+#: iutil.py:936
+#, python-format
+msgid "Error: reading FCP property %(syspath_property)s for reIPL (%(e)s)"
+msgstr ""
+
+#: iutil.py:951
+#, python-format
+msgid "Error: writing FCP property %(reipl_property)s for reIPL (%(e)s)"
+msgstr ""
+
+#: iutil.py:966
+#, python-format
+msgid ""
+"Error: writing default FCP property %(reipl_property)s for reIPL (%(e)s)"
+msgstr ""
+
+#: iutil.py:981
+#, python-format
+msgid ""
+"After shutdown, please perform a manual IPL from FCP %(device)s with WWPN %"
+"(wwpn)s and LUN %(lun)s to continue installation"
+msgstr ""
+
+#: iutil.py:998
+msgid ""
+"After shutdown, please perform a manual IPL from the device now containing /"
+"boot to continue installation"
+msgstr ""
+
+#: iutil.py:1009
+msgid "Error determining boot device's disk name"
+msgstr ""
+
+#: iutil.py:1013
+msgid "The mount point /boot or / is on a disk that we are not familiar with"
+msgstr ""
+
+#: kickstart.py:115
+#, python-format
+msgid ""
+"There was an error running the kickstart script at line %(lineno)s.  You may "
+"examine the output in %(msgs)s.  This is a fatal error and installation will "
+"be aborted.  Press the OK button to exit the installer."
+msgstr ""
+
+#: kickstart.py:123 kickstart.py:125
+#, fuzzy
+msgid "Scriptlet Failure"
+msgstr "Хатои Kprocess"
+
+#: kickstart.py:150 rescue.py:256 yuminstall.py:698 yuminstall.py:1165
+#: iw/task_gui.py:323
+msgid "No Network Available"
+msgstr "Интернет дастнорас аст"
+
+#: kickstart.py:151
+msgid ""
+"Encryption key escrow requires networking, but there was an error enabling "
+"the network on your system."
+msgstr ""
+
+#: kickstart.py:1221
+#, python-format
+msgid "Error processing %%ksappend lines: %s"
+msgstr ""
+
+#: kickstart.py:1224
+#, python-format
+msgid "Unknown error processing %%ksappend lines: %s"
+msgstr ""
+
+#: kickstart.py:1279 livecd.py:228
+#, fuzzy
+msgid "Post-Installation"
+msgstr "Сабт кардани &қайд гирӣ"
+
+#: kickstart.py:1280
+#, fuzzy
+msgid "Running post-installation scripts"
+msgstr "Utility for running KJSEmbed scripts \n"
+
+#: kickstart.py:1296
+#, fuzzy
+msgid "Pre-Installation"
+msgstr "Сабткунии қуттиҳо"
+
+#: kickstart.py:1297
+#, fuzzy
+msgid "Running pre-installation scripts"
+msgstr "Ба кор даровардани пеш-сардиҳии фармон..."
+
+#: kickstart.py:1329
+#, fuzzy
+msgid "Missing Package"
+msgstr "Сабткунии қуттиҳо"
+
+#: kickstart.py:1330
+#, python-format
+msgid ""
+"You have specified that the package '%s' should be installed.  This package "
+"does not exist. Would you like to continue or abort this installation?"
+msgstr ""
+
+#: kickstart.py:1336 kickstart.py:1375
+msgid "_Abort"
+msgstr "_Қатъ"
+
+#: kickstart.py:1337 kickstart.py:1376
+#, fuzzy
+msgid "_Ignore All"
+msgstr "Рад кардан"
+
+#: kickstart.py:1367
+msgid "Missing Group"
+msgstr "Гуруҳ мавҷуд нест"
+
+#: kickstart.py:1368
+#, python-format
+msgid ""
+"You have specified that the group '%s' should be installed. This group does "
+"not exist. Would you like to continue or abort this installation?"
+msgstr ""
+
+#: kickstart.py:1483
+#, python-format
+msgid ""
+"The kickstart configuration file is missing required information that "
+"anaconda cannot prompt for.  Please add the following sections and try "
+"again:\n"
+"%s"
+msgstr ""
+
+#: livecd.py:121
+#, fuzzy
+msgid "Unable to find image"
+msgstr "Тасвирро чоп карда натавонист."
+
+#: livecd.py:122
+#, python-format
+msgid ""
+"The given location isn't a valid %s live CD to use as an installation source."
+msgstr ""
+
+#: livecd.py:180
+msgid "Copying live image to hard drive."
+msgstr ""
+
+#: livecd.py:199
+msgid ""
+"There was an error installing the live image to your hard drive.  This could "
+"be due to bad media.  Please verify your installation media.\n"
+"\n"
+"If you exit, your system will be left in an inconsistent state that will "
+"require reinstallation."
+msgstr ""
+
+#: livecd.py:229
+msgid ""
+"Performing post-installation filesystem changes.  This may take several "
+"minutes."
+msgstr ""
+
+#: livecd.py:441
+#, python-format
+msgid ""
+"The root filesystem you created is not large enough for this live image "
+"(%.2f MB required)."
+msgstr ""
+
+#: network.py:56
+msgid "Hostname must be 255 or fewer characters in length."
+msgstr ""
+
+#: network.py:62
+msgid ""
+"Hostname must start with a valid character in the ranges 'a-z', 'A-Z', or '0-"
+"9'"
+msgstr ""
+
+#: network.py:67
+msgid ""
+"Hostnames can only contain the characters 'a-z', 'A-Z', '0-9', '-', or '.'"
+msgstr ""
+
+#: network.py:176
+#, fuzzy
+msgid "IP address is missing."
+msgstr "Суроғаи фиристанда мавҷуд нест."
+
+#: network.py:180
+msgid ""
+"IPv4 addresses must contain four numbers between 0 and 255, separated by "
+"periods."
+msgstr ""
+
+#: network.py:183
+#, fuzzy, python-format
+msgid "'%s' is not a valid IPv6 address."
+msgstr "Суроғаи ворид кардаи шумо дуруст нест."
+
+#: network.py:185
+#, fuzzy, python-format
+msgid "'%s' is an invalid IP address."
+msgstr "Номи соҳиб/IP-Суроға нест"
+
+#: packages.py:111
+#, fuzzy
+msgid "Resizing Failed"
+msgstr "Васлкунӣ қатъ карда шуд"
+
+#: packages.py:112
+#, python-format
+msgid "There was an error encountered while resizing the device %s."
+msgstr ""
+
+#: packages.py:120
+#, fuzzy
+msgid "Migration Failed"
+msgstr "<h3>Амалиётро ба кор бурда нашуд!</h3><p>%1</p>"
+
+#: packages.py:121
+#, python-format
+msgid "An error was encountered while migrating filesystem on device %s."
+msgstr ""
+
+#: packages.py:130
+msgid "_File Bug"
+msgstr ""
+
+#: packages.py:312 packages.py:333
+msgid "Warning! This is pre-release software!"
+msgstr ""
+
+#: packages.py:313
+#, python-format
+msgid ""
+"Thank you for downloading this pre-release of %(productName)s.\n"
+"\n"
+"This is not a final release and is not intended for use on production "
+"systems.  The purpose of this release is to collect feedback from testers, "
+"and it is not suitable for day to day usage.\n"
+"\n"
+"To report feedback, please visit:\n"
+"\n"
+"   %(bugzillaUrl)s\n"
+"\n"
+"and file a report against '%(fileagainst)s'.\n"
+msgstr ""
+
+#: packages.py:328
+msgid "_Install anyway"
+msgstr "_Ба ҳар ҳол сабт кунед"
+
+#: packages.py:331
+msgid "Your system will now be rebooted..."
+msgstr ""
+
+#: partIntfHelpers.py:41
+#, fuzzy
+msgid "Please enter a volume group name."
+msgstr "Название группы:"
+
+#: partIntfHelpers.py:45
+msgid "Volume Group Names must be less than 128 characters"
+msgstr ""
+
+#: partIntfHelpers.py:48
+#, python-format
+msgid "Error - the volume group name %s is not valid."
+msgstr ""
+
+#: partIntfHelpers.py:53
+msgid ""
+"Error - the volume group name contains illegal characters or spaces.  "
+"Acceptable characters are letters, digits, '.' or '_'."
+msgstr ""
+
+#: partIntfHelpers.py:63
+#, fuzzy
+msgid "Please enter a logical volume name."
+msgstr "Номи қолибро ворид кунед:"
+
+#: partIntfHelpers.py:67
+msgid "Logical Volume Names must be less than 128 characters"
+msgstr ""
+
+#: partIntfHelpers.py:71
+#, python-format
+msgid "Error - the logical volume name %s is not valid."
+msgstr ""
+
+#: partIntfHelpers.py:77
+msgid ""
+"Error - the logical volume name contains illegal characters or spaces.  "
+"Acceptable characters are letters, digits, '.' or '_'."
+msgstr ""
+
+#: partIntfHelpers.py:101
+#, python-format
+msgid ""
+"The mount point %s is invalid.  Mount points must start with '/' and cannot "
+"end with '/', and must contain printable characters and no spaces."
+msgstr ""
+
+#: partIntfHelpers.py:108
+msgid "Please specify a mount point for this partition."
+msgstr ""
+
+#: partIntfHelpers.py:121 partIntfHelpers.py:128
+msgid "Unable To Delete"
+msgstr "Нест карда намешавад"
+
+#: partIntfHelpers.py:122
+#, fuzzy
+msgid "You must first select a partition to delete."
+msgstr "Сначала следует выделить правило, которое вы хотите удалить."
+
+#: partIntfHelpers.py:153 partIntfHelpers.py:341 iw/lvm_dialog_gui.py:862
+msgid "Confirm Delete"
+msgstr "Тасдиқи несткунӣ"
+
+#: partIntfHelpers.py:154
+#, fuzzy, python-format
+msgid "You are about to delete all partitions on the device '%s'."
+msgstr ""
+"Оё шумо дар ҳақиқат ҳамаи\n"
+" диаграммаҳоро нобуд сохтан мехоҳед?"
+
+#: partIntfHelpers.py:157 partIntfHelpers.py:342 iw/lvm_dialog_gui.py:865
+#: iw/lvm_dialog_gui.py:1434 iw/osbootwidget.py:104 iw/partition_gui.py:1819
+#: iw/partition_gui.py:1831
+msgid "_Delete"
+msgstr "_Нест кардан"
+
+#: partIntfHelpers.py:204
+msgid "Notice"
+msgstr "Огоҳӣ"
+
+#: partIntfHelpers.py:205
+#, python-format
+msgid ""
+"The following partitions were not deleted because they are in use:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: partIntfHelpers.py:220
+#, fuzzy
+msgid "Format as Swap?"
+msgstr "Матн: Иввази ранг"
+
+#: partIntfHelpers.py:221
+#, python-format
+msgid ""
+"%s has a partition type of 0x82 (Linux swap) but does not appear to be "
+"formatted as a Linux swap partition.\n"
+"\n"
+"Would you like to format this partition as a swap partition?"
+msgstr ""
+
+#: partIntfHelpers.py:236
+#, python-format
+msgid "You need to select at least one hard drive to install %s."
+msgstr ""
+
+#: partIntfHelpers.py:241
+msgid ""
+"You have chosen to use a pre-existing partition for this installation "
+"without formatting it. We recommend that you format this partition to make "
+"sure files from a previous operating system installation do not cause "
+"problems with this installation of Linux. However, if this partition "
+"contains files that you need to keep, such as home directories, then "
+"continue without formatting this partition."
+msgstr ""
+
+#: partIntfHelpers.py:249
+#, fuzzy
+msgid "Format?"
+msgstr "Андоза"
+
+#: partIntfHelpers.py:249 iw/partition_gui.py:1604
+msgid "_Modify Partition"
+msgstr "_Тағйири қисми диск"
+
+#: partIntfHelpers.py:249
+#, fuzzy
+msgid "Do _Not Format"
+msgstr "Иваз Накардан"
+
+#: partIntfHelpers.py:257
+#, fuzzy
+msgid "Error with Partitioning"
+msgstr "Su вернул ошибку.\n"
+
+#: partIntfHelpers.py:258
+#, python-format
+msgid ""
+"The following critical errors exist with your requested partitioning scheme. "
+"These errors must be corrected prior to continuing with your install of %"
+"(productName)s.\n"
+"\n"
+"%(errorstr)s"
+msgstr ""
+
+#: partIntfHelpers.py:274
+#, fuzzy
+msgid "Partitioning Warning"
+msgstr "Параметри нодуруст"
+
+#: partIntfHelpers.py:275
+#, python-format
+msgid ""
+"The following warnings exist with your requested partition scheme.\n"
+"\n"
+"%s\n"
+"\n"
+"Would you like to continue with your requested partitioning scheme?"
+msgstr ""
+
+#: partIntfHelpers.py:289
+msgid ""
+"The following pre-existing partitions have been selected to be formatted, "
+"destroying all data."
+msgstr ""
+
+#: partIntfHelpers.py:292
+msgid ""
+"Select 'Yes' to continue and format these partitions, or 'No' to go back and "
+"change these settings."
+msgstr ""
+
+#: partIntfHelpers.py:298
+#, fuzzy
+msgid "Format Warning"
+msgstr "Параметри нодуруст"
+
+#: partIntfHelpers.py:325
+#, python-format
+msgid ""
+"You are about to delete the volume group \"%s\".\n"
+"\n"
+"ALL logical volumes in this volume group will be lost!"
+msgstr ""
+
+#: partIntfHelpers.py:329
+#, fuzzy, python-format
+msgid "You are about to delete the logical volume \"%s\"."
+msgstr ""
+"Оё шумо дар ҳақиқат ҳамаи\n"
+" диаграммаҳоро нобуд сохтан мехоҳед?"
+
+#: partIntfHelpers.py:332
+#, fuzzy
+msgid "You are about to delete a RAID device."
+msgstr ""
+"Оё шумо дар ҳақиқат ҳамаи\n"
+" диаграммаҳоро нобуд сохтан мехоҳед?"
+
+#: partIntfHelpers.py:334
+#, fuzzy, python-format
+msgid "You are about to delete the %s partition."
+msgstr ""
+"Оё шумо дар ҳақиқат ҳамаи\n"
+" диаграммаҳоро нобуд сохтан мехоҳед?"
+
+#: partIntfHelpers.py:338
+#, fuzzy, python-format
+msgid "You are about to delete the %(type)s %(name)s"
+msgstr ""
+"Оё шумо дар ҳақиқат ҳамаи\n"
+" диаграммаҳоро нобуд сохтан мехоҳед?"
+
+#: partIntfHelpers.py:349
+msgid "Confirm Reset"
+msgstr "Тасдиқи бозсозӣ"
+
+#: partIntfHelpers.py:350
+msgid ""
+"Are you sure you want to reset the partition table to its original state?"
+msgstr ""
+
+#: platform.py:98 platform.py:344 platform.py:412 platform.py:519
+#: ui/create-storage.glade.h:17
+msgid "RAID Device"
+msgstr "Дастгоҳи RAID"
+
+#: platform.py:99 platform.py:102 platform.py:345 platform.py:413
+#: platform.py:520 platform.py:523
+#, fuzzy
+msgid "Master Boot Record (MBR)"
+msgstr "Сабт кардани &маълумоти пурборкардан даруни диск/тақсимот:"
+
+#: platform.py:101 platform.py:522
+#, fuzzy
+msgid "First sector of boot partition"
+msgstr "Сабт кардани &маълумоти пурборкардан даруни диск/тақсимот:"
+
+#: platform.py:113
+#, fuzzy
+msgid "You have not created a bootable partition."
+msgstr "Шумо наметавонед папкаи системавиро ҳузф кунед."
+
+#: platform.py:118
+msgid "Bootable partitions cannot be on a RAID device."
+msgstr ""
+
+#: platform.py:120
+msgid "Bootable partitions can only be on RAID1 devices."
+msgstr ""
+
+#: platform.py:124
+msgid "Bootable RAID1 set members must be partitions."
+msgstr ""
+
+#: platform.py:129
+msgid "Bootable partitions cannot be on a logical volume."
+msgstr ""
+
+#: platform.py:136
+#, python-format
+msgid "Bootable partitions cannot be on an %s filesystem."
+msgstr ""
+
+#: platform.py:140 platform.py:145
+msgid "Bootable partitions cannot be on an encrypted block device"
+msgstr ""
+
+#: platform.py:217
+#, fuzzy
+msgid "EFI System Partition"
+msgstr "Намуди системаи файлҳо:"
+
+#: platform.py:229
+#, fuzzy
+msgid "You have not created a /boot/efi partition."
+msgstr "Шумо наметавонед папкаи системавиро ҳузф кунед."
+
+#: platform.py:235
+msgid "/boot/efi is not EFI."
+msgstr ""
+
+#: platform.py:251
+#, python-format
+msgid "%s must have a %s disk label."
+msgstr ""
+
+#: platform.py:289
+#, python-format
+msgid "%s must have a bsd disk label."
+msgstr ""
+
+#: platform.py:301
+#, python-format
+msgid "The disk %s requires at least 1MB of free space at the beginning."
+msgstr ""
+
+#: platform.py:347
+#, fuzzy
+msgid "PPC PReP Boot"
+msgstr "Роҳбари Пурборкардан (LILO)"
+
+#: platform.py:363
+msgid "The boot partition must be within the first 4MB of the disk."
+msgstr ""
+
+#: platform.py:415 platform.py:418
+#, fuzzy
+msgid "Apple Bootstrap"
+msgstr "Apple RGB"
+
+#: platform.py:432
+#, python-format
+msgid "%s must have a mac disk label."
+msgstr ""
+
+#: rescue.py:215
+msgid "When finished please exit from the shell and your system will reboot."
+msgstr ""
+
+#: rescue.py:229
+msgid "Unable to find /bin/sh to execute!  Not starting shell"
+msgstr ""
+
+#: rescue.py:248
+msgid "Setup Networking"
+msgstr "Танзимоти Интернет"
+
+#: rescue.py:249
+msgid "Do you want to start the network interfaces on this system?"
+msgstr ""
+
+#: rescue.py:250 loader/driverdisk.c:666 loader/driverdisk.c:676
+#: loader/hdinstall.c:203 textw/constants_text.py:56
+msgid "Yes"
+msgstr "Ҳа"
+
+#: rescue.py:250 rescue.py:252 loader/driverdisk.c:666 loader/driverdisk.c:676
+#: textw/constants_text.py:60
+msgid "No"
+msgstr "Не"
+
+#: rescue.py:257
+msgid ""
+"Unable to activate a networking device.  Networking will not be available in "
+"rescue mode."
+msgstr ""
+
+#: rescue.py:292 rescue.py:361 rescue.py:372 rescue.py:457
+msgid "Rescue"
+msgstr "Барқарорсозӣ"
+
+#: rescue.py:293
+#, python-format
+msgid ""
+"The rescue environment will now attempt to find your Linux installation and "
+"mount it under the directory %s.  You can then make any changes required to "
+"your system.  If you want to proceed with this step choose 'Continue'.  You "
+"can also choose to mount your file systems read-only instead of read-write "
+"by choosing 'Read-Only'.\n"
+"\n"
+"If for some reason this process fails you can choose 'Skip' and this step "
+"will be skipped and you will go directly to a command shell.\n"
+"\n"
+msgstr ""
+
+#: rescue.py:303 iw/partition_gui.py:781 loader/cdinstall.c:206
+#: loader/cdinstall.c:214 loader/driverdisk.c:627 storage/__init__.py:155
+#: storage/devicetree.py:89
+msgid "Continue"
+msgstr "Навбатӣ"
+
+#: rescue.py:303 rescue.py:308
+msgid "Read-Only"
+msgstr "Танҳо-Хондан"
+
+#: rescue.py:303 rescue.py:305 loader/cdinstall.c:248 loader/cdinstall.c:251
+#: loader/method.c:324 storage/__init__.py:1791 textw/upgrade_text.py:139
+#, fuzzy
+msgid "Skip"
+msgstr "Гузарондан"
+
+#: rescue.py:337
+msgid "System to Rescue"
+msgstr "Барқарорсозии система"
+
+#: rescue.py:338
+msgid "Which device holds the root partition of your installation?"
+msgstr ""
+
+#: rescue.py:340 rescue.py:344 text.py:626 text.py:628
+msgid "Exit"
+msgstr "Хуруҷ"
+
+#: rescue.py:362
+msgid ""
+"Your system had dirty file systems which you chose not to mount.  Press "
+"return to get a shell from which you can fsck and mount your partitions.  "
+"The system will reboot automatically when you exit from the shell."
+msgstr ""
+
+#: rescue.py:373
+#, python-format
+msgid ""
+"Your system has been mounted under %(rootPath)s.\n"
+"\n"
+"Press <return> to get a shell. If you would like to make your system the "
+"root environment, run the command:\n"
+"\n"
+"\tchroot %(rootPath)s\n"
+"\n"
+"The system will reboot automatically when you exit from the shell."
+msgstr ""
+
+#: rescue.py:458
+#, python-format
+msgid ""
+"An error occurred trying to mount some or all of your system. Some of it may "
+"be mounted under %s.\n"
+"\n"
+"Press <return> to get a shell. The system will reboot automatically when you "
+"exit from the shell."
+msgstr ""
+
+#: rescue.py:467
+msgid "You don't have any Linux partitions.  Rebooting.\n"
+msgstr ""
+
+#: rescue.py:470
+msgid "Rescue Mode"
+msgstr "Тарзи барқарорсозӣ"
+
+#: rescue.py:471
+msgid ""
+"You don't have any Linux partitions. Press return to get a shell. The system "
+"will reboot automatically when you exit from the shell."
+msgstr ""
+
+#: rescue.py:484
+#, python-format
+msgid "Your system is mounted under the %s directory."
+msgstr ""
+
+#: text.py:154
+#, fuzzy
+msgid "Passphrase for encrypted device"
+msgstr "Барраси барои дастгоҳи навор."
+
+#: text.py:167
+msgid "Also add this passphrase to all existing encrypted devices"
+msgstr ""
+
+#: text.py:198
+#, python-format
+msgid "The passphrase must be at least %d character long."
+msgid_plural "The passphrase must be at least %d characters long."
+msgstr[0] ""
+msgstr[1] ""
+
+#: text.py:232 ui/lukspassphrase.glade.h:6
+msgid "Passphrase"
+msgstr "Гузарвожа"
+
+#: text.py:240 ui/lukspassphrase.glade.h:7
+#, fuzzy
+msgid "This is a global passphrase"
+msgstr "Сигнали номуайян"
+
+#: text.py:355 text.py:359
+msgid "Repository editing is not available in text mode."
+msgstr ""
+
+#: text.py:421
+#, fuzzy, python-format
+msgid "Welcome to %(productName)s for %(productArch)s"
+msgstr "Марҳамат намоед ба %s барои %s"
+
+#: text.py:423
+#, python-format
+msgid "Welcome to %s"
+msgstr "Марҳамат намоед ба %s"
+
+#: text.py:425
+msgid ""
+"  <Tab>/<Alt-Tab> between elements   |  <Space> selects   |  <F12> next "
+"screen"
+msgstr ""
+
+#: text.py:626 loader/net.c:110 loader/net.c:471 loader/net.c:526
+#: loader/net.c:668 loader/net.c:676 loader/net.c:1097 loader/net.c:1105
+msgid "Retry"
+msgstr "Кӯшиши нав"
+
+#: text.py:652
+msgid "Cancelled"
+msgstr "Бекор карда шуд"
+
+#: text.py:653
+msgid "I can't go to the previous step from here. You will have to try again."
+msgstr ""
+
+#: upgrade.py:51
+#, fuzzy
+msgid "Proceed with upgrade?"
+msgstr "Кушодан бо Kaffeine"
+
+#: upgrade.py:52
+msgid ""
+"The file systems of the Linux installation you have chosen to upgrade have "
+"already been mounted. You cannot go back past this point. \n"
+"\n"
+msgstr ""
+
+#: upgrade.py:56
+msgid "Would you like to continue with the upgrade?"
+msgstr ""
+
+#: upgrade.py:175
+msgid "Mount failed"
+msgstr "Васлкунӣ қатъ карда шуд"
+
+#: upgrade.py:176
+#, python-format
+msgid ""
+"The following error occurred when mounting the file systems listed in /etc/"
+"fstab.  Please fix this problem and try to upgrade again.\n"
+"%s"
+msgstr ""
+
+#: upgrade.py:184 upgrade.py:191
+msgid "Upgrade root not found"
+msgstr ""
+
+#: upgrade.py:185
+msgid "The root for the previously installed system was not found."
+msgstr ""
+
+#: upgrade.py:192
+msgid ""
+"The root for the previously installed system was not found.  You can exit "
+"installer or backtrack to choose installation instead of upgrade."
+msgstr ""
+
+#: upgrade.py:215
+msgid ""
+"The following files are absolute symbolic links, which we do not support "
+"during an upgrade. Please change them to relative symbolic links and restart "
+"the upgrade.\n"
+"\n"
+msgstr ""
+
+#: upgrade.py:221
+#, fuzzy
+msgid "Absolute Symlinks"
+msgstr "6: Аҳамияти комилӣ"
+
+#: upgrade.py:232
+msgid ""
+"The following are directories which should instead be symbolic links, which "
+"will cause problems with the upgrade.  Please return them to their original "
+"state as symbolic links and restart the upgrade.\n"
+"\n"
+msgstr ""
+
+#: upgrade.py:238
+msgid "Invalid Directories"
+msgstr "Феҳрастҳои нодуруст"
+
+#: vnc.py:137
+#, fuzzy, python-format
+msgid "%(productName)s %(productVersion)s installation on host %(name)s"
+msgstr "Сеанс X Windows на удалённом узле"
+
+#: vnc.py:143
+#, python-format
+msgid "%(productName)s %(productVersion)s installation"
+msgstr ""
+
+#: vnc.py:172
+#, python-format
+msgid "Attempting to connect to vnc client on host %s..."
+msgstr ""
+
+#: vnc.py:186
+msgid "Connected!"
+msgstr "Пайваст карда шуд!"
+
+#: vnc.py:189
+msgid "Will try to connect again in 15 seconds..."
+msgstr ""
+
+#: vnc.py:195
+#, python-format
+msgid "Giving up attempting to connect after %d try!\n"
+msgid_plural "Giving up attempting to connect after %d tries!\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: vnc.py:206
+#, python-format
+msgid "Please manually connect your vnc client to %s to begin the install."
+msgstr ""
+
+#: vnc.py:208
+msgid "Please manually connect your vnc client to begin the install."
+msgstr ""
+
+#: vnc.py:211
+msgid "Starting VNC..."
+msgstr "Оғозкунии VNC..."
+
+#: vnc.py:236
+msgid "The VNC server is now running."
+msgstr ""
+
+#: vnc.py:249
+msgid ""
+"\n"
+"\n"
+"You chose to connect to a listening vncviewer. \n"
+"This does not require a password to be set.  If you \n"
+"set a password, it will be used in case the connection \n"
+"to the vncviewer is unsuccessful\n"
+"\n"
+msgstr ""
+
+#: vnc.py:254
+msgid ""
+"\n"
+"\n"
+"WARNING!!! VNC server running with NO PASSWORD!\n"
+"You can use the vncpassword=<password> boot option\n"
+"if you would like to secure the server.\n"
+"\n"
+msgstr ""
+
+#: vnc.py:258
+msgid ""
+"\n"
+"\n"
+"You chose to execute vnc with a password. \n"
+"\n"
+msgstr ""
+
+#: vnc.py:260
+#, fuzzy
+msgid ""
+"\n"
+"\n"
+"Unknown Error.  Aborting. \n"
+"\n"
+msgstr "Сервери %1: Сар додани пайвастагӣ."
+
+#: vnc.py:282 vnc.py:375
+msgid "VNC Configuration"
+msgstr "Танзимоти VNC"
+
+#: vnc.py:285 vnc.py:379
+msgid "No password"
+msgstr "Бе парол"
+
+#: vnc.py:287 vnc.py:382
+msgid ""
+"A password will prevent unauthorized listeners connecting and monitoring "
+"your installation progress.  Please enter a password to be used for the "
+"installation"
+msgstr ""
+
+#: vnc.py:295 vnc.py:390 textw/userauth_text.py:47
+msgid "Password:"
+msgstr "Парол:"
+
+#: vnc.py:296 vnc.py:391 textw/userauth_text.py:49
+msgid "Password (confirm):"
+msgstr "Парол (тасдиқ):"
+
+#: vnc.py:314 vnc.py:413 textw/userauth_text.py:70
+msgid "Password Mismatch"
+msgstr "Пароли нодуруст"
+
+#: vnc.py:315 vnc.py:414 textw/userauth_text.py:71
+#, fuzzy
+msgid "The passwords you entered were different. Please try again."
+msgstr "Паролҳо баробар наомаданд. Лутфан, боз кӯшиш кунед."
+
+#: vnc.py:320 vnc.py:419 textw/userauth_text.py:66
+msgid "Password Length"
+msgstr "Дарозии парол"
+
+#: vnc.py:321 vnc.py:420
+msgid "The password must be at least six characters long."
+msgstr ""
+
+#: vnc.py:343
+#, fuzzy
+msgid "Unable to Start X"
+msgstr "Барномаи ksplash-ро иҷро кардан натавонист."
+
+#: vnc.py:345
+msgid ""
+"X was unable to start on your machine.  Would you like to start VNC to "
+"connect to this computer from another computer and perform a graphical "
+"install or continue with a text mode install?"
+msgstr ""
+
+#: vnc.py:364
+msgid "Start VNC"
+msgstr "Оғози VNC"
+
+#: vnc.py:365 vnc.py:367
+msgid "Use text mode"
+msgstr "Ҳолати матниро истифода баред"
+
+#: yuminstall.py:85
+#, python-format
+msgid "%s MB"
+msgstr "%s МБ"
+
+#: yuminstall.py:88
+#, python-format
+msgid "%s KB"
+msgstr "%s КБ"
+
+#: yuminstall.py:90
+#, fuzzy, python-format
+msgid "%s Byte"
+msgid_plural "%s Bytes"
+msgstr[0] "%s Бит"
+msgstr[1] "%s Бит"
+
+#: yuminstall.py:134
+msgid "Preparing to install"
+msgstr ""
+
+#: yuminstall.py:135
+msgid "Preparing transaction from installation source"
+msgstr ""
+
+#: yuminstall.py:163
+#, fuzzy, python-format
+msgid "<b>Installing %(pkgStr)s</b> (%(size)s)\n"
+msgstr "<b>Сабткунии %s</b> (%s)\n"
+
+#: yuminstall.py:212
+#, python-format
+msgid "Packages completed: %(donepkgs)d of %(numpkgs)d"
+msgid_plural "Packages completed: %(donepkgs)d of %(numpkgs)d"
+msgstr[0] ""
+msgstr[1] ""
+
+#: yuminstall.py:227
+#, fuzzy
+msgid "Finishing upgrade"
+msgstr "1MB Зиёдкунӣ"
+
+#: yuminstall.py:228
+msgid "Finishing upgrade process.  This may take a little while."
+msgstr ""
+
+#: yuminstall.py:251
+#, fuzzy
+msgid "Error Installing Package"
+msgstr "Чопгари %1 танзим шуда истодааст"
+
+#: yuminstall.py:252
+#, python-format
+msgid ""
+"A fatal error occurred when installing the %s package.  This could indicate "
+"errors when reading the installation media.  Installation cannot continue."
+msgstr ""
+
+#: yuminstall.py:353 iw/task_gui.py:336
+msgid "Error Setting Up Repository"
+msgstr "Ҳангоми танзими феҳраст хато пайдо шуд"
+
+#: yuminstall.py:354
+#, python-format
+msgid ""
+"The following error occurred while setting up the installation repository:\n"
+"\n"
+"%(e)s\n"
+"\n"
+"Please provide the correct information for installing %(productName)s."
+msgstr ""
+
+#: yuminstall.py:398
+msgid "Change Disc"
+msgstr "Ивази диск"
+
+#: yuminstall.py:399
+#, python-format
+msgid "Please insert %(productName)s disc %(discnum)d to continue."
+msgstr ""
+
+#: yuminstall.py:409
+msgid "Wrong Disc"
+msgstr "Диски нодуруст"
+
+#: yuminstall.py:410
+#, python-format
+msgid "That's not the correct %s disc."
+msgstr ""
+
+#: yuminstall.py:417
+#, fuzzy
+msgid "Unable to access the disc."
+msgstr "Идоракунии дастрасӣ ба репозиторияҳо"
+
+#: yuminstall.py:575
+#, python-format
+msgid "Repository %r is missing name in configuration, using id"
+msgstr ""
+
+#: yuminstall.py:699 yuminstall.py:1166 iw/task_gui.py:324
+msgid ""
+"Some of your software repositories require networking, but there was an "
+"error enabling the network on your system."
+msgstr ""
+
+#: yuminstall.py:800 yuminstall.py:802
+msgid "Re_boot"
+msgstr "Боз_худборшавӣ"
+
+#: yuminstall.py:800
+msgid "_Eject"
+msgstr "_Баровардани диск"
+
+#: yuminstall.py:806
+#, python-format
+msgid ""
+"The file %s cannot be opened.  This is due to a missing file, a corrupt "
+"package or corrupt media.  Please verify your installation source.\n"
+"\n"
+"If you exit, your system will be left in an inconsistent state that will "
+"likely require reinstallation.\n"
+"\n"
+msgstr ""
+
+#: yuminstall.py:854
+msgid "Retrying"
+msgstr "Аз нав кӯшиш мекунад"
+
+#: yuminstall.py:854
+#, fuzzy
+msgid "Retrying download."
+msgstr "Фақат фаровир"
+
+#: yuminstall.py:919
+#, python-format
+msgid ""
+"There was an error running your transaction for the following reason: %s\n"
+msgstr ""
+
+#: yuminstall.py:962 yuminstall.py:963
+#, fuzzy
+msgid "file conflicts"
+msgstr "Нусхабардории файл"
+
+#: yuminstall.py:964
+#, fuzzy
+msgid "older package(s)"
+msgstr "Сабткунии қуттиҳо"
+
+#: yuminstall.py:965
+#, fuzzy
+msgid "insufficient disk space"
+msgstr "Андозаи озод дар диск:"
+
+#: yuminstall.py:966
+#, fuzzy
+msgid "insufficient disk inodes"
+msgstr "Захира дар диск"
+
+#: yuminstall.py:967
+#, fuzzy
+msgid "package conflicts"
+msgstr "Сабткунии қуттиҳо"
+
+#: yuminstall.py:968
+#, fuzzy
+msgid "package already installed"
+msgstr "Настройка установленных шрифтов..."
+
+#: yuminstall.py:969
+#, fuzzy
+msgid "required package"
+msgstr "Сабткунии қуттиҳо"
+
+#: yuminstall.py:970
+#, fuzzy
+msgid "package for incorrect arch"
+msgstr "Сардодан бо рӯйхати хатоҳо барои <package>"
+
+#: yuminstall.py:971
+#, fuzzy
+msgid "package for incorrect os"
+msgstr "Сардодан бо рӯйхати хатоҳо барои <package>"
+
+#: yuminstall.py:985
+msgid "You need more space on the following file systems:\n"
+msgstr ""
+
+#: yuminstall.py:998
+#, python-format
+msgid ""
+"There were file conflicts when checking the packages to be installed:\n"
+"%s\n"
+msgstr ""
+
+#: yuminstall.py:1001
+#, python-format
+msgid ""
+"There was an error running your transaction for the following reason(s): %"
+"s.\n"
+msgstr ""
+
+#: yuminstall.py:1008 yuminstall.py:1013
+#, fuzzy
+msgid "Error Running Transaction"
+msgstr "Хатоӣ дар ба амалории созиш"
+
+#: yuminstall.py:1203
+msgid ""
+"Unable to read group information from repositories.  This is a problem with "
+"the generation of your install tree."
+msgstr ""
+
+#: yuminstall.py:1239
+#, fuzzy
+msgid "Retrieving installation information."
+msgstr "Васл кардан. Аҳбороти борои ҷадвал гирифтан"
+
+#: yuminstall.py:1241
+#, fuzzy, python-format
+msgid "Retrieving installation information for %s."
+msgstr "Гузарвожа барои фаровири иттилоот оиди вақти машғулӣ ва вақти холӣ"
+
+#: yuminstall.py:1243
+msgid "Installation Progress"
+msgstr "Ҳолати сабткунӣ"
+
+#: yuminstall.py:1251 textw/constants_text.py:64
+msgid "Edit"
+msgstr "Тағйир"
+
+#: yuminstall.py:1262 yuminstall.py:1451
+#, python-format
+msgid ""
+"Unable to read package metadata. This may be due to a missing repodata "
+"directory.  Please ensure that your install tree has been correctly "
+"generated.\n"
+"\n"
+"%s"
+msgstr ""
+
+#: yuminstall.py:1430
+msgid ""
+"Some of the packages you have selected for install are missing "
+"dependencies.  You can exit the installation, go back and change your "
+"package selections, or continue installing these packages without their "
+"dependencies."
+msgstr ""
+
+#: yuminstall.py:1473
+#, python-format
+msgid ""
+"Your selected packages require %d MB of free space for installation, but you "
+"do not have enough available.  You can change your selections or exit the "
+"installer."
+msgstr ""
+
+#: yuminstall.py:1494
+#, fuzzy
+msgid "Reboot?"
+msgstr "перезагрузить"
+
+#: yuminstall.py:1495
+msgid "The system will be rebooted now."
+msgstr ""
+
+#: yuminstall.py:1636
+#, python-format
+msgid ""
+"You appear to be upgrading from a system which is too old to upgrade to this "
+"version of %s.  Are you sure you wish to continue the upgrade process?"
+msgstr ""
+
+#: yuminstall.py:1671
+#, python-format
+msgid ""
+"The arch of the release of %(productName)s you are upgrading to appears to "
+"be %(myarch)s which does not match your previously installed arch of %(arch)"
+"s.  This is likely to not succeed.  Are you sure you wish to continue the "
+"upgrade process?"
+msgstr ""
+
+#: yuminstall.py:1718
+#, fuzzy
+msgid "Post Upgrade"
+msgstr "1MB Зиёдкунӣ"
+
+#: yuminstall.py:1719
+#, fuzzy
+msgid "Performing post-upgrade configuration"
+msgstr "Ҳангоми навишти PTY хато пайдо шуд"
+
+#: yuminstall.py:1721
+#, fuzzy
+msgid "Post Installation"
+msgstr "Сабт кардани &қайд гирӣ"
+
+#: yuminstall.py:1722
+#, fuzzy
+msgid "Performing post-installation configuration"
+msgstr "Оғози сабткунии графикӣ..."
+
+#: yuminstall.py:1943
+#, fuzzy
+msgid "Installation Starting"
+msgstr "Оғози сабткунӣ"
+
+#: yuminstall.py:1944
+#, fuzzy
+msgid "Starting installation process"
+msgstr "Ҳолати сабткунӣ"
+
+#: yuminstall.py:1982
+#, fuzzy
+msgid "Dependency Check"
+msgstr "Dependency Check"
+
+#: yuminstall.py:1983
+msgid "Checking dependencies in packages selected for installation"
+msgstr ""
+
+#: installclasses/fedora.py:39
+msgid "_Fedora"
+msgstr "_Fedora"
+
+#: installclasses/fedora.py:40
+#, python-format
+msgid ""
+"The default installation of %s includes a set of software applicable for "
+"general internet usage. You can optionally select a different set of "
+"software now."
+msgstr ""
+
+#: installclasses/fedora.py:49
+msgid "Graphical Desktop"
+msgstr ""
+
+#: installclasses/fedora.py:54 installclasses/rhel.py:61
+msgid "Software Development"
+msgstr "Барноманависии нармафзор"
+
+#: installclasses/fedora.py:60 installclasses/rhel.py:71
+#, fuzzy
+msgid "Web Server"
+msgstr "Хидматгоҳи Веб"
+
+#: installclasses/fedora.py:64 installclasses/rhel.py:51
+msgid "Minimal"
+msgstr ""
+
+#: installclasses/rhel.py:40
+msgid "Red Hat Enterprise Linux"
+msgstr "Red Hat Enterprise Linux"
+
+#: installclasses/rhel.py:41
+#, python-format
+msgid ""
+"The default installation of %s is a minimal install. You can optionally "
+"select a different set of software now."
+msgstr ""
+
+#: installclasses/rhel.py:52
+msgid "Desktop"
+msgstr ""
+
+#: installclasses/rhel.py:78
+#, fuzzy
+msgid "Advanced Server"
+msgstr "Номи хидматгоҳ:"
+
+#: iw/GroupSelector.py:147
+#, fuzzy, python-format
+msgid "Packages in %s"
+msgstr "Калон кардан"
+
+#: iw/GroupSelector.py:424
+#, fuzzy, python-format
+msgid "Optional packages selected: %(inst)d of %(cnt)d"
+msgstr "Дар пайраҳаи ивазо бурида шудааст "
+
+#: iw/GroupSelector.py:426
+#, python-format
+msgid "<i>%s</i>"
+msgstr "<i>%s</i>"
+
+#: iw/GroupSelector.py:486
+msgid "Uncategorized"
+msgstr ""
+
+#: iw/account_gui.py:52
+msgid "Root _Password:"
+msgstr " _Пароли Root:"
+
+#: iw/account_gui.py:54
+msgid "_Confirm:"
+msgstr "_Тасдиқ кунед:"
+
+#: iw/account_gui.py:92
+msgid "Caps Lock is on."
+msgstr "Caps Lock фаъол аст."
+
+#: iw/account_gui.py:102 iw/account_gui.py:110 iw/account_gui.py:117
+#: iw/account_gui.py:138 textw/userauth_text.py:74
+#, fuzzy
+msgid "Error with Password"
+msgstr "Su вернул ошибку.\n"
+
+#: iw/account_gui.py:103
+msgid ""
+"You must enter your root password and confirm it by typing it a second time "
+"to continue."
+msgstr ""
+
+#: iw/account_gui.py:111
+#, fuzzy
+msgid "The passwords you entered were different.  Please try again."
+msgstr "Паролҳо баробар наомаданд. Лутфан, боз кӯшиш кунед."
+
+#: iw/account_gui.py:118
+msgid "The root password must be at least six characters long."
+msgstr ""
+
+#: iw/account_gui.py:127 textw/userauth_text.py:83
+msgid "Weak Password"
+msgstr "Пароли осон"
+
+#: iw/account_gui.py:128
+#, python-format
+msgid "You have provided a weak password: %s"
+msgstr ""
+
+#: iw/account_gui.py:131
+#, fuzzy
+msgid "Use Anyway"
+msgstr "Номи корбар"
+
+#: iw/account_gui.py:139 textw/userauth_text.py:75
+msgid ""
+"Requested password contains non-ASCII characters, which are not allowed."
+msgstr ""
+
+#: iw/advanced_storage.py:91
+#, fuzzy
+msgid "You must select a NIC to use."
+msgstr "Сначала следует выделить правило, которое вы хотите удалить."
+
+#: iw/advanced_storage.py:138
+#, fuzzy
+msgid "Invalid Initiator Name"
+msgstr "Номи Нодурусти Ҷойгир"
+
+#: iw/advanced_storage.py:139
+#, fuzzy
+msgid "You must provide an initiator name."
+msgstr "Шумо бояд номи нохолиро пешкаш намоед."
+
+#: iw/advanced_storage.py:168
+#, fuzzy
+msgid "Error with Data"
+msgstr "Ошибка четности данных"
+
+#: iw/autopart_type.py:97
+msgid ""
+"No partitions are available to resize.  Only physical partitions with "
+"specific filesystems can be resized."
+msgstr ""
+
+#: iw/autopart_type.py:120
+#, fuzzy
+msgid "Resize FileSystem Error"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: iw/autopart_type.py:121
+#, python-format
+msgid "%(device)s: %(msg)s"
+msgstr ""
+
+#: iw/autopart_type.py:130
+msgid "Resize Device Error"
+msgstr ""
+
+#: iw/autopart_type.py:131
+#, python-format
+msgid "%(name)s: %(msg)s"
+msgstr ""
+
+#: iw/autopart_type.py:228
+#, fuzzy
+msgid "Use All Space"
+msgstr "Ҷои истифодашуда:"
+
+#: iw/autopart_type.py:230
+msgid ""
+"Removes all partitions on the selected device(s).  This includes partitions "
+"created by other operating systems.\n"
+"\n"
+"<b>Tip:</b> This option will remove data from the selected device(s).  Make "
+"sure you have backups."
+msgstr ""
+
+#: iw/autopart_type.py:236
+msgid "Replace Existing Linux System(s)"
+msgstr ""
+
+#: iw/autopart_type.py:238
+msgid ""
+"Removes all Linux partitions on the selected device(s). This does not remove "
+"other partitions you may have on your storage device(s) (such as VFAT or "
+"FAT32).\n"
+"\n"
+"<b>Tip:</b> This option will remove data from the selected device(s).  Make "
+"sure you have backups."
+msgstr ""
+
+#: iw/autopart_type.py:246
+#, fuzzy
+msgid "Shrink Current System"
+msgstr "_Рамзгузории система"
+
+#: iw/autopart_type.py:248
+msgid ""
+"Shrinks existing partitions to create free space for the default layout."
+msgstr ""
+
+#: iw/autopart_type.py:250
+#, fuzzy
+msgid "Use Free Space"
+msgstr "Ҷои холӣ (МБ)"
+
+#: iw/autopart_type.py:252
+msgid ""
+"Retains your current data and partitions and uses only the unpartitioned "
+"space on the selected device(s), assuming you have enough free space "
+"available."
+msgstr ""
+
+#: iw/autopart_type.py:256
+#, fuzzy
+msgid "Create Custom Layout"
+msgstr "Эҷоди нақша қатъ карда шуд."
+
+#: iw/autopart_type.py:258
+msgid ""
+"Manually create your own custom layout on the selected device(s) using our "
+"partitioning tool."
+msgstr ""
+
+#: iw/blpasswidget.py:44
+#, fuzzy
+msgid "_Use a boot loader password"
+msgstr "Гузарвожае, ки истифода бурдан мехоҳед."
+
+#: iw/blpasswidget.py:45
+msgid ""
+"A boot loader password prevents users from changing kernel options, "
+"increasing security."
+msgstr ""
+
+#: iw/blpasswidget.py:76
+msgid "Change _password"
+msgstr "Ивази _парол"
+
+#: iw/blpasswidget.py:99
+#, fuzzy
+msgid "Enter Boot Loader Password"
+msgstr "Калимаи рамзи нави гувоҳномаро ворид кунед"
+
+#: iw/blpasswidget.py:105
+msgid ""
+"Enter a boot loader password and then confirm it.  (Note that your BIOS "
+"keymap may be different than the actual keymap you are used to.)"
+msgstr ""
+
+#: iw/blpasswidget.py:112
+msgid "_Password:"
+msgstr "_Парол:"
+
+#: iw/blpasswidget.py:118
+msgid "Con_firm:"
+msgstr "Тас_диқ кунед:"
+
+#: iw/blpasswidget.py:139
+#, fuzzy
+msgid "Passwords don't match"
+msgstr "Паролҳо баробар наомаданд"
+
+#: iw/blpasswidget.py:140
+#, fuzzy
+msgid "Passwords do not match"
+msgstr "Паролҳо баробар наомаданд"
+
+#: iw/blpasswidget.py:149
+msgid ""
+"Your boot loader password is shorter than six characters.  We recommend a "
+"longer boot loader password.\n"
+"\n"
+"Would you like to continue with this password?"
+msgstr ""
+
+#: iw/bootloader_main_gui.py:36
+#, fuzzy
+msgid "Boot Loader Configuration"
+msgstr "Танзимоти Интернет барои %s"
+
+#: iw/bootloader_main_gui.py:180 iw/bootloader_main_gui.py:185
+#: iw/bootloader_main_gui.py:223
+#, python-format
+msgid "_Install boot loader on /dev/%s."
+msgstr ""
+
+#: iw/bootloader_main_gui.py:229
+msgid "_Change device"
+msgstr "_Ивази дастгоҳ"
+
+#: iw/cleardisks_gui.py:33
+msgid "Clear Disks Selector"
+msgstr ""
+
+#: iw/cleardisks_gui.py:44 iw/filter_gui.py:409
+#, fuzzy
+msgid "You must select at least one drive to be used for installation."
+msgstr "Сначала следует выделить правило, которое вы хотите удалить."
+
+#: iw/cleardisks_gui.py:54
+#, fuzzy
+msgid "You must select one drive to boot from."
+msgstr "Сначала следует выделить правило, которое вы хотите удалить."
+
+#: iw/cleardisks_gui.py:126 iw/cleardisks_gui.py:145 iw/filter_gui.py:444
+#: iw/filter_gui.py:455 iw/filter_gui.py:485
+msgid "Model"
+msgstr ""
+
+#: iw/cleardisks_gui.py:127 iw/cleardisks_gui.py:146 iw/filter_gui.py:445
+#: iw/filter_gui.py:456 iw/filter_gui.py:464 iw/filter_gui.py:475
+#: iw/filter_gui.py:486
+msgid "Capacity"
+msgstr ""
+
+#: iw/cleardisks_gui.py:128 iw/filter_gui.py:446 iw/filter_gui.py:465
+#: iw/filter_gui.py:476 iw/filter_gui.py:487
+#, fuzzy
+msgid "Vendor"
+msgstr "_Fedora"
+
+#: iw/cleardisks_gui.py:129 iw/filter_gui.py:447 iw/filter_gui.py:466
+#: iw/filter_gui.py:477 iw/filter_gui.py:488
+msgid "Interconnect"
+msgstr ""
+
+#: iw/cleardisks_gui.py:130 iw/filter_gui.py:448 iw/filter_gui.py:478
+#: iw/filter_gui.py:489
+msgid "Serial Number"
+msgstr ""
+
+#: iw/cleardisks_gui.py:144
+#, fuzzy
+msgid "Boot"
+msgstr "/boot"
+
+#: iw/cleardisks_gui.py:181
+msgid ""
+"<b>Tip:</b> All Linux filesystems on install target devices will be "
+"reformatted and wiped of any data.  Make sure you have backups."
+msgstr ""
+
+#: iw/cleardisks_gui.py:183 ui/cleardisks.glade.h:3
+msgid ""
+"<b>Tip:</b> Install target devices will be reformatted and wiped of any "
+"data.  Make sure you have backups."
+msgstr ""
+
+#: iw/cleardisks_gui.py:185
+msgid ""
+"<b>Tip:</b> Your filesystems on install target devices will not be wiped "
+"unless you choose to do so during customization."
+msgstr ""
+
+#: iw/congrats_gui.py:33
+#, fuzzy
+msgid "Congratulations"
+msgstr "Табрик!"
+
+#: iw/congrats_gui.py:74 textw/complete_text.py:39
+#, fuzzy, python-format
+msgid ""
+"Congratulations, your %s installation is complete.\n"
+"\n"
+msgstr "Ҳангоми нопурра будани ахборот, кӯшиш кунед"
+
+#: iw/congrats_gui.py:77 textw/complete_text.py:42
+msgid "Shutdown"
+msgstr ""
+
+#: iw/congrats_gui.py:79 textw/complete_text.py:44
+msgid "Please shutdown to use the installed system.\n"
+msgstr ""
+
+#: iw/congrats_gui.py:81 textw/complete_text.py:46
+msgid "Please reboot to use the installed system.\n"
+msgstr ""
+
+#: iw/congrats_gui.py:86 textw/complete_text.py:51
+msgid ""
+"Note that updates may be available to ensure the proper functioning of your "
+"system and installation of these updates is recommended after the reboot."
+msgstr ""
+
+#: iw/congrats_gui.py:90 textw/complete_text.py:55
+#, python-format
+msgid ""
+"Congratulations, your %s installation is complete.\n"
+"\n"
+"Please reboot to use the installed system.  Note that updates may be "
+"available to ensure the proper functioning of your system and installation "
+"of these updates is recommended after the reboot."
+msgstr ""
+
+#: iw/examine_gui.py:39
+#, fuzzy
+msgid "Upgrade Examine"
+msgstr "1MB Зиёдкунӣ"
+
+#: iw/examine_gui.py:60
+#, fuzzy
+msgid "Fresh Installation"
+msgstr "Сабткунии қуттиҳо"
+
+#: iw/examine_gui.py:62
+#, python-format
+msgid ""
+"Choose this option to install a fresh copy of %s on your system.  Existing "
+"software and data may be overwritten depending on your configuration choices."
+msgstr ""
+
+#: iw/examine_gui.py:67
+#, fuzzy
+msgid "Upgrade an Existing Installation"
+msgstr "Оғози сабткунии графикӣ..."
+
+#: iw/examine_gui.py:69
+#, python-format
+msgid ""
+"Choose this option if you would like to upgrade your existing %s system.  "
+"This option will preserve the existing data on your storage device(s)."
+msgstr ""
+
+#: iw/examine_gui.py:109
+msgid ""
+"At least one existing installation has been detected on your system.  What "
+"would you like to do?"
+msgstr ""
+
+#: iw/examine_gui.py:128
+#, fuzzy, python-format
+msgid "<b>Which %s installation would you like to upgrade?</b>"
+msgstr "Гузарвожае, ки истифода бурдан мехоҳед."
+
+#: iw/examine_gui.py:142
+msgid "Unknown Linux system"
+msgstr "Системаи Linux-и номайян"
+
+#: iw/filter_gui.py:147
+#, python-format
+msgid "<b>%s device(s) (%s MB) selected</b> out of %s device(s) (%s MB) total."
+msgstr ""
+
+#: iw/filter_gui.py:397
+#, fuzzy
+msgid "Device Filter"
+msgstr "Васлкунӣ қатъ карда шуд"
+
+#: iw/filter_gui.py:449 iw/filter_gui.py:457 iw/filter_gui.py:468
+#: iw/filter_gui.py:479 iw/filter_gui.py:494 iw/osbootwidget.py:66
+#: iw/partition_gui.py:607
+msgid "Device"
+msgstr "Дастгоҳ"
+
+#: iw/filter_gui.py:463 iw/filter_gui.py:474 iw/filter_gui.py:490
+#, fuzzy
+msgid "Identifier"
+msgstr "Муайян кунед"
+
+#: iw/filter_gui.py:467
+#, fuzzy
+msgid "Paths"
+msgstr "_Роҳча"
+
+#: iw/filter_gui.py:491
+#, fuzzy
+msgid "Port"
+msgstr "_Қатъ"
+
+#: iw/filter_gui.py:492
+#, fuzzy
+msgid "Target"
+msgstr "Санҷиш"
+
+#: iw/filter_gui.py:493
+msgid "LUN"
+msgstr ""
+
+#: iw/filter_type.py:55
+msgid "What type of devices will your installation involve?"
+msgstr ""
+
+#: iw/filter_type.py:61
+#, fuzzy
+msgid "Basic Storage Devices"
+msgstr "Дастгоҳ мавҷуд нест"
+
+#: iw/filter_type.py:62
+msgid ""
+"Installs or upgrades to typical types of storage devices.  If you're not "
+"sure which option is right for you, this is probably it."
+msgstr ""
+
+#: iw/filter_type.py:66
+#, fuzzy
+msgid "Specialized Storage Devices"
+msgstr "Дастгоҳ мавҷуд нест"
+
+#: iw/filter_type.py:67
+msgid ""
+"Installs or upgrades to devices such as Storage Area Networks (SANs) or "
+"mainframe attached disks (DASD), usually in an enterprise environment"
+msgstr ""
+
+#: iw/language_gui.py:33 textw/language_text.py:45
+msgid "Language Selection"
+msgstr "Интихоби забонҳо"
+
+#: iw/language_gui.py:81 loader/lang.c:370 textw/language_text.py:46
+msgid "What language would you like to use during the installation process?"
+msgstr "Кадом забонро Шумо мехоҳед барои сабткунии система истифода мебаред?"
+
+#: iw/lvm_dialog_gui.py:125 iw/lvm_dialog_gui.py:171 iw/lvm_dialog_gui.py:185
+#: iw/lvm_dialog_gui.py:224 iw/lvm_dialog_gui.py:301 iw/lvm_dialog_gui.py:690
+#: iw/lvm_dialog_gui.py:711
+#, fuzzy
+msgid "Not enough space"
+msgstr "Ҷой дар диск нокифоя аст?"
+
+#: iw/lvm_dialog_gui.py:126
+msgid ""
+"The physical extent size cannot be changed because otherwise the space "
+"required by the currently defined logical volumes will be increased to more "
+"than the available space."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:135
+#, fuzzy
+msgid "Confirm Physical Extent Change"
+msgstr "Тасдиқи Тағироти Гузоришҳои Экран"
+
+#: iw/lvm_dialog_gui.py:136
+msgid ""
+"This change in the value of the physical extent will require the sizes of "
+"the current logical volume requests to be rounded up in size to an integer "
+"multiple of the physical extent.\n"
+"\n"
+"This change will take effect immediately."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:145 iw/lvm_dialog_gui.py:207
+msgid "C_ontinue"
+msgstr "Д_авом диҳед"
+
+#: iw/lvm_dialog_gui.py:172
+#, python-format
+msgid ""
+"The physical extent size cannot be changed because the value selected (%"
+"(curpe)10.2f MB) is larger than the smallest physical volume (%(maxpvsize)"
+"10.2f MB) in the volume group."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:186
+#, python-format
+msgid ""
+"The physical extent size cannot be changed because the value selected (%"
+"(curpe)10.2f MB) is too large compared to the size of the smallest physical "
+"volume (%(maxpvsize)10.2f MB) in the volume group."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:200
+msgid "Too small"
+msgstr "Хеле хурд"
+
+#: iw/lvm_dialog_gui.py:201
+msgid ""
+"This change in the value of the physical extent will waste substantial space "
+"on one or more of the physical volumes in the volume group."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:225
+#, python-format
+msgid ""
+"The physical extent size cannot be changed because the resulting maximum "
+"logical volume size (%10.2f MB) is smaller than one or more of the currently "
+"defined logical volumes."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:302
+msgid ""
+"You cannot remove this physical volume because otherwise the volume group "
+"will be too small to hold the currently defined logical volumes."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:401
+#, fuzzy
+msgid "Make Logical Volume"
+msgstr "Нишон додани Панели &Баландии овоз"
+
+#: iw/lvm_dialog_gui.py:403
+#, fuzzy, python-format
+msgid "Edit Logical Volume: %s"
+msgstr "Нишон додани Панели &Баландии овоз"
+
+#: iw/lvm_dialog_gui.py:442 iw/raid_dialog_gui.py:443
+msgid "_File System Type:"
+msgstr "_Намуди системаи файлҳо:"
+
+#: iw/lvm_dialog_gui.py:448
+#, fuzzy
+msgid "_Logical Volume Name:"
+msgstr "Номи хидматгоҳи NFS:"
+
+#: iw/lvm_dialog_gui.py:457 iw/partition_dialog_gui.py:469
+msgid "_Size (MB):"
+msgstr "_Андоза (МБ):"
+
+#: iw/lvm_dialog_gui.py:464
+#, fuzzy, python-format
+msgid "(Max size is %s MB)"
+msgstr "<tr><td><i>Андозаи қуттиҳои ниҳоят</i></td><td>%1</td></tr>"
+
+#: iw/lvm_dialog_gui.py:469 iw/partition_dialog_gui.py:521
+#: iw/partition_ui_helpers_gui.py:331 iw/raid_dialog_gui.py:415
+msgid "_Encrypt"
+msgstr "_Рамзгузорӣ"
+
+#: iw/lvm_dialog_gui.py:478 iw/partition_dialog_gui.py:451
+#: iw/raid_dialog_gui.py:453
+#, fuzzy
+msgid "Original File System Type:"
+msgstr "Эҷоди намунаи номи файли нав %1"
+
+#: iw/lvm_dialog_gui.py:483 iw/partition_dialog_gui.py:459
+#: iw/raid_dialog_gui.py:460
+#, fuzzy
+msgid "Original File System Label:"
+msgstr "Танҳо системаи файлиро хонед"
+
+#: iw/lvm_dialog_gui.py:488
+#, fuzzy
+msgid "Logical Volume Name:"
+msgstr "Номи хидматгоҳи NFS:"
+
+#: iw/lvm_dialog_gui.py:492
+msgid "Size (MB):"
+msgstr "Андоза (МБ):"
+
+#: iw/lvm_dialog_gui.py:519 iw/partition_dialog_gui.py:407
+#: iw/raid_dialog_gui.py:434
+msgid "_Mount Point:"
+msgstr "_Нуқтаи васл:"
+
+#: iw/lvm_dialog_gui.py:596 iw/partition_dialog_gui.py:113
+#: iw/partition_ui_helpers_gui.py:109 iw/partition_ui_helpers_gui.py:131
+#: iw/partition_ui_helpers_gui.py:133 iw/raid_dialog_gui.py:169
+msgid "<Not Applicable>"
+msgstr "<Истифоданашаванда>"
+
+#: iw/lvm_dialog_gui.py:604
+msgid "Illegal Logical Volume Name"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:619
+msgid "Illegal logical volume name"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:620
+#, python-format
+msgid "The logical volume name \"%s\" is already in use. Please pick another."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:661 iw/partition_dialog_gui.py:127
+#: iw/raid_dialog_gui.py:183
+msgid "Mount point in use"
+msgstr "Нуқтаи васл банд аст"
+
+#: iw/lvm_dialog_gui.py:662 iw/partition_dialog_gui.py:128
+#: iw/raid_dialog_gui.py:184
+#, python-format
+msgid "The mount point \"%s\" is in use. Please pick another."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:677
+msgid "Illegal size"
+msgstr "Андозаи нодуруст"
+
+#: iw/lvm_dialog_gui.py:678
+msgid "The requested size as entered is not a valid number greater than 0."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:691
+#, python-format
+msgid ""
+"The current requested size (%(size)10.2f MB) is larger than the maximum "
+"logical volume size (%(maxlv)10.2f MB). To increase this limit you can "
+"create more Physical Volumes from unpartitioned disk space and add them to "
+"this Volume Group."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:712
+#, python-format
+msgid ""
+"The logical volumes you have configured require %(size)d MB, but the volume "
+"group only has %(tempvgsize)d MB.  Please either make the volume group "
+"larger or make the logical volume(s) smaller."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:814
+#, fuzzy
+msgid "No free slots"
+msgstr "Пайвасти Сигналҳо /Такягоҳо"
+
+#: iw/lvm_dialog_gui.py:815
+#, python-format
+msgid "You cannot create more than %d logical volume per volume group."
+msgid_plural "You cannot create more than %d logical volumes per volume group."
+msgstr[0] ""
+msgstr[1] ""
+
+#: iw/lvm_dialog_gui.py:825
+#, fuzzy
+msgid "No free space"
+msgstr "Ҷои холӣ (МБ)"
+
+#: iw/lvm_dialog_gui.py:826
+msgid ""
+"There is no room left in the volume group to create new logical volumes. To "
+"add a logical volume you must reduce the size of one or more of the "
+"currently existing logical volumes"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:863
+#, fuzzy, python-format
+msgid "Are you sure you want to delete the logical volume \"%s\"?"
+msgstr "Дар ҳақиқат мехоҳед, ки тахаллусҳои интихобкардаро нобуд созед?"
+
+#: iw/lvm_dialog_gui.py:969
+#, fuzzy
+msgid "Invalid Volume Group Name"
+msgstr "Номи гурӯҳи навро ворид кунед:"
+
+#: iw/lvm_dialog_gui.py:978
+#, fuzzy
+msgid "Name in use"
+msgstr "Истифода баред номи рамзҳоро"
+
+#: iw/lvm_dialog_gui.py:979
+#, python-format
+msgid "The volume group name \"%s\" is already in use. Please pick another."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:1265
+#, fuzzy
+msgid "Not enough physical volumes"
+msgstr "Хатогии Наҳвӣ: Нишонвандҳо нокифояанд\n"
+
+#: iw/lvm_dialog_gui.py:1266
+msgid ""
+"At least one unused physical volume partition is needed to create an LVM "
+"Volume Group.\n"
+"\n"
+"Create a partition or RAID array of type \"physical volume (LVM)\" and then "
+"select the \"LVM\" option again."
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:1277
+msgid "Make LVM Volume Group"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:1280
+#, python-format
+msgid "Edit LVM Volume Group: %s"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:1282
+msgid "Edit LVM Volume Group"
+msgstr ""
+
+#: iw/lvm_dialog_gui.py:1298
+#, fuzzy
+msgid "_Volume Group Name:"
+msgstr "&Номи гурӯҳи амалиёт:"
+
+#: iw/lvm_dialog_gui.py:1306
+#, fuzzy
+msgid "Volume Group Name:"
+msgstr "&Номи гурӯҳи амалиёт:"
+
+#: iw/lvm_dialog_gui.py:1314
+#, fuzzy
+msgid "_Physical Extent:"
+msgstr "Хотири Ҷисмонӣ"
+
+#: iw/lvm_dialog_gui.py:1329
+#, fuzzy
+msgid "Physical Volumes to _Use:"
+msgstr "Суроғаи хато мавриди истифода"
+
+#: iw/lvm_dialog_gui.py:1335
+msgid "Used Space:"
+msgstr "Ҷои истифодашуда:"
+
+#: iw/lvm_dialog_gui.py:1352
+msgid "Free Space:"
+msgstr "Ҷои холӣ:"
+
+#: iw/lvm_dialog_gui.py:1370
+msgid "Total Space:"
+msgstr "Ҳамагӣ:"
+
+#: iw/lvm_dialog_gui.py:1408
+#, fuzzy
+msgid "Logical Volume Name"
+msgstr "Номи хидматгоҳи NFS:"
+
+#: iw/lvm_dialog_gui.py:1411 iw/partition_gui.py:610
+#: iw/upgrade_swap_gui.py:138 textw/upgrade_text.py:124
+msgid "Mount Point"
+msgstr "Нуқтаи васл"
+
+#: iw/lvm_dialog_gui.py:1414 iw/partition_gui.py:609
+msgid "Size (MB)"
+msgstr "Андоза (МБ)"
+
+#: iw/lvm_dialog_gui.py:1428 iw/osbootwidget.py:96
+msgid "_Add"
+msgstr "_Илова"
+
+#: iw/lvm_dialog_gui.py:1431 iw/osbootwidget.py:100 iw/partition_gui.py:1818
+#: iw/partition_gui.py:1828
+msgid "_Edit"
+msgstr "_Таҳрир"
+
+#: iw/lvm_dialog_gui.py:1446
+#, fuzzy
+msgid "_Logical Volumes"
+msgstr "Пешниҳодҳои мантиқӣ"
+
+#: iw/netconfig_dialog.py:192 textw/netconfig_text.py:36
+#, python-format
+msgid ""
+"An error occurred converting the value entered for \"%(field)s\":\n"
+"%(errmsg)s"
+msgstr ""
+
+#: iw/netconfig_dialog.py:195 iw/netconfig_dialog.py:204
+#: textw/netconfig_text.py:35 textw/netconfig_text.py:42
+#, fuzzy
+msgid "Error With Data"
+msgstr "Ошибка четности данных"
+
+#: iw/netconfig_dialog.py:203
+#, fuzzy, python-format
+msgid "A value is required for the field %s."
+msgstr "Маънои\"%1\" барои драйвер аввалиндараҷа нест."
+
+#: iw/netconfig_dialog.py:213
+#, python-format
+msgid "An error occurred trying to bring up the %s network interface."
+msgstr ""
+
+#: iw/netconfig_dialog.py:215
+#, fuzzy
+msgid "Error Configuring Network"
+msgstr "Хатои дохилӣ: Дастгоҳ танзим нашудааст."
+
+#: iw/netconfig_dialog.py:241
+#, fuzzy
+msgid "Dynamic IP Address"
+msgstr "Адреси IP Динамикӣ"
+
+#: iw/netconfig_dialog.py:242
+#, python-format
+msgid "Sending request for IP address information for %s"
+msgstr ""
+
+#: iw/netconfig_dialog.py:257 iw/netconfig_dialog.py:260
+#: textw/netconfig_text.py:225 textw/netconfig_text.py:228
+msgid "IP Address"
+msgstr "Суроғаи IP"
+
+#: iw/netconfig_dialog.py:267 textw/netconfig_text.py:235
+msgid "IPv4 CIDR prefix must be between 0 and 32."
+msgstr ""
+
+#: iw/netconfig_dialog.py:268 iw/netconfig_dialog.py:274
+#: iw/netconfig_dialog.py:282 iw/netconfig_dialog.py:285
+#: textw/netconfig_text.py:236 textw/netconfig_text.py:242
+#: textw/netconfig_text.py:250
+#, fuzzy
+msgid "IPv4 Network Mask"
+msgstr "Ниқоби бехатарии феҳрист:"
+
+#: iw/netconfig_dialog.py:295 textw/netconfig_text.py:263
+msgid "Gateway"
+msgstr "Суроҳаи хидматгоҳ"
+
+#: iw/netconfig_dialog.py:305 textw/netconfig_text.py:273
+msgid "Nameserver"
+msgstr "Номи хидматгоҳ"
+
+#: iw/netconfig_dialog.py:314
+#, fuzzy
+msgid "Error configuring network device:"
+msgstr "Хатои дохилӣ: Дастгоҳ танзим нашудааст."
+
+#: iw/network_gui.py:67 iw/network_gui.py:73
+#, fuzzy
+msgid "Error with Hostname"
+msgstr "Su вернул ошибку.\n"
+
+#: iw/network_gui.py:68
+msgid "You must enter a valid hostname for this computer."
+msgstr ""
+
+#: iw/network_gui.py:74
+#, python-format
+msgid ""
+"The hostname \"%(hostname)s\" is not valid for the following reason:\n"
+"\n"
+"%(herrors)s"
+msgstr ""
+
+#: iw/osbootwidget.py:50
+msgid "Boot loader operating system list"
+msgstr ""
+
+#: iw/osbootwidget.py:66
+msgid "Default"
+msgstr "Стандартӣ"
+
+#: iw/osbootwidget.py:66 iw/partition_gui.py:608
+msgid "Label"
+msgstr "Тамға"
+
+#: iw/osbootwidget.py:130
+#, fuzzy
+msgid "Image"
+msgstr "Тасвир"
+
+#: iw/osbootwidget.py:137
+msgid ""
+"Enter a label for the boot loader menu to display. The device (or hard drive "
+"and partition number) is the device from which it boots."
+msgstr ""
+
+#: iw/osbootwidget.py:145
+msgid "_Label"
+msgstr "_Тамға"
+
+#: iw/osbootwidget.py:153
+msgid "_Device"
+msgstr "_Дастгоҳ"
+
+#: iw/osbootwidget.py:183
+#, fuzzy
+msgid "Default Boot _Target"
+msgstr "Пурбор кардани ядро/СО ба пешфарз &баъди:"
+
+#: iw/osbootwidget.py:212
+msgid "You must specify a label for the entry"
+msgstr ""
+
+#: iw/osbootwidget.py:221
+msgid "Boot label contains illegal characters"
+msgstr ""
+
+#: iw/osbootwidget.py:245
+#, fuzzy
+msgid "Duplicate Label"
+msgstr "Нишонаҳои Атомҳо"
+
+#: iw/osbootwidget.py:246
+msgid "This label is already in use for another boot entry."
+msgstr ""
+
+#: iw/osbootwidget.py:259
+msgid "Duplicate Device"
+msgstr "Нусхабардории дастгоҳ"
+
+#: iw/osbootwidget.py:260
+msgid "This device is already being used for another boot entry."
+msgstr ""
+
+#: iw/osbootwidget.py:322
+msgid "Cannot Delete"
+msgstr "Нест карда намешавад"
+
+#: iw/osbootwidget.py:323
+#, python-format
+msgid ""
+"This boot target cannot be deleted because it is for the %s system you are "
+"about to install."
+msgstr ""
+
+#: iw/partition_dialog_gui.py:57
+msgid "Additional Size Options"
+msgstr "Интихобҳои иловагии андоза"
+
+#: iw/partition_dialog_gui.py:62
+msgid "_Fixed size"
+msgstr "_Андозаи муайяншуда"
+
+#: iw/partition_dialog_gui.py:64
+msgid "Fill all space _up to (MB):"
+msgstr ""
+
+#: iw/partition_dialog_gui.py:71
+msgid "Fill to maximum _allowable size"
+msgstr ""
+
+#: iw/partition_dialog_gui.py:377
+msgid "Add Partition"
+msgstr "Иловаи қисми диск"
+
+#: iw/partition_dialog_gui.py:379
+#, fuzzy, python-format
+msgid "Edit Partition: %s"
+msgstr "Таҳрири қисми диск: /dev/%s"
+
+#: iw/partition_dialog_gui.py:416
+msgid "File System _Type:"
+msgstr "Намуди _системаи файлҳо:"
+
+#: iw/partition_dialog_gui.py:432
+msgid "Allowable _Drives:"
+msgstr "Дастгоҳҳои _иҷозашуда:"
+
+#: iw/partition_dialog_gui.py:508
+msgid "Force to be a _primary partition"
+msgstr ""
+
+#: iw/partition_gui.py:356
+#, fuzzy, python-format
+msgid "Drive %(drive)s (%(size)-0.f MB) (Model: %(model)s)"
+msgstr "Интихоби Шакли Чопгар"
+
+#: iw/partition_gui.py:396 iw/partition_gui.py:442 iw/partition_gui.py:509
+#: iw/partition_gui.py:1000 iw/partition_gui.py:1067
+msgid "Free"
+msgstr "Холӣ"
+
+#: iw/partition_gui.py:474
+#, fuzzy, python-format
+msgid "LVM Volume Group %s (%-0.f MB)"
+msgstr "Гурӯҳҳои шахсии корванд"
+
+#: iw/partition_gui.py:540
+#, python-format
+msgid "MD RAID ARRAY %s (%-0.f MB)"
+msgstr ""
+
+#: iw/partition_gui.py:611
+msgid "Type"
+msgstr "Намуд"
+
+#: iw/partition_gui.py:612 storage/__init__.py:1791
+#, fuzzy
+msgid "Format"
+msgstr "Андоза"
+
+#: iw/partition_gui.py:649
+#, fuzzy
+msgid ""
+"Mount Point/\n"
+"RAID/Volume"
+msgstr "Нуқтаи монтаж кунӣ (/mnt/floppy):"
+
+#: iw/partition_gui.py:651
+msgid ""
+"Size\n"
+"(MB)"
+msgstr ""
+"Андоза\n"
+"(MB)"
+
+#: iw/partition_gui.py:756
+#, fuzzy
+msgid "Partitioning"
+msgstr "Ҳолати бахшбандӣ"
+
+#: iw/partition_gui.py:846
+msgid ""
+"The partitioning scheme you requested caused the following critical errors."
+msgstr ""
+
+#: iw/partition_gui.py:848
+#, python-format
+msgid ""
+"You must correct these errors before you continue your installation of %s."
+msgstr ""
+
+#: iw/partition_gui.py:854
+#, fuzzy
+msgid "Partitioning Errors"
+msgstr "Гузориши хатогиҳо"
+
+#: iw/partition_gui.py:861
+msgid "The partitioning scheme you requested generated the following warnings."
+msgstr ""
+
+#: iw/partition_gui.py:863
+msgid "Would you like to continue with your requested partitioning scheme?"
+msgstr ""
+
+#: iw/partition_gui.py:868
+#, fuzzy
+msgid "Partitioning Warnings"
+msgstr "Ҳолати бахшбандӣ"
+
+#: iw/partition_gui.py:877
+msgid ""
+"The following pre-existing devices have been selected to be formatted, "
+"destroying all data."
+msgstr ""
+
+#: iw/partition_gui.py:889
+#, fuzzy
+msgid "Format Warnings"
+msgstr "Ба андоза даровардани лента..."
+
+#: iw/partition_gui.py:894 storage/dasd.py:139
+msgid "_Format"
+msgstr "_Андоза"
+
+#: iw/partition_gui.py:988
+#, fuzzy
+msgid "LVM Volume Groups"
+msgstr "Гурӯҳҳои шахсии корванд"
+
+#: iw/partition_gui.py:1010
+msgid "RAID Devices"
+msgstr "Дастгоҳҳои RAID"
+
+#: iw/partition_gui.py:1021 loader/hdinstall.c:203
+msgid "Hard Drives"
+msgstr "Дискҳои компютерӣ"
+
+#: iw/partition_gui.py:1071
+msgid "Extended"
+msgstr "Васеъшуда"
+
+#: iw/partition_gui.py:1350
+msgid "Cannot perform any creation action"
+msgstr ""
+
+#: iw/partition_gui.py:1351
+msgid ""
+"Note that the creation action requires one of the following:\n"
+"\n"
+"* Free space in one of the Hard Drives.\n"
+"* At least two free Software RAID partitions.\n"
+"* At least one free physical volume (LVM) partition.\n"
+"* At least one Volume Group with free space."
+msgstr ""
+
+#: iw/partition_gui.py:1463
+#, python-format
+msgid ""
+"Software RAID allows you to combine several disks into a larger RAID "
+"device.  A RAID device can be configured to provide additional speed and "
+"reliability compared to using an individual drive.  For more information on "
+"using RAID devices please consult the %s documentation.\n"
+msgstr ""
+
+#: iw/partition_gui.py:1469
+msgid ""
+"To use RAID you must first create at least two partitions of type 'software "
+"RAID'.  Then you can create a RAID device that can be formatted and "
+"mounted.\n"
+"\n"
+msgstr ""
+
+#: iw/partition_gui.py:1473
+#, python-format
+msgid "You currently have %d software RAID partition free to use."
+msgid_plural "You currently have %d software RAID partitions free to use."
+msgstr[0] ""
+msgstr[1] ""
+
+#: iw/partition_gui.py:1477
+#, fuzzy
+msgid "About RAID"
+msgstr "нармафзори RAID"
+
+#: iw/partition_gui.py:1483
+#, python-format
+msgid ""
+"Logical Volume Manager (LVM) is a 3 level construct. The first level is made "
+"up of disks or partitions formatted with LVM metadata called Physical "
+"Volumes (PV).  A Volume Group (VG) sits on top of one or more PVs. The VG, "
+"in turn, is the base to create one or more Logical Volumes (LV).  Note that "
+"a VG can be an aggregate of PVs from multiple physical disks.  For more "
+"information on using LVM please consult the %s documentation\n"
+msgstr ""
+
+#: iw/partition_gui.py:1491
+msgid ""
+"To create a PV you need a partition with free space.  To create a VG you "
+"need a PV that is not part of any existing VG.  To create an LV you need a "
+"VG with free space.\n"
+"\n"
+msgstr ""
+
+#: iw/partition_gui.py:1495
+#, python-format
+msgid "You currently have %d available PV free to use.\n"
+msgid_plural "You currently have %d available PVs free to use.\n"
+msgstr[0] ""
+msgstr[1] ""
+
+#: iw/partition_gui.py:1499
+msgid "You currently have free space to create PVs."
+msgstr ""
+
+#: iw/partition_gui.py:1502
+msgid "About LVM"
+msgstr ""
+
+#: iw/partition_gui.py:1533
+msgid "Couldn't Create Drive Clone Editor"
+msgstr ""
+
+#: iw/partition_gui.py:1534
+msgid "The drive clone editor could not be created for some reason."
+msgstr ""
+
+#: iw/partition_gui.py:1592 storage/partitioning.py:196
+#: storage/partitioning.py:239
+#, fuzzy
+msgid "Error Partitioning"
+msgstr "Ҳолати бахшбандӣ"
+
+#: iw/partition_gui.py:1593
+#, fuzzy, python-format
+msgid "Could not allocate requested partitions: %s."
+msgstr "Амалиёти дархостшуда иҷро карда намешавад"
+
+#: iw/partition_gui.py:1602
+#, python-format
+msgid "Warning: %s."
+msgstr "Огоҳӣ: %s."
+
+#: iw/partition_gui.py:1633
+msgid "Unable To Edit"
+msgstr "Таҳрир карда намешавад"
+
+#: iw/partition_gui.py:1634
+#, fuzzy, python-format
+msgid ""
+"You cannot edit this device:\n"
+"\n"
+"%s"
+msgstr "Ин файлҳои зиёдро таҳрир мекунад. Шумо боварӣ доред?"
+
+#: iw/partition_gui.py:1817
+#, fuzzy
+msgid "_Create"
+msgstr "<i>Эҷод кардашудагӣ дар</i>: %1"
+
+#: iw/partition_gui.py:1820
+msgid "Re_set"
+msgstr "Боз_созӣ"
+
+#: iw/partition_gui.py:1843
+#, fuzzy
+msgid "Please Select A Device"
+msgstr "Фақат як алоқаро нишон диҳед."
+
+#: iw/partition_ui_helpers_gui.py:312
+#, fuzzy
+msgid "_Format as:"
+msgstr "Додани худро ҳамчун"
+
+#: iw/partition_ui_helpers_gui.py:334
+msgid "Mi_grate filesystem to:"
+msgstr ""
+
+#: iw/partition_ui_helpers_gui.py:364
+msgid "_Resize"
+msgstr "_Тағйири андоза"
+
+#: iw/partition_ui_helpers_gui.py:435
+#, python-format
+msgid ""
+"Partitions of type '%s' must be constrained to a single drive.  To do this, "
+"select the drive in the 'Allowable Drives' checklist."
+msgstr ""
+
+#: iw/progress_gui.py:37
+#, fuzzy
+msgid "Installing Packages"
+msgstr "Чопгари %1 танзим шуда истодааст"
+
+#: iw/raid_dialog_gui.py:382
+msgid ""
+"At least two unused software RAID partitions are needed to create a RAID "
+"device.\n"
+"\n"
+"First create at least two partitions of type \"software RAID\", and then "
+"select the \"RAID\" option again."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:396
+msgid "Make RAID Device"
+msgstr "Эҷоди дастгоҳи RAID"
+
+#: iw/raid_dialog_gui.py:399
+#, fuzzy, python-format
+msgid "Edit RAID Device: %s"
+msgstr "Таҳрири дастгоҳи RAID"
+
+#: iw/raid_dialog_gui.py:401
+msgid "Edit RAID Device"
+msgstr "Таҳрири дастгоҳи RAID"
+
+#: iw/raid_dialog_gui.py:468
+msgid "RAID _Device:"
+msgstr "Дастгоҳи _RAID"
+
+#: iw/raid_dialog_gui.py:486
+msgid "RAID _Level:"
+msgstr "Дараҷаи  _RAID:"
+
+#: iw/raid_dialog_gui.py:528
+#, fuzzy
+msgid "_RAID Members:"
+msgstr "Дараҷотҳои &ишорашуда"
+
+#: iw/raid_dialog_gui.py:545
+#, fuzzy
+msgid "Number of _spares:"
+msgstr "Рақами сабткунӣ"
+
+#: iw/raid_dialog_gui.py:555
+#, fuzzy
+msgid "_Format partition?"
+msgstr "Иловаи қисми диск"
+
+#: iw/raid_dialog_gui.py:629
+msgid ""
+"The source drive has no partitions to be cloned.  You must first define "
+"partitions of type 'software RAID' on this drive before it can be cloned."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:633 iw/raid_dialog_gui.py:639
+#: iw/raid_dialog_gui.py:653 iw/raid_dialog_gui.py:666
+msgid "Source Drive Error"
+msgstr "Хатои манбаъи дастгоҳ"
+
+#: iw/raid_dialog_gui.py:640
+msgid ""
+"The source drive you selected has partitions which are not of type 'software "
+"RAID'.\n"
+"\n"
+"You must remove these partitions before this drive can be cloned. "
+msgstr ""
+
+#: iw/raid_dialog_gui.py:654
+#, python-format
+msgid ""
+"The source drive you selected has partitions which are not constrained to "
+"the drive %s.\n"
+"\n"
+"You must remove these partitions or restrict them to this drive before this "
+"drive can be cloned. "
+msgstr ""
+
+#: iw/raid_dialog_gui.py:667
+msgid ""
+"The source drive you selected has software RAID partition(s) which are "
+"members of an active software RAID device.\n"
+"\n"
+"You must remove these partitions before this drive can be cloned."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:681 iw/raid_dialog_gui.py:687
+#: iw/raid_dialog_gui.py:703
+msgid "Target Drive Error"
+msgstr "Хатои нишонад дастгоҳ"
+
+#: iw/raid_dialog_gui.py:682
+msgid "Please select the target drives for the clone operation."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:688
+#, python-format
+msgid "The source drive %s cannot be selected as a target drive as well."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:704
+#, python-format
+msgid ""
+"The target drive %(path)s has a partition which cannot be removed for the "
+"following reason:\n"
+"\n"
+"\"%(rc)s\"\n"
+"\n"
+"You must remove this partition before this drive can be a target."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:767
+#, fuzzy
+msgid "Please select a source drive."
+msgstr "Фақат як алоқаро нишон диҳед."
+
+#: iw/raid_dialog_gui.py:787
+#, python-format
+msgid ""
+"The drive %s will now be cloned to the following drives:\n"
+"\n"
+msgstr ""
+
+#: iw/raid_dialog_gui.py:792
+msgid ""
+"\n"
+"\n"
+"WARNING! ALL DATA ON THE TARGET DRIVES WILL BE DESTROYED."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:795
+#, fuzzy
+msgid "Final Warning"
+msgstr "Параметри нодуруст"
+
+#: iw/raid_dialog_gui.py:797
+msgid "Clone Drives"
+msgstr "Нусхаи диск"
+
+#: iw/raid_dialog_gui.py:806
+msgid "There was an error clearing the target drives.  Cloning failed."
+msgstr ""
+
+#: iw/raid_dialog_gui.py:829
+#, fuzzy
+msgid "Clone Drive Tool"
+msgstr "Нусхаи диск"
+
+#: iw/raid_dialog_gui.py:838
+msgid ""
+"This tool clones the layout from a partitioned source onto other similar "
+"sized drives. The source must have partitions which are restricted to that "
+"drive and must ONLY contain unused software RAID partitions.  EVERYTHING on "
+"the target drive(s) will be destroyed.\n"
+msgstr ""
+
+#: iw/raid_dialog_gui.py:849
+msgid "Source Drive:"
+msgstr "Дастгоҳи манбаъ:"
+
+#: iw/raid_dialog_gui.py:857
+msgid "Target Drive(s):"
+msgstr "Нишонаи дастгоҳ(s):"
+
+#: iw/raid_dialog_gui.py:865
+msgid "Drives"
+msgstr "Дастгоҳҳо"
+
+#: iw/task_gui.py:70
+#, python-format
+msgid ""
+"Unable to read package metadata from repository.  This may be due to a "
+"missing repodata directory.  Please ensure that your repository has been "
+"correctly generated.\n"
+"\n"
+"%s"
+msgstr ""
+
+#: iw/task_gui.py:147
+msgid "Edit Repository"
+msgstr "Таҳрири феҳраст"
+
+#: iw/task_gui.py:171
+#, python-format
+msgid ""
+"The repository %s has already been added.  Please choose a different "
+"repository name and URL."
+msgstr ""
+
+#: iw/task_gui.py:251
+msgid "Invalid Proxy URL"
+msgstr "Proxy URL нодуруст"
+
+#: iw/task_gui.py:252
+msgid "You must provide an HTTP, HTTPS, or FTP URL to a proxy."
+msgstr ""
+
+#: iw/task_gui.py:264 iw/task_gui.py:431
+msgid "Invalid Repository URL"
+msgstr "Феҳраст URL нодуруст"
+
+#: iw/task_gui.py:265 iw/task_gui.py:432
+msgid "You must provide an HTTP, HTTPS, or FTP URL to a repository."
+msgstr ""
+
+#: iw/task_gui.py:286 iw/task_gui.py:441
+msgid "No Media Found"
+msgstr "Ягон дастгоҳ ёфт нашуд"
+
+#: iw/task_gui.py:287 iw/task_gui.py:442
+msgid ""
+"No installation media was found. Please insert a disc into your drive and "
+"try again."
+msgstr ""
+
+#: iw/task_gui.py:318 iw/task_gui.py:465
+msgid "Please enter an NFS server and path."
+msgstr ""
+
+#: iw/task_gui.py:337
+#, python-format
+msgid ""
+"The following error occurred while setting up the repository:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: iw/task_gui.py:360
+msgid "Invalid Repository Name"
+msgstr "Номи феҳрасти нодуруст"
+
+#: iw/task_gui.py:361
+#, fuzzy
+msgid "You must provide a repository name."
+msgstr "Шумо бояд номи нохолиро пешкаш намоед."
+
+#: iw/task_gui.py:497 ui/addrepo.glade.h:3
+msgid "Add Repository"
+msgstr "Иловаи феҳраст"
+
+#: iw/task_gui.py:502
+msgid "No Software Repos Enabled"
+msgstr ""
+
+#: iw/task_gui.py:503
+msgid ""
+"You must have at least one software repository enabled to continue "
+"installation."
+msgstr ""
+
+#: iw/timezone_gui.py:63 textw/timezone_text.py:95
+msgid "Time Zone Selection"
+msgstr "Интихоби минтақаи вақт"
+
+#: iw/upgrade_bootloader_gui.py:37 textw/upgrade_bootloader_text.py:137
+msgid "Upgrade Boot Loader Configuration"
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:123
+msgid "_Update boot loader configuration"
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:124
+msgid "This will update your current boot loader."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:128 textw/upgrade_bootloader_text.py:108
+msgid ""
+"Due to system changes, your boot loader configuration can not be "
+"automatically updated."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:131 textw/upgrade_bootloader_text.py:112
+msgid ""
+"The installer is unable to detect the boot loader currently in use on your "
+"system."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:138 textw/upgrade_bootloader_text.py:121
+#, python-format
+msgid ""
+"The installer has detected the %(type)s boot loader currently installed on %"
+"(bootDev)s."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:142
+#, fuzzy
+msgid "This is the recommended option."
+msgstr "Сигнали номуайян"
+
+#: iw/upgrade_bootloader_gui.py:147
+msgid "_Create new boot loader configuration"
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:149
+msgid ""
+"This option creates a new boot loader configuration.  If you wish to switch "
+"boot loaders, you should choose this."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:156
+msgid "_Skip boot loader updating"
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:157
+msgid ""
+"This option makes no changes to boot loader configuration.  If you are using "
+"a third party boot loader, you should choose this."
+msgstr ""
+
+#: iw/upgrade_bootloader_gui.py:168
+#, fuzzy
+msgid "What would you like to do?"
+msgstr "Гузарвожае, ки истифода бурдан мехоҳед."
+
+#: iw/upgrade_migratefs_gui.py:38 textw/upgrade_text.py:42
+#, fuzzy
+msgid "Migrate File Systems"
+msgstr "Миқдори системаҳои қубурҳо"
+
+#: iw/upgrade_migratefs_gui.py:69 textw/upgrade_text.py:44
+#, python-format
+msgid ""
+"This release of %(productName)s supports an updated file system, which has "
+"several benefits over the file system traditionally shipped in %(productName)"
+"s.  This installation program can migrate formatted partitions without data "
+"loss.\n"
+"\n"
+"Which of these partitions would you like to migrate?"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:35
+#, fuzzy
+msgid "Upgrade Swap Partition"
+msgstr "Матн: Иввази ранг"
+
+#: iw/upgrade_swap_gui.py:92 textw/upgrade_text.py:107
+#, python-format
+msgid ""
+"Recent kernels (2.4 or newer) need significantly more swap than older "
+"kernels, up to twice the amount of RAM on the system.  You currently have %"
+"dMB of swap configured, but you may create additional swap space on one of "
+"your file systems now."
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:99
+#, python-format
+msgid ""
+"\n"
+"\n"
+"The installer has detected %s MB of RAM.\n"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:111
+#, fuzzy
+msgid "I _want to create a swap file"
+msgstr "Файли муваққатиро офарида намешавад."
+
+#: iw/upgrade_swap_gui.py:120
+msgid "Select the _partition to put the swap file on:"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:138 textw/upgrade_text.py:125
+msgid "Partition"
+msgstr "Қисми диск"
+
+#: iw/upgrade_swap_gui.py:138
+msgid "Free Space (MB)"
+msgstr "Ҷои холӣ (МБ)"
+
+#: iw/upgrade_swap_gui.py:156
+#, python-format
+msgid ""
+"A minimum swap file size of %d MB is recommended.  Please enter a size for "
+"the swap file:"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:171
+#, fuzzy
+msgid "Swap file _size (MB):"
+msgstr "&Андозаи тасвири файлро нишон диҳед"
+
+#: iw/upgrade_swap_gui.py:181
+msgid "I _don't want to create a swap file"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:191
+msgid ""
+"A swap file is strongly recommended. Failure to create one could cause the "
+"installer to abort abnormally.  Are you sure you wish to continue?"
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:199 textw/upgrade_text.py:194
+msgid "The swap file must be between 1 and 2000 MB in size."
+msgstr ""
+
+#: iw/upgrade_swap_gui.py:206 textw/upgrade_text.py:189
+msgid ""
+"There is not enough space on the device you selected for the swap partition."
+msgstr ""
+
+#: iw/welcome_gui.py:56 textw/welcome_text.py:36
+msgid "Network Install Required"
+msgstr ""
+
+#: iw/welcome_gui.py:57 textw/welcome_text.py:37
+msgid ""
+"Your installation source is set to a network location, but no netork devices "
+"were found on your system.  To avoid a network installation, boot with the "
+"full DVD, full CD set, or do not pass a repo= parameter that specifies a "
+"network source."
+msgstr ""
+
+#: iw/welcome_gui.py:67
+#, fuzzy
+msgid "E_xit Installer"
+msgstr "Хуруҷи сабткунанда"
+
+#: iw/zipl_gui.py:37
+msgid "z/IPL Boot Loader Configuration"
+msgstr ""
+
+#: iw/zipl_gui.py:61
+msgid "The z/IPL boot loader will be installed on your system."
+msgstr ""
+
+#: iw/zipl_gui.py:63
+msgid ""
+"The z/IPL Boot Loader will now be installed on your system.\n"
+"\n"
+"The root partition will be the one you selected previously in the partition "
+"setup.\n"
+"\n"
+"The kernel used to start the machine will be the one to be installed by "
+"default.\n"
+"\n"
+"If you wish to make changes later after the installation feel free to change "
+"the /etc/zipl.conf configuration file.\n"
+"\n"
+"You can now enter any additional kernel parameters which your machine or "
+"your setup may require."
+msgstr ""
+
+#: iw/zipl_gui.py:90 textw/zipl_text.py:72
+msgid "Kernel Parameters"
+msgstr "Параметрҳои Kernel"
+
+#: iw/zipl_gui.py:93 iw/zipl_gui.py:96
+msgid "Chandev Parameters"
+msgstr "Параметриҳои Chandev"
+
+#: loader/cdinstall.c:185 loader/cdinstall.c:206 loader/mediacheck.c:60
+msgid "Media Check"
+msgstr "Санҷиши медиа"
+
+#: loader/cdinstall.c:185 loader/cdinstall.c:188 loader/cdinstall.c:206
+#: loader/cdinstall.c:214 loader/method.c:324
+msgid "Test"
+msgstr "Санҷиш"
+
+#: loader/cdinstall.c:185 loader/cdinstall.c:189
+msgid "Eject Disc"
+msgstr "Баровардани диск"
+
+#: loader/cdinstall.c:186
+#, c-format
+msgid ""
+"Choose \"%s\" to test the disc currently in the drive, or \"%s\" to eject "
+"the disc and insert another for testing."
+msgstr ""
+
+#: loader/cdinstall.c:207
+#, c-format
+msgid ""
+"If you would like to test additional media, insert the next disc and press "
+"\"%s\". Testing each disc is not strictly required, however it is highly "
+"recommended.  Minimally, the discs should be tested prior to using them for "
+"the first time. After they have been successfully tested, it is not required "
+"to retest each disc prior to using it again."
+msgstr ""
+
+#: loader/cdinstall.c:229
+#, c-format
+msgid ""
+"The %s disc was not found in any of your drives. Please insert the %s disc "
+"and press %s to retry."
+msgstr ""
+
+#: loader/cdinstall.c:248
+msgid "Disc Found"
+msgstr "Диск ёфт шуд"
+
+#: loader/cdinstall.c:249
+#, c-format
+msgid ""
+"To begin testing the media before installation press %s.\n"
+"\n"
+"Choose %s to skip the media test and start the installation."
+msgstr ""
+
+#: loader/cdinstall.c:330
+msgid "Scanning"
+msgstr "Сканеркунӣ"
+
+#: loader/cdinstall.c:330
+#, c-format
+msgid "Looking for installation images on CD device %s\n"
+msgstr ""
+
+#: loader/cdinstall.c:332
+#, c-format
+msgid "Looking for installation images on CD device %s"
+msgstr ""
+
+#: loader/cdinstall.c:424
+#, c-format
+msgid ""
+"The %s disc was not found in any of your CDROM drives. Please insert the %s "
+"disc and press %s to retry."
+msgstr ""
+
+#: loader/cdinstall.c:430
+msgid "Disc Not Found"
+msgstr "Диск ёфт нашуд"
+
+#: loader/cdinstall.c:431 loader/driverdisk.c:423 loader/driverdisk.c:461
+#: loader/driverdisk.c:542 loader/driverselect.c:78 loader/driverselect.c:152
+#: loader/driverselect.c:178 loader/hdinstall.c:203 loader/hdinstall.c:257
+#: loader/kbd.c:119 loader/loader.c:506 loader/loader.c:523
+#: loader/loader.c:1372 loader/loader.c:1405 loader/net.c:579 loader/net.c:950
+#: loader/net.c:1851 loader/net.c:1870 loader/nfsinstall.c:91
+#: loader/urls.c:258 storage/__init__.py:109 storage/__init__.py:155
+#: storage/devicetree.py:89 textw/constants_text.py:52
+msgid "Back"
+msgstr "Ақиб"
+
+#: loader/cdinstall.c:505
+msgid "Cannot find kickstart file on CDROM."
+msgstr ""
+
+#: loader/copy.c:51 loader/method.c:278
+#, fuzzy, c-format
+msgid "Failed to read directory %s: %m"
+msgstr "Сана хонда натавонист."
+
+#: loader/driverdisk.c:304
+msgid "Loading"
+msgstr "Поркунӣ"
+
+#: loader/driverdisk.c:304
+#, fuzzy
+msgid "Reading driver disk"
+msgstr "Озмоиши диски драйвер..."
+
+#: loader/driverdisk.c:417 loader/driverdisk.c:456
+msgid "Driver Disk Source"
+msgstr "Манбаъи диски драйвер"
+
+#: loader/driverdisk.c:418
+msgid ""
+"You have multiple devices which could serve as sources for a driver disk.  "
+"Which would you like to use?"
+msgstr ""
+
+#: loader/driverdisk.c:457
+msgid ""
+"There are multiple partitions on this device which could contain the driver "
+"disk image.  Which would you like to use?"
+msgstr ""
+
+#: loader/driverdisk.c:492
+#, fuzzy
+msgid "Failed to mount partition."
+msgstr "ХАТО вакти нобуд сохтани %1 аз %2: \"%3\"\n"
+
+#: loader/driverdisk.c:497
+#, fuzzy
+msgid "Select driver disk image"
+msgstr "Интихоби файли тасвири мизи корӣ"
+
+#: loader/driverdisk.c:498
+msgid "Select the file which is your driver disk image."
+msgstr ""
+
+#: loader/driverdisk.c:527
+msgid "Failed to load driver disk from file."
+msgstr ""
+
+#: loader/driverdisk.c:539
+#, c-format
+msgid "Insert your driver disk into /dev/%s and press \"OK\" to continue."
+msgstr ""
+
+#: loader/driverdisk.c:542
+msgid "Insert Driver Disk"
+msgstr "Вориди диски драйвер"
+
+#: loader/driverdisk.c:555
+msgid "Failed to mount driver disk."
+msgstr ""
+
+#: loader/driverdisk.c:563
+#, c-format
+msgid "Driver disk is invalid for this release of %s."
+msgstr ""
+
+#: loader/driverdisk.c:626
+#, fuzzy
+msgid "Manually choose"
+msgstr "Забонро интихоб кунед"
+
+#: loader/driverdisk.c:627
+msgid "Load another disk"
+msgstr "Диски дигарро истифода баред"
+
+#: loader/driverdisk.c:628
+msgid ""
+"No devices of the appropriate type were found on this driver disk.  Would "
+"you like to manually select the driver, continue anyway, or load another "
+"driver disk?"
+msgstr ""
+
+#: loader/driverdisk.c:666
+msgid "Driver disk"
+msgstr "Диски драйвер"
+
+#: loader/driverdisk.c:667
+msgid "Do you have a driver disk?"
+msgstr "Шумо драйвери диск доред?"
+
+#: loader/driverdisk.c:676
+#, fuzzy
+msgid "More Driver Disks?"
+msgstr "Ягон драйвер ёфт нашуд"
+
+#: loader/driverdisk.c:677
+msgid "Do you wish to load any more driver disks?"
+msgstr ""
+
+#: loader/driverdisk.c:722 loader/driverdisk.c:761 loader/hdinstall.c:349
+#: loader/kickstart.c:132 loader/kickstart.c:142 loader/kickstart.c:184
+#: loader/kickstart.c:189 loader/kickstart.c:510 loader/modules.c:381
+#: loader/modules.c:397 loader/net.c:1558 loader/net.c:1579
+#: loader/nfsinstall.c:366 loader/urlinstall.c:372 loader/urlinstall.c:383
+#: loader/urlinstall.c:390
+msgid "Kickstart Error"
+msgstr "Хатои Kickstart"
+
+#: loader/driverdisk.c:723
+#, c-format
+msgid "Unknown driver disk kickstart source: %s"
+msgstr ""
+
+#: loader/driverdisk.c:762
+#, c-format
+msgid ""
+"The following invalid argument was specified for the kickstart driver disk "
+"command: %s"
+msgstr ""
+
+#: loader/driverselect.c:67
+#, c-format
+msgid ""
+"Please enter any parameters which you wish to pass to the %s module "
+"separated by spaces.  If you don't know what parameters to supply, skip this "
+"screen by pressing the \"OK\" button."
+msgstr ""
+
+#: loader/driverselect.c:88
+msgid "Enter Module Parameters"
+msgstr "Вориди параметрҳои модул"
+
+#: loader/driverselect.c:151
+msgid "No drivers found"
+msgstr "Ягон драйвер ёфт нашуд"
+
+#: loader/driverselect.c:151
+msgid "Load driver disk"
+msgstr "Интихоби диски драйвер"
+
+#: loader/driverselect.c:152
+msgid ""
+"No drivers were found to manually insert.  Would you like to use a driver "
+"disk?"
+msgstr ""
+
+#: loader/driverselect.c:170
+msgid ""
+"Please select the driver below which you wish to load.  If it does not "
+"appear and you have a driver disk, press F2."
+msgstr ""
+
+#: loader/driverselect.c:179
+#, fuzzy
+msgid "Specify optional module arguments"
+msgstr "Номи мидулро ишора кунед."
+
+#: loader/driverselect.c:204
+#, fuzzy
+msgid "Select Device Driver to Load"
+msgstr "<qt>Қобили пурбор кардани драйвери лозимӣ нестам:<p>%1</p></qt>"
+
+#: loader/hdinstall.c:116
+msgid ""
+"An error occured finding the installation image on your hard drive.  Please "
+"check your images and try again."
+msgstr ""
+
+#: loader/hdinstall.c:204
+msgid ""
+"You don't seem to have any hard drives on your system! Would you like to "
+"configure additional devices?"
+msgstr ""
+
+#: loader/hdinstall.c:217
+#, c-format
+msgid ""
+"What partition and directory on that partition holds the installation image "
+"for %s?  If you don't see the disk drive you're using listed here, press F2 "
+"to configure additional devices."
+msgstr ""
+
+#: loader/hdinstall.c:241
+#, fuzzy
+msgid "Directory holding image:"
+msgstr "Тасвири силсиларо эҷод кунед"
+
+#: loader/hdinstall.c:269
+msgid "Select Partition"
+msgstr "Интихоби қисми диск"
+
+#: loader/hdinstall.c:316
+#, c-format
+msgid "Device %s does not appear to contain an installation image."
+msgstr ""
+
+#: loader/hdinstall.c:350
+#, c-format
+msgid "Bad argument to HD kickstart method command: %s"
+msgstr ""
+
+#: loader/hdinstall.c:422 loader/hdinstall.c:478
+msgid "Cannot find kickstart file on hard drive."
+msgstr ""
+
+#: loader/hdinstall.c:465
+#, c-format
+msgid "Cannot find hard drive for BIOS disk %s"
+msgstr ""
+
+#: loader/kbd.c:117
+msgid "Keyboard Type"
+msgstr "Намуди клавиатура"
+
+#: loader/kbd.c:118
+#, fuzzy
+msgid "What type of keyboard do you have?"
+msgstr "Шумо чӣ мехоҳед кард?"
+
+#: loader/kickstart.c:133
+#, fuzzy, c-format
+msgid "Error opening kickstart file %s: %m"
+msgstr "Хатогӣ ҳангоми кушодани файл"
+
+#: loader/kickstart.c:143
+#, fuzzy, c-format
+msgid "Error reading contents of kickstart file %s: %m"
+msgstr "Ҳангоми хондани файл хато пайдо шуд '%1'"
+
+#: loader/kickstart.c:185
+#, c-format
+msgid "Error in %s on line %d of kickstart file %s."
+msgstr ""
+
+#: loader/kickstart.c:190
+#, fuzzy, c-format
+msgid "Missing options on line %d of kickstart file %s."
+msgstr "Ҳангоми хондани файл хато пайдо шуд '%1'"
+
+#: loader/kickstart.c:297
+msgid "Cannot find ks.cfg on removable media."
+msgstr ""
+
+#: loader/kickstart.c:333
+msgid ""
+"Unable to download the kickstart file.  Please modify the kickstart "
+"parameter below or press Cancel to proceed as an interactive installation."
+msgstr ""
+
+#: loader/kickstart.c:342
+#, fuzzy
+msgid "Error downloading kickstart file"
+msgstr "Хатогӣ: Якҷоянашавандаи шакли файлҳо"
+
+#: loader/kickstart.c:511
+#, c-format
+msgid "Bad argument to shutdown kickstart method command: %s"
+msgstr ""
+
+#: loader/lang.c:63 loader/loader.c:223
+#, c-format
+msgid "Welcome to %s for %s"
+msgstr "Марҳамат намоед ба %s барои %s"
+
+#: loader/lang.c:64
+#, c-format
+msgid "Welcome to %s for %s - Rescue Mode"
+msgstr "Марҳамат намоед ба %s барои %s - Ҳолати бехатарӣ"
+
+#: loader/lang.c:65 loader/loader.c:247
+msgid ""
+"  <Tab>/<Alt-Tab> between elements  | <Space> selects | <F12> next screen "
+msgstr ""
+
+#: loader/lang.c:369
+msgid "Choose a Language"
+msgstr "Забонро интихоб кунед"
+
+#: loader/loader.c:131
+msgid "Local CD/DVD"
+msgstr "Дискҳои маҳаллии CD/DVD"
+
+#: loader/loader.c:132
+msgid "Hard drive"
+msgstr "Диски компютерӣ"
+
+#: loader/loader.c:133
+msgid "NFS directory"
+msgstr "Феҳрасти NFS"
+
+#: loader/loader.c:460 loader/loader.c:501
+msgid "Update Disk Source"
+msgstr "Навсозии манбаъи диск"
+
+#: loader/loader.c:461
+msgid ""
+"You have multiple devices which could serve as sources for an update disk.  "
+"Which would you like to use?"
+msgstr ""
+
+#: loader/loader.c:502
+msgid ""
+"There are multiple partitions on this device which could contain the update "
+"disk image.  Which would you like to use?"
+msgstr ""
+
+#: loader/loader.c:520
+#, c-format
+msgid "Insert your updates disk into %s and press \"OK\" to continue."
+msgstr ""
+
+#: loader/loader.c:523
+msgid "Updates Disk"
+msgstr "Дискро аз нав месозад"
+
+#: loader/loader.c:541
+msgid "Failed to mount updates disk"
+msgstr ""
+
+#: loader/loader.c:546
+msgid "Updates"
+msgstr "Навсозиҳо"
+
+#: loader/loader.c:546
+#, fuzzy
+msgid "Reading anaconda updates"
+msgstr "Навсозии anaconda хонда шудааст..."
+
+#: loader/loader.c:582
+msgid ""
+"Unable to download the updates image.  Please modify the updates location "
+"below or press Cancel to proceed without updates.."
+msgstr ""
+
+#: loader/loader.c:591
+msgid "Error downloading updates image"
+msgstr "Навсозии бойгонии диск файрон аст"
+
+#: loader/loader.c:1187
+#, c-format
+msgid "You do not have enough RAM to install %s on this machine."
+msgstr ""
+
+#: loader/loader.c:1241
+msgid "Media Detected"
+msgstr "Дастгоҳ муайян карда шуд"
+
+#: loader/loader.c:1242
+#, fuzzy
+msgid "Found local installation media"
+msgstr "Оғози сабткунии графикӣ..."
+
+#: loader/loader.c:1364
+msgid "Rescue Method"
+msgstr "Тарзи барқарорсозӣ"
+
+#: loader/loader.c:1365
+msgid "Installation Method"
+msgstr "Тарзи сабткунӣ"
+
+#: loader/loader.c:1367
+msgid "What type of media contains the rescue image?"
+msgstr ""
+
+#: loader/loader.c:1369
+msgid "What type of media contains the installation image?"
+msgstr ""
+
+#: loader/loader.c:1404
+msgid "No driver found"
+msgstr "Ягон драйвер ёфт нашуд"
+
+#: loader/loader.c:1404
+msgid "Select driver"
+msgstr "Интихоби драйвер"
+
+#: loader/loader.c:1405
+msgid "Use a driver disk"
+msgstr "Интихоби диски драйвер"
+
+#: loader/loader.c:1406
+msgid ""
+"Unable to find any devices of the type needed for this installation type.  "
+"Would you like to manually select your driver or use a driver disk?"
+msgstr ""
+
+#: loader/loader.c:1634
+msgid "The following devices have been found on your system."
+msgstr ""
+
+#: loader/loader.c:1636
+msgid ""
+"No device drivers have been loaded for your system.  Would you like to load "
+"any now?"
+msgstr ""
+
+#: loader/loader.c:1640
+msgid "Devices"
+msgstr "Дастгоҳҳо"
+
+#: loader/loader.c:1641
+msgid "Done"
+msgstr "Шуд"
+
+#: loader/loader.c:1642
+msgid "Add Device"
+msgstr "Иловаи дастгоҳ"
+
+#: loader/loader.c:1918
+#, c-format
+msgid "loader has already been run.  Starting shell.\n"
+msgstr ""
+
+#: loader/loader.c:2359
+#, c-format
+msgid "Running anaconda %s, the %s rescue mode - please wait.\n"
+msgstr ""
+
+#: loader/loader.c:2361
+#, c-format
+msgid "Running anaconda %s, the %s system installer - please wait.\n"
+msgstr ""
+
+#: loader/mediacheck.c:46
+#, c-format
+msgid "Unable to find install image %s"
+msgstr "Бойгонии диски %s барои сабт ёфт карда нашуд"
+
+#: loader/mediacheck.c:52
+#, fuzzy, c-format
+msgid "Checking \"%s\"."
+msgstr "Озмоиши \"%s\"..."
+
+#: loader/mediacheck.c:54
+#, fuzzy, c-format
+msgid "Checking media."
+msgstr "Озмоиши медиа..."
+
+#: loader/mediacheck.c:86
+msgid ""
+"Unable to read the disc checksum from the primary volume descriptor.  This "
+"probably means the disc was created without adding the checksum."
+msgstr ""
+
+#: loader/mediacheck.c:93
+msgid ""
+"The image which was just tested has errors. This could be due to a corrupt "
+"download or a bad disc.  If applicable, please clean the disc and try "
+"again.  If this test continues to fail you should not continue the install."
+msgstr ""
+
+#: loader/mediacheck.c:101
+msgid "Success"
+msgstr "Мувафақият"
+
+#: loader/mediacheck.c:102
+msgid ""
+"The image which was just tested was successfully verified.  It should be OK "
+"to install from this media.  Note that not all media/drive errors can be "
+"detected by the media check."
+msgstr ""
+
+#: loader/method.c:321
+#, c-format
+msgid ""
+"Would you like to perform a checksum test of the ISO image:\n"
+"\n"
+"   %s?"
+msgstr ""
+
+#: loader/method.c:324
+msgid "Checksum Test"
+msgstr "Санҷиши Checksum"
+
+#: loader/modules.c:382
+#, c-format
+msgid "Bad argument to device kickstart method command: %s"
+msgstr ""
+
+#: loader/modules.c:398
+msgid "A module name must be specified for the kickstart device command."
+msgstr ""
+
+#: loader/net.c:110
+msgid "Invalid Prefix"
+msgstr "Префикси нодуруст"
+
+#: loader/net.c:111
+msgid ""
+"Prefix must be between 1 and 32 for IPv4 networks or between 1 and 128 for "
+"IPv6 networks"
+msgstr ""
+
+#: loader/net.c:464 loader/net.c:472 loader/net.c:527
+#, c-format
+msgid "There was an error configuring your network interface."
+msgstr ""
+
+#: loader/net.c:466
+#, c-format
+msgid ""
+"\n"
+"This cannot be corrected in cmdline mode.\n"
+"Halting.\n"
+msgstr ""
+
+#: loader/net.c:471 loader/net.c:526
+msgid "Network Error"
+msgstr "Хатои пайвастшавии Интернет"
+
+#: loader/net.c:557 textw/netconfig_text.py:133
+msgid "Enable IPv4 support"
+msgstr "Пуштибонии IPv4 фаъол созед"
+
+#: loader/net.c:571
+msgid "Enable IPv6 support"
+msgstr "Пуштибонии IPv6 фаъол созед"
+
+#: loader/net.c:611
+msgid "Configure TCP/IP"
+msgstr "Танзимоти TCP/IP"
+
+#: loader/net.c:668
+msgid "Missing Protocol"
+msgstr "Протокол мавҷуд нест"
+
+#: loader/net.c:669
+msgid "You must select at least one protocol (IPv4 or IPv6)."
+msgstr ""
+
+#: loader/net.c:676
+msgid "IPv4 Needed for NFS"
+msgstr "IPv4 барои NFS лозим аст"
+
+#: loader/net.c:677
+msgid "NFS installation method requires IPv4 support."
+msgstr ""
+
+#: loader/net.c:776
+msgid "IPv4 address:"
+msgstr "Суроғаи IPv4:"
+
+#: loader/net.c:788 loader/net.c:855 ui/netconfig.glade.h:1
+msgid "/"
+msgstr "/"
+
+#: loader/net.c:843
+msgid "IPv6 address:"
+msgstr "Суроғаи IPv6:"
+
+#: loader/net.c:909 textw/netconfig_text.py:160
+msgid "Gateway:"
+msgstr "Суроғаи хидматгоҳ:"
+
+#: loader/net.c:917
+msgid "Name Server:"
+msgstr "Номи хидматгоҳ:"
+
+#: loader/net.c:956
+msgid ""
+"Enter the IPv4 and/or the IPv6 address and prefix (address / prefix).  For "
+"IPv4, the dotted-quad netmask or the CIDR-style prefix are acceptable. The "
+"gateway and name server fields must be valid IPv4 or IPv6 addresses."
+msgstr ""
+
+#: loader/net.c:973
+msgid "Manual TCP/IP Configuration"
+msgstr "Танзимоти дастӣ барои TCP/IP"
+
+#: loader/net.c:1097 loader/net.c:1105
+msgid "Missing Information"
+msgstr "Иттилоот мавҷуд нест"
+
+#: loader/net.c:1098
+msgid ""
+"You must enter both a valid IPv4 address and a network mask or CIDR prefix."
+msgstr ""
+
+#: loader/net.c:1106
+msgid "You must enter both a valid IPv6 address and a CIDR prefix."
+msgstr ""
+
+#: loader/net.c:1559
+#, c-format
+msgid "Bad argument to kickstart network command: %s"
+msgstr ""
+
+#: loader/net.c:1580
+#, c-format
+msgid "Bad bootproto %s specified in network command"
+msgstr ""
+
+#: loader/net.c:1657
+msgid "Seconds:"
+msgstr "Дақиқа:"
+
+#: loader/net.c:1846
+msgid "Networking Device"
+msgstr "Дастгоҳи Интернетӣ"
+
+#: loader/net.c:1847
+msgid ""
+"You have multiple network devices on this system. Which would you like to "
+"install through?"
+msgstr ""
+
+#: loader/net.c:1851
+msgid "Identify"
+msgstr "Муайян кунед"
+
+#: loader/net.c:1860
+msgid "You can identify the physical port for"
+msgstr ""
+
+#: loader/net.c:1862
+msgid ""
+"by flashing the LED lights for a number of seconds.  Enter a number between "
+"1 and 30 to set the duration to flash the LED port lights."
+msgstr ""
+
+#: loader/net.c:1869
+msgid "Identify NIC"
+msgstr "Муайянкунии NIC"
+
+#: loader/net.c:1882
+msgid "Invalid Duration"
+msgstr "Давомнокии нодуруст"
+
+#: loader/net.c:1883
+msgid "You must enter the number of seconds as an integer between 1 and 30."
+msgstr ""
+
+#: loader/net.c:1895
+#, c-format
+msgid "Flashing %s port lights for %d seconds."
+msgstr ""
+
+#: loader/net.c:2062 loader/net.c:2066
+#, fuzzy, c-format
+msgid "Waiting for NetworkManager to configure %s.\n"
+msgstr "Дар ҳоли интизории Мудири Шабака барои танзимоти  %s...\n"
+
+#: loader/nfsinstall.c:68
+msgid "NFS server name:"
+msgstr "Номи хидматгоҳи NFS:"
+
+#: loader/nfsinstall.c:72
+#, c-format
+msgid "%s directory:"
+msgstr "Феҳрасти %s:"
+
+#: loader/nfsinstall.c:76
+msgid "NFS mount options (optional):"
+msgstr ""
+
+#: loader/nfsinstall.c:82
+#, c-format
+msgid ""
+"Please enter the server and path to your %s installation image and "
+"optionally additional NFS mount options."
+msgstr ""
+
+#: loader/nfsinstall.c:90
+msgid "NFS Setup"
+msgstr "Танзими NFS"
+
+#: loader/nfsinstall.c:280
+msgid "That directory could not be mounted from the server."
+msgstr ""
+
+#: loader/nfsinstall.c:292
+#, c-format
+msgid "That directory does not seem to contain a %s installation image."
+msgstr ""
+
+#: loader/nfsinstall.c:367
+#, c-format
+msgid "Bad argument to NFS kickstart method command: %s"
+msgstr ""
+
+#: loader/telnetd.c:89 loader/telnetd.c:128
+msgid "Telnet"
+msgstr "Telnet"
+
+#: loader/telnetd.c:89
+#, fuzzy
+msgid "Waiting for telnet connection."
+msgstr "Дар ҳоли интизории пайвастшавии telnet..."
+
+#: loader/telnetd.c:128
+#, fuzzy
+msgid "Running anaconda via telnet."
+msgstr "Навсозии anaconda хонда шудааст..."
+
+#: loader/urlinstall.c:138
+#, fuzzy, c-format
+msgid "Unable to retrieve %s."
+msgstr "Қабул кардани %s://%s/%s имконпазир нест."
+
+#: loader/urlinstall.c:222
+msgid "Unable to retrieve the install image."
+msgstr "Бойгонии дискро қабул карда натавонист."
+
+#: loader/urlinstall.c:373
+#, c-format
+msgid "Bad argument to URL kickstart method command: %s"
+msgstr ""
+
+#: loader/urlinstall.c:384
+msgid "Must supply a --url argument to Url kickstart method."
+msgstr ""
+
+#: loader/urlinstall.c:391
+#, c-format
+msgid "Unknown Url method %s"
+msgstr "Услуби Url %s номуайян"
+
+#: loader/urls.c:167 loader/urls.c:175
+msgid "Retrieving"
+msgstr "Қабул мекунад"
+
+#: loader/urls.c:261
+#, c-format
+msgid ""
+"Please enter the URL containing the %s installation image on your server."
+msgstr ""
+
+#: loader/urls.c:279
+#, fuzzy
+msgid "Enable HTTP proxy"
+msgstr "Пуштибонии IPv4 фаъол созед"
+
+#: loader/urls.c:293
+#, fuzzy
+msgid "Proxy URL"
+msgstr "Proxy URL нодуруст"
+
+#: loader/urls.c:298
+#, fuzzy
+msgid "Username"
+msgstr "_Номи корбар"
+
+#: loader/urls.c:303
+msgid "Password"
+msgstr "Парол"
+
+#: loader/urls.c:322
+msgid "URL Setup"
+msgstr "Танзимоти URL"
+
+#: loader/urls.c:330
+msgid "You must enter a URL."
+msgstr "Шумо бояд URL-ро ворид кунед."
+
+#: loader/urls.c:336
+msgid "URL must be either an ftp or http URL"
+msgstr ""
+
+#: loader/windows.c:65
+msgid "Loading SCSI driver"
+msgstr "Боркунии драйвери SCSI"
+
+#: loader/windows.c:66
+#, fuzzy, c-format
+msgid "Loading %s driver"
+msgstr "Боркунии драйвери %s..."
+
+#: storage/__init__.py:96
+#, fuzzy
+msgid "Unknown Device"
+msgstr "Дастгоҳи Номаълум"
+
+#: storage/__init__.py:97
+#, python-format
+msgid ""
+"The installation source given by device %s could not be found.  Please check "
+"your parameters and try again."
+msgstr ""
+
+#: storage/__init__.py:106
+#, fuzzy
+msgid "No disks found"
+msgstr "Ягон драйвер ёфт нашуд"
+
+#: storage/__init__.py:107
+msgid "No usable disks have been found."
+msgstr ""
+
+#: storage/__init__.py:118
+msgid "Installation cannot continue."
+msgstr "Сабткунӣ давом дода намешавад"
+
+#: storage/__init__.py:119
+msgid ""
+"The storage configuration you have chosen has already been activated. You "
+"can no longer return to the disk editing screen. Would you like to continue "
+"with the installation process?"
+msgstr ""
+
+#: storage/__init__.py:147
+msgid "Encrypt device?"
+msgstr "Дастгрҳро рамзгузорӣ мекунед"
+
+#: storage/__init__.py:148
+msgid ""
+"You specified block device encryption should be enabled, but you have not "
+"supplied a passphrase. If you do not go back and provide a passphrase, block "
+"device encryption will be disabled."
+msgstr ""
+
+#: storage/__init__.py:171
+#, fuzzy
+msgid "Writing storage configuration to disk"
+msgstr "Ҳангоми навишти PTY хато пайдо шуд"
+
+#: storage/__init__.py:172
+msgid ""
+"The partitioning options you have selected will now be written to disk.  Any "
+"data on deleted or reformatted partitions will be lost."
+msgstr ""
+
+#: storage/__init__.py:177
+#, fuzzy
+msgid "Go _back"
+msgstr "Гузаштан ба қафо"
+
+#: storage/__init__.py:178
+#, fuzzy
+msgid "_Write changes to disk"
+msgstr "Тағиротҳоро дар санадоти %1 нигоҳ дорам?"
+
+#: storage/__init__.py:197
+msgid "Running..."
+msgstr "Иҷро мекунад..."
+
+#: storage/__init__.py:198
+msgid "Storing encryption keys"
+msgstr ""
+
+#: storage/__init__.py:214
+#, python-format
+msgid "Error storing an encryption key: %s\n"
+msgstr ""
+
+#: storage/__init__.py:357
+#, fuzzy
+msgid "Finding Devices"
+msgstr "Дастгоҳ мавҷуд нест"
+
+#: storage/__init__.py:358
+#, fuzzy
+msgid "Finding storage devices"
+msgstr "Дастгоҳ мавҷуд нест"
+
+#: storage/__init__.py:637
+msgid "This partition is holding the data for the hard drive install."
+msgstr ""
+
+#: storage/__init__.py:642
+msgid "You cannot delete a partition of a LDL formatted DASD."
+msgstr ""
+
+#: storage/__init__.py:648
+#, python-format
+msgid "This device is part of the RAID device %s."
+msgstr ""
+
+#: storage/__init__.py:651
+msgid "This device is part of a RAID device."
+msgstr ""
+
+#: storage/__init__.py:656
+#, python-format
+msgid "This device is part of the LVM volume group '%s'."
+msgstr ""
+
+#: storage/__init__.py:659
+msgid "This device is part of a LVM volume group."
+msgstr ""
+
+#: storage/__init__.py:675
+msgid ""
+"This device is an extended partition which contains logical partitions that "
+"cannot be deleted:\n"
+"\n"
+msgstr ""
+
+#: storage/__init__.py:951
+#, python-format
+msgid ""
+"You have not defined a root partition (/), which is required for "
+"installation of %s to continue."
+msgstr ""
+
+#: storage/__init__.py:956
+#, python-format
+msgid ""
+"Your root partition is less than 250 megabytes which is usually too small to "
+"install %s."
+msgstr ""
+
+#: storage/__init__.py:962
+#, python-format
+msgid ""
+"Your / partition is less than %(min)s MB which is lower than recommended for "
+"a normal %(productName)s install."
+msgstr ""
+
+#: storage/__init__.py:972
+#, python-format
+msgid ""
+"Your / partition does not match the the live image you are installing from.  "
+"It must be formatted as %s."
+msgstr ""
+
+#: storage/__init__.py:979
+#, python-format
+msgid ""
+"Your %(mount)s partition is less than %(size)s megabytes which is lower than "
+"recommended for a normal %(productName)s install."
+msgstr ""
+
+#: storage/__init__.py:1008
+msgid ""
+"Installing on a USB device.  This may or may not produce a working system."
+msgstr ""
+
+#: storage/__init__.py:1011
+msgid ""
+"Installing on a FireWire device.  This may or may not produce a working "
+"system."
+msgstr ""
+
+#: storage/__init__.py:1018
+msgid ""
+"You have not specified a swap partition.  Due to the amount of memory "
+"present, a swap partition is required to complete installation."
+msgstr ""
+
+#: storage/__init__.py:1023
+msgid ""
+"You have not specified a swap partition.  Although not strictly required in "
+"all cases, it will significantly improve performance for most installations."
+msgstr ""
+
+#: storage/__init__.py:1030
+#, python-format
+msgid ""
+"This mount point is invalid.  The %s directory must be on the / file system."
+msgstr ""
+
+#: storage/__init__.py:1034
+#, python-format
+msgid "The mount point %s must be on a linux file system."
+msgstr ""
+
+#: storage/__init__.py:1045
+msgid "No Drives Found"
+msgstr "Ягон дастгоҳ ёфт нашуд"
+
+#: storage/__init__.py:1046
+msgid ""
+"An error has occurred - no valid devices were found on which to create new "
+"file systems. Please check your hardware for the cause of this problem."
+msgstr ""
+
+#: storage/__init__.py:1337 storage/__init__.py:1346
+#, fuzzy
+msgid "Dirty File Systems"
+msgstr "Миқдори системаҳои қубурҳо"
+
+#: storage/__init__.py:1338
+#, python-format
+msgid ""
+"The following file systems for your Linux system were not unmounted "
+"cleanly.  Please boot your Linux installation, let the file systems be "
+"checked and shut down cleanly to upgrade.\n"
+"%s"
+msgstr ""
+
+#: storage/__init__.py:1347
+#, python-format
+msgid ""
+"The following file systems for your Linux system were not unmounted "
+"cleanly.  Would you like to mount them anyway?\n"
+"%s"
+msgstr ""
+
+#: storage/__init__.py:1824
+#, python-format
+msgid ""
+"The swap device:\n"
+"\n"
+"     %s\n"
+"\n"
+"is an old-style Linux swap partition.  If you want to use this device for "
+"swap space, you must reformat as a new-style Linux swap partition."
+msgstr ""
+
+#: storage/__init__.py:1835
+#, python-format
+msgid ""
+"The swap device:\n"
+"\n"
+"     %s\n"
+"\n"
+"in your /etc/fstab file is currently in use as a software suspend device, "
+"which means your system is hibernating. To perform an upgrade, please shut "
+"down your system rather than hibernating it."
+msgstr ""
+
+#: storage/__init__.py:1843
+#, python-format
+msgid ""
+"The swap device:\n"
+"\n"
+"     %s\n"
+"\n"
+"in your /etc/fstab file is currently in use as a software suspend device, "
+"which means your system is hibernating. If you are performing a new install, "
+"make sure the installer is set to format all swap devices."
+msgstr ""
+
+#: storage/__init__.py:1855
+#, python-format
+msgid ""
+"The swap device:\n"
+"\n"
+"     %s\n"
+"\n"
+"does not contain a supported swap volume.  In order to continue "
+"installation, you will need to format the device or skip it."
+msgstr ""
+
+#: storage/__init__.py:1866
+#, python-format
+msgid ""
+"Error enabling swap device %(name)s: %(msg)s\n"
+"\n"
+"The /etc/fstab on your upgrade partition does not reference a valid swap "
+"device.\n"
+"\n"
+"Press OK to exit the installer"
+msgstr ""
+
+#: storage/__init__.py:1873
+#, python-format
+msgid ""
+"Error enabling swap device %(name)s: %(msg)s\n"
+"\n"
+"This most likely means this swap device has not been initialized.\n"
+"\n"
+"Press OK to exit the installer."
+msgstr ""
+
+#: storage/__init__.py:1936 storage/__init__.py:1948
+msgid "Invalid mount point"
+msgstr "Нуқтаи васли нодуруст"
+
+#: storage/__init__.py:1937
+#, python-format
+msgid ""
+"An error occurred when trying to create %s.  Some element of this path is "
+"not a directory. This is a fatal error and the install cannot continue.\n"
+"\n"
+"Press <Enter> to exit the installer."
+msgstr ""
+
+#: storage/__init__.py:1949
+#, python-format
+msgid ""
+"An error occurred when trying to create %(mountpoint)s: %(msg)s.  This is a "
+"fatal error and the install cannot continue.\n"
+"\n"
+"Press <Enter> to exit the installer."
+msgstr ""
+
+#: storage/__init__.py:1965 storage/__init__.py:1989
+#, fuzzy
+msgid "Unable to mount filesystem"
+msgstr "Не удаётся выполнить /sbin/mount."
+
+#: storage/__init__.py:1966
+#, python-format
+msgid ""
+"An error occurred mounting device %(path)s as %(mountpoint)s.  You may "
+"continue installation, but there may be problems."
+msgstr ""
+
+#: storage/__init__.py:1990
+#, python-format
+msgid ""
+"An error occurred mounting device %(path)s as %(mountpoint)s: %(msg)s. This "
+"is a fatal error and the install cannot continue.\n"
+"\n"
+"Press <Enter> to exit the installer."
+msgstr ""
+
+#: storage/devicelibs/lvm.py:317
+#, python-format
+msgid "vginfo failed for %s"
+msgstr ""
+
+#: storage/devicelibs/lvm.py:346
+#, python-format
+msgid "lvs failed for %s"
+msgstr ""
+
+#: storage/devices.py:1258 storage/devices.py:1926 storage/devices.py:2329
+#: storage/devices.py:2800 storage/devices.py:3282
+#, fuzzy
+msgid "Creating"
+msgstr "Забони хорватӣ"
+
+#: storage/devices.py:1259 storage/devices.py:1927 storage/devices.py:2330
+#: storage/devices.py:2801
+#, fuzzy, python-format
+msgid "Creating device %s"
+msgstr "_Ивази дастгоҳ"
+
+#: storage/devices.py:2423
+#, python-format
+msgid "A RAID%d set requires atleast %d members"
+msgstr ""
+
+#: storage/devices.py:3283
+#, fuzzy, python-format
+msgid "Creating file %s"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: storage/devicetree.py:98
+msgid "Confirm"
+msgstr "Тасдиқ"
+
+#: storage/devicetree.py:99
+#, python-format
+msgid ""
+"Are you sure you want to skip entering a passphrase for device %s?\n"
+"\n"
+"If you skip this step the device's contents will not be available during "
+"installation."
+msgstr ""
+
+#: storage/devicetree.py:1863 storage/devicetree.py:1911
+msgid "This partition is part of an inconsistent LVM Volume Group."
+msgstr ""
+
+#: storage/formats/fs.py:102
+msgid "filesystem configuration missing a type"
+msgstr ""
+
+#: storage/formats/fs.py:354 storage/formats/luks.py:194
+#: storage/formats/lvmpv.py:103 storage/formats/swap.py:161
+#, fuzzy
+msgid "Formatting"
+msgstr "Шаклбандӣ"
+
+#: storage/formats/fs.py:355
+#, fuzzy, python-format
+msgid "Creating %s filesystem on %s"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: storage/formats/fs.py:463
+#, fuzzy
+msgid "Resizing"
+msgstr "&Ҳаракатдиҳӣ/бозандозагирӣ"
+
+#: storage/formats/fs.py:464
+#, fuzzy, python-format
+msgid "Resizing filesystem on %s"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: storage/formats/fs.py:499
+#, fuzzy, python-format
+msgid "Unknown return code: %d."
+msgstr "Услуби Url %s номуайян"
+
+#: storage/formats/fs.py:513
+msgid "Checking"
+msgstr "Озмоиш мекунад"
+
+#: storage/formats/fs.py:514
+#, fuzzy, python-format
+msgid "Checking filesystem on %s"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: storage/formats/fs.py:531
+#, python-format
+msgid "%(type)s filesystem check failure on %(device)s: "
+msgstr ""
+
+#: storage/formats/fs.py:537
+msgid ""
+"Errors like this usually mean there is a problem with the filesystem that "
+"will require user interaction to repair.  Before restarting installation, "
+"reboot to rescue mode or another system that allows you to repair the "
+"filesystem interactively.  Restart installation after you have corrected the "
+"problems on the filesystem."
+msgstr ""
+
+#: storage/formats/fs.py:545 storage/partitioning.py:275
+#, fuzzy
+msgid "Unrecoverable Error"
+msgstr "Хатои Kickstart"
+
+#: storage/formats/fs.py:871
+msgid "File system errors left uncorrected."
+msgstr ""
+
+#: storage/formats/fs.py:872
+#, fuzzy
+msgid "Operational error."
+msgstr "Хато"
+
+#: storage/formats/fs.py:873
+msgid "Usage or syntax error."
+msgstr ""
+
+#: storage/formats/fs.py:874
+msgid "e2fsck cancelled by user request."
+msgstr ""
+
+#: storage/formats/fs.py:875
+msgid "Shared library error."
+msgstr ""
+
+#: storage/formats/fs.py:1034
+msgid ""
+"Recoverable errors have been detected or dosfsck has discovered an internal "
+"inconsistency."
+msgstr ""
+
+#: storage/formats/fs.py:1036
+#, fuzzy
+msgid "Usage error."
+msgstr "Хатои нишонад дастгоҳ"
+
+#: storage/formats/luks.py:48
+#, fuzzy
+msgid "Encrypted"
+msgstr "_Рамзгузорӣ"
+
+#: storage/formats/luks.py:195
+#, fuzzy, python-format
+msgid "Encrypting %s"
+msgstr "_Рамзгузорӣ"
+
+#: storage/formats/lvmpv.py:104 storage/formats/swap.py:162
+#, fuzzy, python-format
+msgid "Creating %s on %s"
+msgstr "Ба ҳамон системаи файлӣ қарор гирифтан"
+
+#: storage/dasd.py:120
+msgid "Unformatted DASD Device Found"
+msgid_plural "Unformatted DASD Devices Found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: storage/dasd.py:122
+#, python-format
+msgid ""
+"Format uninitialized DASD device?\n"
+"\n"
+"There is %d uninitialized DASD device on this system.  To continue "
+"installation, the device must be formatted.  Formatting will remove any data "
+"on this device."
+msgid_plural ""
+"Format uninitialized DASD devices?\n"
+"\n"
+"There are %d uninitialized DASD devices on this system.  To continue "
+"installation, the devices must be formatted.  Formatting will remove any "
+"data on these devices."
+msgstr[0] ""
+msgstr[1] ""
+
+#: storage/dasd.py:151
+#, fuzzy
+msgid "Formatting DASD Device"
+msgid_plural "Formatting DASD Devices"
+msgstr[0] "Шаклбандӣ"
+msgstr[1] "Шаклбандӣ"
+
+#: storage/dasd.py:152
+#, python-format
+msgid "Preparing %d DASD device for use with Linux..."
+msgid_plural "Preparing %d DASD devices for use with Linux..."
+msgstr[0] ""
+msgstr[1] ""
+
+#: storage/fcoe.py:66 storage/fcoe.py:67
+msgid "Connecting to FCoE SAN"
+msgstr ""
+
+#: storage/fcoe.py:106
+#, fuzzy
+msgid "FCoE not available"
+msgstr "Ёрӣ дастнорас аст"
+
+#: storage/iscsi.py:83 storage/iscsi.py:84
+#, fuzzy
+msgid "Scanning iSCSI nodes"
+msgstr "Боркунии драйвери SCSI"
+
+#: storage/iscsi.py:176 storage/iscsi.py:177
+#, fuzzy
+msgid "Initializing iSCSI initiator"
+msgstr "Дар мавриди қарор гирифтани системаи чопгар..."
+
+#: storage/iscsi.py:213
+#, fuzzy
+msgid "iSCSI not available"
+msgstr "Ёрӣ дастнорас аст"
+
+#: storage/iscsi.py:215
+#, fuzzy
+msgid "No initiator name set"
+msgstr "Номи iSCSI Initiator"
+
+#: storage/iscsi.py:229
+msgid "No iSCSI nodes discovered"
+msgstr ""
+
+#: storage/iscsi.py:232 storage/iscsi.py:233
+msgid "Logging in to iSCSI nodes"
+msgstr ""
+
+#: storage/iscsi.py:258
+msgid "No new iSCSI nodes discovered"
+msgstr ""
+
+#: storage/iscsi.py:261
+msgid "Could not log in to any of the discovered nodes"
+msgstr ""
+
+#: storage/partitioning.py:190
+msgid ""
+"Could not find enough free space for automatic partitioning.  Press 'OK' to "
+"exit the installer."
+msgstr ""
+
+#: storage/partitioning.py:193
+msgid ""
+"Could not find enough free space for automatic partitioning, please use "
+"another partitioning method."
+msgstr ""
+
+#: storage/partitioning.py:222
+msgid "Warnings During Automatic Partitioning"
+msgstr ""
+
+#: storage/partitioning.py:224
+#, python-format
+msgid ""
+"Following warnings occurred during automatic partitioning:\n"
+"\n"
+"%s"
+msgstr ""
+
+#: storage/partitioning.py:238 storage/partitioning.py:259
+msgid ""
+"\n"
+"\n"
+"Press 'OK' to exit the installer."
+msgstr ""
+
+#: storage/partitioning.py:240
+#, fuzzy, python-format
+msgid ""
+"Could not allocate requested partitions: \n"
+"\n"
+"%(msg)s.%(extra)s"
+msgstr "Амалиёти дархостшуда иҷро карда намешавад"
+
+#: storage/partitioning.py:261
+msgid ""
+"\n"
+"\n"
+"Press 'OK' to choose a different partitioning option."
+msgstr ""
+
+#: storage/partitioning.py:263
+#, fuzzy
+msgid "Automatic Partitioning Errors"
+msgstr "Хатогӣ қабул шуд:"
+
+#: storage/partitioning.py:264
+#, python-format
+msgid ""
+"The following errors occurred with your partitioning:\n"
+"\n"
+"%(errortxt)s\n"
+"\n"
+"This can happen if there is not enough space on your hard drive(s) for the "
+"installation. %(extra)s"
+msgstr ""
+
+#: storage/zfcp.py:50
+msgid "You have not specified a device number or the number is invalid"
+msgstr ""
+
+#: storage/zfcp.py:52
+msgid "You have not specified a worldwide port name or the name is invalid."
+msgstr ""
+
+#: storage/zfcp.py:54
+msgid "You have not specified a FCP LUN or the number is invalid."
+msgstr ""
+
+#: storage/zfcp.py:131
+#, python-format
+msgid "Could not free zFCP device %(devnum)s from device ignore list (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:137
+#, python-format
+msgid "zFCP device %s not found, not even in device ignore list."
+msgstr ""
+
+#: storage/zfcp.py:149
+#, python-format
+msgid "Could not set zFCP device %(devnum)s online (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:160
+#, python-format
+msgid "Could not add WWPN %(wwpn)s to zFCP device %(devnum)s (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:167
+#, python-format
+msgid "WWPN %(wwpn)s not found at zFCP device %(devnum)s."
+msgstr ""
+
+#: storage/zfcp.py:182
+#, python-format
+msgid ""
+"Could not add LUN %(fcplun)s to WWPN %(wwpn)s on zFCP device %(devnum)s (%(e)"
+"s)."
+msgstr ""
+
+#: storage/zfcp.py:188
+#, python-format
+msgid ""
+"LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s already configured."
+msgstr ""
+
+#: storage/zfcp.py:200
+#, python-format
+msgid ""
+"Could not read failed attribute of LUN %(fcplun)s at WWPN %(wwpn)s on zFCP "
+"device %(devnum)s (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:209
+#, python-format
+msgid ""
+"Failed LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s removed "
+"again."
+msgstr ""
+
+#: storage/zfcp.py:266
+#, python-format
+msgid ""
+"Could not correctly delete SCSI device of zFCP %(devnum)s %(wwpn)s %(fcplun)"
+"s (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:275
+#, python-format
+msgid ""
+"Could not remove LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s (%"
+"(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:293
+#, python-format
+msgid "Could not remove WWPN %(wwpn)s on zFCP device %(devnum)s (%(e)s)."
+msgstr ""
+
+#: storage/zfcp.py:319
+#, python-format
+msgid "Could not set zFCP device %(devnum)s offline (%(e)s)."
+msgstr ""
+
+#: textw/complete_text.py:32
+msgid "Reboot"
+msgstr "Бозхудборшавӣ"
+
+#: textw/complete_text.py:34
+msgid "<Enter> to exit"
+msgstr "Тугмаи <Enter> барои хуруҷ"
+
+#: textw/complete_text.py:62
+msgid "Complete"
+msgstr "Ҳама"
+
+#: textw/keyboard_text.py:48
+msgid "Keyboard Selection"
+msgstr "Интихоби клавиатура"
+
+#: textw/keyboard_text.py:49
+msgid "Which model keyboard is attached to this computer?"
+msgstr ""
+
+#: textw/netconfig_text.py:43
+#, fuzzy, python-format
+msgid "A value is required for the field %s"
+msgstr "Маънои\"%1\" барои драйвер аввалиндараҷа нест."
+
+#: textw/netconfig_text.py:88 ui/netconfig.glade.h:9
+msgid "Enable network interface"
+msgstr "Танзимотҳои Интернетро фаъол созед"
+
+#: textw/netconfig_text.py:91 ui/netconfig.glade.h:10
+msgid ""
+"This requires that you have an active network connection during the "
+"installation process.  Please configure a network interface."
+msgstr ""
+
+#: textw/netconfig_text.py:130
+msgid "Use dynamic IP configuration (DHCP)"
+msgstr "Танзимоти динамикии IP (DHCP) истифода баред"
+
+#: textw/netconfig_text.py:140
+msgid "IPv4 Address:"
+msgstr "Суроғаи IPv4:"
+
+#: textw/netconfig_text.py:163
+msgid "Nameserver:"
+msgstr "Номи хидматгоҳ:"
+
+#: textw/netconfig_text.py:193
+msgid "Missing Device"
+msgstr "Дастгоҳ мавҷуд нест"
+
+#: textw/netconfig_text.py:194
+#, fuzzy
+msgid "You must select a network device"
+msgstr "Шумо бояд якчанд ячейка интихоб кунед."
+
+#: textw/netconfig_text.py:253
+#, fuzzy
+msgid "IPv4 Network Mask "
+msgstr "Ниқоби бехатарии феҳрист:"
+
+#: textw/netconfig_text.py:276
+#, fuzzy
+msgid "Configuring Network Interfaces"
+msgstr "Ба ҳам пайвастани танҳо интерфейсҳо"
+
+#: textw/netconfig_text.py:276
+#, fuzzy
+msgid "Waiting for NetworkManager"
+msgstr "интизории ҷавоб"
+
+#: textw/netconfig_text.py:282
+#, fuzzy
+msgid "Error configuring network device"
+msgstr "Хатои дохилӣ: Дастгоҳ танзим нашудааст."
+
+#: textw/netconfig_text.py:282
+#, fuzzy, python-format
+msgid "Error configuring network device %s"
+msgstr "Хатои дохилӣ: Дастгоҳ танзим нашудааст."
+
+#: textw/partition_text.py:58
+msgid "Partitioning Type"
+msgstr "Намуди қисмҳои диск"
+
+#: textw/partition_text.py:60
+msgid ""
+"Installation requires partitioning of your hard drive.  The default layout "
+"is suitable for most users.  Select what space to use and which drives to "
+"use as the install target."
+msgstr ""
+
+#: textw/partition_text.py:63
+#, fuzzy
+msgid "Use entire drive"
+msgstr "_Радкунии дастгоҳ"
+
+#: textw/partition_text.py:64
+msgid "Replace existing Linux system"
+msgstr ""
+
+#: textw/partition_text.py:65
+#, fuzzy
+msgid "Use free space"
+msgstr "Ҷои холӣ (МБ)"
+
+#: textw/partition_text.py:80
+msgid "Which drive(s) do you want to use for this installation?"
+msgstr ""
+
+#: textw/partition_text.py:95
+msgid "<Space>,<+>,<-> selection   |   <F2> Add drive   |   <F12> next screen"
+msgstr ""
+
+#: textw/partition_text.py:173 ui/adddrive.glade.h:4
+msgid "Advanced Storage Options"
+msgstr "Интихобҳои иловагии захирагоҳ"
+
+#: textw/partition_text.py:174 ui/adddrive.glade.h:5
+msgid "How would you like to modify your drive configuration?"
+msgstr ""
+
+#: textw/partition_text.py:203
+msgid "Add FCP Device"
+msgstr "Иловаи дастгоҳи FCP"
+
+#: textw/partition_text.py:204 ui/zfcp-config.glade.h:5
+msgid ""
+"zSeries machines can access industry-standard SCSI devices via Fibre Channel "
+"(FCP). You need to provide a 16 bit device number, a 64 bit World Wide Port "
+"Name (WWPN), and a 64 bit FCP LUN for each device."
+msgstr ""
+
+#: textw/partition_text.py:228
+msgid "No network cards present."
+msgstr ""
+
+#: textw/partition_text.py:231
+#, fuzzy
+msgid "Add FCoE SAN"
+msgstr "Иловаи _ZFCP LUN"
+
+#: textw/partition_text.py:235
+msgid "Select which NIC is connected to the FCoE SAN."
+msgstr ""
+
+#: textw/partition_text.py:251 ui/fcoe-config.glade.h:5
+msgid "Use DCB"
+msgstr ""
+
+#: textw/partition_text.py:280 ui/iscsi-config.glade.h:7
+msgid "Configure iSCSI Parameters"
+msgstr "Танзимоти параметрҳои iSCSI"
+
+#: textw/partition_text.py:281 ui/iscsi-config.glade.h:8
+msgid ""
+"To use iSCSI disks, you must provide the address of your iSCSI target and "
+"the iSCSI initiator name you've configured for your host."
+msgstr ""
+
+#: textw/partition_text.py:282
+msgid "Target IP Address"
+msgstr "Суроғаи нишонаи IP"
+
+#: textw/partition_text.py:283
+msgid "iSCSI Initiator Name"
+msgstr "Номи iSCSI Initiator"
+
+#: textw/partition_text.py:284
+#, fuzzy
+msgid "CHAP username"
+msgstr "&Сатҳи номи корванд:"
+
+#: textw/partition_text.py:285
+#, fuzzy
+msgid "CHAP password"
+msgstr "Бе парол"
+
+#: textw/partition_text.py:286
+#, fuzzy
+msgid "Reverse CHAP username"
+msgstr "Имя + пароль (классика)"
+
+#: textw/partition_text.py:287
+#, fuzzy
+msgid "Reverse CHAP password"
+msgstr "Истифодаи пароли GRUB"
+
+#: textw/progress_text.py:46
+msgid "Package Installation"
+msgstr "Сабткунии қуттиҳо"
+
+#: textw/timezone_text.py:74
+msgid "In which time zone are you located?"
+msgstr ""
+
+#: textw/timezone_text.py:92
+#, fuzzy
+msgid "System clock uses UTC"
+msgstr "Барпои муҳити соат:  UTC: %1  JD: %2"
+
+#: textw/upgrade_bootloader_text.py:116 textw/upgrade_bootloader_text.py:126
+msgid "Update boot loader configuration"
+msgstr ""
+
+#: textw/upgrade_bootloader_text.py:129
+msgid "Skip boot loader updating"
+msgstr ""
+
+#: textw/upgrade_bootloader_text.py:131
+msgid "Create new boot loader configuration"
+msgstr ""
+
+#: textw/upgrade_text.py:125
+msgid "Free Space"
+msgstr "Ҷои холӣ"
+
+#: textw/upgrade_text.py:143
+msgid "RAM detected (MB):"
+msgstr "RAM муайяншуда (MB):"
+
+#: textw/upgrade_text.py:146
+#, fuzzy
+msgid "Suggested size (MB):"
+msgstr "Ҷои холӣ (МБ)"
+
+#: textw/upgrade_text.py:149
+#, fuzzy
+msgid "Swap file size (MB):"
+msgstr "&Андозаи тасвири файлро нишон диҳед"
+
+#: textw/upgrade_text.py:157
+msgid "Add Swap"
+msgstr "Иловаи Swap"
+
+#: textw/upgrade_text.py:182
+msgid "The value you entered is not a valid number."
+msgstr ""
+
+#: textw/upgrade_text.py:214
+msgid "Reinstall System"
+msgstr "Сабткунии системаи нав"
+
+#: textw/upgrade_text.py:226
+msgid "System to Upgrade"
+msgstr "Навсозии система"
+
+#: textw/upgrade_text.py:227
+msgid ""
+"There seem to be one or more existing Linux installations on your system.\n"
+"\n"
+"Please choose one to upgrade, or select 'Reinstall System' to freshly "
+"install your system."
+msgstr ""
+
+#: textw/userauth_text.py:30
+msgid "Root Password"
+msgstr "Пароли Root"
+
+#: textw/userauth_text.py:33
+msgid ""
+"Pick a root password. You must type it twice to ensure you know it and do "
+"not make a typing mistake. "
+msgstr ""
+
+#: textw/userauth_text.py:67
+msgid "The root password must be at least 6 characters long."
+msgstr ""
+
+#: textw/userauth_text.py:84
+#, python-format
+msgid ""
+"You have provided a weak password: %s\n"
+"\n"
+"Would you like to continue with this password?"
+msgstr ""
+
+#: textw/welcome_text.py:29
+#, python-format
+msgid "%s"
+msgstr "%s"
+
+#: textw/welcome_text.py:30
+#, python-format
+msgid ""
+"Welcome to %s!\n"
+"\n"
+msgstr ""
+"Марҳамат намоед ба %s!\n"
+"\n"
+
+#: textw/zipl_text.py:36
+msgid ""
+"The z/IPL Boot Loader will be installed on your system after installation is "
+"complete. You can now enter any additional kernel and chandev parameters "
+"which your machine or your setup require."
+msgstr ""
+
+#: textw/zipl_text.py:68
+msgid "z/IPL Configuration"
+msgstr "Танзимоти z/IPL"
+
+#: textw/zipl_text.py:76 textw/zipl_text.py:80
+#, fuzzy
+msgid "Chandev line "
+msgstr "Сатри фармон:"
+
+#: liveinst/liveinst.desktop.in.h:1
+msgid "Install"
+msgstr "Сабт кунед"
+
+#: liveinst/liveinst.desktop.in.h:2
+msgid "Install the live CD to your hard disk"
+msgstr "CD-диски зиндаро ба компютер сабт намоед"
+
+#: liveinst/liveinst.desktop.in.h:3
+msgid "Install to Hard Drive"
+msgstr "Ба компютер сабт намоед"
+
+#: ui/GroupSelector.glade.h:1
+msgid ""
+"Some packages associated with this group are not required to be installed "
+"but may provide additional functionality.  Please choose the packages which "
+"you would like to have installed."
+msgstr ""
+
+#: ui/GroupSelector.glade.h:2
+msgid "_Deselect"
+msgstr "&Азқайдгирӣ"
+
+#: ui/GroupSelector.glade.h:3
+msgid "_Deselect all optional packages"
+msgstr ""
+
+#: ui/GroupSelector.glade.h:4
+msgid "_Optional packages"
+msgstr "_Брномаҳои интихобӣ"
+
+#: ui/GroupSelector.glade.h:5
+msgid "_Select"
+msgstr "_Интихоб"
+
+#: ui/GroupSelector.glade.h:6
+msgid "_Select all optional packages"
+msgstr "_Ҳамаи барномаҳоро интихоб кунед"
+
+#: ui/GroupSelector.glade.h:7
+msgid "dialog1"
+msgstr "диалоги1"
+
+#: ui/account.glade.h:1
+msgid "Confirm:"
+msgstr "Тасдиқ кунед:"
+
+#: ui/account.glade.h:2
+msgid "Root Password:"
+msgstr "Пароли Root:"
+
+#: ui/account.glade.h:3
+msgid ""
+"The root account is used for administering the system.  Enter a password for "
+"the root user."
+msgstr ""
+
+#: ui/adddrive.glade.h:1
+#, fuzzy
+msgid "Add _FCoE SAN"
+msgstr "Иловаи _ZFCP LUN"
+
+#: ui/adddrive.glade.h:2
+msgid "Add _ZFCP LUN"
+msgstr "Иловаи _ZFCP LUN"
+
+#: ui/adddrive.glade.h:3
+msgid "Add _iSCSI target"
+msgstr "Иловаи _нишонаи iSCSI"
+
+#: ui/adddrive.glade.h:6
+msgid "_Add drive"
+msgstr "_Иловаи дастгоҳ"
+
+#: ui/addrepo.glade.h:1
+msgid "<b>Repository _name:</b>"
+msgstr "<b>Номи _феҳраст:</b>"
+
+#: ui/addrepo.glade.h:2
+msgid "<b>Repository _type:</b>"
+msgstr "<b>Навъи _феҳраст:</b>"
+
+#: ui/addrepo.glade.h:4
+msgid "Configure _proxy"
+msgstr "Танзимоти _proxy"
+
+#: ui/addrepo.glade.h:5
+msgid ""
+"HTTP/FTP\n"
+"CD/DVD\n"
+"NFS\n"
+"Hard Drive"
+msgstr ""
+
+#: ui/addrepo.glade.h:9
+msgid ""
+"Please provide the configuration information for this software repository."
+msgstr ""
+
+#: ui/addrepo.glade.h:10
+#, fuzzy
+msgid "Proxy U_RL (host:port)"
+msgstr "Сервер: %1 порт: %2 аллакай вуҷуд дорад."
+
+#: ui/addrepo.glade.h:11
+msgid "Proxy pass_word"
+msgstr "Пар_оли Proxy"
+
+#: ui/addrepo.glade.h:12
+msgid "Proxy u_sername"
+msgstr "Но_ми корбари Proxy"
+
+#: ui/addrepo.glade.h:13
+msgid "Repository _URL"
+msgstr "Феҳрасти _URL"
+
+#: ui/addrepo.glade.h:14
+msgid "Select A Directory"
+msgstr "Интихоби феҳраст"
+
+#: ui/addrepo.glade.h:15
+msgid "URL is a _mirror list"
+msgstr "URL ҳамчун рӯйхати алоқаҳои иловагӣ"
+
+#: ui/addrepo.glade.h:16
+msgid "_Directory"
+msgstr "Феҳраст"
+
+#: ui/addrepo.glade.h:17
+msgid "_Options"
+msgstr "_Интихобҳо"
+
+#: ui/addrepo.glade.h:18
+msgid "_Partition"
+msgstr "_Қисми диск"
+
+#: ui/addrepo.glade.h:19
+msgid "_Path"
+msgstr "_Роҳча"
+
+#: ui/addrepo.glade.h:20
+msgid "_Server"
+msgstr "_Хидматгоҳ"
+
+#: ui/anaconda.glade.h:1
+msgid "Reboo_t"
+msgstr ""
+
+#: ui/anaconda.glade.h:4
+msgid "_Next"
+msgstr "_Навбатӣ"
+
+#: ui/autopart.glade.h:1
+#, fuzzy
+msgid "<b>Shrink partition _to size (in MB):</b>"
+msgstr "<b> _Тағйир диҳед:</b>"
+
+#: ui/autopart.glade.h:2
+msgid "Re_view and modify partitioning layout"
+msgstr ""
+
+#: ui/autopart.glade.h:3
+msgid "Volume to Shrink"
+msgstr ""
+
+#: ui/autopart.glade.h:4
+#, fuzzy
+msgid ""
+"Which partition would you like to shrink to make room for your installation?"
+msgstr "Кадом забонро Шумо мехоҳед барои сабткунии система истифода мебаред?"
+
+#: ui/autopart.glade.h:5
+msgid "Which type of installation would you like?"
+msgstr ""
+
+#: ui/autopart.glade.h:6
+msgid "_Encrypt system"
+msgstr "_Рамзгузории система"
+
+#: ui/autopart.glade.h:7
+msgid "_Shrink"
+msgstr ""
+
+#: ui/blwhere.glade.h:1
+msgid "/boot"
+msgstr "/boot"
+
+#: ui/blwhere.glade.h:2
+msgid "BIOS Drive Order"
+msgstr "Дараҷаи дастгоҳи BIOS"
+
+#: ui/blwhere.glade.h:3
+msgid "Boot loader device"
+msgstr "Дастгоҳи боркунандаи Boot"
+
+#: ui/blwhere.glade.h:4
+msgid "First BIOS drive:"
+msgstr "Дастгоҳи аввалини BIOS:"
+
+#: ui/blwhere.glade.h:5
+msgid "Fourth BIOS drive:"
+msgstr "Дастгоҳи чоруми BIOS:"
+
+#: ui/blwhere.glade.h:6
+msgid "MBR"
+msgstr "MBR"
+
+#: ui/blwhere.glade.h:7
+msgid "Second BIOS drive:"
+msgstr "Дастгоҳи дуюми BIOS:"
+
+#: ui/blwhere.glade.h:8
+msgid "Third BIOS drive:"
+msgstr "Дастгоҳи сеюми BIOS:"
+
+#: ui/blwhere.glade.h:9
+msgid "Where would you like to install the boot loader for your system?"
+msgstr ""
+
+#: ui/cleardisks.glade.h:1
+msgid "<b>Data Storage Devices</b> (to be mounted only)"
+msgstr ""
+
+#: ui/cleardisks.glade.h:2
+#, fuzzy
+msgid "<b>Install Target Devices</b>"
+msgstr "<b>Сабткунии %s</b> (%s)\n"
+
+#: ui/cleardisks.glade.h:4
+msgid ""
+"Below are the storage devices you've selected to be a part of this "
+"installation.  Please indicate using the arrows below which devices you'd "
+"like to use as data drives (these will not be formatted, only mounted) and "
+"which devices you'd like to use as system drives (these may be formatted)."
+msgstr ""
+
+#: ui/create-storage.glade.h:1
+msgid ""
+"<span size=\"small\" color=\"gray\">Create a RAID formated partition</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:2
+msgid ""
+"<span size=\"small\" color=\"gray\">Create a logical volume on selected "
+"volume group</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:3
+msgid ""
+"<span size=\"small\" color=\"gray\">Create an LVM formated partition</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:4
+msgid ""
+"<span size=\"small\" color=\"gray\">Facilitates RAID device creation</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:5
+msgid ""
+"<span size=\"small\" color=\"gray\">General purpose partition creation</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:6
+msgid ""
+"<span size=\"small\" color=\"gray\">Requires at least 1 free LVM formated "
+"partition</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:7
+msgid ""
+"<span size=\"small\" color=\"gray\">Requires at least 2 free RAID formated "
+"partitions</span>"
+msgstr ""
+
+#: ui/create-storage.glade.h:8
+#, fuzzy
+msgid "Create"
+msgstr "<i>Эҷод кардашудагӣ дар</i>: %1"
+
+#: ui/create-storage.glade.h:9
+msgid "Create LVM"
+msgstr ""
+
+#: ui/create-storage.glade.h:10
+#, fuzzy
+msgid "Create Partition"
+msgstr "Интихоби қисми диск"
+
+#: ui/create-storage.glade.h:11
+#, fuzzy
+msgid "Create Software RAID"
+msgstr "нармафзори RAID"
+
+#: ui/create-storage.glade.h:12
+msgid "Create Storage"
+msgstr ""
+
+#: ui/create-storage.glade.h:13
+#, fuzzy
+msgid "LVM Logical Volume"
+msgstr "Нишон додани Панели &Баландии овоз"
+
+#: ui/create-storage.glade.h:14
+#, fuzzy
+msgid "LVM Physical Volume"
+msgstr "Пешниҳодҳои мантиқӣ"
+
+#: ui/create-storage.glade.h:15
+#, fuzzy
+msgid "LVM Volume Group"
+msgstr "Гурӯҳҳои шахсии корванд"
+
+#: ui/create-storage.glade.h:16
+#, fuzzy
+msgid "RAID Clone"
+msgstr "Интихобҳои RAID"
+
+#: ui/create-storage.glade.h:18
+#, fuzzy
+msgid "RAID Partition"
+msgstr "Иловаи қисми диск"
+
+#: ui/create-storage.glade.h:19
+#, fuzzy
+msgid "Standard Partition"
+msgstr "Иловаи қисми диск"
+
+#: ui/detailed-dialog.glade.h:1
+msgid "Info"
+msgstr "Иттилооти"
+
+#: ui/detailed-dialog.glade.h:2
+msgid "_Details"
+msgstr "_Тафсилотҳо"
+
+#: ui/fcoe-config.glade.h:1
+#, fuzzy
+msgid "Configure FCoE Parameters"
+msgstr "Танзимоти параметрҳои iSCSI"
+
+#: ui/fcoe-config.glade.h:2
+msgid "NIC:"
+msgstr ""
+
+#: ui/fcoe-config.glade.h:3
+msgid ""
+"Please select the network interface which is connected to\n"
+"your FCoE switch."
+msgstr ""
+
+#: ui/fcoe-config.glade.h:6
+#, fuzzy
+msgid "_Add FCoE Disk(s)"
+msgstr "Иловаи _ZFCP LUN"
+
+#: ui/filter.glade.h:2
+#, no-c-format
+msgid "<b>%s devices (%s) selected</b> out of %s devices (%s) total."
+msgstr ""
+
+#: ui/filter.glade.h:3
+msgid ""
+"<b>Tip:</b> Selecting a drive on this screen does not necessarily mean it "
+"will be wiped by the installation process.  Also, note that post-"
+"installation you may mount drives you did not select here by modifying your /"
+"etc/fstab file."
+msgstr ""
+
+#: ui/filter.glade.h:4
+#, fuzzy
+msgid "Add Advanced Target"
+msgstr "Интихобҳои иловагии захирагоҳ"
+
+#: ui/filter.glade.h:5
+#, fuzzy
+msgid "Basic Devices"
+msgstr "Дастгоҳҳо"
+
+#: ui/filter.glade.h:6
+msgid "Filter By:"
+msgstr ""
+
+#: ui/filter.glade.h:7
+#, fuzzy
+msgid "Firmware RAID"
+msgstr "нармафзори RAID"
+
+#: ui/filter.glade.h:8
+#, fuzzy
+msgid "Identifier:"
+msgstr "Муайян кунед"
+
+#: ui/filter.glade.h:9
+msgid ""
+"Interconnect\n"
+"Vendor\n"
+"Identifier"
+msgstr ""
+
+#: ui/filter.glade.h:12
+msgid "LUN:"
+msgstr ""
+
+#: ui/filter.glade.h:13
+#, fuzzy
+msgid "Multipath Devices"
+msgstr "Нусхабардории дастгоҳ"
+
+#: ui/filter.glade.h:14
+#, fuzzy
+msgid "Other SAN Devices"
+msgstr "Дастгоҳҳои RAID"
+
+#: ui/filter.glade.h:15
+msgid ""
+"Please select the drives you'd like to install the operating system on, as "
+"well as any drives you'd like to automatically mount to your system, below:"
+msgstr ""
+
+#: ui/filter.glade.h:16
+msgid ""
+"Port / Target / LUN\n"
+"Target Identifier"
+msgstr ""
+
+#: ui/filter.glade.h:18
+msgid "Port:"
+msgstr ""
+
+#: ui/filter.glade.h:19
+msgid "Search"
+msgstr ""
+
+#: ui/filter.glade.h:20
+msgid "Search By:"
+msgstr ""
+
+#: ui/filter.glade.h:21
+msgid "Search Results:"
+msgstr ""
+
+#: ui/filter.glade.h:22
+msgid "Show Identifiers that Include:"
+msgstr ""
+
+#: ui/filter.glade.h:23
+msgid "Show Only Devices From:"
+msgstr ""
+
+#: ui/filter.glade.h:24
+msgid "Show Only Devices Using:"
+msgstr ""
+
+#: ui/filter.glade.h:25
+#, fuzzy
+msgid "Target:"
+msgstr "Нишонаи дастгоҳ(s):"
+
+#: ui/iscsi-config.glade.h:1
+msgid "<b>CHAP _Password:</b>"
+msgstr "<b>Номи  _пароли CHAP:</b>"
+
+#: ui/iscsi-config.glade.h:2
+msgid "<b>CHAP _Username:</b>"
+msgstr "<b>Номи  _корбари CHAP:</b>"
+
+#: ui/iscsi-config.glade.h:3
+msgid "<b>Reverse CHAP P_assword:</b>"
+msgstr "<b>Баргаштани номи  _пароли CHAP:</b>"
+
+#: ui/iscsi-config.glade.h:4
+msgid "<b>Reverse CHAP U_sername:</b>"
+msgstr "<b>Баргаштани номи  _корбари CHAP:</b>"
+
+#: ui/iscsi-config.glade.h:5
+msgid "<b>_Target IP Address:</b>"
+msgstr "<b>_Нишонаи суроғаи IP:</b>"
+
+#: ui/iscsi-config.glade.h:6
+msgid "<b>iSCSI Initiator _Name:</b>"
+msgstr "<b>Номи _iSCSI Initiator:</b>"
+
+#: ui/iscsi-config.glade.h:9
+msgid "_Add target"
+msgstr "_Иловаи нишона"
+
+#: ui/lukspassphrase.glade.h:1
+msgid ""
+"Also add this passphrase to all existing encrypted devices to streamline the "
+"boot process"
+msgstr ""
+
+#: ui/lukspassphrase.glade.h:2
+msgid ""
+"Choose a passphrase for this encrypted partition. You will be prompted for "
+"the passphrase during system boot."
+msgstr ""
+
+#: ui/lukspassphrase.glade.h:3
+msgid "Confirm passphrase:"
+msgstr "Тасдиқи гузарвожа:"
+
+#: ui/lukspassphrase.glade.h:4
+msgid "Enter passphrase for encrypted partition"
+msgstr ""
+
+#: ui/lukspassphrase.glade.h:5
+msgid "Enter passphrase:"
+msgstr "Вориди гузарвожа:"
+
+#: ui/netconfig.glade.h:2
+msgid "<b>Gateway:</b>"
+msgstr "<b>Суроҳаи хидматгоҳ:</b>"
+
+#: ui/netconfig.glade.h:3
+msgid "<b>IPv4 Address:</b>"
+msgstr "<b>Суроғаи IPv4:</b>"
+
+#: ui/netconfig.glade.h:4
+msgid "<b>IPv6 Address:</b>"
+msgstr "<b>Суроғаи IPv6:</b>"
+
+#: ui/netconfig.glade.h:5
+msgid "<b>Nameserver:</b>"
+msgstr "<b>Номи хидматгоҳ:</b>"
+
+#: ui/netconfig.glade.h:6
+msgid "<b>_Interface:</b>"
+msgstr "<b>_Интерфейс:</b>"
+
+#: ui/netconfig.glade.h:7
+msgid "Enable IPv_4 support"
+msgstr "Пуштибонии IPv_4 фаъол созед"
+
+#: ui/netconfig.glade.h:8
+msgid "Enable IPv_6 support"
+msgstr "Пуштибонии IPv_6 фаъол созед"
+
+#: ui/netconfig.glade.h:11
+msgid "Use _dynamic IP configuration (DHCP)"
+msgstr ""
+
+#: ui/network.glade.h:1
+msgid "Hostname:"
+msgstr "Номи шабака:"
+
+#: ui/network.glade.h:2
+msgid ""
+"Please name this computer.  The hostname identifies the computer on a "
+"network."
+msgstr ""
+
+#: ui/tasksel.glade.h:1
+msgid "Customize _later"
+msgstr "_Баъдтар танзим кунед"
+
+#: ui/tasksel.glade.h:2
+msgid ""
+"Please select any additional repositories that you want to use for software "
+"installation."
+msgstr ""
+
+#: ui/tasksel.glade.h:4
+#, no-c-format
+msgid ""
+"The default installation of %s includes a set of software applicable for "
+"general internet usage.  What additional tasks would you like your system to "
+"support?"
+msgstr ""
+
+#: ui/tasksel.glade.h:5
+msgid ""
+"You can further customize the software selection now, or after install via "
+"the software management application."
+msgstr ""
+
+#: ui/tasksel.glade.h:6
+msgid "_Add additional software repositories"
+msgstr "_Иловаи феҳрастҳои нармафзори иловагӣ"
+
+#: ui/tasksel.glade.h:7
+msgid "_Customize now"
+msgstr "_Танзим кунед"
+
+#: ui/tasksel.glade.h:8
+msgid "_Modify repository"
+msgstr "_Тағйири феҳраст"
+
+#: ui/zfcp-config.glade.h:1
+msgid "<b>Device number:</b>"
+msgstr "<b>Рақами дастгоҳ:</b>"
+
+#: ui/zfcp-config.glade.h:2
+msgid "<b>FCP LUN:</b>"
+msgstr "<b>FCP LUN:</b>"
+
+#: ui/zfcp-config.glade.h:3
+msgid "<b>WWPN:</b>"
+msgstr "<b>WWPN:</b>"
+
+#: ui/zfcp-config.glade.h:4
+msgid "Add FCP device"
+msgstr "Иловаи дастгоҳи FCP"
+
+#: lang-table.h:1
+msgid "Afrikaans"
+msgstr "Забони африкоӣ"
+
+#: lang-table.h:2
+msgid "Arabic"
+msgstr "Забони арабӣ"
+
+#: lang-table.h:3
+msgid "Assamese"
+msgstr "Забони асамесӣ"
+
+#: lang-table.h:4
+msgid "Bengali"
+msgstr "Забони бенгалӣ"
+
+#: lang-table.h:5
+msgid "Bengali(India)"
+msgstr "Забони бенгалӣ (Ҳиндустон)"
+
+#: lang-table.h:6
+msgid "Bulgarian"
+msgstr "Забони булғорӣ"
+
+#: lang-table.h:7
+msgid "Catalan"
+msgstr "Забони каталанӣ"
+
+#: lang-table.h:8
+msgid "Chinese(Simplified)"
+msgstr "Забони хитоӣ (оддӣ)"
+
+#: lang-table.h:9
+msgid "Chinese(Traditional)"
+msgstr "Забони хитоӣ (анъанавӣ)"
+
+#: lang-table.h:10
+msgid "Croatian"
+msgstr "Забони хорватӣ"
+
+#: lang-table.h:11
+msgid "Czech"
+msgstr "Забони чехӣ"
+
+#: lang-table.h:12
+msgid "Danish"
+msgstr "Забони даннӣ"
+
+#: lang-table.h:13
+msgid "Dutch"
+msgstr "Забони даниягӣ"
+
+#: lang-table.h:14
+msgid "English"
+msgstr "Забони англисӣ"
+
+#: lang-table.h:15
+msgid "Estonian"
+msgstr "Забони эстонӣ"
+
+#: lang-table.h:16
+msgid "Finnish"
+msgstr "Забони финнӣ"
+
+#: lang-table.h:17
+msgid "French"
+msgstr "Забони франсавӣ"
+
+#: lang-table.h:18
+msgid "German"
+msgstr "Забони немисӣ"
+
+#: lang-table.h:19
+msgid "Greek"
+msgstr "Забони юнонӣ"
+
+#: lang-table.h:20
+msgid "Gujarati"
+msgstr "Забони гуҷаратӣ"
+
+#: lang-table.h:21
+msgid "Hebrew"
+msgstr "Яҳудӣ"
+
+#: lang-table.h:22
+msgid "Hindi"
+msgstr "Забони ҳиндӣ"
+
+#: lang-table.h:23
+msgid "Hungarian"
+msgstr "Забони венгерӣ"
+
+#: lang-table.h:24
+msgid "Icelandic"
+msgstr "Забони исландӣ"
+
+#: lang-table.h:25
+msgid "Iloko"
+msgstr "Забони илоко"
+
+#: lang-table.h:26
+msgid "Indonesian"
+msgstr "Забони индонезӣ"
+
+#: lang-table.h:27
+msgid "Italian"
+msgstr "Забони италиёӣ"
+
+#: lang-table.h:28
+msgid "Japanese"
+msgstr "Забони японӣ"
+
+#: lang-table.h:29
+msgid "Kannada"
+msgstr "Забони каннадӣ"
+
+#: lang-table.h:30
+msgid "Korean"
+msgstr "Забони кореягӣ"
+
+#: lang-table.h:31
+msgid "Macedonian"
+msgstr "Забони мақдунӣ"
+
+#: lang-table.h:32
+#, fuzzy
+msgid "Maithili"
+msgstr "Забони маратӣ"
+
+#: lang-table.h:33
+msgid "Malay"
+msgstr "Забони малайӣ"
+
+#: lang-table.h:34
+msgid "Malayalam"
+msgstr "Забони малайяламӣ"
+
+#: lang-table.h:35
+msgid "Marathi"
+msgstr "Забони маратӣ"
+
+#: lang-table.h:36
+#, fuzzy
+msgid "Nepali"
+msgstr "Забони бенгалӣ"
+
+#: lang-table.h:37
+msgid "Norwegian(Bokmål)"
+msgstr "Забони норвегиягӣ (Букмалӣ)"
+
+#: lang-table.h:38
+msgid "Northern Sotho"
+msgstr "Забони соттои шимолӣ"
+
+#: lang-table.h:39
+msgid "Oriya"
+msgstr "Забони ориёӣ"
+
+#: lang-table.h:40
+msgid "Persian"
+msgstr "Забони форсӣ"
+
+#: lang-table.h:41
+msgid "Polish"
+msgstr "Забони полякӣ"
+
+#: lang-table.h:42
+msgid "Portuguese"
+msgstr "Забони португалӣ"
+
+#: lang-table.h:43
+msgid "Portuguese(Brazilian)"
+msgstr "Забони португалӣ (Бразилиягӣ)"
+
+#: lang-table.h:44
+msgid "Punjabi"
+msgstr "Забони панҷабӣ"
+
+#: lang-table.h:45
+msgid "Romanian"
+msgstr "Забони руминӣ"
+
+#: lang-table.h:46
+msgid "Russian"
+msgstr "Забони русӣ"
+
+#: lang-table.h:47
+msgid "Serbian"
+msgstr "Забони сербӣ"
+
+#: lang-table.h:48
+msgid "Serbian(Latin)"
+msgstr "Забони сербӣ (лотинӣ)"
+
+#: lang-table.h:49
+msgid "Sinhala"
+msgstr "Забони шинхала"
+
+#: lang-table.h:50
+msgid "Slovak"
+msgstr "Забони словакӣ"
+
+#: lang-table.h:51
+msgid "Slovenian"
+msgstr "Забони словениягӣ"
+
+#: lang-table.h:52
+msgid "Spanish"
+msgstr "Забони испанӣ"
+
+#: lang-table.h:53
+msgid "Swedish"
+msgstr "Забони шведӣ"
+
+#: lang-table.h:54
+#, fuzzy
+msgid "Tajik"
+msgstr "Забони тамилӣ"
+
+#: lang-table.h:55
+msgid "Tamil"
+msgstr "Забони тамилӣ"
+
+#: lang-table.h:56
+msgid "Telugu"
+msgstr "Забони телугу"
+
+#: lang-table.h:57
+msgid "Turkish"
+msgstr "Забони туркӣ"
+
+#: lang-table.h:58
+msgid "Ukrainian"
+msgstr "Забони украинӣ"
+
+#: lang-table.h:59
+msgid "Vietnamese"
+msgstr "Забони ветнамӣ"
+
+#: lang-table.h:60
+msgid "Welsh"
+msgstr "Забони вэлсӣ"
+
+#: lang-table.h:61
+msgid "Zulu"
+msgstr "Забони зулу"
+
+#, fuzzy
+#~ msgid "The installer will now exit."
+#~ msgstr ""
+#~ "\n"
+#~ "Хурӯҷшавӣ аз KWin..."
+
+#, fuzzy
+#~ msgid "Device Creation Failed"
+#~ msgstr "Файли муайянкунӣ"
+
+#, fuzzy
+#~ msgid "An error was encountered while formatting device %s."
+#~ msgstr "Интизор шавед то даме, ки ба хидматрасон дархост меравад..."
+
+#~ msgid "Invalid Key"
+#~ msgstr "Калиди нодуруст"
+
+#, fuzzy
+#~ msgid "The key you entered is invalid."
+#~ msgstr "Номи воридшуда нодуруст аст."
+
+#~ msgid "_Skip"
+#~ msgstr "_Гузаштан"
+
+#, fuzzy
+#~ msgid "The installer will now exit..."
+#~ msgstr ""
+#~ "\n"
+#~ "Хурӯҷшавӣ аз KWin..."
+
+#, fuzzy
+#~ msgid "Please enter your %(instkey)s"
+#~ msgstr "Введите ваш текущий пароль:"
+
+#, fuzzy
+#~ msgid "Skip entering %(instkey)s"
+#~ msgstr "Радкунии &саҳифабанд"
+
+#~ msgid "%s not found"
+#~ msgstr "%s ёфт нашуд"
+
+#~ msgid "%s %s installation"
+#~ msgstr "Сабткунии %s %s"
+
+#~ msgid "Office and Productivity"
+#~ msgstr "Идора ва сермаҳсулӣ"
+
+#~ msgid "Office"
+#~ msgstr "Офис"
+
+#~ msgid "Multimedia"
+#~ msgstr "Мултимедиа"
+
+#~ msgid "Web server"
+#~ msgstr "Хидматгоҳи Интернет"
+
+#~ msgid "Virtualization"
+#~ msgstr "Барномаҳои виртуалӣ"
+
+#~ msgid "Clustering"
+#~ msgstr "Кластерҳо"
+
+#~ msgid "Storage Clustering"
+#~ msgstr "Захирагоҳи кластерҳо"
+
+#~ msgid "Installation Number"
+#~ msgstr "Рақами сабткунӣ"
+
+#~ msgid "_Install %s"
+#~ msgstr "_Сабт кардани %s"
+
+#~ msgid "Unknown"
+#~ msgstr "Номуайян"
+
+#~ msgid "Not supported"
+#~ msgstr "Пуштибонӣ намешавад"
+
+#, fuzzy
+#~ msgid "What do you want to do now?"
+#~ msgstr ""
+#~ "Шумо аз рости мехоҳед ,кучонед :\n"
+#~ " %1?"
+
+#~ msgid "Ne_w"
+#~ msgstr "На_в"
+
+#~ msgid "R_AID"
+#~ msgstr "R_AID"
+
+#~ msgid "_LVM"
+#~ msgstr "_LVM"
+
+#~ msgid "Unknown Host"
+#~ msgstr "Алоқаи номуайян"
+
+#~ msgid "%s is not a valid hostname."
+#~ msgstr "%s номи шабакаи нодуруст мебошад."
+
+#~ msgid "_Ignore drive"
+#~ msgstr "_Радкунии дастгоҳ"
+
+#, fuzzy
+#~ msgid "_Re-initialize drive"
+#~ msgstr "Танзимоти дастгоҳи лента ҷамъшаванда"
+
+#, fuzzy
+#~ msgid "NIC device name"
+#~ msgstr "Устройства PCI не найдены."
+
+#, fuzzy
+#~ msgid "%s is not a valid NIC device name."
+#~ msgstr "%s номи шабакаи нодуруст мебошад."
+
+#~ msgid "Disable _dmraid device"
+#~ msgstr "Хомӯшсозии _дастгоҳи dmraid"
+
+#~ msgid "_Advanced storage configuration"
+#~ msgstr "_Танзимоти захирагоҳи иловагӣ"
+
+#~ msgid "Please enter your %(instkey)s."
+#~ msgstr "Лутфан, % худро ворид кунед."
+
+#~ msgid "%(instkey)s:"
+#~ msgstr "%(instkey)s:"
+
+#, fuzzy
+#~ msgid "label1"
+#~ msgstr "Тамға"
+
+#~ msgid "Unable To File Bug"
+#~ msgstr "Гузариши хато эҷод карда намешавад"
+
+#~ msgid "Bug Filing Not Supported"
+#~ msgstr "Гузариши хато пуштибонӣ намешавад"
+
+#~ msgid "Invalid Bug Information"
+#~ msgstr "Иттилооти хатои нодуруст"
+
+#~ msgid "Unable To Login"
+#~ msgstr "Ворид карда намешавад"
+
+#~ msgid "Bug Updated"
+#~ msgstr "Хато ислоҳ карда шуд"
+
+#, fuzzy
+#~ msgid "Dump Written"
+#~ msgstr "<p><i>Навистаги %1.</i></p>"
+
+#, fuzzy
+#~ msgid "Dump Not Written"
+#~ msgstr ""
+#~ "%1 навишта буд бо\n"
+#~ "%2"
+
+#, fuzzy
+#~ msgid "Bugzilla (%s)"
+#~ msgstr "Тафсири Bugzilla:"
+
+#, fuzzy
+#~ msgid "Debug"
+#~ msgstr "Ғалатёб"
+
+#, fuzzy
+#~ msgid "Exception Occurred"
+#~ msgstr ""
+#~ "Хатогӣ рӯй дод:\n"
+#~ "%1"
+
+#~ msgid "None"
+#~ msgstr "Ҳеҷ чиз"
+
+#~ msgid "Initializing"
+#~ msgstr "Омодасозӣ"
+
+#, fuzzy
+#~ msgid "Please wait while formatting drive %s...\n"
+#~ msgstr "Интизор шавед то даме, ки ба хидматрасон дархост меравад..."
+
+#~ msgid "Save"
+#~ msgstr "Захира"
+
+#~ msgid "Save to local disk"
+#~ msgstr "Ба диски компютерӣ захира кунед"
+
+#, fuzzy
+#~ msgid "Send to bugzilla (%s)"
+#~ msgstr "Ҳеҷ чиз барои Фиристодан нест"
+
+#, fuzzy
+#~ msgid "Send to remote server (scp)"
+#~ msgstr "Ба сервер фиристода натавонист.\n"
+
+#, fuzzy
+#~ msgid "Bug Description"
+#~ msgstr "Тасвири Қисмат "
+
+#, fuzzy
+#~ msgid "Host (host:port)"
+#~ msgstr "Сервер: %1 порт: %2 аллакай вуҷуд дорад."
+
+#, fuzzy
+#~ msgid "Destination file"
+#~ msgstr "Файли муайянкунӣ"
+
+#~ msgid "%s Bytes"
+#~ msgstr "%s Бит"
+
+#, fuzzy
+#~ msgid "Processing"
+#~ msgstr "Коркард "
+
+#, fuzzy
+#~ msgid "%s of %s packages completed"
+#~ msgstr "Хотима дода нашуд"
+
+#, fuzzy
+#~ msgid "Drive %s (Geom: %s/%s/%s) (Model: %s)"
+#~ msgstr "Интихоби Шакли Чопгар"
+
+#, fuzzy
+#~ msgid "boot flag not available for this partition"
+#~ msgstr "Шумо наметавонед папкаи системавиро ҳузф кунед."
+
+#, fuzzy
+#~ msgid "_Ignore drive(s)"
+#~ msgstr "_Радкунии дастгоҳ"
+
+#, fuzzy
+#~ msgid "_Re-initialize drive(s)"
+#~ msgstr "Танзимоти дастгоҳи лента ҷамъшаванда"
+
+#~ msgid "Bug _description"
+#~ msgstr "Тафсилоти _хато"
+
+#~ msgid "Destination _file"
+#~ msgstr "Номи _файл"
+
+#~ msgid "Select A File"
+#~ msgstr "Интихоби файл"
+
+#~ msgid "_Host (host:port)"
+#~ msgstr "_Шабака (host:port)"
+
+#~ msgid "_Password"
+#~ msgstr "_Парол"
