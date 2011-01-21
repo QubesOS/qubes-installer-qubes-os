@@ -349,6 +349,16 @@ class x86BootloaderInfo(efiBootloaderInfo):
 
                 if initrd:
                     f.write('\tmodule %s%s\n' % (cfPath, initrd))
+            elif version.find("xenlinux") >= 0:
+                # Qubes kernel
+                hvFile = "%sxen.gz" %(cfPath)
+                f.write('\tkernel %s\n' %(hvFile,))
+                f.write('\tmodule %s ro%s' %(kernelFile, realroot))
+                if self.args.get():
+                    f.write(' %s' % self.args.get())
+                f.write('\n')
+                if initrd:
+                    f.write('\tmodule %s%s\n' % (cfPath, initrd))
             else: # normal kernel
                 f.write('\tkernel %s ro%s' % (kernelFile, realroot))
                 if self.args.get():
