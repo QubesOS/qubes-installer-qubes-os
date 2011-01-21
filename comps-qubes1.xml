@@ -736,7 +736,6 @@
       <packagereq type="default">dosfstools</packagereq>
       <packagereq type="default">dump</packagereq>
       <packagereq type="default">eject</packagereq>
-      <packagereq type="default">qubes-release-notes</packagereq>
       <packagereq type="default">finger</packagereq>
       <packagereq type="default">fprintd-pam</packagereq>
       <packagereq type="default">ftp</packagereq>
@@ -774,6 +773,7 @@
       <packagereq type="default">pm-utils</packagereq>
       <packagereq type="default">prctl</packagereq>
       <packagereq type="default">prelink</packagereq>
+      <packagereq type="default">qubes-release-notes</packagereq>
       <packagereq type="default">rdate</packagereq>
       <packagereq type="default">rdist</packagereq>
       <packagereq type="default">readahead</packagereq>
@@ -2262,7 +2262,6 @@
       <packagereq type="mandatory">cronie-anacron</packagereq>
       <packagereq type="mandatory">dhclient</packagereq>
       <packagereq type="mandatory">e2fsprogs</packagereq>
-      <packagereq type="mandatory">qubes-release</packagereq>
       <packagereq type="mandatory">file</packagereq>
       <packagereq type="mandatory">filesystem</packagereq>
       <packagereq type="mandatory">glibc</packagereq>
@@ -2279,6 +2278,7 @@
       <packagereq type="mandatory">passwd</packagereq>
       <packagereq type="mandatory">policycoreutils</packagereq>
       <packagereq type="mandatory">procps</packagereq>
+      <packagereq type="mandatory">qubes-release</packagereq>
       <packagereq type="mandatory">readline</packagereq>
       <packagereq type="mandatory">rootfiles</packagereq>
       <packagereq type="mandatory">rpm</packagereq>
@@ -2300,7 +2300,6 @@
       <packagereq type="default">yaboot</packagereq>
     </packagelist>
   </group>
-  
   <group>
     <id>critical-path-base</id>
     <name>Critical Path (Base)</name>
@@ -2388,12 +2387,10 @@
       <packagereq type="mandatory">dracut</packagereq>
       <packagereq type="mandatory">firstboot</packagereq>
       <packagereq type="mandatory">gcc-c++</packagereq>
-      
       <packagereq type="mandatory">kernel</packagereq>
       <packagereq type="mandatory">livecd-tools</packagereq>
       <packagereq type="mandatory">mash</packagereq>
       <packagereq type="mandatory">NetworkManager</packagereq>
-      
       <packagereq type="mandatory">pungi</packagereq>
       <packagereq type="mandatory">redhat-rpm-config</packagereq>
       <packagereq type="mandatory">rpm-build</packagereq>
@@ -2481,14 +2478,12 @@
     <default>false</default>
     <uservisible>false</uservisible>
     <packagelist>
-      
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
       <packagereq type="mandatory">gdm</packagereq>
       <packagereq type="mandatory">xorg-x11-drivers</packagereq>
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
       <packagereq type="mandatory">xorg-x11-xauth</packagereq>
       <packagereq type="mandatory">xorg-x11-xinit</packagereq>
-      
       <packagereq type="default">notification-daemon</packagereq>
     </packagelist>
   </group>
@@ -6101,7 +6096,6 @@
       <packagereq type="default">kdm</packagereq>
       <packagereq type="default">kftpgrabber</packagereq>
       <packagereq type="default">kipi-plugins</packagereq>
-      <packagereq type="optional">knetworkmanager</packagereq>
       <packagereq type="default">kpackagekit</packagereq>
       <packagereq type="default">ksshaskpass</packagereq>
       <packagereq type="default">phonon-backend-gstreamer</packagereq>
@@ -6132,6 +6126,7 @@
       <packagereq type="optional">kmid</packagereq>
       <packagereq type="optional">kmymoney2</packagereq>
       <packagereq type="optional">knemo</packagereq>
+      <packagereq type="optional">knetworkmanager</packagereq>
       <packagereq type="optional">kobby</packagereq>
       <packagereq type="optional">koffice-suite</packagereq>
       <packagereq type="optional">koverartist</packagereq>
@@ -11540,109 +11535,4 @@
       <groupid>zulu-support</groupid>
     </grouplist>
   </category>
-  <blacklist>
-    <package name="dev"/>
-    <package name="system-config-mouse"/>
-    <package name="NetworkManager" arch="i386"/>
-    <package name="dbus" arch="i386"/>
-    <package name="e2fsprogs" arch="i386"/>
-    <package name="esound" arch="i386"/>
-    <package name="gdb" arch="i386"/>
-    <package name="geomview" arch="i386"/>
-    <package name="gnome-applets" arch="i386"/>
-    <package name="gnome-panel" arch="i386"/>
-    <package name="hal" arch="i386"/>
-    <package name="hpijs" arch="i386"/>
-    <package name="kdeaccessibility" arch="i386"/>
-    <package name="kdebase" arch="i386"/>
-    <package name="kdeedu" arch="i386"/>
-    <package name="kdegraphics" arch="i386"/>
-    <package name="kdemultimedia" arch="i386"/>
-    <package name="kdemultimedia-extras" arch="i386"/>
-    <package name="kdenetwork" arch="i386"/>
-    <package name="kdesdk" arch="i386"/>
-    <package name="kdeutils" arch="i386"/>
-    <package name="kdewebdev" arch="i386"/>
-    <package name="kmymoney2" arch="i386"/>
-    <package name="mysql" arch="i386"/>
-    <package name="nas" arch="i386"/>
-    <package name="perl" arch="i386"/>
-    <package name="NetworkManager" arch="ppc64"/>
-    <package name="dbus" arch="ppc64"/>
-    <package name="e2fsprogs" arch="ppc64"/>
-    <package name="esound" arch="ppc64"/>
-    <package name="gdb" arch="ppc64"/>
-    <package name="geomview" arch="ppc64"/>
-    <package name="gnome-applets" arch="ppc64"/>
-    <package name="gnome-panel" arch="ppc64"/>
-    <package name="hal" arch="ppc64"/>
-    <package name="hpijs" arch="ppc64"/>
-    <package name="kdeaccessibility" arch="ppc64"/>
-    <package name="kdebase" arch="ppc64"/>
-    <package name="kdeedu" arch="ppc64"/>
-    <package name="kdegraphics" arch="ppc64"/>
-    <package name="kdemultimedia" arch="ppc64"/>
-    <package name="kdemultimedia-extras" arch="ppc64"/>
-    <package name="kdenetwork" arch="ppc64"/>
-    <package name="kdesdk" arch="ppc64"/>
-    <package name="kdeutils" arch="ppc64"/>
-    <package name="kdewebdev" arch="ppc64"/>
-    <package name="kmymoney2" arch="ppc64"/>
-    <package name="mysql" arch="ppc64"/>
-    <package name="nas" arch="ppc64"/>
-  </blacklist>
-  <whiteout>
-    <ignoredep requires="Mesa" package="XFree86"/>
-    <ignoredep requires="XFree86-Mesa-libGL" package="XFree86-libs"/>
-    <ignoredep requires="kdelibs-sound" package="arts"/>
-    <ignoredep requires="aspell-en" package="aspell"/>
-    <ignoredep requires="bind-utils" package="bind"/>
-    <ignoredep requires="db1" package="compat-glibc"/>
-    <ignoredep requires="db2" package="compat-glibc"/>
-    <ignoredep requires="xscreensaver" package="control-center"/>
-    <ignoredep requires="pam" package="coreutils"/>
-    <ignoredep requires="openldap" package="cyrus-sasl"/>
-    <ignoredep requires="dbus-glib" package="dbus"/>
-    <ignoredep requires="gimp-print" package="ghostscript"/>
-    <ignoredep requires="ghostscript" package="ghostscript-fonts"/>
-    <ignoredep requires="gimp-print-plugin" package="gimp"/>
-    <ignoredep requires="glibc-devel" package="glibc-debug"/>
-    <ignoredep requires="gnome-python2-bonobo" package="gnome-python2"/>
-    <ignoredep requires="gdk-pixbuf" package="gtk+"/>
-    <ignoredep requires="scim-libs" package="gtk2"/>
-    <ignoredep requires="gtk2" package="hicolor-icon-theme"/>
-    <ignoredep requires="httpd-suexec" package="httpd"/>
-    <ignoredep requires="ncurses" package="info"/>
-    <ignoredep requires="kernel" package="initscripts"/>
-    <ignoredep requires="kernel-smp" package="initscripts"/>
-    <ignoredep requires="sysklogd" package="initscripts"/>
-    <ignoredep requires="util-linux" package="initscripts"/>
-    <ignoredep requires="kdemultimedia-libs" package="kdemultimedia-arts"/>
-    <ignoredep requires="gnome-print" package="libgnomeprint15"/>
-    <ignoredep requires="bash" package="libtermcap"/>
-    <ignoredep requires="kernel" package="lvm2"/>
-    <ignoredep requires="vixie-cron" package="modutils"/>
-    <ignoredep requires="perl-DBD-MySQL" package="mysql"/>
-    <ignoredep requires="nautilus-cd-burner" package="nautilus"/>
-    <ignoredep requires="nautilus-mozilla" package="nautilus"/>
-    <ignoredep requires="gpm" package="ncurses"/>
-    <ignoredep requires="openoffice.org" package="openoffice.org-libs"/>
-    <ignoredep requires="initscripts" package="pam"/>
-    <ignoredep requires="pango-gtkbeta" package="pango-gtkbeta-devel"/>
-    <ignoredep requires="mod_perl" package="perl"/>
-    <ignoredep requires="mrtg" package="perl"/>
-    <ignoredep requires="perl-Filter" package="perl"/>
-    <ignoredep requires="perl-Bit-Vector" package="perl-Date-Calc"/>
-    <ignoredep requires="php-pear" package="php"/>
-    <ignoredep requires="redhat-lsb" package="redhat-lsb"/>
-    <ignoredep requires="postgresql-tcl" package="tcl"/>
-    <ignoredep requires="util-linux" package="usermode"/>
-    <ignoredep requires="apel-xemacs" package="xemacs"/>
-    <ignoredep requires="xemacs-sumo" package="xemacs"/>
-    <ignoredep requires="XFree86" package="xinitrc"/>
-    <ignoredep requires="xorg-x11" package="xinitrc"/>
-    <ignoredep requires="Mesa" package="xorg-x11"/>
-    <ignoredep requires="xorg-x11-Mesa-libGL" package="xorg-x11-libs"/>
-    <ignoredep requires="yp-tools" package="ypbind"/>
-  </whiteout>
 </comps>
