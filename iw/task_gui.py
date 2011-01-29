@@ -703,4 +703,5 @@ class TaskWindow(InstallWindow):
         self.xml.get_widget("addRepoButton").connect("clicked", self._addRepo)
         self.xml.get_widget("editRepoButton").connect("clicked", self._editRepo, self.rs)
 
-        return vbox
+        #return vbox
+        return None
