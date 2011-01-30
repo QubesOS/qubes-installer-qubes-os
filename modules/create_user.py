@@ -204,6 +204,7 @@ class moduleClass(Module):
                      userEnt.get(libuser.GIDNUMBER)[0])
 
         self.admin.setpassUser(userEnt, self.passwordEntry.get_text(), 0)
+        os.system("usermod -a -G qubes %s" % username)
 
         return RESULT_SUCCESS
 
