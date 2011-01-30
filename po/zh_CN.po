@@ -1,0 +1,326 @@
+# translation of firstboot.master.po to Simplified Chinese
+# translation of zh_CN.po to
+# translation of zh_CN.po to
+# translation of zh_CN.po to
+# Simplified Chinese Version of firstboot.
+# Copyright (C) 2002 Red Hat, Inc.
+#
+# Sarah Wang <sarahs@redhat.com>, 2003,2004.
+# Tony Fu <tfu@redhat.com>, 2004, 2006.
+# Leah Liu <weliu@redhat.com>, 2005, 2006.
+# Wu Yu <kiluawuyu@gmail.com>, 2007.
+# Leah Liu <lliu@redhat.com>, 2008, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot.master\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-03-30 15:42+1000\n"
+"Last-Translator: Leah Liu <lliu@redhat.com>\n"
+"Language-Team: Simplified Chinese <zh@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "运行 firstboot 时您必须是根用户。"
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "无法启动任何 firstboot 前端。"
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "未发现任何 firstboot 模块。"
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "无法创建任何 firstboot 界面。"
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "模块 %s 中出现错误。"
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"由于 %s 模块中出现问题，\n"
+"firstboot 无法载入该模块，\n"
+"它将会尝试运行剩余的模块。"
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "firstboot 中模块 %s 中出现错误。"
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "因为出现问题，所以 firstboot 将退出。"
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"调试输出的副本已被保存在 %s， \n"
+"请在提交错误报告时确定附带该文件。\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"请向红帽的错误跟踪系统报告关于“firstboot”\n"
+"的错误：http://www.redhat.com/bugzilla。\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "试图返回，但历史记录为空白。"
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "完成（_F）"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "为了使您做的修改生效，系统需要重新启动。"
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "返回（_B）"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "前进（_F）"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "模块 %s 没有设置其 UI，删除。"
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "必须为 moveToPage 提供模块标题或者页号。"
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "无法生成截图目录，跳过。"
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "没有标题为 %s 的模块。"
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "跳过还没有更新的模块 %s。"
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "模块 %s 不包含名为 moduleClass 的级别，跳过。"
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "模块 %s 不包含需要的属性 %s，跳过。"
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "无法为模块 %s 载入象图（pixmap） %s。"
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "模块 %s 位设置 UI，删除。"
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "附加光盘"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"请插入“红帽企业版 Linux 附加光盘”来安装第三方插件和应用程序。此时您还可以插入"
+"文档光盘，或其它由红帽提供的光盘来安装额外的软件。"
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "现在请插入附带的软件安装盘。"
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"要使 Intel Itanium2 系统对 32 位应用程序提供运行时的支持，您现在必须从附加光"
+"盘中安装 Intel Execution Layer 软件包。"
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "安装..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr "没有检测到光盘，请在驱动器中插入光盘并点击“确定”继续。"
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "光盘上找不到自动运行程序。请点击“确定”继续。"
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "创建用户"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "您必须为这个系统创建用户帐户。"
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "您必须为这个用户输入并确认密码。"
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "密码错误，请再次输入密码。"
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr "用户名‘%s’是保留的系统帐户，请指定另一个用户名。"
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr "用户 %s 的主目录已经存在，您是否想要继续，以便使新用户成为这个目录及其所有内容的拥有者？这样做需要一些时间来重设权限以及所有 SELinux 标签。您要重新使用这个主目录吗？如果不是，请选择不同的用户名。"
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "为 %s 修复主目录属性。这需要几分钟时间。"
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr "为 %s 修复主目录中的一些文件时遇到问题。请参考 %s 找出造成此错误的文件。"
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"您必须为您的系统创建一个常规使用的（非管理）‘用户名’。要创建系统‘用户名’，请"
+"提供以下所需信息。"
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "用户名（_U）："
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "全名（_e）："
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "密码（_P）："
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "确认密码（_m）："
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr "如果您需要使用网络验证，比如 Kerberos 或者 NIS，请点击“使用网络登录”按钮。"
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "使用网络登录（_L）..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "请等待"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "日期和时间"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "请为系统设置日期和时间。"
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "许可证信息"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"非常感谢您安装了Fedora。Fedora集成了多种软件包，每个软件包都有自己的许可证。"
+"Fedora 在 GNU 通用公共许可证（第二版）的保护下发布。您可以随意的使用、拷贝或"
+"者修改该源代码。如果您希望重新发布这些代码，无论修改与否，都需要遵守一定的限"
+"制和义务。这些限制、义务等需要符合再发布版的许可证、注册商标和出口控制。如果"
+"您希望了解这些限制，请访问 http://fedoraproject.org/wiki/Legal/Licenses/"
+"LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "了解，请开始进行。"
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "欢迎"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"在您的系统就绪前还要进行几个步骤。设置代理将会引导您进行一些基本配置。请点击"
+"右下角的“前进”按钮继续。"
+

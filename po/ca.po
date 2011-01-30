@@ -1,0 +1,381 @@
+# Catalan translations for firstboot package.
+# Copyright © 2004-2007 Free Software Foundation
+# This file is distributed under the same license as the firstboot package.
+# Xavier Conde Rueda <xavi.conde@gmail.com>, 2003, 2004, 2005, 2006, 2007.
+#
+# This file is translated according to the glossary and style guide of
+#   Softcatalà. If you plan to modify this file, please read first the page
+#   of the Catalan translation team for the Fedora project at:
+#   http://www.softcatala.org/projectes/fedora/
+#   and contact the previous translator
+#
+# Aquest fitxer s'ha de traduir d'acord amb el recull de termes i la guia
+#   d'estil de Softcatalà. Si voleu modificar aquest fitxer, llegiu si
+#   us plau la pàgina de catalanització del projecte Fedora a:
+#   http://www.softcatala.org/projectes/fedora/
+#   i contacteu l'anterior traductor/a.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-03-13 18:42+0100\n"
+"Last-Translator: Xavier Conde Rueda <xavi.conde@gmail.com>\n"
+"Language-Team: Catalan <fedora@softcatala.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "Heu de ser el superusuari per executar firstboot."
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "No s'ha pogut iniciar cap frontal de firstboot."
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "No s'ha trobat cap mòdul de firsboot."
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "No s'ha pogut crear cap interfície de firsboot."
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "S'ha produït un error en el mòdul %s."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"Atès que s'ha produït un problema amb el mòdul %s, \n"
+"l'agent de configuració de Red Hat no carregarà aquest mòdul i \n"
+"intentarà executar la resta de mòduls."
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "S'ha produït un error en el programa firstboot."
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "Atès que s'ha produït un problema, firstboot sortirà."
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"S'ha desat una còpia de la sortida de depuració a %s. \n"
+"Assegureu-vos que adjunteu aquest fitxer a l'informe d'errors. \n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"Podeu emplenar un informe d'error quant al «firstboot» en el \n"
+"sistema de seguiment d'errors de Red Hat a http://www.redhat.com/bugzilla. \n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "S'ha intentat tornar enrere, però l'historial és buit."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "_Finalitza"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr ""
+"Per tal que algunes de les seleccions que heu fet tinguin efecte, el sistema "
+"ha d'inicialitzar de nou."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "_Anterior"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "_Endavant"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "El mòdul %s no ha configurat la seva UI, s'està eliminant."
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "S'ha de donar un títol de mòdul o número de pàgina a moveToPage"
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "No s'ha pogut crear un directori d'instantànies; S'està ometent."
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "No existeix cap mòdul amb el títol %s."
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "S'està ometent el mòdul antic %s que no s'ha actualitzat."
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "El mòdul %s no conté la classe anomenada moduleClass; s'està ometent."
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "El mòdul %s no conté l'atribut requerit %s; s'està ometent."
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "No s'ha pogut carregar el mapa de píxels %s per al mòdul %s."
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "El mòdul %s no ha configurat la seva UI; s'està eliminant."
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "CD addicionals"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"Inseriu el disc etiquetat \"Red Hat Enterprise Linux Extras\" per permetre "
+"la instal·lació de connectors i aplicacions de tercers. També podeu inserir "
+"el disc de documentació, o altres discs proporcionats per Red Hat per "
+"instal·lar programari ara."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "Inseriu ara qualsevol CD de programari addicional que tingueu."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Per habilitar el suport per a aplicacions de 32 bits en temps d'execució en "
+"l'arquitectura Intel Itanium2, heu d'instal·lar el paquet Intel Execution "
+"Layer del disc d'extres."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "Instal·la..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"No s'ha trobat cap disc CD-ROM. Inseriu un CD-ROM en el dispositiu i feu "
+"clic a «D'acord» per continuar."
+
+#: ../modules/additional_cds.py:146
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr ""
+"No s'ha trobat el programa autorun en el CD. Feu clic a «D'acord» per "
+"continuar."
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "Crea un usuari"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "Heu de crear un compte d'usuari per a aquest sistema."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "Heu d'entrar i confirmar una contrasenya per a aquest usuari."
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "Les contrasenyes no coincideixen. Si us plau, torneu-les a escriure."
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+"El nom d'usuari '%s' és un compte de sistema reservat.  Especifiqueu un "
+"altre nom d'usuari."
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"Existeix un directori d'inici per a l'usuari %s. Voleu continuar i fer que el "
+"nou usuari sigui el propietari del directori i els seus continguts? Si ho "
+"feu es trigarà una mica en reiniciar els permisos i les etiquetes del SELinux. "
+"Voleu tornar a fer servir aquest directori d'inici? Si no, escolliu un altre "
+"nom d'usuari."
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr ""
+"S'estan corregint els atributs del directori d'inici de %s. Pot trigar uns "
+"minuts."
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+"S'han trobat errors en corregir els atributs en alguns fitxers en el directori "
+"d'inici per a %s. Referiu-vos a %s per conèixer quins fitxers han fallat."
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"Heu de crear un «nom d'usuari» per a ús habitual (no administratiu) del vostre "
+"sistema. Per crear un «nom d'usuari» de sistema, proporcioneu la informació "
+"demanada a sota."
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "Nom d'_usuari:"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "Nom compl_et:"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "_Contrasenya:"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "Confir_meu la contrasenya"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"Si heu de fer servir autenticació en xarxa com ara Kerberos o NIS, feu clic "
+"al botó «Usa entrada a xarxa»."
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "Usa entrada a _xarxa..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "Espereu"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "Data i hora"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "Especifiqueu la data i l'hora del sistema"
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "Informació de la llicència"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Gràcies per haver instal·lat Fedora. Fedora és una compilació de diferents "
+"paquets de programari, cadascun amb la seva llicència. Aquesta compilació es "
+"posa a disposició sota la versió 2 de la Llicència Pública General de GNU. "
+"No hi ha cap mena de restricció quant a la utilització, còpia, o modificació "
+"d'aquest codi. Tanmateix, hi ha restriccions i obligacions aplicables a la "
+"redistribució del codi, ja sigui en la seva versió original o en una de "
+"modificada. Entre d'altres coses, aquestes restriccions i obligacions "
+"pertanyen a la llicència de la redistribució, marques registrades, i control "
+"de l'exportació.\n"
+"\n"
+"Si voleu conèixer amb més detall aquestes restriccions, aneu al lloc web "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "Ho he entès, continua."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "Benvinguts"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"S'han de seguir uns passos més abans que aquest sistema estigui llest. "
+"L'auxiliar de la configuració us guiarà a través d'una configuració bàsica. "
+"Feu clic al botó «Endavant» de la part inferior dreta per a continuar."
+
+#~ msgid "Waiting for X server to start... log located in %s\n"
+#~ msgstr ""
+#~ "S'està esperant que arrenqui el servidor d'X... el registre es troba a %"
+#~ "s\n"
+
+#~ msgid ""
+#~ "It is highly recommended that a personal user account be created.  If you "
+#~ "continue without an account, you can only log in with the root account, "
+#~ "which is reserved for administrative use only."
+#~ msgstr ""
+#~ "És molt recomanable crear un compte d'usuari personal. Si continueu sense "
+#~ "un compte d'usuari, només podreu entrar amb el compte de superusuari,que "
+#~ "està reservat només per a ús administratiu."
+
+#~ msgid "_Continue"
+#~ msgstr "_Continua"
+
+#~ msgid "Create _account"
+#~ msgstr "Cre_a un compte"

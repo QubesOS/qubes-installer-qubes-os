@@ -1,0 +1,342 @@
+# translation of firstboot.master.ko.po to Korean
+# translation of ko.po to
+# Copyright (C) 2002 Red Hat, Inc.
+#
+# Michelle J Kim <mkim@redhat.com>, 2003,2004.
+# Michelle Ji Yeen Kim <mkim@redhat.com>, 2005, 2006.
+# Eunju Kim <eukim@redhat.com>, 2006, 2007, 2008, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot.master.ko\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-03-31 16:31+1000\n"
+"Last-Translator: Eunju Kim <eukim@redhat.com>\n"
+"Language-Team: Korean <ko@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.4\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=2; plural=(n!=1);\n\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "root로 firstboot를 실행해야 합니다. "
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "firstboot 프론트앤드를 시작할 수 없습니다. "
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "firstboot 모듈을 찾을 수 없습니다. "
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "firstboot 인터페이스를 생성할 수 없습니다. "
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s 모듈에서 오류가 발생했습니다."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+" %s 모듈에서 문제가 발생했기 때문에, \n"
+"firstboot는 이 모듈을 읽어오지 않고 \n"
+"그 외 나머지 모듈을 실행할 것입니다. "
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "firstboot에서 오류가 발생했습니다. "
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "문제가 발생하여 firstboot를 종료합니다. "
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"디버그 출력 결과는 %s에 저장되어 있습니다. \n"
+"이 파일을 버그 리포트에 첨부해 주십시오. \n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"'firstboot'에 대한 버그를 Red Hat 버그 추적 시스템인 \n"
+"http://www.redhat.com/bugzilla로 보고해 주십시오. \n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "이전 단계로 되돌아 가려 하였으나, 기록이 남아있지 않습니다. "
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "완료(_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "선택하신 사항을 적용하려면 지금 시스템을 재부팅하셔야 합니다."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "이전(_B)"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "다음(_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "%s 모듈에 UI가 설정되어 있지 않습니다, 삭제합니다. "
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "페이지로 이동하기에서는 모듈 제목이나 페이지 번호가 있어야 합니다. "
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "스크린샷 디렉토리를 생성할 수 없습니다; 생략합니다. "
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "%s 라는 모듈이 없습니다. "
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "업데이트되지 않은 이전 모듈 %s을 생략합니다. "
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "%s 모듈에는 moduleClass라는 클래스가 들어있지 않습니다; 생략합니다. "
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "%s 모듈에 %s 속성이 들어 있지 않습니다; 생략합니다. "
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "%s 모듈에 해당하는 pixmap %s을 읽어올 수 없습니다. "
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "%s 모듈에 UI가 설정되어 있지 않습니다; 삭제합니다. "
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "추가 CD"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"\"Red Hat Enterprise Linux 추가\" 디스크를 삽입하여 제삼자 플러그인 및 응용 "
+"프로그램을 설치하실 수 있습니다. 문서 자료 디스크 또는 Red Hat에서 제공한 기"
+"타 다른 디스크를 이용하여 언제든지 추가 소프트웨어를 설치하실 수 있습니다."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "추가 소프트웨어 설치 시디를 지금 삽입해 주십시오."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Intel Itanium2 아키텍쳐에서 32 비트 응용 프로그램을 런타임 지원하려면, 추가 "
+"시디에서 Intel Execution Layer 패키지를 지금 설치하셔야 합니다."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "설치..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"CD-ROM이 감지되지 않았습니다.  CD-ROM을 드라이브에 삽입하신 후 \"확인\" 버튼"
+"을 클릭하여 계속 진행해 주십시오."
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr ""
+"autorun 프로그램을 CD에서 찾지 못했습니다. \"확인\"을 클릭하여 계속 진행하시"
+"기 바랍니다."
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "사용자 생성 "
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "시스템에 대한 사용자 계정을 생성하셔야 합니다."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "사용자에 대한 암호를 입력하고 확인해 주십시오.  "
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "암호가 일치하지 않습니다. 암호를 다시 입력해 주시기 바랍니다.   "
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr "사용자명 '%s'은 시스템 계정입니다.  다른 사용자명을 지정해주십시오. "
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"%s 사용자에 대한 홈 디렉토리는 이미 존재합니다. 이 디렉토리의 소유자와 관련된 모든 내용에 대해 새로운 사용자를 만드시겠습니까?  디렉토리의 권한 및 SELinux 레이블을 다시 설정하려면 시간이 오래 소요될 수 있습니다. "
+"이 홈 디렉토리를 다시 사용하시겠습니까? 그렇지 않다면, 다른 사용자 이름을 지정해 주십시오.   "
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "%s의 홈 디렉토리에 있는 속성을 수정하고 있습니다.  몇 분이 소요될 수 있습니다. "
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+"%s의 홈 디렉토리에 있는 일부 파일에서 속성을 수정하는 도중 문제가 발생하였습니다. "
+"오류의 원인이 되는 파일을 찾으려면 %s에서 참조하십시오. "
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"시스템의 일반 사용을 위한 (관리자가 아닌) '사용자 이름'을 생성하시기 바"
+"랍니다. 시스템 '사용자 이름'을 만드시려면, 아래에서 요구하는 정보를 기입해 주"
+"십시오.  "
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "사용자 이름(_U): "
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "성명(_E): "
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "암호(_P): "
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "암호 확인(_M): "
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"커베로스나 NIS와 같은 네트워크 인증을 사용하시려면, 네트워크 로그인 사용 버튼"
+"을 클릭해 주십시오.  "
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "네트워크 로그인 사용(_L)..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "잠시만 기다려 주십시오 "
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "날짜 및 시간 "
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "시스템 날짜 및 시간을 설정하시기 바랍니다. "
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "라이센스 정보"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Fedora를 설치해 주셔서 감사합니다.  Fedora는 라이센스 기반 소프트웨어 패키지"
+"로 컴파일되어 있습니다. 이 컴파일은 GNU General Public License version 2 하"
+"에 사용하실 수 있습니다. 이러한 코드를 사용, 복사, 수정하는 데에는 제한이 없"
+"지만, 코드 원본이나 수정본의 재배포에는 제한 및 의무가 있습니다. 특히, 이러"
+"한 제한/의무는 재배포, 상표권, 수출 통제와 관련되어 있습니다.\n"
+"\n"
+"이러한 제한에 대한 자세한 내용은 http://fedoraproject.org/wiki/Legal/"
+"Licenses/LicenseAgreement에서 확인하시기 바랍니다."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "네, 계속 진행합니다."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "환영합니다"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"시스템 사용 준비가 완료되기 전에 몇 가지의 단계가 더 남아 있습니다. 설정 에이"
+"전트는 이제 몇 가지 기본적인 설정 과정을 단계별로 길잡이를 해 드릴 것입니다. "
+"계속하시려면 오른쪽 하단 모서리에 위치한 \"다음\" 버튼을 클릭하십시오."
+

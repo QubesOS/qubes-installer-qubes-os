@@ -1,0 +1,351 @@
+# translation of firstboot.master.or.po to Oriya
+# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+#
+# Subhransu Behera <sbehera@redhat.com>, 2006, 2007.
+# Subhransu Behera <arya_subhransu@yahoo.co.in>, 2007.
+# Manoj Kumar Giri <giri.manojkr@gmail.com>, 2008.
+# Manoj Kumar Giri <mgiri@redhat.com>, 2008, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot.master.or\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-03-31 15:00+0530\n"
+"Last-Translator: Manoj Kumar Giri <mgiri@redhat.com>\n"
+"Language-Team: Oriya <oriya-it@googlegroups.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=2; plural=(n!=1);\n\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "firstboot ଚଲାଇବା ପାଇଁ ଆପଣଙ୍କୁ ମୁଖ୍ୟ ଚାଳକ ହୋଇଥିବା ଆବଶ୍ୟକ।"
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "କୌଣସି firstboot ସାମ୍ନାପାଖ ଆରମ୍ଭ କରି ପାରିଲେ ନାହିଁ।"
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "କୌଣସି firstboot ଏକକାଂଶ ମିଳିଲା ନାହିଁ।"
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "କୌଣସି firstboot ଅନ୍ତରାପୃଷ୍ଠ ସୃଷ୍ଟିକରି ପାରିଲେ ନାହିଁ।"
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s ଏକକାଂଶରେ ଗୋଟିଏ ତୃଟି ପରିଲକ୍ଷିତ ହେଲା।"
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"ଯେହେତୁ %s ଏକକାଂଶରେ ଗୋଟିଏ ସମସ୍ୟା ଅଛି, \n"
+"firstboot ଏହି ଏକକାଂଶକୁ ଧାରଣ କରିବ ନାହିଁ ଏବଂ \n"
+"ବଳକା ଏକକାଂଶ ଗୁଡିକୁ ଚଳାଇବା ପାଇଁ ପ୍ରଚେଷ୍ଟା କରିବ।"
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "firstboot ରେ ଗୋଟିଏ ତୃଟି ପରିଲକ୍ଷିତ ହେଲା।"
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "ସେଠାରେ ଗୋଟିଏ ସମସ୍ୟା ଥିବା ହେତୁ, firstboot ପ୍ରସ୍ଥାନ କରିବ।"
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"ତୃଟିମୁକ୍ତ ନିର୍ଗମର ଗୋଟିଏ ନକଲ %s ରେ ସଂରକ୍ଷିତ କରାଯାଇଛି \n"
+"ତୃଟି ବିବରଣୀରେ ସେହି ଫାଇଲକୁ ସଂଲଗ୍ନ କରିବାକୁ ନିଶ୍ଚିତ ହୁଅନ୍ତୁ।\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"'firstboot' ବିରୋଧରେ ଗୋଟିଏ ତୃଟିକୁ Red Hat ତୃଟି ଅନୁସରଣ ପ୍ରଣାଳୀ \n"
+"ନିକଟରେ http://www.redhat.com/bugzilla ଜଣାନ୍ତୁ।\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "ପଛକୁ ଯିବା ପାଇଁ ପ୍ରଚେଷ୍ଟା କରାଯାଇଛି, କିନ୍ତୁ ଇତିହାସଟି ଖାଲି ଅଛି।"
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "ସମାପ୍ତ (_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "ଆପଣଙ୍କ ଚୟନ ମଦ୍ଧ୍ଯରୁ କିଛି ଅଂଶକୁ ପ୍ରଭାବିତ କରିବା ପାଇଁ ତନ୍ତ୍ରଟି ବର୍ତ୍ତମାନ ପୁନର୍ଚାଳିତ ହେବା ଆବଶ୍ଯକ।"
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "ପଛକୁ (_B)"
+
+# msgid "_Next"
+# msgstr "ପରବର୍ତ୍ତୀ (_N)"
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "ଆଗକୁ (_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "%s ଏକକାଂଶ ତାର UI କୁ ବିନ୍ୟାସ କରିନାହିଁ, କାଢିନେଉଛି।"
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "ପୃଷ୍ଠାକୁ ଯାଆନ୍ତୁକୁ ନିଶ୍ଚିତ ଭାବେ ଗୋଟିଏ ଏକକାଂଶ ଶୀର୍ଷକ କିମ୍ୱା ପୃଷ୍ଠା ସଂଖ୍ୟା ଦିଆଯାଇଥିବ।"
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "ପରଦା ପ୍ରତିଛବି ଡିରେକ୍ଟରି ନିର୍ମାଣ କରିବାରେ ଅସମର୍ଥ; ଏଡାଇଯାଉଛି।"
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "%s ଶୀର୍ଷକ ସହିତ କୌଣସି ଏକକାଂଶ ଅବସ୍ଥିତ ନାହିଁ।"
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "ପୁରୁଣା %s ଏକକାଂଶକୁ ଏଡାଇ ଦିଆଯାଉଛି ଯେଉଁଟାକି ଅଦ୍ୟତିତ ହୋଇନାହିଁ।"
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "%s ଏକକାଂଶ ରେ ଏକକାଂଶ ଶ୍ରେଣୀ ନାମକ କୌଣସି ଶ୍ରେଣୀ ନାହିଁ; ଏଡାଇ ଯାଉଛି।"
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "%s ଏକକାଂଶ ଆବଶ୍ୟକୀୟ ଗୁଣ %s ଧାରଣ କରିନାହିଁ; ଏଡାଇ ଯାଉଛି।"
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "%s ଏକକାଂଶ ପାଇଁ ପିକ୍ସ ମାନଚିତ୍ର %s କୁ ଧାରଣ କରିବାରେ ଅସମର୍ଥ।"
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "%s ଏକକାଂଶ ତାର UI କୁ ବିନ୍ୟାସ କରିନାହିଁ, କାଢିନେଉଛି।"
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "ଅତିରିକ୍ତ ସି.ଡି."
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"ତୃତୀୟ-ବ୍ଯକ୍ତି ପ୍ଲୋଗ୍-ଇନ୍ସ ଏବଂ ପ୍ରୟୋଗର ସ୍ଥାପନକୁ ଅନୁମତି ପ୍ରଦାନ କରିବା ପାଇଁ ଦୟାକରି \"Red Hat "
+"Enterprise Linux Extras\" ଦ୍ବାରା ସୂଚୀତ ହୋଇଥିବା ଡିସ୍କକୁ ଭର୍ତ୍ତି କରନ୍ତୁ। ଏହି ସମୟରେ ଆପଣ ମଧ୍ଯ "
+"ଅତିରିକ୍ତ ସଫ୍ଟୱେରକୁ ବିନ୍ଯାସ କରିବା ପାଇଁ ଦଲିଲକରଣ ଡିସ୍କ, କିମ୍ବା Red Hat ଦ୍ବାରା ବିରରିତ ଅନ୍ଯାନ୍ଯ ଡିସ୍କକୁ "
+"ଭର୍ତ୍ତି କରିପାରିବେ।"
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "ଦୟାକରି ଏହି ସମୟରେ କୌଣସି ଅତିରିକ୍ତ ସଫ୍ଟୱେର ସ୍ଥାପନ ସି.ଡି.କୁ ଭର୍ତ୍ତି କରନ୍ତୁ।"
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Intel Itanium2 ସ୍ଥାପତ୍ଯରେ ୩୨-ବିଟ୍ ପ୍ରୟୋଗର ଚଳନ୍ତି ସମୟ ସହାୟକକୁ ସକ୍ରିୟ କରିବା ପାଇଁ ଆପଣ Intel "
+"Execution Layer ପ୍ଯାକେଜକୁ ବର୍ତ୍ତମାନ ଅତିରିକ୍ତ ଡିସ୍କରୁ ସ୍ଥାପନ କରିବା ଉଚିତ।"
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "ସ୍ଥାପନ କରନ୍ତୁ"
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"ଗୋଟିଏ ସିଡି-ରମ୍ କୁ ଖୋଜି ପାରିଲା ନାହିଁ। ଦୟାକରି ଡ୍ରାଇଭ ରେ ଗୋଟିଏ ସିଡି-ରମ୍ କୁ ଭର୍ତ୍ତି କରନ୍ତୁ ଏବଂ ଆଗକୁ "
+"ବଢିବା ପାଇଁ \"ଠିକ ଅଛି\" ବଟନକୁ ଦବାନ୍ତୁ।"
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "ଅଟୋରନ ପ୍ରୋଗ୍ରାମ ଟି ସି.ଡି. ରେ ମିଳିପାରିବ ନାହିଁ। ଆଗକୁ ବଢିବା ପାଇଁ \"ଠିକ ଅଛି\" ବଟନକୁ ଦବାନ୍ତୁ।"
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "ଚାଳକ ନିର୍ମାଣ କରନ୍ତୁ"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "ଏହି ତନ୍ତ୍ର ପାଇଁ ଆପଣଙ୍କୁ ଗୋଟିଏ ଚାଳକ ଖାତା ନିର୍ମାଣ କରିବା ଉଚିତ."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "ଏହି ଚାଳକ ପାଇଁ ଆପଣଙ୍କୁ ଗୋଟିଏ ପ୍ରବେଶ ସଂକେତ ଭରଣ ଏବଂ ନିଶ୍ଚିତ କରିବା ଉଚିତ।"
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "ପ୍ରବେଶ ସଂକେତଟି ମେଳଖାଉ ନାହିଁ।  ଦୟାକରି ଆଉଥରେ ପ୍ରବେଶ ସଂକେତ ଭରଣ କରନ୍ତୁ।"
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr "'%s' ଚାଳକ ନାମଟି ଗୋଟିଏ ସଂରକ୍ଷିତ ତନ୍ତ୍ର ନାମ।  ଦୟାକରି ଅନ୍ୟ ଏକ ଚାଳକ ନାମ ଉଲ୍ଲେଖ କରନ୍ତୁ।"
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"ଚାଳକ %s ପାଇଁ ଗୋଟିଏ ମୂଳସ୍ଥାନ ପଞ୍ଜିକା ପୂର୍ବରୁ ଅବସ୍ଥିତ ଅଛି। ଆପଣ ଏହି ନୂତନ ଚାଳକକୁ ସେହି ଡିରେକ୍ଟୋରୀ "
+"ଏବଂ ତାହାର ସମସ୍ତ ବିଷୟବସ୍ତୁର ମାଲିକ କରି ଅଗ୍ରସର ହେବାକୁ ଚାହୁଁଛନ୍ତି କି? ଏହା କରିବା ଦ୍ୱାରା ଅନୁମତି ଏବଂ "
+"SELinux ନାମପଟିକୁ ପୁଣି ସେଟ କରିବା ପାଇଁ କିଛି ସମୟ ଲାଗିପାରେ। ଆପଣ ଏହି ମୂଳସ୍ଥାନ ପଞ୍ଜିକାକୁ "
+"ପୁଣିଥରେ ବ୍ୟବହାର କରିବାକୁ ପସନ୍ଦ କରିବେ କି?  ଯଦି ନୁହଁ, ତେବେ ଅନ୍ୟ ଏକ ଚାଳକନାମ ଚୟନ କରନ୍ତୁ।"
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "%s ପାଇଁ ମୂଳସ୍ଥାନ ପଞ୍ଜିକାରେ ଗୁଣଧର୍ମଗୁଡ଼ିକୁ ସଜାଡ଼ୁଅଛି।  ଏହା ପାଇଁ କିଛି ସମୟ ଲାଗିପାରେ।"
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+"%s ପାଇଁ ମୂଳସ୍ଥାନ ପଞ୍ଜିକାରେ କିଛି ଫାଇଲରେ ଗୁଣଧର୍ମଗୁଡ଼ିକୁ ସଜାଡ଼ିବା ସମୟରେ ସମସ୍ୟାର ସମ୍ମୁଖିନ ହୋଇଥିଲା। "
+"କେଉଁ ଫାଇଲ ତ୍ରୁଟି ପାଇଁ ଦାୟୀ ତାହା ପାଇଁ %s କୁ ଅନୁସରଣ କରନ୍ତୁ।"
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"ଆପଣଙ୍କୁ ଆପଣଙ୍କ ତନ୍ତ୍ରର ନିୟମିତ (ଅପ୍ରଶାସନିକ) ବ୍ୟବହାର ପାଇଁ ଗୋଟିଏ 'ଚାଳକନାମ' "
+"ନିର୍ମାଣ କରିବା ଉଚିତ। ଗୋଟିଏ ତନ୍ତ୍ର 'ଚାଳକନାମ' ନିର୍ମାଣ କରିବାକୁ ହେଲେ, ଦୟାକରି "
+"ନିମ୍ନରେ ଅନୁରୋଧିତ ସୂଚନା ପ୍ରଦାନ କରନ୍ତୁ।"
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "ଚାଳକନାମ (_U):"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "ସମ୍ପୂର୍ଣ୍ଣ ନାମ (_e):"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "ପ୍ରବେଶ ସଂକେତ (_P):"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "ପ୍ରବେଶ ସଂକେତ ନିଶ୍ଚିତ କରନ୍ତୁ (_m):"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"ଯଦି ଆପଣଙ୍କର ନେଟୱର୍କ ବୈଧିକରଣ ବ୍ୟବହାର କରିବା ଆବଶ୍ୟକ ହେଉଥାଏ, ଯେପରିକି Kerberos ଏବଂ NIS, "
+"ଦୟାକରି ନେଟୱର୍କ ଲଗଇନ ବ୍ୟବହାର କରନ୍ତୁ ଚାବିକୁ ଦବାନ୍ତୁ।"
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "ନେଟୱର୍କ ଲଗଇନ ବ୍ୟବହାର କରନ୍ତୁ (_L) ..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "ଦୟାକରି ଅପେକ୍ଷା କରନ୍ତୁ"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "ତାରିଖ ଏବଂ ସମୟ"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "ଏହି ତନ୍ତ୍ର ପାଇଁ ଦୟାକରି ତାରିଖ ଏବଂ ସମୟ ସେଟକରନ୍ତୁ।"
+
+# msgid "Sound card configuration"
+# msgstr "ସାଉଣ୍ଡ କାର୍ଡ ବିନ୍ଯାସ"
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "ଲାଇସେନ୍ସ ସୂଚନା"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"ଫେଡୋରା ସ୍ଥାପନ କରିଥିବାରୁ ଧନ୍ଯବାଦ।  ଫେଡୋରା ସଫ୍ଟୱେର ପ୍ଯାକେଜ ମାନଙ୍କର ଗୋଟିଏ ସଙ୍କଳନ ଅଟେ, "
+"ଯେଉଁଠାରେ ପ୍ରତ୍ଯେକ ସଫ୍ଟୱେର ନିଜସ୍ବ ଲାଇସେନ୍ସ ଅଛି।  ସଙ୍କଳନକୁ GNU ସାଧାରଣ ସାର୍ବଜନୀନ ଲାଇସେନ୍ସ "
+"ସଂସ୍କରଣ ୨ ଅଧୀନରେ ଉପଲବ୍ଧ କରାଯାଇଛି।  ଏହି ସଙ୍କେତକୁ ବ୍ଯବହାର କରିବା, ନକଲ କରିବା, କିମ୍ବା "
+"ପରିବର୍ତ୍ତନ କରିବା ଉପରେ କୌଣସି ପ୍ରତିବନ୍ଧ ନାହିଁ।  ତଥାପି, ସଙ୍କେତକୁ ଏହାର ପ୍ରକୃତ ରୂପରେ କିମ୍ବା ପରିବର୍ତ୍ତିତ "
+"ରୂପରେ ପୁନଃବଣ୍ଟନ କରିବା ଉପରେ ପ୍ରତିବନ୍ଧ ଏବଂ ସର୍ତ୍ତ ରହିଛି।  ଅନ୍ଯାନ୍ଯ ବସ୍ତୁ ମାନଙ୍କ ମଧ୍ଯରେ, ସେହି "
+"ପ୍ରତିବନ୍ଧ /ସର୍ତ୍ତ ମାନଙ୍କର ପୁନଃବଣ୍ଟନ, ଟ୍ରେଡମାର୍କ ଅଧୀକାର, ଏବଂ ନିର୍ଯ୍ଯାସିତ ନିୟନ୍ତ୍ରଣ ମାନଙ୍କ ସହିତ "
+"ସମ୍ବନ୍ଧ ରହିଛି।\n"
+"\n"
+"ଆପଣ ଯଦି ସେହି ପ୍ରତିବନ୍ଧ ଗୁଡିକ କଣ ବୋଲି ଜାଣିବା ପାଇଁ ଚାହୁଁଛନ୍ତି, ତାହାହେଲେ ଦୟାକରି http://"
+"fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement ରେ ଦେଖନ୍ତୁ।"
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "ବୁଝିହେଲା, ଦୟାକରି ଆଗକୁ ବଢନ୍ତୁ।"
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "ସ୍ବାଗତମ"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"ଆପଣଙ୍କ ତନ୍ତ୍ର ଟି ବ୍ଯବହୃତ ହେବା ପୂର୍ବରୁ ସେଠାରେ ଆଉ ଅଲ୍ପ କିଛି ପଦକ୍ଷେପ ବାକି ଅଛି। ବ୍ଯବସ୍ଥାପନ ପ୍ରତିନିଧୀ "
+"ଆପଣଙ୍କୁ କିଛି ମୌଳିକ ବିନ୍ଯାସ ପ୍ରକ୍ରିୟାରେ ସାହାଯ୍ଯ କରିବ। ଆଗକୁ ବଢିବା ପାଇଁ ଦୟାକରି ଦକ୍ଷିଣ ପାର୍ଶ୍ବର ତଳ "
+"କୋଣରେ ଥିବା \"ଆଗକୁ\" ବଟନକୁ ଦବାନ୍ତୁ।"
+

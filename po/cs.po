@@ -1,0 +1,290 @@
+# Translation of firstboot.master.cs.po to Czech
+# Copyright (C) 2004, 2005, 2008 Miloslav Trmač <mitr@volny.cz>
+#
+# Miloslav Trmač <mitr@volny.cz>, 2002, 2003, 2004, 2005, 2008.
+# Nikola Štohanzl <niko@srnet.cz>, 2006.
+# Adam Pribyl <pribyl@lowlevel.cz>, 2007, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: system-config-firewall.master\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-09-12 08:59+0100\n"
+"Last-Translator: Dušan Hokův <dusan@mirc.cz>\n"
+"Language-Team: Czech <fedora-cs-list@redhat.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.4\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Lokalize 0.2\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "Pro spuštění firstboot musíte být root."
+
+#: ../progs/firstboot:163
+#: ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "Nemohu spustit žádné rozhraní pro firstboot."
+
+#: ../progs/firstboot:180
+#: ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "Pro firstboot nebyly nalezeny žádné moduly."
+
+#: ../progs/firstboot:190
+#: ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "Nemohu vytvořit rozhraní pro firstboot."
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "V modulu %s nastala chyba."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"Protože s modulem %s jsou problémy\n"
+"nebude nahrán. Pokusím se spustit \n"
+"zbývající moduly."
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "Ve firstboot nastala chyba."
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "Protože nastaly problémy, bude firstboot ukončen."
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"Kopie ladícího výpisu byla uložena do %s\n"
+"Prosím připojte jeje k hlášení o chybě.\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"Prosím nahlašte chybu v komponentě 'firstboot' v \n"
+"systému sledování chyba na http://www.redhat.com/bugzilla.\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "Pokus o návrat v historii, ale historie je prázdná."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83
+#: ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "_Konec"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "Aby se aplikovaly některé vaše volby, bude nyní systém restartován."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "_Zpět"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "_Vpřed"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "Module %s nenastavil své uživatelské rozhraní. Odstraňuji."
+
+#: ../firstboot/interface.py:353
+#: ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage musí dostat titulek modulu nebo číslo strany."
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "Nemohu vytvořit adresář pro snímky obrazovky; přeskakuji."
+
+#: ../firstboot/interface.py:478
+#: ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "Neexistuje žádný modul s titulkem %s."
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "Přeskakuji starý modul %s, který nebyl aktualizován."
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "Modul %s neobsahuje třídu pojmenovanou moduleClass; přeskakuji."
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "Modul %s nebsahuje požadovaný příznak %s; přeskakuji."
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "Nemohu nahrát grafiku %s pro modul %s."
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "Modul %s nenastavil své rozhraní; odstraňuji."
+
+#: ../modules/additional_cds.py:43
+#: ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "Další CD"
+
+#: ../modules/additional_cds.py:55
+msgid "Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow for installation of third-party plug-ins and applications.  You may also insert the Documentation disc, or other Red Hat-provided discs to install additional software at this time."
+msgstr "Prosím vložte disk s označením \"Red Hat Enterprise Linux Extras\" k nainstalování aplikací a zásuvných modulů třetích stran. Můžete také vložit disk s dokumentací nebo jiný Red Hatem poskytnutý disk k instalaci dodatečného software."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "Nyní můžete vložit instalační CD s dodatečným softwarem."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 architecture you must install the Intel Execution Layer package from the Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Pro běh 32-bit aplikací na achitektuře Intel Itanium 2 musíte nainstalovat balíček Intel Execution Layer z Extra disku."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "Instaluji..."
+
+#: ../modules/additional_cds.py:110
+msgid "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and click \"OK\" to continue."
+msgstr "CD médium nebylo detekováno. Prosím vložte CD do mechaniky a klikněte na  \"OK\" pro pokračování."
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "Program autorun nebyl na CD nalezen. Klikněte na \"OK\" pro pokračování."
+
+#: ../modules/create_user.py:41
+#: ../modules/create_user.py:42
+msgid "Create User"
+msgstr "Vytvořit uživatele"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "Pro tento systém si musíte vytvořit uživatelský účet."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "Musíte zadat a potvrdit heslo pro tohoto uživatele."
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "Hesla nesouhlasí. Prosím vložte heslo znovu."
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid "The username '%s' is a reserved system account.  Please specify another username."
+msgstr "Uživatelské jméno '%s' je reservováno pro systémové účty. Prosím vyberte si jiné jméno."
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid "A home directory for user %s already exists. Would you like to continue, making the new user the owner of this directory and all its contents?  Doing so may take a while to reset permissions and any SELinux labels.  Would you like to reuse this home directory?  If not, please choose a different username."
+msgstr "Domovský adresář pro uživatele %s již existuje. Chcete pokračovat vytvořením nového uživatele jako vlastníka tohoto adresáře a jeho obsahu? Může chvíli trvat resetování oprávnění a nastavení SELinux značek. Chcete tedy použít znovu tento domovský adresář? Pokud ne, vyberte si jiné uživatelské jméno."
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "Opravuju atributy pro domovský adresář %s.  To může zabrat několik minut."
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid "Problems were encountered fixing the attributes on some files in the home directory for %s.  Please refer to %s for which files caused the errors."
+msgstr "Objevily se problémy s opravou atributů u některých soubrů v domovském adresáři %s.  Prosím prohlédněte si %s kde je seznam souborů, které způsobily chyby."
+
+#: ../modules/create_user.py:213
+msgid "You must create a 'username' for regular (non-administrative) use of your system.  To create a system 'username', please provide the information requested below."
+msgstr "Pro běžné používání systému je doporučeno vytvořit si uživatelský účet. Pro vytvoření takového účtu prosím vyplňte požadované údaje níže."
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "_Uživatelské jméno:"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "Celé _jméno:"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "_Heslo:"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "Pov_rďte heslo:"
+
+#: ../modules/create_user.py:261
+msgid "If you need to use network authentication, such as Kerberos or NIS, please click the Use Network Login button."
+msgstr "Pokud potřebujete používat síťovou autentizaci, jako Kerberos nebo NIS, klikněte prosím na tlačítko Použít síťové přihlášení."
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "Použít síťové příh_lášení..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "Prosím počkejte"
+
+#: ../modules/date.py:40
+#: ../modules/date.py:41
+msgid "Date and Time"
+msgstr "Datum a čas"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "Prosím nastavte datum a čas pro váš systém."
+
+#: ../modules/eula.py:35
+#: ../modules/eula.py:36
+msgid "License Information"
+msgstr "Licenční informace"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Děkujeme, že jste si nainstalovali Fedoru. Fedora je sbírka softwarových balíčků s různými licencemi. Sbírka je uvolněna pod GNU General Public License verze 2. Neexistují žádná omezení k používání, kopírování nebo upravování tohoto kódu. Existují ale omezení a povinosti, které je potřeba dodržet při redistribuci kódu, ať už v původní formě nebo upravené. Mimo jiné, tyto omezení a povinosti, platí pro licence o redistribuci, práva k obchodním známkám nebo pro exportní omezení.\n"
+"\n"
+"Pokud chcete více porozumět co tyto omezení znamenají, prosím navštivte http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "Rozumím, prosím pokračovat."
+
+#: ../modules/welcome.py:35
+#: ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "Vítejte"
+
+#: ../modules/welcome.py:45
+msgid "There are a few more steps to take before your system is ready to use.  The Setup Agent will now guide you through some basic configuration.  Please click the \"Forward\" button in the lower right corner to continue"
+msgstr "Zbývá několik kroků, které je potřeba udělat než bude váš systém připraven k používání. Tento průvodce vás provede základním nastavením. Prosím klikněte na tlačítko \"Vpřed\" a pravém dolním rohu pro pokračování."
+

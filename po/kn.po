@@ -1,0 +1,337 @@
+# translation of firstboot.master.kn.po to Kannada
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Umesh Rudrapatna <urudrapatna@yahoo.com>, 2006.
+# shankar Prasad <svenkate@redhat.com>, 2006.
+# Shankar Prasad <svenkate@redhat.com>, 2007, 2008, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot.master.kn\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-04-02 23:18+0530\n"
+"Last-Translator: Shankar Prasad <svenkate@redhat.com>\n"
+"Language-Team: Kannada <en@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"\n"
+"\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "ಫರ್ಸ್ಟ್‍-ಬೂಟನ್ನು ಚಲಾಯಿಸಲು ನೀವು ರೂಟ್‌ ಆಗಿರಬೇಕು."
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "ಯಾವುದೇ ಫರ್ಸ್ಟ್-ಬೂಟ್ ಮುಖಭಾಗವನ್ನು (frontend) ಆರಂಭಿಸಲಾಗಿಲ್ಲ."
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "ಯಾವುದೇ ಫರ್ಸ್ಟ್-ಬೂಟ್ ಘಟಕಗಳು ಕಂಡು ಬಂದಿಲ್ಲ."
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "ಯಾವುದೇ ಫರ್ಸ್ಟ್-ಬೂಟ್ ಸಂಪರ್ಕಸಾಧನವನ್ನು ರಚಿಸಲಾಗಿಲ್ಲ."
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s ಘಟಕದಲ್ಲಿ ದೋಷ ಕಂಡುಬಂದಿದೆ."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"%s ಘಟಕದಲ್ಲಿ ತೊಂದರೆ ಕಂಡುಬಂದಿರುವ ಕಾರಣ,\n"
+"ಫರ್ಸ್ಟ್-ಬೂಟ್ ಈ ಘಟಕವನ್ನು ಲೋಡ್ ಮಾಡುವುದಿಲ್ಲ ಮತ್ತು \n"
+"ಇತರ ಘಟಕಗಳನ್ನು ಚಾಲಿಸಲು ಪ್ರಯತ್ನಿಸುತ್ತದೆ."
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "ಫರ್ಸ್ಟ್-ಬೂಟ್‍ನಲ್ಲಿ ಒಂದು ದೋಷ ಕಂಡುಬಂದಿದೆ."
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "ತೊಂದರೆ ಎದುರಾಗಿರುವುದರಿಂದ, ಫರ್ಸ್ಟ್-ಬೂಟ್‍ ನಿರ್ಗಮಿಸುತ್ತದೆ."
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"ದೋಷನಿವಾರಣಾ ಪ್ರದಾನದ(ಔಟ್‍ಪುಟ್) ಒಂದು ನಕಲನ್ನು %s ಗೆ ಉಳಿಸಲಾಗಿದೆ \n"
+"ಆ ಕಡತವನ್ನು ದೋಷವರದಿಯೊಡನೆ ಸೇರ್ಪಡಿಸಲು ಮರೆಯದಿರಿ. \n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"ಫರ್ಸ್ಟ್-ಬೂಟ್‍ನ ವಿರುದ್ಧ ಒಂದು ದೋಷವನ್ನು Red Hat ನ \n"
+"ದೋಷನಿರ್ವಹಣಾ ವ್ಯವಸ್ಥೆ http://www.redhat.com/bugzilla ನಲ್ಲಿ ನಮೂದಿಸಿ.\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "ಹಿಮ್ಮರಳಲು ಪ್ರಯತ್ನಿಸಲಾಯ್ತು, ಆದರೆ ಪೂರ್ವಇತಿಹಾಸ ಖಾಲಿ ಇದೆ."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "ಮುಗಿಸು (_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "ನಿಮ್ಮ ಕೆಲವು ಆಯ್ಕೆಗಳು ಪರಿಣಾಮ ಬೀರಲು ಗಣಕವು ಮರುಸಜ್ಜುಗೊಳ್ಳಬೇಕಾಗುತ್ತದೆ."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "ಹಿಂದಕ್ಕೆ (_B)"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "ಮುಂದಕ್ಕೆ (_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "%s ಘಟಕಕ್ಕೆ ಅದರ UI ಅನ್ನು ಹೊಂದಿಸಲಾಗಿಲ್ಲ, ತೆಗೆಯಲಾಗುತ್ತಿದೆ."
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "'ಪುಟಕ್ಕೆಜರುಗಿಸು' ಗೆ ಒಂದು ಘಟಕದ ಶೀರ್ಷಿಕೆ ಅಥವ ಪುಟದ ಸಂಖ್ಯೆಯನ್ನು ಒದಗಿಸಬೇಕಾಗುತ್ತದೆ."
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "ತೆರೆಚಿತ್ರಗಳ(ಸ್ಕ್ರೀನ್‍ಶಾಟ್) ಕೋಶವನ್ನು ರಚಿಸಲಾಗಿಲ್ಲ; ಉಪೇಕ್ಷಿಸಲಾಗುತ್ತಿದೆ."
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "%s ಶೀರ್ಷಿಕೆಯನ್ನು ಹೊಂದಿರುವ ಯಾವುದೇ ಘಟಕ ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲ."
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "ಅಪ್‍ಡೇಟ್ ಮಾಡಲಾಗಿರದ ಹಳೆಯ %s ಘಟಕಗಳನ್ನು ಅಲಕ್ಷಿಸಲಾಗುತ್ತಿದೆ."
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "%s ಘಟಕವು ಘಟಕವರ್ಗ ಎಂಬ ಹೆಸರಿನ ವರ್ಗವನ್ನು ಹೊಂದಿಲ್ಲ; ಉಪೇಕ್ಷಿಸಲಾಗುತ್ತಿದೆ."
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "%s ಘಟಕವು ಅಗತ್ಯವಿರುವ %s ವೈಶಿಷ್ಟ್ಯವನ್ನು ಹೊಂದಿಲ್ಲ; ಉಪೇಕ್ಷಿಸಲಾಗುತ್ತಿದೆ."
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "ಪಿಕ್ಸ್‍ಮ್ಯಾಪ್‍ %s ಅನ್ನು %s ಘಟಕಕ್ಕೆ ಲೋಡ್ ಮಾಡಲಾಗಿಲ್ಲ."
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "%s ಘಟಕಕ್ಕೆ ಅದರ UI ಅನ್ನು ಹೊಂದಿಸಲಾಗಿಲ್ಲ; ತೆಗೆಯಲಾಗುತ್ತಿದೆ."
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "ಹೆಚ್ಚುವರಿ ಸೀಡಿಗಳು"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"ಇತರಪಕ್ಷ ಅನ್ವಯಗಳು ಹಾಗೂ ಮಿಲಿತಾನ್ವಯಗಳನ್ನು (plugins) ಅನುಸ್ಥಾಪಿಸಿಕೊಳ್ಳಲು \"Red Hat "
+"Enterprise Linux Extras\" ಎಂಬ ಹೆಸರುಳ್ಳ ಸೀಡಿಯನ್ನು ತೂರಿಸಿ.Red Hat ನವರ ಇತರ "
+"ತಂತ್ರಾಂಶ ಸೀಡಿಗಳು ಅಥವಾ ದಸ್ತಾವೇಜೀಕರಣ ಸೀಡಿಯನ್ನು ಬೇಕಾದರೂ ಈಗ ತೂರಿಸಬಹುದು."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "ಹೆಚ್ಚುವರಿ ಅನುಸ್ಥಾಪನಾ ಸೀಡಿಗಳಿದ್ದ ಪಕ್ಷದಲ್ಲಿ ಈಗ ಅವುಗಳನ್ನು ತೂರಿಸಿ."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"ಇಂಟೆಲ್ ನ Itanium2 ಗಣಕಶೈಲಿಯ ಮೇಲೆ ೩೨-ಬಿಟ್ ಚಾಲನಸಮಯ ಸಮರ್ಥನೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲು ನೀವು "
+"Extras ಹೆಸರಿನ ಸೀಡಿಯಿಂದ Intel Execution Layer ಸಂಗ್ರಹವನ್ನು ಅನುಸ್ಥಾಪಿಸಬೇಕು."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "ಅನುಸ್ಢಾಪಿಸು..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"ಒಂದು ಸೀಡಿ-ರಾಮ್ ಪತ್ತೆಯಾಗಿಲ್ಲ. ಮುಂದುವರೆಯಲು ದಯವಿಟ್ಟು ಒಂದು ಸೀಡಿ-ರಾಮ್‌ಅನ್ನು ಸೀಡಿ-ರಾಮ್ "
+"ಚಾಲಕಕ್ಕೆ ತೂರಿಸಿ \"ಸರಿ\" ಗುಂಡಿಯನ್ನು ಒತ್ತಿರಿ."
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "autorun ಪ್ರೊಗ್ರಾಂ ಸೀಡಿಯಲ್ಲಿ ಕಂಡುಬರುತ್ತಿಲ್ಲ. ಮುಂದುವರೆಯಲು \"ಸರಿ\" ಗುಂಡಿಯನ್ನು ಒತ್ತಿರಿ."
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "ಬಳಕೆದಾರನನ್ನು ರಚಿಸಿ"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "ಈ ಗಣಕಕ್ಕಾಗಿ ನೀವು ಒಂದು ಬಳಕೆದಾರ ಖಾತೆಯನ್ನು ರಚಿಸಲೇ ಬೇಕು."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "ಈ ಬಳಕೆದಾರನಿಗಾಗಿ ನೀವು ಒಂದು ಗುಪ್ತಪದವನ್ನು ನಮೂದಿಸಿ ಖಚಿತಪಡಿಸಬೇಕಾಗುತ್ತದೆ."
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "ಗುಪ್ತಪದಗಳು ತಾಳೆಯಾಗುತ್ತಿಲ್ಲ.  ದಯವಿಟ್ಟು ಗುಪ್ತಪದವನ್ನು ಪುನಃ ನಮೂದಿಸಿ."
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+"ಬಳಕೆದಾರ ಹೆಸರು '%s' ಒಂದು ಕಾದಿರಿಸಲಾದ ಗಣಕದ ಖಾತೆಯದ್ದಾಗಿದೆ.  ದಯವಿಟ್ಟು ಬೇರೊಂದು "
+"ಬಳಕೆದಾರ ಹೆಸರನ್ನು ಸೂಚಿಸಿ."
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"ಬಳಕೆದಾರ %s ನ ಒಂದು ನೆಲೆಕಡತಕೋಶ ಈಗಾಗಲೆ ಅಸ್ತಿತ್ವದಲ್ಲಿದೆ. ಹೊಸ ಬಳಕೆದಾರರನ್ನು ಈ ಕಡತಕೋಶದ ಹಾಗು ಅದರಲ್ಲಿ ಎಲ್ಲಾ ಅಂಶಗಳಿಗೆ ಮಾಲಿಕರನ್ನಾಗಿ ಮಾಡಿ ಮುಂದುವರೆಯಲು ಬಯಸುತ್ತೀರೆ?  ಹಾಗೆ ಮಾಡಿದಾಗ ಎಲ್ಲಾ ಅನುಮತಿಗಳನ್ನು ಹಾಗು ಇರಬಹುದಾದ ಯಾವುದೆ SELinux ಲೇಬಲ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಲು ಒಂದಿಷ್ಟು ಸಮಯ ಹಿಡಿಯಬಹುದು. ನೀವು ಈ ನೆಲೆ ಕಡತಕೋಶವನ್ನು "
+"ಪುನಃ ಬಳಸಲು ಬಯಸುತ್ತೀರೆ?  ಇಲ್ಲದೆ ಹೋದಲ್ಲಿ, ದಯವಿಟ್ಟು ಬೇರೊಂದು ಬಳಕೆದಾರಹೆಸರನ್ನು ಸೂಚಿಸಿ."
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "ನೆಲೆ ಕಡತಕೋಶದಲ್ಲಿನ ವೈಶಿಷ್ಟ್ಯಗಳನ್ನು %s ಸರಿಪಡಿಸಲಾಗುತ್ತಿದೆ.  ಇದಕ್ಕೆ ಒಂದಿಷ್ಟು ಹೊತ್ತು ಹಿಡಿಯಬಹುದು."
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr "ನೆಲೆ ಕಡತಕೋಶದಲ್ಲಿನ ಕೆಲವು ಕಡತಗಳ ವೈಶಿಷ್ಟ್ಯಗಳನ್ನು %s ಸರಿಪಡಿಸುವಾಗ ತೊಂದರೆಗಳು ಎದುರಾಗಿವೆ.  ಯಾವ ಕಡತಗಳಲ್ಲಿ ದೋಷಗಳು ಕಂಡುಬಂದಿವೆ ಎಂದು ಅರಿಯಲು ದಯವಿಟ್ಟು %s ಅನ್ನು ನೋಡಿ."
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr "ನಿಮ್ಮ ಗಣಕದ ಸಾಮಾನ್ಯ (ನಿರ್ವಹಣೆಯಲ್ಲದ) ಬಳಕೆಗಾಗಿ ಒಂದು 'ಬಳಕೆದಾರ ಹೆಸರನ್ನು' ನೀವು ರಚಿಸಬೇಕಾಗುತ್ತದೆ. ಒಂದು ಗಣಕದ 'ಬಳಕೆದಾರಹೆಸರನ್ನು' ರಚಿಸಲು, ದಯವಿಟ್ಟು ಈ ಕೆಳಗೆ ಕೇಳಲಾದ ಮಾಹಿತಿಯನ್ನು ಒದಗಿಸಿ."
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "ಬಳಕೆದಾರಹೆಸರು(_U):"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "ಸಂಪೂರ್ಣ ಹೆಸರು(_e):"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "ಗುಪ್ತಪದ(_P):"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "ಗುಪ್ತಪದವನ್ನು ಖಚಿತಪಡಿಸಿ(_P):"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"ಕರ್ಬರೋಸ್ ಅಥವ NIS ನಂತಹ ಜಾಲಬಂಧ ದೃಢೀಕರಣವನ್ನು ನೀವು ಬಳಸಬೇಕೆಂದರೆ, ದಯವಿಟ್ಟು ಜಾಲಬಂಧ "
+"ಪ್ರವೇಶ ಗುಂಡಿಯನ್ನು ಬಳಸು ಅನ್ನು ಕ್ಲಿಕ್ಕಿಸಿ."
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "ಜಾಲಬಂಧ ಪ್ರವೇಶವನ್ನು ಬಳಸು(_L)..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "ದಯವಿಟ್ಟು ಕಾಯಿರಿ"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "ದಿನಾಂಕ ಹಾಗು ಸಮಯ"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "ಗಣಕದ ದಿನಾಂಕ ಹಾಗು ಸಮಯವನ್ನು ದಯವಿಟ್ಟು ಹೊಂದಿಸಿ."
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "ಲೈಸನ್ಸ್ ಮಾಹಿತಿ"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Thank you for installing Fedora.   Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "ಅರ್ಥವಾಯಿತು, ದಯವಿಟ್ಟು ಮುಂದುವರೆ."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "ಸುಸ್ವಾಗತ"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"ನಿಮ್ಮ ಗಣಕವು ಬಳಕೆಗೆ ಸಿದ್ಧವಾಗಲು ಇನ್ನು ಕೆಲವೆ ಹಂತಗಳಿವೆ.  ಸಂಯೋಜನಾ ಮಧ್ಯವರ್ತಿಯು ನಿಮಗೆ "
+"ಮೂಲಭೂತ ಸಂರಚನಾ ಕಾರ್ಯದಲ್ಲಿ ನೆರವಾಗುತ್ತದೆ. ಮುಂದುವರೆಯಲು, ದಯವಿಟ್ಟು ಬಲಕೆಳತುದಿಯಲ್ಲಿರುವ "
+"\"ಮುಂದಕ್ಕೆ\" ಗುಂಡಿಯನ್ನೊತ್ತಿರಿ"
+

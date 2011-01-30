@@ -1,0 +1,343 @@
+# translation of firstboot.master.ta.po to Tamil
+# Jayaradha <njaya@redhat.com>, 2005, 2006.
+# Felix <ifelix@redhat.com>, 2006.
+# I felix <ifelix@redhat.com>, 2007.
+# I. Felix <ifelix@redhat.com>, 2008, 2009.
+# translation of ta.po to
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot.master.ta\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-04-02 17:53+0530\n"
+"Last-Translator: I. Felix <ifelix@redhat.com>\n"
+"Language-Team: Tamil <fedora-trans-ta@redhat.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\\n\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+"\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "firstbootஐ இயக்க நீங்கள் ரூட்டாக இருக்க வேண்டும்."
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "எந்த firstboot முன்புலத்தையும் துவக்க முடியவில்லை."
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "firstboot தொகுதிகள் எதுவும் இல்லை."
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "firstboot முகப்பு எதையும் உருவாக்க முடியவில்லை."
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s தொகுதியில் பிழை ஏற்பட்டுள்ளது."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"%s தொகுதியில் சிக்கல் உள்ளதால், firstboot இந்த\n"
+"தொகுதியை ஏற்ற இயலாது. அதனால் மீதமுள்ள\n"
+"தொகுதிகளை இயக்க முயற்சிக்கும்."
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "firstboot இல் ஒரு பிழை ஏற்பட்டுள்ளது."
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "இன்னும் சிக்கல் இருப்பதால், firstboot வெளியேறும்."
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"பிழைத்திருத்த வெளிப்பாட்டின் நகல் %sஇல் சேமிக்கப்பட்டுள்ளது\n"
+"அந்த கோப்பினை பிழை அறிக்கையில் இணைக்கவும்.\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"'firstboot' உள்ள இந்த பிழையை Red Hat பிழை தேடும் முறைமையில்\n"
+"http://www.redhat.com/bugzillaவில்அறிக்கையிடவும்.\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "பின்னால் செல்ல முயற்சிக்கிறது, ஆனால் வரலாறு வெற்றாக உள்ளது."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "முடிவு (_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "உங்கள் தேர்ந்தெடுப்பில் சில இயக்கத்திற்கு வர கணினியை மீண்டும் தொடங்கவும்."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "பின்னோக்கு (_B)"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "அடுத்து (_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "தொகுதி %s அதன் UIஐ அமைக்கவில்லை, எனவே நீக்குகிறது."
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPageக்கு ஒரு தொகுதி தலைப்பு அல்லது பக்க எண்ணை கொடுக்க வேண்டும்."
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "திரைப்பிடிப்பி அடைவை உருவாக்க முடியவில்லை; எனவே தவிர்க்கப்படுகிறது."
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "தலைப்பு %s இல் தொகுதிகள் எதுவும் இல்லை."
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "மேம்படுத்தாத பழைய தொகுதி %s தவிர்க்கப்படுகிறது."
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr ""
+"தொகுதி %s moduleClass என பெயரிடப்பட்ட வகுப்பை கொண்டிருக்கவில்லை; எனவே "
+"தவிர்க்கப்படுகிறது."
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "தொகுதி %s தேவையான அளவுரு %sஐ கொண்டிருக்கவில்லை; எனவே தவிர்க்கப்படுகிறது."
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "pixmap %sஐ தொகுதி %sக்கு ஏற்றமுடியவில்லை."
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "தொகுதி %s அதன் UIஐ அமைக்கவில்லை; எனவே நீக்குகிறது."
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "கூடுதல் குறுவட்டுகள்"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"மூன்றாம்-நபர் கூடுதல் இணைப்புகள் மற்றும் பயன்பாடுகளை நிறுவ \"Red Hat Enterprise Linux "
+"Extras\" என பெயரிடப்பட்ட வட்டினை நுழைக்கவும். நீங்கள் ஆவண வட்டினை நுழைக்கலாம் அல்லது "
+"வேறு Red Hat ஆல் வழங்கப்பட்ட கூடுதல் மென்பொருள் வட்டுகளை பயன்படுத்தலாம்."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "இந்த நேரத்தில் ஏதாவது கூடுதல் மென்பொருளின் குறுவட்டுகளை உள்ளிடவும்."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Intel Itanium 2 கட்டமைப்பில் 32-பிட் பயன்பாட்டை செயல்படுத்த, கூடுதல் வட்டில் உள்ள Intel "
+"Execution Layer பணித்தொகுப்பை பயன்படுத்த வேண்டும்."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "நிறுவவும்..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"குறுவட்டு கண்டுபிடிக்கப்பட்டது.  குறுவட்டினை இயக்கியில் நுழைத்து \"சரி\" என்பதை "
+"சொடுக்கி தொடரவும்."
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "குறுவட்டில் தானியக்க நிரல் கிடைக்கவில்லை. \"சரி\" என்பதை சொடுக்கி தொடரவும்."
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "பயனரை உருவாக்குதல்"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "இந்த கணினிக்கு ஒரு பயனர் கணக்கை உருவாக்க வேண்டும்."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "இந்த பயனரின் ஒரு கடவுச்சொல்லை உள்ளிட்டு உறுதிப்படுத்தவும்."
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "கடவுச்சொல் பொருந்தவில்லை. எனவே கடவுச்சொல்லை மீண்டும் உள்ளிடவும்."
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr "பயனர் பெயர் '%s' ஏற்கனவே உள்ள கணினி கணக்கு.  எனவே வேறு பயனர் பெயரை குறிப்பிடவும்."
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr "பயனர் %sக்கு இல்ல அடைவு ஏற்கனவே உள்ளது. நீங்கள் தொடர வேண்டுமா, இந்த அடைவின் உரிமையாளராக புதிய பயனரை உருவாக்க வேண்டுமா? இவ்வாறு செய்வது SELinux லேபிள்கள் அனுமதிகளை மறுஅமைக்கும். இந்த இல்ல அடைவை மீண்டும் பயன்படுத்த வேண்டுமா? இல்லையெனில், வேறு பயனர் பெயரை தேர்ந்தெடுக்கவும்."
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "%sக்கு இல்ல அடைவில் அளவுருக்களை சரி செய்கிறது. இதற்கு சில நிமிடங்கள் ஆகும். "
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr "இல்ல அடைவில் %sக்கு சில கோப்புகளில் அளவுருக்களை சிக்கல்கள் தீர்க்கிறது.  %sஐ பார்த்து எந்த கோப்புகள் பிழைகளை உருவாக்குகிறது என பார்க்கவும்."
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"உங்கள் கணினியில் சாதாரண பயனருக்கு (நிர்வாகி அல்லாத) ஒரு 'பயனர் பெயரை' உருவாக்க "
+"பரிந்துரைக்கப்படுகிறது. ஒரு கணினி 'பயனர் பெயரை' உருவாக்க, கீழே கோரப்பட்ட தகவலை கொடுக்கவும்."
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "பயனர் பெயர் (_U):"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "முழுப்பெயர் (_e):"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "கடவுச்சொல் (_P):"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "கடவுச்சொல்லை உறுதிப்படுத்தல் (_m):"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"நீங்கள் Kerberos அல்லது NIS போன்ற பிணைய அங்கீகாரத்தை பயன்படுத்த, பிணைய புகுபதிவை "
+"பயன்படுத்தல் பொத்தானை சொடுக்கவும்."
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "பிணைய புகுபதிவை பயன்படுத்தல் (_L)..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "காத்திருக்கவும்"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "தேதி மற்றும் நேரம்"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "கணினிக்கு தேதி மற்றும் நேரத்தை அமைக்கவும்."
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "அங்கீகார தகவல்"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "புரிந்ததா, தொடரவும்."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "நல்வரவு"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"உங்கள் கணினியை பயன்படுத்துவதற்கு முன் சில படிமுறைகளை செய்ய வேண்டியுள்ளது. அமைப்பு "
+"முகவர் அடிப்படை சில அடிப்படை கட்டமைப்பு மூலம் உங்களை வழிநடத்தும்.  தொடர கீழ் வலது "
+"மூலையில் உள்ள \"அடுத்து\" பொத்தானை சொடுக்கி தொடரவும்."
+
