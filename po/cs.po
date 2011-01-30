@@ -267,11 +267,11 @@ msgstr "Licenční informace"
 
 #: ../modules/eula.py:53
 msgid ""
-"Thank you for installing Fedora.  Fedora is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
+"Thank you for installing Qubes.  Qubes is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
 "\n"
 "If you would like to understand what those restrictions are, please visit http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Děkujeme, že jste si nainstalovali Fedoru. Fedora je sbírka softwarových balíčků s různými licencemi. Sbírka je uvolněna pod GNU General Public License verze 2. Neexistují žádná omezení k používání, kopírování nebo upravování tohoto kódu. Existují ale omezení a povinosti, které je potřeba dodržet při redistribuci kódu, ať už v původní formě nebo upravené. Mimo jiné, tyto omezení a povinosti, platí pro licence o redistribuci, práva k obchodním známkám nebo pro exportní omezení.\n"
+"Děkujeme, že jste si nainstalovali Fedoru. Qubes je sbírka softwarových balíčků s různými licencemi. Sbírka je uvolněna pod GNU General Public License verze 2. Neexistují žádná omezení k používání, kopírování nebo upravování tohoto kódu. Existují ale omezení a povinosti, které je potřeba dodržet při redistribuci kódu, ať už v původní formě nebo upravené. Mimo jiné, tyto omezení a povinosti, platí pro licence o redistribuci, práva k obchodním známkám nebo pro exportní omezení.\n"
 "\n"
 "Pokud chcete více porozumět co tyto omezení znamenají, prosím navštivte http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 

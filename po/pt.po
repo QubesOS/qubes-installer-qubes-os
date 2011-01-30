@@ -267,11 +267,11 @@ msgstr "Informação da Licença"
 
 #: ../modules/eula.py:53
 msgid ""
-"Thank you for installing Fedora.  Fedora is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
+"Thank you for installing Qubes.  Qubes is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
 "\n"
 "If you would like to understand what those restrictions are, please visit http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Obrigado por instalar o Fedora.  O Fedora é uma compilação de pacotes de software, tendo cada um a sua própria licença. A compilação é disponibilizada segundo a Licença Pública da GNU, na sua versão 2. Não existem restrições quanto à utilização, cópia ou modificação deste código. Todavia, existem restrições e obrigações que se aplicam à redistribuição do código, quer no seu formato original quer num formato modificado. Entre outras coisas, estas restrições/obrigações dizem respeito ao licenciamento de redistribuição, as marcas registadas e o controlo de exportação.\n"
+"Obrigado por instalar o Qubes.  O Qubes é uma compilação de pacotes de software, tendo cada um a sua própria licença. A compilação é disponibilizada segundo a Licença Pública da GNU, na sua versão 2. Não existem restrições quanto à utilização, cópia ou modificação deste código. Todavia, existem restrições e obrigações que se aplicam à redistribuição do código, quer no seu formato original quer num formato modificado. Entre outras coisas, estas restrições/obrigações dizem respeito ao licenciamento de redistribuição, as marcas registadas e o controlo de exportação.\n"
 "\n"
 "Se desejar compreender o que significam estas restrições, por favor vá a http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 

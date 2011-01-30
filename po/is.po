@@ -1,6 +1,6 @@
 # translation of firstboot.master.po to icelandic
 # Íslensk þýðing firstboot
-# Copyright (C) 2009 Fedora
+# Copyright (C) 2009 Qubes
 #
 # Richard Allen <ra@ra.is>, 2002.
 # Sveinn í Felli <sveinki@nett.is>, 2009.
@@ -291,7 +291,7 @@ msgstr "Notkunarskilmálar"
 
 #: ../modules/eula.py:53
 msgid ""
-"Thank you for installing Fedora.  Fedora is a compilation of software "
+"Thank you for installing Qubes.  Qubes is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -303,7 +303,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Þakka þér fyrir að setja upp Fedora.  Fedora er safn hugbúnaðarpakka sem "
+"Þakka þér fyrir að setja upp Qubes.  Qubes er safn hugbúnaðarpakka sem "
 "hver hefur sína notkunarskilmála.  Þetta safn hugbúnaðarpakka er gefið út "
 "samkvæmt skilmálum GNU General Public License útgáfu 2.  Það eru engar "
 "takmarkanir á notkun, afritun eða breytingum á þessum kóða.  Þó eru til "

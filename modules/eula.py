@@ -42,7 +42,7 @@ class moduleClass(Module):
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=10)
 
-        label = gtk.Label(_("""Thank you for installing Fedora.  Fedora is a \
+        label = gtk.Label(_("""Thank you for installing Qubes.  Qubes is a \
 compilation of software packages, each under its own license.  The \
 compilation is made available under the GNU General Public License version \
 2.  There are no restrictions on using, copying, or modifying this code.  \

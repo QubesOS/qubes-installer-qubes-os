@@ -5,13 +5,13 @@
 #
 # This file is translated according to the glossary and style guide of
 #   Softcatalà. If you plan to modify this file, please read first the page
-#   of the Catalan translation team for the Fedora project at:
+#   of the Catalan translation team for the Qubes project at:
 #   http://www.softcatala.org/projectes/fedora/
 #   and contact the previous translator
 #
 # Aquest fitxer s'ha de traduir d'acord amb el recull de termes i la guia
 #   d'estil de Softcatalà. Si voleu modificar aquest fitxer, llegiu si
-#   us plau la pàgina de catalanització del projecte Fedora a:
+#   us plau la pàgina de catalanització del projecte Qubes a:
 #   http://www.softcatala.org/projectes/fedora/
 #   i contacteu l'anterior traductor/a.
 #
@@ -317,7 +317,7 @@ msgstr "Informació de la llicència"
 
 #: ../modules/eula.py:53
 msgid ""
-"Thank you for installing Fedora.  Fedora is a compilation of software "
+"Thank you for installing Qubes.  Qubes is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -329,7 +329,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Gràcies per haver instal·lat Fedora. Fedora és una compilació de diferents "
+"Gràcies per haver instal·lat Qubes. Qubes és una compilació de diferents "
 "paquets de programari, cadascun amb la seva llicència. Aquesta compilació es "
 "posa a disposició sota la versió 2 de la Llicència Pública General de GNU. "
 "No hi ha cap mena de restricció quant a la utilització, còpia, o modificació "
