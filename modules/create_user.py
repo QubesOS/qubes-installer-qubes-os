@@ -260,22 +260,22 @@ class moduleClass(Module):
 
         self.vbox.pack_start(table, False)
 
-        label = gtk.Label(_("If you need to use network authentication, such as Kerberos or NIS, "
-                            "please click the Use Network Login button."))
-
-        label.set_line_wrap(True)
-        label.set_alignment(0.0, 0.5)
-        label.set_size_request(500, -1)
-        self.vbox.pack_start(label, False, True, padding=20)
-
-        authHBox = gtk.HBox()
-        authButton = gtk.Button(_("Use Network _Login..."))
-        authButton.connect("clicked", self._runAuthconfig)
-        align = gtk.Alignment()
-        align.add(authButton)
-        align.set(0.0, 0.5, 0.0, 1.0)
-        authHBox.pack_start(align, True)
-        self.vbox.pack_start(authHBox, False, False)
+#        label = gtk.Label(_("If you need to use network authentication, such as Kerberos or NIS, "
+#                            "please click the Use Network Login button."))
+#
+#        label.set_line_wrap(True)
+#        label.set_alignment(0.0, 0.5)
+#        label.set_size_request(500, -1)
+#        self.vbox.pack_start(label, False, True, padding=20)
+#
+#        authHBox = gtk.HBox()
+#        authButton = gtk.Button(_("Use Network _Login..."))
+#        authButton.connect("clicked", self._runAuthconfig)
+#        align = gtk.Alignment()
+#        align.add(authButton)
+#        align.set(0.0, 0.5, 0.0, 1.0)
+#        authHBox.pack_start(align, True)
+#        self.vbox.pack_start(authHBox, False, False)
 
     def focus(self):
         self.usernameEntry.grab_focus()
