@@ -1,0 +1,18 @@
+diff -ur a/revisor/pungi.py b/revisor/pungi.py
+--- a/revisor/pungi.py	2011-02-05 00:07:18.000000000 +0100
++++ b/revisor/pungi.py	2011-01-19 20:25:04.000000000 +0100
+@@ -173,10 +173,10 @@
+ 
+         if comps:
+             # FIXME: Watch for https://bugzilla.redhat.com/show_bug.cgi?id=429509
+-            if hasattr(self.cfg.yumobj.comps,"xml"):
+-                ourcomps = open(comps, 'w')
+-                ourcomps.write(self.cfg.yumobj.comps.xml())
+-                ourcomps.close()
++            #if hasattr(self.cfg.yumobj.comps,"xml"):
++            #    ourcomps = open(comps, 'w')
++            #    ourcomps.write(self.cfg.yumobj.comps.xml())
++            #    ourcomps.close()
+ 
+             # Let's clean up the comps file before moving anything around
+             # Run the xslt filter over our comps file
