@@ -994,7 +994,6 @@
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
       <packagereq type="mandatory">xorg-x11-xauth</packagereq>
       <packagereq type="mandatory">xorg-x11-xinit</packagereq>
-      <packagereq type="default">abrt-desktop</packagereq>
       <packagereq type="default">authconfig-gtk</packagereq>
       <packagereq type="default">cups-pk-helper</packagereq>
       <packagereq type="default">desktop-backgrounds-basic</packagereq>
@@ -1006,7 +1005,6 @@
       <packagereq type="default">plymouth-system-theme</packagereq>
       <packagereq type="default">policycoreutils-gui</packagereq>
       <packagereq type="default">setroubleshoot</packagereq>
-      <packagereq type="default">smolt-firstboot</packagereq>
       <packagereq type="default">system-config-date</packagereq>
       <packagereq type="default">system-config-firewall</packagereq>
       <packagereq type="default">system-config-network</packagereq>
@@ -6095,14 +6093,11 @@
       <packagereq type="default">kdeartwork-screensavers</packagereq>
       <packagereq type="default">kdm</packagereq>
       <packagereq type="default">kftpgrabber</packagereq>
-      <packagereq type="default">kipi-plugins</packagereq>
       <packagereq type="default">kpackagekit</packagereq>
       <packagereq type="default">ksshaskpass</packagereq>
       <packagereq type="default">phonon-backend-gstreamer</packagereq>
       <packagereq type="default">phonon-backend-xine</packagereq>
       <packagereq type="default">pinentry-qt4</packagereq>
-      <packagereq type="default">qtcurve-gtk2</packagereq>
-      <packagereq type="default">qtcurve-kde4</packagereq>
       <packagereq type="default">xsettings-kde</packagereq>
       <packagereq type="optional">basket</packagereq>
       <packagereq type="optional">bespin</packagereq>
