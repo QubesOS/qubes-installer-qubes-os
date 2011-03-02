@@ -78,7 +78,7 @@ cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
 # dist macros.
 
 %%qubes		%{dist_version}
-%%dist		.qu%{dist_version}
+%%dist		.qbs%{dist_version}
 %%fedora		%{fedora_base_version}
 %%qu%{dist_version}		1
 %%fc%{fedora_base_version}		1
@@ -97,7 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 %config %attr(0644,root,root) /etc/system-release-cpe
 %dir /etc/yum.repos.d
 %config(noreplace) /etc/yum.repos.d/fedora.repo
-%config(noreplace) /etc/yum.repos.d/qubes-dom0.repo
+%config(noreplace) /etc/yum.repos.d/qubes-r1-dom0.repo
 %config(noreplace) %attr(0644,root,root) /etc/issue
 %config(noreplace) %attr(0644,root,root) /etc/issue.net
 %config %attr(0644,root,root) /etc/rpm/macros.dist
