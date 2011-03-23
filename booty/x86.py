@@ -356,7 +356,7 @@ class x86BootloaderInfo(efiBootloaderInfo):
                 f.write('\tmodule %s ro%s' %(kernelFile, realroot))
                 if self.args.get():
                     f.write(' %s' % self.args.get())
-                f.write(' max_loop=255')
+                f.write(' max_loop=255 rdblacklist=aesni-intel')
                 f.write('\n')
                 if initrd:
                     f.write('\tmodule %s%s\n' % (cfPath, initrd))
