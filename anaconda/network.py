@@ -518,15 +518,27 @@ class Network:
 
     def write(self, instPath='', anaconda=None, devices=None):
 
+        sysconfig = "%s/etc/sysconfig" % (instPath,)
+        netscripts = "%s/network-scripts" % (sysconfig,)
+        destnetwork = "%s/network" % (sysconfig,)
+
+        # /etc/sysconfig/network
+        if (not instPath) or (not os.path.isfile(destnetwork)) or flags.livecdInstall:
+            newnetwork = "%s.new" % (destnetwork,)
+
+            # Qubes specific - see ticket #145
+            f = open(newnetwork, "w")
+            f.write("NETWORKING=no\n")
+            f.write("HOSTNAME=dom0")
+
+            f.close()
+            shutil.move(newnetwork, destnetwork)
+
         if devices is None:
             devices = self.netdevices.values()
 
         if len(devices) == 0:
             return
-
-        sysconfig = "%s/etc/sysconfig" % (instPath,)
-        netscripts = "%s/network-scripts" % (sysconfig,)
-        destnetwork = "%s/network" % (sysconfig,)
 
         if not os.path.isdir(netscripts):
             iutil.mkdirChain(netscripts)
@@ -634,29 +646,6 @@ class Network:
                     shutil.copy(dhclientconf, destdhclientconf)
                 except:
                     log.warning("unable to copy %s to target system" % (dhclientconf,))
-
-        # /etc/sysconfig/network
-        if (not instPath) or (not os.path.isfile(destnetwork)) or flags.livecdInstall:
-            newnetwork = "%s.new" % (destnetwork,)
-
-            f = open(newnetwork, "w")
-            f.write("NETWORKING=yes\n")
-            f.write("HOSTNAME=")
-
-            # use instclass hostname if set(kickstart) to override
-            if self.hostname:
-                f.write(self.hostname + "\n")
-            else:
-                f.write("localhost.localdomain\n")
-
-            if dev.get('GATEWAY'):
-                f.write("GATEWAY=%s\n" % (dev.get('GATEWAY'),))
-
-            if dev.get('IPV6_DEFAULTGW'):
-                f.write("IPV6_DEFAULTGW=%s\n" % (dev.get('IPV6_DEFAULTGW'),))
-
-            f.close()
-            shutil.move(newnetwork, destnetwork)
 
         # If the hostname was not looked up, but typed in by the user,
         # domain might not be computed, so do it now.
