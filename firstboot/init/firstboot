@@ -1,0 +1,100 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides: firstboot
+# Default-Start: 3 5
+# Default-Stop: 0 1 2 4 6
+# Required-Start:
+# Should-Start: $network
+# Short-Description: Starts the firstboot configuration program
+# Description: Firstboot runs the first time a machine is booted after
+#              installation.  It checks for the existance of an
+#              /etc/sysconfig/firstboot file.  If the file exists and
+#              contains RUN_FIRSTBOOT=NO, firstboot will not run.  Otherwise
+#              firstboot will be run.  If /etc/reconfigSys exists or if
+#              "reconfig" is provided in the kernel boot arguments,
+#              firstboot will run in reconfiguration mode.
+### END INIT INFO
+
+#
+# firstboot: Starts the firstboot druid if it hasn't been run before
+#
+# chkconfig: 35 99 95
+#
+# description: Firstboot is a druid style program that runs on the first \
+#              time a machine is booted after install.  It checks for \
+#              the existence of an /etc/sysconfig/firstboot file.  If \
+#              the file exists and contains RUN_FIRSTBOOT=NO, firstboot \
+#              will not run.  Otherwise, firstboot will be run.  \
+#              If /etc/reconfigSys exists or if "reconfig" is provided \
+#              in the kernel boot arguments, firstboot will run in \
+#              reconfiguration mode.
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+FILENAME=/etc/sysconfig/firstboot
+
+[ -z "$HOME" ] && export HOME=/
+
+usage() {
+    echo $"Usage: $0 {start|stop}"
+}
+
+case "$1" in
+    start)
+        if [ `/usr/bin/id -u` -ne 0 ]; then
+            echo $"ERROR: Only root can run firstboot"
+            exit 4
+        fi
+
+        if [ ! -f /usr/sbin/firstboot ]; then
+            echo $"ERROR: Program /usr/sbin/firstboot is not installed"
+            exit 5
+        fi
+
+        args=""
+
+        if [ -f $FILENAME ] && [ ! -z "$(grep 'RUN_FIRSTBOOT=NO' $FILENAME)" ]; then
+            exit 0
+        fi
+
+        if grep -i "reconfig" /proc/cmdline >/dev/null || [ -f /etc/reconfigSys ]; then
+            args="--reconfig"
+        fi
+
+        . /etc/sysconfig/i18n
+
+        /usr/bin/plymouth --hide-splash
+
+        /usr/sbin/firstboot $args
+        RETVAL=$?
+
+        /usr/bin/plymouth --show-splash
+
+        # If firstboot succeeded, chkconfig it off so we don't see the message
+        # every time about starting up firstboot.
+        if [ "$RETVAL" -eq 0 ]; then
+            action "" /bin/true
+            /sbin/chkconfig firstboot off
+        else
+            action "" /bin/false
+        fi
+
+        exit $RETVAL
+        ;;
+
+    stop)
+        exit 0
+        ;;
+
+    restart | reload | force-reload | status | condrestart | try-restart)
+        usage
+        exit 3
+        ;;
+
+    *)
+        usage
+        exit 2
+        ;;
+esac

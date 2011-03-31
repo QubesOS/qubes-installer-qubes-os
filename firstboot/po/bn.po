@@ -1,0 +1,343 @@
+# Bengali Translation of Firstboot
+# Copyright (C) 2004 Red Hat Inc.
+# This file is distributed under the same license as the firstboot package.
+# Ashabul Yeameen <ayeameen@yahoo.com>, 2003.
+# Runa Bhattacharjee <runab@redhat.com>, 2004.
+# Samia Niamatullah <mailsamia2001@yahoo.com>, 2005.
+# Mahay Alam Khan (মাহে আলম) <makl10n@yahoo.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: bn\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2006-09-23 01:11+0600\n"
+"Last-Translator: Mahay Alam Khan (মাহে আলম) <makl10n@yahoo.com>\n"
+"Language-Team: Bengali <redhat-translation@bengalinux.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.3.1\n"
+"Plural-Forms: Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr ""
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr ""
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr ""
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr ""
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s মডিউলে একটি ত্রুটি দেখা দিয়েছে।"
+
+# Red Hat-->brand name
+# sam: why isn't it in future tense?
+# যেহেতু %s মডিউলে একটি সমস্যা রয়েছে, Red Hat\n
+# Setup Agent এই মডিউলটি বাদ দিয়ে বাকি\n
+# মডিউলগুলো লোড করার চেষ্টা করবে।
+#: ../firstboot/exceptionWindow.py:51
+#, fuzzy, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"যেহেতু %s মডিউলে একটি সমস্যা রয়েছে, Red Hat\n"
+"Setup Agent এই মডিউলটি লোড করছে না। বাকি\n"
+"মডিউলগুলো লোড করার চেষ্টা করছে।"
+
+#: ../firstboot/exceptionWindow.py:55
+#, fuzzy
+msgid "An error has occurred in firstboot."
+msgstr "%s মডিউলে একটি ত্রুটি দেখা দিয়েছে।"
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr ""
+
+# modified for RHEL
+#: ../firstboot/exceptionWindow.py:66
+#, fuzzy, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"অনুগ্রহ করে http://www.redhat.com/bugzilla ওয়েবসাইটের\n"
+"Red Hat বাগ অনুসন্ধান সিস্টেমে 'firstboot'-র জন্য একটি ত্রুটির সূচনা করুন।\n"
+"debug তথ্য %s ফাইলে রাখা হয়েছে \n"
+"ঐ ফাইলটি বাগ রিপোর্টে সংযুক্ত করে দিতে ভুলবেন না। \n"
+
+# modified for RHEL
+#: ../firstboot/exceptionWindow.py:71
+#, fuzzy
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"অনুগ্রহ করে http://www.redhat.com/bugzilla ওয়েবসাইটের\n"
+"Red Hat বাগ অনুসন্ধান সিস্টেমে 'firstboot'-র জন্য একটি ত্রুটির সূচনা করুন।\n"
+"debug তথ্য %s ফাইলে রাখা হয়েছে \n"
+"ঐ ফাইলটি বাগ রিপোর্টে সংযুক্ত করে দিতে ভুলবেন না। \n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr ""
+
+# modified by RB
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "সম্পন্ন (_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "আপনার কিছু নির্বাচন বাস্তবায়ন করতে হলে, সিস্টেমকে এখন রিবুট করতে হবে।"
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "পূর্ববর্তী (_প)"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "সামনে (‍‍_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr ""
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr ""
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr ""
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr ""
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr ""
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr ""
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr ""
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr ""
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr ""
+
+# msgstr "অতিরিক্ত সিডিগুলো"
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "অতিরিক্ত সিডিসমূহ"
+
+# modified for RHEL
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"স্বতন্ত্র প্লাগ-ইন এবং অ্যাপ্লিকেশন ইনস্টল করার জন্য \"Red Hat Enterprise Linux "
+"Extras\" নামক ডিস্কটি অনুগ্রহ করে প্রবেশ করান।  অতিরিক্ত সফ্টওয়্যার ইনস্টল করার জন্য "
+"আপনি এইবার ডকুমেন্টেশন ডিস্ক, অথবা Red-Hat সরবরাহকৃত অন্যান্য ডিস্কও দিতে পারেন।"
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "অনুগ্রহ করে, যদি কোন অতিরিক্ত সফটওয়্যার সিডি থাকে তাহলে এখন প্রবেশ করান।"
+
+# modified for RHEL
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Intel Itanium2 আর্কিটেকচারের উপর ৩২-বিট অ্যাপ্লিকেশনের রানটাইম সমর্থন সক্রিয় করার "
+"জন্য আপনাকে Extras ডিস্কটি থেকে Intel Execution Layer প্যাকেজটি ইনস্টল করতে হবে।"
+
+# modified by RB
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "ইনস্টল করো..."
+
+# modified for RHEL
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"কোনো CD-ROM পাওয়া যায়নি। অনুগ্রহ করে ড্রাইভে একটি CD-ROM প্রবেশ করান এবং চালানোর "
+"জন্য \"ঠিক আছে\" চাপুন।"
+
+#: ../modules/additional_cds.py:146
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr ""
+"সিডিতে autorun প্রোগ্রামটি পাওয়া যায়নি। চালিয়ে যাওয়ার জন্য \"ঠিক আছে\" চাপুন।"
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr ""
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr ""
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr ""
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr ""
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr ""
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr ""
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr ""
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr ""
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr ""
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr ""
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr ""
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr ""
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr ""
+
+# sam:
+#: ../modules/eula.py:35 ../modules/eula.py:36
+#, fuzzy
+msgid "License Information"
+msgstr "সময়ের অঞ্চল কনফিগারেশন"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Qubes.  Qubes is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr ""
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "স্বাগতম"
+
+#: ../modules/welcome.py:45
+#, fuzzy
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"আর কয়েকটি ধাপের পর আপনার কম্পিউটারটি ব্যাবহারের জন্য প্রস্তুত হবে। এখন আপনার "
+"সিস্টেমের কিছু মৌলিক কনফিগারেশনের জন্য সেটআপ এজেন্ট আপনাকে সাহায্য করবে। অগ্রসর "
+"হওয়ার জন্য নীচে ডানদিকের কোনায় অবস্থিত \"পরবর্তী\" বোতামটি চাপুন।"

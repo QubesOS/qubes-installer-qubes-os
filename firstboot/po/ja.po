@@ -1,0 +1,350 @@
+# translation of firstboot.po to Japanese
+# firstboot ja.po Japanese Translation.
+# Copyright (C) 2002 Red Hat Inc.
+#
+#
+# James Hashida <khashida@redhat.com>,2002,2003.
+# Noriko Mizumoto <noriko@redhat.com>, 2003, 2005, 2006.
+# Tadashi Jokagi <fedora@elf.no-ip.org>, 2004.
+# Hirofumi Saito <hi_saito@yk.rim.or.jp>, 2004, 2005, 2006.
+# Kiyoto James Hashida <khashida@redhat.com>, 2006.
+# Hyu_gabaru Ryu_ichi <hyu_gabaru@yahoo.co.jp>, 2007.
+# Makoto Mizukami <mmk9060@aol.com>, 2008.
+# Kiyoto Hashida <khashida@redhat.com>, 2008, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-04-02 12:11+1000\n"
+"Last-Translator: Kiyoto Hashida <khashida@redhat.com>\n"
+"Language-Team: Japanese <jp@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "firstboot を起動するには、ルートになる必要があります。"
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "firstboot のフロントエンドを起動できません。"
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "firstboot のモジュールが見つかりませんでした。"
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "firstboot のインターフェースを作成てきません。"
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "%s モジュールにエラーが発生しました。"
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"%s モジュールに問題があるため、\n"
+"firstboot はこのモジュールをロードしません。\n"
+"残りのモジュールの実行を試みます。"
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "firstboot にエラーが発生しました。"
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "問題が発生したので、firstboot を終了します。"
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"デバッグ出力のコピーを %s に保存しました。\n"
+"バグ報告の際には、必ずこのファイルを添付して下さい。\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"firstboot のバグを、Red Hat\n"
+"バグトラッキングシステム(http://www.redhat.com/bugzilla)に報告してくださ"
+"い。\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "戻ろうとしましたが、履歴が空です。"
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "終了(_F)"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "いくつかの選択を有効にする為、システムを再起動する必要があります。"
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "戻る(_B)"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "進む(_F)"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr ""
+"%s モジュールのユーザーインターフェースがセットアップされていません。削除しま"
+"す。"
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "ページの移動には、モジュールのタイトルか、ページ番号が必要です。"
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "スクリーンショット用のディレクトリが作成できません: スキップします。"
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "%s という名前のモジュールは存在しません。"
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "アップデートされていない、古い %s モジュールをスキップします。"
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr "%s モジュールは、moduleClass が定義されていません: スキップします。"
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "%s モジュールは、必要な属性 %s を含んでいません: スキップします。"
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "画像 %s がロードできません(%s モジュールに必要とされています)。"
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "%s モジュールは、ユーザーインターフェイスが設定されていません: 削除します。"
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "追加の CD"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"サードパーティ製のプラグインやアプリケーションのインストールをするために "
+"\"Red Hat Enterprise Linux Extras\" というラベルのディスクを入れてください。"
+"この際、ドキュメントディスクや追加ソフトのインストールのために Red Hat の提供"
+"した他のディスクを挿入できます。"
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "ここで追加ソフトウェアのインストール CD を挿入してください。"
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"Intel の Itanium2 アーキテクチャーで 32-bit アプリケーションのランタイムを有"
+"効にするには、ここでエクストラディスクから Intel Execution Layer パッケージを"
+"インストールする必要があります。"
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "インストール..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"CD-ROM は検出されませんでした。CD-ROM をドライブに挿入して\"OK\"を クリックし"
+"て続けて下さい。"
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "自動起動プログラムが CD 上に見つかりません。\"OK\" をクリックして継続します。"
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "ユーザーの作成"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "このシステム用にユーザーアカウントを作成する必要があります。"
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "このユーザー用にパスワードを作成して確定する必要があります。"
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "パスワードが一致していません。もう一度入力してください。"
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+"ユーザー名 '%s' はシステムアカウントとして既に使用されています。他のユーザー"
+"名を指定してください。"
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"ユーザー '%s' のホームディレクトリは既に存在します。継続して新しいユーザーを "
+"このディレクトリとそのコンテンツのオーナーにしますか？ これを実行するには、 "
+"権限と SELinux ラベルのリセットのために少し時間がかかります。このホーム "
+"ディレクトリを再利用しますか？ そうでなければ、別のユーザー名を選択して "
+"下さい。"
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr "%s のホームディレクトリ上の属性を修復しています。これには数分かかります。"
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+"%s のホームディレクトリ内にある一部のファイルの属性修復中に問題が発生しました。 "
+"どのファイルがエラーを起こしたかを見るには %s を参照してください。"
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"システムでの(管理用途ではない)普通の作業のために、'ユーザー'を作成することを "
+"推奨します。以下の情報を入力し、システムに 'ユーザー' を作成します。"
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "ユーザー名 (_U):"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "フルネーム (_E):"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "パスワード (_P):"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "パスワードの確認 (_C):"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"もしも Kerberos や NIS のようなネットワーク認証が必要な場合、\"ネットワークロ"
+"グインを使用する\" をクリックしてください。"
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "ネットワークログインを使用する (_L)"
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "お待ち下さい"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "日付と時刻"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "システム用に日付と時刻を設定してください。"
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "ライセンス情報"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Qubes.  Qubes is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Qubes をインストールしていただき、ありがとうございます。Qubes は其々が各々"
+"のライセンスを持ったソフトウェアパッケージの編集物です。編集は GNU General "
+"Public License version 2 の下で可能です。このコードの使用や複製、改変に制限は"
+"ありません。しかし、改変したものかオリジナルであるかに関わらず、再配布には制"
+"限と義務とがあります。こうした制限や義務は、再配布の使用許諾や商標権、輸出規"
+"制に関係してきます。\n"
+"\n"
+"制限についての詳細をお知りになりたい場合は、http://fedoraproject.org/wiki/"
+"Legal/Licenses/EULA をご覧ください。"
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "了解しました。先に進みます。"
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "ようこそ"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"システムが使用できるようになるまでもう少しステップがあります。セットアップ"
+"エージェントは、基本的な設定についてガイドしていきます。右下隅にある \"進む"
+"\" をクリックして、設定を開始します。"
+

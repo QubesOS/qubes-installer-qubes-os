@@ -1,0 +1,355 @@
+# Danish translation of firstboot.
+# Copyright © 2002 Free Software Foundation.
+# This file is distributed under the same license as the firstboot package.
+# Kjartan Maraas <kmaraas@gnome.org>, 2002.
+# Keld Simonsen <keld@dkuug.dk>, 2002-2003, 2004.
+# Martin Willemoes Hansen <mwh@sysrq.dk>, 2004.
+# Keld Simonsen <keld@rap.dk>, 2005, 2006, 2007.
+# Kris Thomsen <lakristho@gmail.com>, 2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: firstboot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-03-12 16:50-0400\n"
+"PO-Revision-Date: 2009-05-15 13:23+0200\n"
+"Last-Translator: Kris Thomsen <lakristho@gmail.com>\n"
+"Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ../progs/firstboot:140
+msgid "You must be root to run firstboot."
+msgstr "Du skal være administrator (root) for at køre firstboot."
+
+#: ../progs/firstboot:163 ../progs/firstboot:164
+msgid "Could not start any firstboot frontend."
+msgstr "Kunne ikke starte nogen firstboot-grænseflade."
+
+#: ../progs/firstboot:180 ../progs/firstboot:181
+msgid "No firstboot modules were found."
+msgstr "Ingen firstboot-moduler blev fundet."
+
+#: ../progs/firstboot:190 ../progs/firstboot:191
+msgid "Could not create any firstboot interface."
+msgstr "Kunne ikke oprette nogen firstboot-grænseflade."
+
+#: ../firstboot/exceptionWindow.py:50
+#, python-format
+msgid "An error has occurred in the %s module."
+msgstr "En fejl indtraf i %s-modulet."
+
+#: ../firstboot/exceptionWindow.py:51
+#, python-format
+msgid ""
+"Since there is a problem with the %s module,\n"
+"firstboot will not load this module and will\n"
+"attempt to run the remaining modules."
+msgstr ""
+"Da der er et problem med %s-modulet,\n"
+"vil firstboot ikke indlæse dette modul og vil\n"
+"forsøge at køre de resterende moduler."
+
+#: ../firstboot/exceptionWindow.py:55
+msgid "An error has occurred in firstboot."
+msgstr "En fejl opstod i firstboot."
+
+#: ../firstboot/exceptionWindow.py:56
+msgid "Since there is a problem, firstboot will exit."
+msgstr "Eftersom der er et problem, vil firstboot afslutte."
+
+#: ../firstboot/exceptionWindow.py:66
+#, python-format
+msgid ""
+"A copy of the debug output has been saved to %s\n"
+"Be sure to attach that file to the bug report.\n"
+msgstr ""
+"En kopi af fejlsøgnings-uddataene er blevet gemt til %s\n"
+"Vær sikker på du vedhæfter filen til fejlrapporten.\n"
+
+#: ../firstboot/exceptionWindow.py:71
+msgid ""
+"Please file a bug against 'firstboot' in the Red Hat\n"
+"bug tracking system at http://www.redhat.com/bugzilla.\n"
+msgstr ""
+"Vær venlig at indsende en fejlrapport på \"firstboot\" via Red Hats\n"
+"fejlrapporteringssystem på http://www.redhat.com/bugzilla.\n"
+
+#: ../firstboot/interface.py:75
+msgid "Attempted to go back, but history is empty."
+msgstr "Forsøgte at gå tilbage, men historikken er tom."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+msgid "_Finish"
+msgstr "_Færdiggør"
+
+#: ../firstboot/interface.py:183
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "System skal nu genstartes for at nogle af dine valg kan få virkning."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "_Tilbage"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "_Fremad"
+
+#: ../firstboot/interface.py:277
+#, python-format
+msgid "Module %s did not set up its UI, removing."
+msgstr "Modulet %s satte ikke sin brugerflade op, bliver fjernet."
+
+#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage skal have angivet en modultitel eller et sidenummer."
+
+#: ../firstboot/interface.py:438
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "Kunne ikke oprette skærmbillede-mappen; springer over."
+
+#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "Der eksisterer intet modul med titlen %s."
+
+#: ../firstboot/loader.py:90
+#, python-format
+msgid "Skipping old module %s that has not been updated."
+msgstr "Springer over gammelt modul %s, som ikke er blevet opdateret."
+
+#: ../firstboot/loader.py:102
+#, python-format
+msgid "Module %s does not contain a class named moduleClass; skipping."
+msgstr ""
+"Modulet %s indeholder ikke en klasse kaldet moduleClass; springer over."
+
+#: ../firstboot/loader.py:113
+#, python-format
+msgid "Module %s does not contain the required attribute %s; skipping."
+msgstr "Modulet %s indeholder ikke den nødvendige %s-attribut; springer over."
+
+#: ../firstboot/module.py:187
+#, python-format
+msgid "Unable to load pixmap %s for module %s."
+msgstr "Kunne ikke indlæse %s-pixmappet til %s-modulet."
+
+#: ../firstboot/moduleset.py:93
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "Modulet %s satte ikke sin brugerflade op; bliver fjernet."
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "Yderligere CD'er"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"Indsæt venligst skiven mærket \"Red Hat Enterprise Linux Extras\" for at "
+"tillade installation af tredjeparts-moduler og -programmer. Du kan også "
+"indsætte dokumentationsskiven, eller andre Red Hat-leverede cd'er for at "
+"installere flere programmer på dette tidspunkt."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "Indsæt andre yderligere softwareinstallations-cd'er nu."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"For at aktivere køretidsunderstøttelse for 32-bit programmer på Intel "
+"Itanium2-arkitekturen skal du installere Intel Execution Layer-pakken fra "
+"Extra-skiven nu."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "Installér..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"En cdrom blev ikke fundet.  Indsæt venligst en cdrom i drevet og klik \"O.k."
+"\" for at fortsætte."
+
+#: ../modules/additional_cds.py:146
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr ""
+"Autokør-programmet kan ikke findes på cd'en. Klik på \"O.k.\" for at "
+"fortsætte."
+
+#: ../modules/create_user.py:41 ../modules/create_user.py:42
+msgid "Create User"
+msgstr "Opret bruger"
+
+#: ../modules/create_user.py:83
+msgid "You must create a user account for this system."
+msgstr "Du skal oprette en brugerkonto til dette system."
+
+#: ../modules/create_user.py:94
+msgid "You must enter and confirm a password for this user."
+msgstr "Du skal indtaste og bekræfte en adgangskode for denne bruger."
+
+#: ../modules/create_user.py:101
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "Adgangskoderne er ikke ens.  Indtast venligst adgangskoden igen."
+
+#: ../modules/create_user.py:113
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+"Brugernavnet \"%s\" er reserveret til systemkonto.  Vælg venligst et andet "
+"brugernavn."
+
+#: ../modules/create_user.py:132
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"En hjemmemappe til brugeren %s eksisterer allerede. Vil du fortsætte med, at "
+"oprette den nye bruger, ejeren af denne mappe og alt dens indhold? At gøre "
+"sådan vil tage et stykke tid, mens rettigheder og SELinux-etiketter "
+"nulstilles.  Vil du genbruge denne hjemmemappe?  Hvis ikke, skal du venligst "
+"vælge et andet brugernavn."
+
+#: ../modules/create_user.py:175
+#, python-format
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr ""
+"Retter attributer på hjemmemappen for %s.  Dette kan tage et par minutter."
+
+#: ../modules/create_user.py:195
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %s.  Please refer to %s for which files caused the errors."
+msgstr ""
+"Der opstod problemer under retningen af attributer på nogle filer i "
+"hjemmemappen for %s.  Læs venligst %s for at se, hvilke filer der er skyld i "
+"fejlene."
+
+#: ../modules/create_user.py:213
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"Du skal oprette et \"brugernavn\" til almindeligt (ikke-administrativt) brug "
+"af dit system.  For at oprette et \"systembrugernavn\",  skal du venligst "
+"indtaste de nødvendige informationer nedenfor."
+
+#: ../modules/create_user.py:231
+msgid "_Username:"
+msgstr "_Brugernavn:"
+
+#: ../modules/create_user.py:238
+msgid "Full Nam_e:"
+msgstr "Fulde _navn:"
+
+#: ../modules/create_user.py:245
+msgid "_Password:"
+msgstr "_Adgangskode:"
+
+#: ../modules/create_user.py:252
+msgid "Confir_m Password:"
+msgstr "Bekræf_t adgangskode:"
+
+#: ../modules/create_user.py:261
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"Hvis du har brug for netværksgodkendelse, som f.eks. Kerberos eller NIS, så "
+"tryk venligst på Brug netværklogind-knappen."
+
+#: ../modules/create_user.py:270
+msgid "Use Network _Login..."
+msgstr "Brug netværk_logind..."
+
+#: ../modules/create_user.py:308
+msgid "Please wait"
+msgstr "Vent venligst"
+
+#: ../modules/date.py:40 ../modules/date.py:41
+msgid "Date and Time"
+msgstr "Dato og tid"
+
+#: ../modules/date.py:62
+msgid "Please set the date and time for the system."
+msgstr "Sæt venligst dato og tid for systemet."
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "Licens-information"
+
+#: ../modules/eula.py:53
+msgid ""
+"Thank you for installing Qubes.  Qubes is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Tak for at du installerer Qubes.  Qubes er en samling af software, som "
+"hver især har deres egen licens. Samlingen er gjort tilgængelig under GNU "
+"General Public License version 2.  Der er ingen begrænsninger på brug, "
+"kopiering eller ændring af denne kode. Men der er begrænsninger og pligter "
+"som gælder ved gendistribuering af koden, enten i sin oprindelige form eller "
+"i en ændret form. Bl. a. vedrører disse begrænsninger licensen ved "
+"gendistribution, varemærke-rettigheder og kontrol af eksport.\n"
+"\n"
+"Hvis du ønsker at vide hvad disse begrænsninger er, kan du besøge http://"
+"fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:64
+msgid "Understood, please proceed."
+msgstr "Forstået, fortsæt venligst."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "Velkommen"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"Der er endnu nogle enkelte trin der skal gøres før dit system er klar til "
+"brug.  Opsætningshjælperen vil nu lede dig gennem noget grundlæggende "
+"konfigurering.  Klik på \"Fremad\"-knappen i det nederste højre hjørne for "
+"at fortsætte."
+
+#~ msgid "Waiting for X server to start... log located in %s\n"
+#~ msgstr "Venter på at X-serveren starter... log placeret i %s\n"

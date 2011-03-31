@@ -1,0 +1,210 @@
+#!/usr/bin/python2
+#
+# Chris Lumens <clumens@redhat.com>
+#
+# Copyright 2007, 2008 Red Hat, Inc.
+#
+# This copyrighted material is made available to anyone wishing to use, modify,
+# copy, or redistribute it subject to the terms and conditions of the GNU
+# General Public License v.2.  This program is distributed in the hope that it
+# will be useful, but WITHOUT ANY WARRANTY expressed or implied, including the
+# implied warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  Any Red Hat
+# trademarks that are incorporated in the source code or documentation are not
+# subject to the GNU General Public License and may only be used or replicated
+# with the express permission of Red Hat, Inc. 
+#
+import meh
+import os, string, sys
+
+# Since X may be starting up immediately after firstboot crashes, we might
+# not have any way to see the traceback.  This lets it be logged somewhere
+# useful.  Set this up as early as possible.
+
+# Set up some exception handling as early as possible, in case we traceback
+# before any interface is even up, let alone configured.  This lets it be
+# logged somewhere useful.  We will override this with python-meh later.
+def earlyExnHandler(type, value, tb):
+    import tempfile, traceback
+
+    (fd, path) = tempfile.mkstemp("", "firstboot-", "/tmp")
+    fo = os.fdopen(fd, "w")
+
+    traceback.print_exception(type, value, tb, None, fo)
+    fo.close()
+
+    # Also print on stderr just in case we have time to see the problem.
+    traceback.print_exception(type, value, tb)
+
+sys.excepthook = earlyExnHandler
+
+from firstboot.config import *
+from firstboot.constants import *
+from firstboot.loader import *
+import logging
+from optparse import OptionParser
+from system_config_keyboard.keyboard import Keyboard
+
+import gettext
+_ = lambda x: gettext.ldgettext("firstboot", x)
+
+def finish(opts):
+    # Now make sure we don't run again on the next reboot.
+    if not opts.test and not opts.debug:
+        logging.debug("Writing /etc/sysconfig/firstboot file")
+        writeSysconfigFile()
+
+    if opts.reconfig and not opts.test:
+        logging.debug("Removing /etc/reconfigSys")
+
+        try:
+            os.unlink("/etc/reconfigSys")
+        except:
+            pass
+
+def getRunlevel():
+    line = os.popen("/sbin/runlevel", "r").readline()
+    line = string.strip(line)
+
+    # This can happen in kadischi, for instance
+    if line.startswith("unknown"):
+        return 3
+    else:
+        tokens = string.split(line)
+        return int(tokens[-1])
+
+def writeSysconfigFile():
+    fd = open("/etc/sysconfig/firstboot", "w")
+    fd.write("RUN_FIRSTBOOT=NO\n")
+    fd.close()
+
+# Find the first directory in the themes dir that's not the default and use
+# that.  If there is no theme, return None and the default will end up getting
+# used.
+def findDefaultThemeDir():
+    import glob
+    lst = filter(lambda d: d.find("default") == -1, glob.glob(BASEDIR+"themes/*"))
+    if len(lst) == 0:
+        return None
+    else:
+        return lst[0]
+
+if __name__ == "__main__":
+    logLevelMap = {"debug": logging.DEBUG, "info": logging.INFO,
+                   "warning": logging.WARNING, "error": logging.ERROR,
+                   "critical": logging.CRITICAL}
+
+    op = OptionParser()
+    op.add_option("-s", "--autoscreenshot", action="store_true", default=False,
+                  help="take a screenshot on every page")
+    op.add_option("-d", "--debug", action="store_true", default=False,
+                  help="enable debugging mode")
+    op.add_option("-g", "--forcegui", action="store_true", default=False,
+                  help="use the GUI interface no matter what")
+    op.add_option("-l", "--loglevel", type="choice",
+                  choices=["debug", "info", "warning", "error", "critical"], default="error",
+                  help="set the logging level: debug, info, warning, error, or critical [default: %default]")
+    op.add_option("-m", "--moduleDir", action="store", default=BASEDIR+"modules/",
+                  help="set the directory containing firstboot modules [default: %default]")
+    op.add_option("-r", "--reconfig", action="store_true", default=False,
+                  help="enable reconfiguration mode")
+    op.add_option("-t", "--test", action="store_true", default=False,
+                  help="only test, don't configure the system")
+    op.add_option("--themeDir", action="store", dest="themeDir", default=findDefaultThemeDir(),
+                  help="set the directory containing the theme [default: %default]")
+    (opts, args) = op.parse_args()
+
+    config.moduleDir = opts.moduleDir
+    config.themeDir = opts.themeDir
+
+    if opts.debug:
+        opts.loglevel = "debug"
+
+    if logLevelMap.has_key(opts.loglevel):
+        logging.basicConfig(level=logLevelMap[opts.loglevel],
+                            format="firstboot %(levelname)s: %(message)s")
+
+    if opts.reconfig:
+        logging.info("Starting up in reconfig mode")
+        config.mode = config.mode | MODE_RECONFIG
+
+    # First check to see if firstboot should even run.
+    if not opts.test and (os.getuid() > 0 or os.geteuid() > 0):
+        logging.error(_("You must be root to run firstboot."))
+        os._exit(0)
+
+    # If we have a $DISPLAY set, we are either in debug mode or in reconfig
+    # mode from a terminal already running under X.  Otherwise, run in text
+    # mode if in runlevel 3, or start up our own X server.
+    if os.environ.has_key("DISPLAY") or opts.debug:
+        config.needInterface = True
+        logging.debug("X is already running, not using any frontend")
+    elif (getRunlevel() == 3 and not opts.forcegui):
+        logging.debug("Running text mode interface")
+        if os.access("/usr/bin/setup", os.X_OK):
+            os.system("/usr/bin/setup")
+
+        finish(opts)
+        os._exit(0)
+    elif not os.environ.has_key("DISPLAY"):
+        from firstboot.xfrontend import XFrontEnd
+        config.frontend = XFrontEnd()
+        config.needInterface = True
+        logging.debug("Using X frontend")
+    else:
+        logging.error(_("Could not start any firstboot frontend."))
+        raise RuntimeError, _("Could not start any firstboot frontend.")
+
+    # If X was already running, we don't need to make a frontend so skip this
+    # step.  This also means that frontends can't do anything besides set
+    # themselves up.
+    if config.frontend is not None:
+        logging.debug("Starting frontend")
+        config.frontend.start()
+
+    if config.needInterface:
+        from firstboot.interface import *
+        config.interface = Interface(autoscreenshot=opts.autoscreenshot,
+                                     testing=opts.test)
+        logging.debug("Using GTK interface")
+
+    # This must come as early as possible so we can present the UI for the
+    # widest class of problems, BUT it also has to come late enough for us
+    # to have already imported gtk.
+    meh.makeRHHandler("firstboot", "@VERSION@", config)
+
+    config.moduleList = loadModules(config.moduleDir, config.mode)
+    if not config.moduleList:
+        logging.error(_("No firstboot modules were found."))
+        raise RuntimeError, _("No firstboot modules were found.")
+
+    config.interface.moduleList = config.moduleList
+
+    # Set up the keyboard just in case we're running as a real program.
+    kbd = Keyboard()
+    kbd.read()
+    kbd.activate()
+
+    if config.interface is None:
+        logging.error(_("Could not create any firstboot interface."))
+        raise RuntimeError, _("Could not create any firstboot interface.")
+
+    win = config.interface.createMainWindow()
+    config.interface.createSidebar()
+    config.interface.createScreens()
+    config.interface.run()
+
+    # We arrive back here after the interface has been torn down.  Now
+    # kill whatever frontend is running.
+    if config.frontend is not None:
+        logging.debug("Stopping frontend")
+        config.frontend.stop()
+
+    finish(opts)
+
+    # If X is still running for some reason, exiting now should take it down.
+    os._exit(0)
