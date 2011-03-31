@@ -44,28 +44,25 @@ help:
 	    echo "make rpms_release     <--- create binary rpms for Qubes Release package"; \
 	    echo "make rpms_revisor     <--- create binary rpms for Revisor"; \
 	    echo; \
-	    echo "make update-repo      <-- copy newly generated rpms to qubes yum repo";\
-	    echo "make update-repo-testing  <-- same, but to "testing" repo";\
-	    echo "make clean            <--- clean all the binary files";\
+	    echo "make update-repo      <-- copy newly generated rpms to installer yum repo";\
 	    exit 0;
 
 .PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor \
 	update-repo update-repo-testing clean
 
 rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor
-	rpm --addsign rpm/x86_64/*.rpm
-	(if [ -d rpm/i686 ] ; then rpm --addsign rpm/i686/*.rpm; fi)
+	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
-rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2: anaconda
+rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2: anaconda anaconda/anaconda.spec
 	$(call package,anaconda,$(ANACONDA_VERSION))
 
-rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2: firstboot
+rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2: firstboot firstboot/firstboot.spec
 	$(call package,firstboot,$(FIRSTBOOT_VERSION))
 
-rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2: qubes-logos
+rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2: qubes-logos qubes-logos/qubes-logos.spec
 	$(call package,qubes-logos,$(QBSLOGOS_VERSION))
 
-rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release
+rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release qubes-release/qubes-release.spec
 	$(call package,qubes-release,$(QBSRELEASE_VERSION))
 
 rpms_anaconda: rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2
@@ -80,33 +77,15 @@ rpms_logos: rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2
 rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb qubes-release/qubes-release.spec
 
-rpms_revisor: rpm/SOURCES/revisor-$(REVISOR_VERSION).tar.bz2
+rpms_revisor: revisor/revisor-$(REVISOR_VERSION).tar.gz revisor/revisor.spec
 	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/revisor" -bb revisor/revisor.spec
 
+RPMS = pm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
+	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
+	rpm/noarch/revisor*-$(REVISOR_VERSION)-*.rpm \
+	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
+	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
+
 update-repo:
-	ln -f rpm/x86_64/qubes-gui-vm-*.rpm ../yum/r1/appvm/rpm/
-	ln -f rpm/x86_64/qubes-gui-vm-*.rpm ../yum/r1/netvm/rpm/
-	ln -f rpm/x86_64/qubes-vchan-vm-*.rpm ../yum/r1/appvm/rpm/
-	ln -f rpm/x86_64/qubes-vchan-vm-*.rpm ../yum/r1/netvm/rpm/
-	ln -f rpm/x86_64/qubes-gui-dom0-*.rpm ../yum/r1/dom0/rpm/
-
-update-repo-testing:
-	ln -f rpm/x86_64/qubes-gui-vm-*.rpm ../yum/r1-testing/appvm/rpm/
-	ln -f rpm/x86_64/qubes-gui-vm-*.rpm ../yum/r1-testing/netvm/rpm/
-	ln -f rpm/x86_64/qubes-vchan-vm-*.rpm ../yum/r1-testing/appvm/rpm/
-	ln -f rpm/x86_64/qubes-vchan-vm-*.rpm ../yum/r1-testing/netvm/rpm/
-	ln -f rpm/x86_64/qubes-gui-dom0-*.rpm ../yum/r1-testing/dom0/rpm/
-
-clean:
-	(cd common; $(MAKE) clean)
-	(cd gui-agent; $(MAKE) clean)
-	(cd gui-common; $(MAKE) clean)
-	(cd gui-daemon; $(MAKE) clean)
-	(cd shmoverride; $(MAKE) clean)
-	$(MAKE) -C pulse clean
-	(cd xf86-input-mfndev; if [ -e Makefile ] ; then $(MAKE) distclean; fi; ./bootstrap --clean || echo )
-	(cd vchan; $(MAKE) clean)
-	(cd vchan/event_channel; ./cleanup.sh || echo)
-	(cd vchan/u2mfn; ./cleanup.sh || echo)
-	$(MAKE) -C relaxed_xf86ValidateModes clean
+	ln -f $(RPMS) ../yum/r1/installer/rpm/
 
