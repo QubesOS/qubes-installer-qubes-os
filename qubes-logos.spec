@@ -1,1 +1,0 @@
-qubes-logos-1/qubes-logos.spec
