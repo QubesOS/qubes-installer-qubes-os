@@ -51,7 +51,8 @@ class BaseInstallClass(object):
     _descriptionFields = ()
     name = "base"
     pkgstext = ""
-    # default to showing the upgrade option
+    # default to showing the packages selection and upgrade options
+    showPackageSelection = True
     showUpgrade = True
     bootloaderTimeoutDefault = None
 
@@ -128,7 +129,7 @@ class BaseInstallClass(object):
             dispatch.skipStep("bootloader", permanent=1)
 
         # allow backends to disable interactive package selection
-        if not anaconda.backend.supportsPackageSelection:
+        if not self.showPackageSelection or not anaconda.backend.supportsPackageSelection:
             dispatch.skipStep("tasksel", skip = 1, permanent=1)
             dispatch.skipStep("group-selection", skip = 1, permanent=1)
 
