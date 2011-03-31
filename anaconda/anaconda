@@ -1,0 +1,1237 @@
+#!/usr/bin/python
+#
+# anaconda: The Red Hat Linux Installation program
+#
+# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+# Red Hat, Inc.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author(s): Brent Fox <bfox@redhat.com>
+#            Mike Fulbright <msf@redhat.com>
+#            Jakub Jelinek <jakub@redhat.com>
+#            Jeremy Katz <katzj@redhat.com>
+#            Chris Lumens <clumens@redhat.com>
+#            Paul Nasrat <pnasrat@redhat.com>
+#            Erik Troan <ewt@rpath.com>
+#            Matt Wilson <msw@rpath.com>
+#
+
+# This toplevel file is a little messy at the moment...
+
+import sys, os, re, time, subprocess
+from optparse import OptionParser
+from tempfile import mkstemp
+
+# keep up with process ID of miniwm if we start it
+
+miniwm_pid = None
+
+# Make sure messages sent through python's warnings module get logged.
+def AnacondaShowWarning(message, category, filename, lineno, file=sys.stderr, line=None):
+    log.warning("%s" % warnings.formatwarning(message, category, filename, lineno, line))
+
+# start miniWM
+def startMiniWM(root='/'):
+    (rd, wr) = os.pipe()
+    childpid = os.fork()
+    if not childpid:
+        if os.access("./mini-wm", os.X_OK):
+            cmd = "./mini-wm"
+        elif os.access(root + "/usr/bin/mini-wm", os.X_OK):
+            cmd = root + "/usr/bin/mini-wm"
+        else:
+            return None
+        
+        os.dup2(wr, 1)
+        os.close(wr)
+        args = [cmd, '--display', ':1']
+        os.execv(args[0], args)
+        sys.exit (1)
+    else:
+        # We need to make sure that mini-wm is the first client to
+        # connect to the X server (see bug #108777).  Wait for mini-wm
+        # to write back an acknowledge token.
+        os.read(rd, 1)
+
+    return childpid
+
+# function to handle X startup special issues for anaconda
+def doStartupX11Actions(runres="800x600"):
+    global miniwm_pid
+
+    setupGraphicalLinks()
+
+    # now start up mini-wm
+    try:
+        miniwm_pid = startMiniWM()
+        log.info("Started mini-wm")
+
+    except:
+        miniwm_pid = None
+        log.error("Unable to start mini-wm")
+
+    if miniwm_pid is not None:
+        import xutils
+        import gtk
+
+        try:
+            i = gtk.Invisible()
+            i.selection_owner_set("_ANACONDA_MINI_WM_RUNNING")
+
+            xutils.setRootResource('Xcursor.size', '24')
+            xutils.setRootResource('Xcursor.theme', 'Bluecurve')
+            xutils.setRootResource('Xcursor.theme_core', 'true')
+
+            xutils.setRootResource('Xft.antialias', '1')
+            xutils.setRootResource('Xft.hinting', '1')
+            xutils.setRootResource('Xft.hintstyle', 'hintslight')
+            xutils.setRootResource('Xft.rgba', 'none')
+        except:
+            sys.stderr.write("X SERVER STARTED, THEN FAILED");
+            raise RuntimeError, "X server failed to start"
+
+def doShutdownX11Actions():
+    global miniwm_pid
+    
+    if miniwm_pid is not None:
+        try:
+            os.kill(miniwm_pid, 15)
+            os.waitpid(miniwm_pid, 0)
+        except:
+            pass
+
+def setupPythonUpdates():
+    from distutils.sysconfig import get_python_lib
+
+    if not os.path.exists("/tmp/updates"):
+        return
+
+    for pkg in os.listdir("/tmp/updates"):
+        d = "/tmp/updates/%s" % pkg
+
+        if not os.path.isdir(d):
+            continue
+
+        # See if the package exists in /usr/lib{64,}/python/?.?/site-packages.
+        # If it does, we can set it up as an update.  If not, the pkg is
+        # likely a completely new directory and should not be looked at.
+        dest = "%s/%s" % (get_python_lib(), pkg)
+        if not os.access(dest, os.R_OK):
+            dest = "%s/%s" % (get_python_lib(1), pkg)
+            if not os.access(dest, os.R_OK):
+                continue
+
+        contents = os.listdir(d)
+
+        # Symlink over everything that's in the python libdir but not in
+        # the updates directory.
+        for f in filter(lambda fn: fn not in contents, os.listdir(dest)):
+            if f.endswith(".pyc") or f.endswith(".pyo"):
+                continue
+
+            os.symlink("%s/%s" % (dest, f), "/tmp/updates/%s/%s" % (pkg, f))
+
+    if os.access("/tmp/updates/70-anaconda.rules", os.R_OK):
+        import shutil
+        shutil.copyfile("/tmp/updates/70-anaconda.rules",
+                        "/etc/udev/rules.d/70-anaconda.rules")
+
+def parseOptions():
+    def resolution_cb (option, opt_str, value, parser):
+        parser.values.runres = value
+
+    op = OptionParser()
+    # Interface
+    op.add_option("-C", "--cmdline", dest="display_mode", action="store_const", const="c",
+                  default="g")
+    op.add_option("-G", "--graphical", dest="display_mode", action="store_const", const="g")
+    op.add_option("-T", "--text", dest="display_mode", action="store_const", const="t")
+
+    # Network
+    op.add_option("--noipv4", action="store_true", default=False)
+    op.add_option("--noipv6", action="store_true", default=False)
+    op.add_option("--proxy")
+    op.add_option("--proxyAuth")
+
+    # Method of operation
+    op.add_option("--autostep", action="store_true", default=False)
+    op.add_option("-d", "--debug", dest="debug", action="store_true", default=False)
+    op.add_option("--kickstart", dest="ksfile")
+    op.add_option("--rescue", dest="rescue", action="store_true", default=False)
+    op.add_option("--targetarch", dest="targetArch", nargs=1, type="string")
+
+    op.add_option("-m", "--method", dest="method", default=None)
+    op.add_option("--repo", dest="method", default=None)
+    op.add_option("--stage2", dest="stage2", default=None)
+
+    op.add_option("--liveinst", action="store_true", default=False)
+
+    # Display
+    op.add_option("--headless", dest="isHeadless", action="store_true", default=False)
+    op.add_option("--nofb")
+    op.add_option("--resolution", action="callback", callback=resolution_cb, dest="runres",
+                  default="800x600", nargs=1, type="string")
+    op.add_option("--serial", action="store_true", default=False)
+    op.add_option("--usefbx", dest="xdriver", action="store_const", const="fbdev")
+    op.add_option("--virtpconsole")
+    op.add_option("--vnc", action="store_true", default=False)
+    op.add_option("--vncconnect")
+    op.add_option("--xdriver", dest="xdriver", action="store", type="string", default=None)
+
+    # Language
+    op.add_option("--keymap")
+    op.add_option("--kbdtype")
+    op.add_option("--lang")
+
+    # Obvious
+    op.add_option("--loglevel")
+    op.add_option("--syslog")
+
+    op.add_option("--noselinux", dest="selinux", action="store_false", default=True)
+    op.add_option("--selinux", action="store_true")
+
+    op.add_option("--nompath", dest="mpath", action="store_false", default=True)
+    op.add_option("--mpath", action="store_true")
+
+    op.add_option("--nodmraid", dest="dmraid", action="store_false", default=True)
+    op.add_option("--dmraid", action="store_true")
+
+    op.add_option("--noibft", dest="ibft", action="store_false", default=True)
+    op.add_option("--ibft", action="store_true")
+    op.add_option("--noiscsi", dest="iscsi", action="store_false", default=False)
+    op.add_option("--iscsi", action="store_true")
+
+    # Miscellaneous
+    op.add_option("--module", action="append", default=[])
+    op.add_option("--nomount", dest="rescue_nomount", action="store_true", default=False)
+    op.add_option("--updates", dest="updateSrc", action="store", type="string")
+    op.add_option("--dogtail", dest="dogtail",   action="store", type="string")
+    op.add_option("--dlabel", action="store_true", default=False)
+
+    # Deprecated, unloved, unused
+    op.add_option("-r", "--rootPath", dest="unsupportedMode",
+                  action="store_const", const="root path")
+    op.add_option("-t", "--test", dest="unsupportedMode",
+                  action="store_const", const="test")
+
+    return op.parse_args()
+
+def setupPythonPath():
+    haveUpdates = False
+    for ndx in range(len(sys.path)-1, -1, -1):
+        if sys.path[ndx].endswith('updates'):
+            haveUpdates = True
+            break
+
+    if haveUpdates:
+        sys.path.insert(ndx+1, '/usr/lib/anaconda')
+        sys.path.insert(ndx+2, '/usr/lib/anaconda/textw')
+        sys.path.insert(ndx+3, '/usr/lib/anaconda/iw')
+    else:
+        sys.path.insert(0, '/usr/lib/anaconda')
+        sys.path.insert(1, '/usr/lib/anaconda/textw')
+        sys.path.insert(2, '/usr/lib/anaconda/iw')
+
+    sys.path.append('/usr/share/system-config-date')
+
+def addPoPath(dir):
+    """ Looks to see what translations are under a given path and tells
+    the gettext module to use that path as the base dir """
+    for d in os.listdir(dir):
+        if not os.path.isdir("%s/%s" %(dir,d)):
+            continue
+        if not os.path.exists("%s/%s/LC_MESSAGES" %(dir,d)):
+            continue
+        for basename in os.listdir("%s/%s/LC_MESSAGES" %(dir,d)):
+            if not basename.endswith(".mo"):
+                continue
+            log.info("setting %s as translation source for %s" %(dir, basename[:-3]))
+            gettext.bindtextdomain(basename[:-3], dir)
+
+def setupTranslations():
+    if os.path.isdir("/tmp/updates/po"):
+        addPoPath("/tmp/updates/po")
+    gettext.textdomain("anaconda")
+
+def setupEnvironment():
+    # Silly GNOME stuff
+    if os.environ.has_key('HOME') and not os.environ.has_key("XAUTHORITY"):
+        os.environ['XAUTHORITY'] = os.environ['HOME'] + '/.Xauthority'
+    os.environ['HOME'] = '/tmp'
+    os.environ['LC_NUMERIC'] = 'C'
+    os.environ["GCONF_GLOBAL_LOCKS"] = "1"
+
+    # In theory, this gets rid of our LVM file descriptor warnings
+    os.environ["LVM_SUPPRESS_FD_WARNINGS"] = "1"
+
+    # make sure we have /sbin and /usr/sbin in our path
+    os.environ["PATH"] += ":/sbin:/usr/sbin"
+
+    # we can't let the LD_PRELOAD hang around because it will leak into
+    # rpm %post and the like.  ick :/
+    if os.environ.has_key("LD_PRELOAD"):
+        del os.environ["LD_PRELOAD"]
+
+    os.environ["GLADEPATH"] = "/tmp/updates/:/tmp/updates/ui/:ui/:/usr/share/anaconda/ui/:/usr/share/python-meh/"
+    os.environ["PIXMAPPATH"] = "/tmp/updates/pixmaps/:/tmp/updates/:/tmp/product/pixmaps/:/tmp/product/:pixmaps/:/usr/share/anaconda/pixmaps/:/usr/share/pixmaps/:/usr/share/anaconda/:/usr/share/python-meh/"
+
+def setupLoggingFromOpts(opts):
+    if opts.loglevel and anaconda_log.logLevelMap.has_key(opts.loglevel):
+        level = anaconda_log.logLevelMap[opts.loglevel]
+        anaconda_log.logger.tty_loglevel = level
+        anaconda_log.setHandlersLevel(log, level)
+        anaconda_log.setHandlersLevel(storage.storage_log.logger, level)
+
+    if opts.syslog:
+        anaconda_log.logger.remote_syslog = opts.syslog
+        if opts.syslog.find(":") != -1:
+            (host, port) = opts.syslog.split(":")
+            anaconda_log.logger.addSysLogHandler(log, host, port=int(port))
+        else:
+            anaconda_log.logger.addSysLogHandler(log, opts.syslog)
+
+# ftp installs pass the password via a file in /tmp so
+# ps doesn't show it
+def expandFTPMethod(str):
+    ret = None
+
+    try:
+        filename = str[1:]
+        ret = open(filename, "r").readline()
+        ret = ret[:len(ret) - 1]
+        os.unlink(filename)
+        return ret
+    except:
+        return None
+
+def runVNC():
+    global vncS
+    vncS.startServer()
+
+    child = os.fork()
+    if child == 0:
+        for p in ('/tmp/updates/pyrc.py', \
+                '/usr/lib/anaconda-runtime/pyrc.py'):
+            if os.access(p, os.R_OK|os.X_OK):
+                os.environ['PYTHONSTARTUP'] = p
+                break
+
+        while True:
+            # s390/s390x are the only places we /really/ need a shell on tty1,
+            # and everywhere else this just gets in the way of pdb.  But we
+            # don't want to return, because that'll return try to start X
+            # a second time.
+            if iutil.isConsoleOnVirtualTerminal():
+                    time.sleep(10000)
+            else:
+                    print _("Press <enter> for a shell")
+                    sys.stdin.readline()
+                    iutil.execConsole()
+
+def checkMemory(anaconda):
+    if iutil.memInstalled() < isys.MIN_RAM:
+        from snack import SnackScreen, ButtonChoiceWindow
+
+        screen = SnackScreen()
+        ButtonChoiceWindow(screen, _('Fatal Error'),
+                            _('You do not have enough RAM to install %s '
+                              'on this machine.\n'
+                              '\n'
+                              'Press <return> to reboot your system.\n')
+                           %(product.productName,),
+                           buttons = (_("OK"),))
+        screen.finish()
+        sys.exit(0)
+
+    # override display mode if machine cannot nicely run X
+    if not flags.usevnc:
+        if anaconda.displayMode not in ('t', 'c') and iutil.memInstalled() < isys.MIN_GUI_RAM:
+            stdoutLog.warning(_("You do not have enough RAM to use the graphical "
+                                "installer.  Starting text mode."))
+            anaconda.displayMode = 't'
+            time.sleep(2)
+
+def setupGraphicalLinks():
+    for i in ( "imrc", "im_palette.pal", "gtk-2.0", "pango", "fonts",
+               "fb.modes"):
+        try:
+            if os.path.exists("/mnt/runtime/etc/%s" %(i,)):
+                os.symlink ("../mnt/runtime/etc/" + i, "/etc/" + i)
+        except:
+            pass
+
+def handleSshPw(anaconda):
+    import users
+    u = users.Users(anaconda)
+
+    userdata = anaconda.ksdata.sshpw.dataList()
+    for ud in userdata:
+        if u.checkUserExists(ud.username, root="/"):
+            u.setUserPassword(username=ud.username, password=ud.password,
+                              isCrypted=ud.isCrypted, lock=ud.lock)
+        else:
+            u.createUser(name=ud.username, password=ud.password,
+                         isCrypted=ud.isCrypted, lock=ud.lock,
+                         root="/")
+
+    del u
+
+def createSshKey(algorithm, keyfile):
+    path = '/etc/ssh/%s' % (keyfile,)
+    argv = ['-q','-t',algorithm,'-f',path,'-C','','-N','']
+    log.info("running \"%s\"" % (" ".join(['ssh-keygen']+argv),))
+
+    so = "/tmp/ssh-keygen-%s-stdout.log" % (algorithm,)
+    se = "/tmp/ssh-keygen-%s-stderr.log" % (algorithm,)
+    iutil.execWithRedirect('ssh-keygen', argv, stdout=so, stderr=se)
+
+def fork_orphan():
+    """Forks an orphan.
+    
+    Returns 1 in the parent and 0 in the orphaned child.
+    """
+    intermediate = os.fork()
+    if not intermediate:
+        if os.fork():
+            # the intermediate child dies
+            os._exit(0)
+        return 0;
+    # the original process waits for the intermediate child
+    os.waitpid(intermediate, 0)
+    return 1
+
+def startSsh():
+    if not flags.sshd:
+        return   
+    if iutil.isS390():
+        return
+
+    if not fork_orphan():
+        os.mkdir("/var/log", 0755)
+        os.open("/var/log/lastlog", os.O_RDWR | os.O_CREAT, 0644)
+        ssh_keys = {
+            'rsa1':'ssh_host_key',
+            'rsa':'ssh_host_rsa_key',
+            'dsa':'ssh_host_dsa_key',
+            }
+        for (algorithm, keyfile) in ssh_keys.items():
+            createSshKey(algorithm, keyfile)
+        args = ["/sbin/sshd", "-f", "/etc/ssh/sshd_config.anaconda"]
+        os.execv("/sbin/sshd", args)
+        sys.exit(1)
+
+def startDebugger(signum, frame):
+    import epdb
+    epdb.serve(skip=1)
+
+class Anaconda(object):
+    def __init__(self):
+        import desktop, dispatch, firewall, security
+        import system_config_keyboard.keyboard as keyboard
+        from flags import flags
+
+        self._backend = None
+        self._bootloader = None
+        self.canReIPL = False
+        self.desktop = desktop.Desktop()
+        self.dir = None
+        self.dispatch = dispatch.Dispatcher(self)
+        self.displayMode = None
+        self.extraModules = []
+        self.firewall = firewall.Firewall()
+        self.id = None
+        self._instClass = None
+        self._instLanguage = None
+        self._intf = None
+        self.isHeadless = False
+        self.keyboard = keyboard.Keyboard()
+        self.ksdata = None
+        self.mediaDevice = None
+        self.methodstr = None
+        self._network = None
+        self._platform = None
+        self.proxy = None
+        self.proxyUsername = None
+        self.proxyPassword = None
+        self.reIPLMessage = None
+        self.rescue = False
+        self.rescue_mount = True
+        self.rootParts = None
+        self.rootPath = "/mnt/sysimage"
+        self.security = security.Security()
+        self.simpleFilter = True
+        self.stage2 = None
+        self._storage = None
+        self._timezone = None
+        self.updateSrc = None
+        self.upgrade = flags.cmdline.has_key("preupgrade")
+        self.upgradeRoot = None
+        self.upgradeSwapInfo = None
+        self._users = None
+
+        # *sigh* we still need to be able to write this out
+        self.xdriver = None
+
+    @property
+    def backend(self):
+        if not self._backend:
+            b = self.instClass.getBackend()
+            self._backend = apply(b, (self, ))
+
+        return self._backend
+
+    @property
+    def bootloader(self):
+        if not self._bootloader:
+            import booty
+            self._bootloader = booty.getBootloader(self)
+
+        return self._bootloader
+
+    @property
+    def firstboot(self):
+        from pykickstart.constants import FIRSTBOOT_SKIP, FIRSTBOOT_DEFAULT
+
+        if self.ksdata:
+            return self.ksdata.firstboot.firstboot
+        elif iutil.isS390():
+            return FIRSTBOOT_SKIP
+        else:
+            return FIRSTBOOT_DEFAULT
+
+    @property
+    def instClass(self):
+        if not self._instClass:
+            from installclass import DefaultInstall
+            self._instClass = DefaultInstall()
+
+        return self._instClass
+
+    @property
+    def instLanguage(self):
+        if not self._instLanguage:
+            import language
+            self._instLanguage = language.Language(self.displayMode)
+
+        return self._instLanguage
+
+    def _getInterface(self):
+        return self._intf
+
+    def _setInterface(self, v):
+        # "lambda cannot contain assignment"
+        self._intf = v
+
+    def _delInterface(self):
+        del self._intf
+
+    intf = property(_getInterface, _setInterface, _delInterface)
+
+    @property
+    def network(self):
+        if not self._network:
+            import network
+            self._network = network.Network()
+
+        return self._network
+
+    @property
+    def platform(self):
+        if not self._platform:
+            import platform
+            self._platform = platform.getPlatform(self)
+
+        return self._platform
+
+    @property
+    def protected(self):
+        import stat
+
+        if os.path.exists("/dev/live") and \
+           stat.S_ISBLK(os.stat("/dev/live")[stat.ST_MODE]):
+            return [os.readlink("/dev/live")]
+        elif self.methodstr and self.methodstr.startswith("hd:"):
+            method = self.methodstr[3:]
+            return [method.split(":", 3)[0]]
+        else:
+            return []
+
+    @property
+    def users(self):
+        if not self._users:
+            import users
+            self._users = users.Users(self)
+
+        return self._users
+
+    @property
+    def storage(self):
+        if not self._storage:
+            import storage
+            self._storage = storage.Storage(self)
+
+        return self._storage
+
+    @property
+    def timezone(self):
+        if not self._timezone:
+            import timezone
+            self._timezone = timezone.Timezone()
+            self._timezone.setTimezoneInfo(self.instLanguage.getDefaultTimeZone(self.rootPath))
+
+        return self._timezone
+
+    def dumpState(self):
+        from meh.dump import ReverseExceptionDump
+        from inspect import stack as _stack
+
+        # Skip the frames for dumpState and the signal handler.
+        stack = _stack()[2:]
+        stack.reverse()
+        exn = ReverseExceptionDump((None, None, stack), self.mehConfig)
+
+        (fd, filename) = mkstemp("", "anaconda-tb-", "/tmp")
+        fo = os.fdopen(fd, "w")
+
+        exn.write(self, fo)
+
+    def initInterface(self):
+        if self._intf:
+            raise RuntimeError, "Second attempt to initialize the InstallInterface"
+
+        # setup links required by graphical mode if installing and verify display mode
+        if self.displayMode == 'g':
+            stdoutLog.info (_("Starting graphical installation."))
+
+            try:
+                from gui import InstallInterface
+            except Exception, e:
+                stdoutLog.error("Exception starting GUI installer: %s" %(e,))
+                # if we're not going to really go into GUI mode, we need to get
+                # back to vc1 where the text install is going to pop up.
+                if not flags.livecdInstall:
+                    isys.vtActivate (1)
+                stdoutLog.warning("GUI installer startup failed, falling back to text mode.")
+                self.displayMode = 't'
+                if 'DISPLAY' in os.environ.keys():
+                    del os.environ['DISPLAY']
+                time.sleep(2)
+
+        if self.displayMode == 't':
+            from text import InstallInterface
+            if not os.environ.has_key("LANG"):
+                os.environ["LANG"] = "en_US.UTF-8"
+
+        if self.displayMode == 'c':
+            from cmdline import InstallInterface
+
+        self._intf = InstallInterface()
+        return self._intf
+
+    def writeXdriver(self, root = None):
+        # this should go away at some point, but until it does, we
+        # need to keep it around.
+        if self.xdriver is None:
+            return
+        if root is None:
+            root = self.rootPath
+        if not os.path.isdir("%s/etc/X11" %(root,)):
+            os.makedirs("%s/etc/X11" %(root,), mode=0755)
+        f = open("%s/etc/X11/xorg.conf" %(root,), 'w')
+        f.write('Section "Device"\n\tIdentifier "Videocard0"\n\tDriver "%s"\nEndSection\n' % self.xdriver)
+        f.close()
+
+    def setMethodstr(self, methodstr):
+        if methodstr.startswith("cdrom://"):
+            (device, tree) = string.split(methodstr[8:], ":", 1)
+
+            if not tree.startswith("/"):
+                tree = "/%s" %(tree,)
+
+            if device.startswith("/dev/"):
+                device = device[5:]
+
+            self.mediaDevice = device
+            self.methodstr = "cdrom://%s" % tree
+        else:
+            self.methodstr = methodstr
+
+    def requiresNetworkInstall(self):
+        fail = False
+        numNetDevs = isys.getNetworkDeviceCount()
+
+        if self.methodstr is not None:
+            if (self.methodstr.startswith("http") or \
+                self.methodstr.startswith("ftp://") or \
+                self.methodstr.startswith("nfs:")) and \
+               numNetDevs == 0:
+                fail = True
+        elif self.stage2 is not None:
+            if self.stage2.startswith("cdrom://") and \
+               not os.path.isdir("/mnt/stage2/Packages") and \
+               numNetDevs == 0:
+                fail = True
+
+        if fail:
+            log.error("network install required, but no network devices available")
+
+        return fail
+
+    def write(self):
+        self.writeXdriver()
+        self.instLanguage.write(self.rootPath)
+
+        self.timezone.write(self.rootPath)
+        self.network.write(instPath=self.rootPath, anaconda=self)
+        self.desktop.write(self.rootPath)
+        self.users.write(self.rootPath)
+        self.security.write(self.rootPath)
+        self.firewall.write(self.rootPath)
+
+        if self.ksdata:
+            for svc in self.ksdata.services.disabled:
+                iutil.execWithRedirect("/sbin/chkconfig",
+                                       [svc, "off"],
+                                       stdout="/dev/tty5", stderr="/dev/tty5",
+                                       root=self.rootPath)
+
+            for svc in self.ksdata.services.enabled:
+                iutil.execWithRedirect("/sbin/chkconfig",
+                                       [svc, "on"],
+                                       stdout="/dev/tty5", stderr="/dev/tty5",
+                                       root=self.rootPath)
+
+    def writeKS(self, filename):
+        import urllib
+        from pykickstart.version import versionToString, DEVEL
+
+        f = open(filename, "w")
+
+        f.write("# Kickstart file automatically generated by anaconda.\n\n")
+        f.write("#version=%s\n" % versionToString(DEVEL))
+
+        if self.upgrade:
+            f.write("upgrade\n");
+        else:
+            f.write("install\n");
+
+        m = None
+
+        if self.methodstr:
+            m = self.methodstr
+        elif self.stage2:
+            m = self.stage2
+
+        if m:
+            if m.startswith("cdrom:"):
+                f.write("cdrom\n")
+            elif m.startswith("hd:"):
+                if m.count(":") == 3:
+                    (part, fs, dir) = string.split(m[3:], ":")
+                else:
+                    (part, dir) = string.split(m[3:], ":")
+
+                f.write("harddrive --partition=%s --dir=%s\n" % (part, dir))
+            elif m.startswith("nfs:"):
+                if m.count(":") == 3:
+                    (server, opts, dir) = string.split(m[4:], ":")
+                    f.write("nfs --server=%s --opts=%s --dir=%s" % (server, opts, dir))
+                else:
+                    (server, dir) = string.split(m[4:], ":")
+                    f.write("nfs --server=%s --dir=%s\n" % (server, dir))
+            elif m.startswith("ftp://") or m.startswith("http"):
+                f.write("url --url=%s\n" % urllib.unquote(m))
+
+        # Some kickstart commands do not correspond to any anaconda UI
+        # component.  If this is a kickstart install, we need to make sure
+        # the information from the input file ends up in the output file.
+        if self.ksdata:
+            f.write(self.ksdata.user.__str__())
+            f.write(self.ksdata.services.__str__())
+            f.write(self.ksdata.reboot.__str__())
+
+        self.instLanguage.writeKS(f)
+
+        if not self.isHeadless:
+            self.keyboard.writeKS(f)
+            self.network.writeKS(f)
+
+        self.timezone.writeKS(f)
+        self.users.writeKS(f)
+        self.security.writeKS(f)
+        self.firewall.writeKS(f)
+
+        self.storage.writeKS(f)
+        self.bootloader.writeKS(f)
+
+        if self.backend:
+            self.backend.writeKS(f)
+            self.backend.writePackagesKS(f, self)
+
+        # Also write out any scripts from the input ksfile.
+        if self.ksdata:
+            for s in self.ksdata.scripts:
+                f.write(s.__str__())
+
+        # make it so only root can read, could have password
+        os.chmod(filename, 0600)
+
+if __name__ == "__main__":
+    setupPythonPath()
+
+    # Allow a file to be loaded as early as possible
+    try:
+        import updates_disk_hook
+    except ImportError:
+        pass
+
+    # Set up logging as early as possible.
+    import logging
+    import anaconda_log
+
+    log = logging.getLogger("anaconda")
+    stdoutLog = logging.getLogger("anaconda.stdout")
+
+    # pull this in to get product name and versioning
+    import product
+
+    # this handles setting up updates for pypackages to minimize the set needed
+    setupPythonUpdates()
+
+    import signal, string, isys, iutil, time
+    import warnings
+    import vnc
+    import users
+    import kickstart
+    import storage.storage_log
+
+    from flags import flags
+
+    # the following makes me very sad. -- katzj
+    # we have a slightly different set of udev rules in the second 
+    # stage than the first stage.  why this doesn't get picked up
+    # automatically, I don't know.  but we need to trigger so that we
+    # have all the information about netdevs that we care about for 
+    # NetworkManager in the udev database
+    from baseudev import udev_trigger, udev_settle
+    udev_trigger("net")
+    udev_settle()
+    # and for added fun, once doesn't seem to be enough?  so we 
+    # do it twice, it works and we scream at the world "OH WHY?"
+    udev_trigger("net")
+    udev_settle()
+
+    import gettext
+    _ = lambda x: gettext.ldgettext("anaconda", x)
+
+    anaconda = Anaconda()
+    warnings.showwarning = AnacondaShowWarning
+    setupTranslations()
+
+    # reset python's default SIGINT handler
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGSEGV, isys.handleSegv)
+
+    setupEnvironment()
+
+    pidfile = open("/var/run/anaconda.pid", "w")
+    pidfile.write("%s\n" % (os.getpid(),))
+    del pidfile
+    # add our own additional signal handlers
+    signal.signal(signal.SIGHUP, startDebugger)
+
+    # we need to do this really early so we make sure its done before rpm
+    # is imported
+    iutil.writeRpmPlatform()
+
+    graphical_failed = 0
+    vncS = vnc.VncServer()          # The vnc Server object.
+    vncS.anaconda = anaconda
+    xserver_pid = None
+
+    (opts, args) = parseOptions()
+
+    if opts.unsupportedMode:
+        stdoutLog.error("Running anaconda in %s mode is no longer supported." % opts.unsupportedMode)
+        sys.exit(0)
+
+    # Now that we've got arguments, do some extra processing.
+    setupLoggingFromOpts(opts)
+
+    # Default is to prompt to mount the installed system.
+    anaconda.rescue_mount = not opts.rescue_nomount
+
+    if opts.dlabel: #autodetected driverdisc in use
+        flags.dlabel = True
+
+    anaconda.displayMode = opts.display_mode
+    anaconda.isHeadless = opts.isHeadless
+
+    if opts.noipv4:
+        flags.useIPv4 = False
+
+    if opts.noipv6:
+        flags.useIPv6 = False
+
+    if opts.proxy:
+        anaconda.proxy = opts.proxy
+
+        if opts.proxyAuth:
+            filename = opts.proxyAuth
+            ret = open(filename, "r").readlines()
+            os.unlink(filename)
+
+            anaconda.proxyUsername = ret[0].rstrip()
+            if len(ret) == 2:
+                anaconda.proxyPassword = ret[1].rstrip()
+
+    if opts.updateSrc:
+        anaconda.updateSrc = opts.updateSrc
+
+    if opts.method:
+        if opts.method[0] == '@':
+            opts.method = expandFTPMethod(opts.method)
+
+        anaconda.setMethodstr(opts.method)
+    else:
+        anaconda.methodstr = None
+
+    if opts.stage2:
+        if opts.stage2[0] == '@':
+            opts.stage2 = expandFTPMethod(opts.stage2)
+
+        anaconda.stage2 = opts.stage2
+
+    if opts.liveinst:
+        flags.livecdInstall = True
+
+    if opts.module:
+        for mod in opts.module:
+            (path, name) = string.split(mod, ":")
+            anaconda.extraModules.append((path, name))
+
+    if opts.vnc:
+        flags.usevnc = 1
+        anaconda.displayMode = 'g'
+        vncS.recoverVNCPassword()
+
+        # Only consider vncconnect when vnc is a param
+        if opts.vncconnect:
+            cargs = string.split(opts.vncconnect, ":")
+            vncS.vncconnecthost = cargs[0]
+            if len(cargs) > 1 and len(cargs[1]) > 0:
+                if len(cargs[1]) > 0:
+                    vncS.vncconnectport = cargs[1]
+
+    if opts.ibft:
+        flags.ibft = 1
+
+    if opts.iscsi:
+        flags.iscsi = 1
+
+    if opts.targetArch:
+        flags.targetarch = opts.targetArch
+
+    # set flags 
+    flags.dmraid = opts.dmraid
+    flags.mpath = opts.mpath
+    flags.selinux = opts.selinux
+
+    if opts.serial:
+        flags.serial = True
+    if opts.virtpconsole:
+        flags.virtpconsole = opts.virtpconsole
+
+    if opts.xdriver:
+        anaconda.xdriver = opts.xdriver
+        anaconda.writeXdriver(root="/")
+
+    if not flags.livecdInstall:
+        isys.auditDaemon()
+
+    # setup links required for all install types
+    for i in ( "services", "protocols", "nsswitch.conf", "joe", "selinux",
+               "mke2fs.conf" ):
+        try:
+            if os.path.exists("/mnt/runtime/etc/" + i):
+                os.symlink ("../mnt/runtime/etc/" + i, "/etc/" + i)
+        except:
+            pass
+
+    # This is the one place we do all kickstart file parsing.
+    if opts.ksfile:
+        kickstart.preScriptPass(anaconda, opts.ksfile)
+        anaconda.ksdata = kickstart.parseKickstart(anaconda, opts.ksfile)
+        opts.rescue = anaconda.ksdata.rescue.rescue
+
+        # we need to have a libuser.conf that points to the installer root for
+        # sshpw, but after that we start sshd, we need one that points to the
+        # install target.
+        luserConf = users.createLuserConf(instPath="")
+        handleSshPw(anaconda)
+        startSsh()
+        del(os.environ["LIBUSER_CONF"])
+
+    users.createLuserConf(anaconda.rootPath)
+
+    if opts.rescue:
+        anaconda.rescue = True
+
+        import rescue
+
+        if anaconda.ksdata:
+            anaconda.instClass.configure(anaconda)
+
+            # We need an interface before running kickstart execute methods for
+            # storage.
+            from snack import *
+            screen = SnackScreen()
+            anaconda.intf = rescue.RescueInterface(screen)
+
+            anaconda.ksdata.execute()
+
+            anaconda.intf = None
+            screen.finish()
+
+            # command line 'nomount' overrides kickstart /same for vnc/
+            anaconda.rescue_mount = not (opts.rescue_nomount or anaconda.ksdata.rescue.nomount)
+
+        rescue.runRescue(anaconda)
+
+        # shouldn't get back here
+        sys.exit(1)
+
+    if anaconda.ksdata:
+        if anaconda.ksdata.vnc.enabled:
+            flags.usevnc = 1
+            anaconda.displayMode = 'g'
+
+            if vncS.password == "":
+                vncS.password = anaconda.ksdata.vnc.password
+
+            if vncS.vncconnecthost == "":
+                vncS.vncconnecthost = anaconda.ksdata.vnc.host
+
+            if vncS.vncconnectport == "":
+                vncS.vncconnectport = anaconda.ksdata.vnc.port
+
+        flags.vncquestion = False
+
+    # disable VNC over text question when not enough memory is available
+    if iutil.memInstalled() < isys.MIN_GUI_RAM:
+        flags.vncquestion = False
+
+
+    if anaconda.displayMode == 't' and flags.vncquestion: #we prefer vnc over text mode, so ask about that
+        title = _("Would you like to use VNC?")
+        message = _("Text mode provides a limited set of installation options.  "
+                    "It does not allow you to specify your own partitioning "
+                    "layout or package selections.  Would you like to use VNC "
+                    "mode instead?")
+
+        ret = vnc.askVncWindow(title, message)
+        if ret != -1:
+            anaconda.displayMode = 'g'
+            flags.usevnc = 1
+            if ret is not None:
+                vncS.password = ret
+
+    if opts.debug:
+        flags.debug = True
+
+    log.info("anaconda called with cmdline = %s" %(sys.argv,))
+    log.info("Display mode = %s" % anaconda.displayMode)
+    log.info("Default encoding = %s " % sys.getdefaultencoding())
+
+    checkMemory(anaconda)
+
+    #
+    # now determine if we're going to run in GUI or TUI mode
+    #
+    # if no X server, we have to use text mode
+    if not flags.livecdInstall and not iutil.isS390() and not os.access("/usr/bin/Xorg", os.X_OK):
+         stdoutLog.warning(_("Graphical installation is not available. "
+                             "Starting text mode."))
+         time.sleep(2)
+         anaconda.displayMode = 't'
+
+    # s390/iSeries checks
+    if anaconda.isHeadless and anaconda.displayMode == "g" and not \
+       (os.environ.has_key("DISPLAY") or flags.usevnc):
+        stdoutLog.warning(_("DISPLAY variable not set. Starting text mode."))
+        anaconda.displayMode = 't'
+        graphical_failed = 1
+        time.sleep(2)
+
+    # if DISPLAY not set either vnc server failed to start or we're not
+    # running on a redirected X display, so start local X server
+    if anaconda.displayMode == 'g' and not os.environ.has_key('DISPLAY') and not flags.usevnc:
+        try:
+            # The following code depends on no SIGCHLD being delivered, possibly
+            # only except the one from a failing X.org. Thus make sure before
+            # entering this section that all the other children of anaconda have
+            # terminated or were forked into an orphan (which won't deliver a
+            # SIGCHLD to mess up the fragile signaling below).
+
+            # start X with its USR1 handler set to ignore.  this will make it send
+            # us SIGUSR1 if it succeeds.  if it fails, catch SIGCHLD and bomb out.
+
+            def sigchld_handler(num, frame):
+                raise OSError
+
+            def sigusr1_handler(num, frame):
+                pass
+
+            def preexec_fn():
+                signal.signal(signal.SIGUSR1, signal.SIG_IGN)
+
+            old_sigusr1 = signal.signal(signal.SIGUSR1, sigusr1_handler)
+            old_sigchld = signal.signal(signal.SIGCHLD, sigchld_handler)
+            xout = open("/dev/tty5", "w")
+
+            proc = subprocess.Popen(["Xorg", "-br", "-logfile", "/tmp/X.log",
+                                     ":1", "vt6", "-s", "1440", "-ac",
+                                     "-nolisten", "tcp", "-dpi", "96"],
+                                     close_fds=True, stdout=xout, stderr=xout,
+                                     preexec_fn=preexec_fn)
+
+            signal.pause()
+
+            os.environ["DISPLAY"] = ":1"
+            doStartupX11Actions(opts.runres)
+            xserver_pid = proc.pid
+        except (OSError, RuntimeError):
+            stdoutLog.warning(" X startup failed, falling back to text mode")
+            anaconda.displayMode = 't'
+            graphical_failed = 1
+            time.sleep(2)
+        finally:
+            signal.signal(signal.SIGUSR1, old_sigusr1)
+            signal.signal(signal.SIGCHLD, old_sigchld)
+
+    if anaconda.displayMode == 't' and graphical_failed and not anaconda.ksdata:
+        ret = vnc.askVncWindow()
+        if ret != -1:
+            anaconda.displayMode = 'g'
+            flags.usevnc = 1
+            if ret is not None:
+                vncS.password = ret
+
+    # if they want us to use VNC do that now
+    if anaconda.displayMode == 'g' and flags.usevnc:
+        runVNC()
+        doStartupX11Actions(opts.runres)
+
+    # with X running we can initialize the UI interface
+    anaconda.initInterface()
+    anaconda.instClass.configure(anaconda)
+
+    # comment out the next line to make exceptions non-fatal
+    from exception import initExceptionHandling
+    anaconda.mehConfig = initExceptionHandling(anaconda)
+
+    # add our own additional signal handlers
+    signal.signal(signal.SIGUSR2, lambda signum, frame: anaconda.dumpState())
+
+    # download and run Dogtail script
+    if opts.dogtail:
+       try:
+           import urlgrabber
+
+           try:
+               fr = urlgrabber.urlopen(opts.dogtail)
+           except urlgrabber.grabber.URLGrabError, e:
+               log.error("Could not retrieve Dogtail script from %s.\nError was\n%s" % (opts.dogtail, e))
+               fr = None
+                           
+           if fr:
+               (fw, testcase) = mkstemp(prefix='testcase.py.', dir='/tmp')
+               os.write(fw, fr.read())
+               fr.close()
+               os.close(fw)
+               
+               # download completed, run the test
+               if not os.fork():
+                   # we are in the child
+                   os.chmod(testcase, 0755)
+                   os.execv(testcase, [testcase])
+                   sys.exit(0)
+               else:
+                   # we are in the parent, sleep to give time for the testcase to initialize
+                   # todo: is this needed, how to avoid possible race conditions
+                   time.sleep(1)
+       except Exception, e:
+           log.error("Exception %s while running Dogtail testcase" % e)
+
+    if opts.lang:
+        # this is lame, but make things match what we expect (#443408)
+        opts.lang = opts.lang.replace(".utf8", ".UTF-8")
+        anaconda.dispatch.skipStep("language", permanent = 1)
+        anaconda.instLanguage.instLang = opts.lang
+        anaconda.instLanguage.systemLang = opts.lang
+        anaconda.timezone.setTimezoneInfo(anaconda.instLanguage.getDefaultTimeZone(anaconda.rootPath))
+
+    if opts.keymap:
+        anaconda.dispatch.skipStep("keyboard", permanent = 1)
+        anaconda.keyboard.set(opts.keymap)
+        anaconda.keyboard.activate()
+
+    if anaconda.ksdata:
+        import storage
+
+        # Before we set up the storage system, we need to know which disks to
+        # ignore, etc.  Luckily that's all in the kickstart data.
+        anaconda.storage.zeroMbr = anaconda.ksdata.zerombr.zerombr
+        anaconda.storage.ignoredDisks = anaconda.ksdata.ignoredisk.ignoredisk
+        anaconda.storage.exclusiveDisks = anaconda.ksdata.ignoredisk.onlyuse
+
+        if anaconda.ksdata.clearpart.type is not None:
+            anaconda.storage.clearPartType = anaconda.ksdata.clearpart.type
+            anaconda.storage.clearPartDisks = anaconda.ksdata.clearpart.drives
+            if anaconda.ksdata.clearpart.initAll:
+                anaconda.storage.reinitializeDisks = anaconda.ksdata.clearpart.initAll
+
+        storage.storageInitialize(anaconda)
+
+        # Now having initialized storage, we can apply all the other kickstart
+        # commands.  This gives us the ability to check that storage commands
+        # are correctly formed and refer to actual devices.
+        anaconda.ksdata.execute()
+
+    # set up the headless case
+    if anaconda.isHeadless:
+        anaconda.dispatch.skipStep("keyboard", permanent = 1)
+
+    if not anaconda.ksdata:
+        anaconda.instClass.setSteps(anaconda)
+    else:
+        kickstart.setSteps(anaconda)
+
+    try:
+        anaconda.intf.run(anaconda)
+    except SystemExit, code:
+        anaconda.intf.shutdown()
+
+    if anaconda.ksdata and anaconda.ksdata.reboot.eject:
+        for drive in anaconda.storage.devicetree.devices:
+            if drive.type != "cdrom":
+                continue
+
+            log.info("attempting to eject %s" % drive.path)
+            drive.eject()
+
+    del anaconda.intf
+
+# vim:tw=78:ts=4:et:sw=4
