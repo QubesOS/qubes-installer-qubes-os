@@ -80,7 +80,7 @@ rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 rpms_revisor: revisor/revisor-$(REVISOR_VERSION).tar.gz revisor/revisor.spec
 	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/revisor" -bb revisor/revisor.spec
 
-RPMS = pm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
+RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/revisor*-$(REVISOR_VERSION)-*.rpm \
 	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
