@@ -45,6 +45,8 @@ help:
 	    echo "make rpms_revisor     <--- create binary rpms for Revisor"; \
 	    echo; \
 	    echo "make update-repo      <-- copy newly generated rpms to installer yum repo";\
+	    echo; \
+		echo "make iso              <== \o/";\
 	    exit 0;
 
 .PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor \
@@ -90,3 +92,6 @@ update-repo:
 	ln -f $(RPMS) build/yum/installer/rpm/
 	build/yum/installer/update_repo.sh
 
+iso:
+	ln -sf `pwd`/build /tmp/qubes-installer-workdir
+	revisor --cli --config=conf/qubes-install-respin.conf --model=qubes1-x86_64 --install-dvd
