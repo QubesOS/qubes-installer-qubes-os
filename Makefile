@@ -87,5 +87,6 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
 update-repo:
-	ln -f $(RPMS) ../yum/r1/installer/rpm/
+	ln -f $(RPMS) build/yum/installer/rpm/
+	build/yum/installer/update_repo.sh
 
