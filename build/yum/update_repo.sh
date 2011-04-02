@@ -25,7 +25,7 @@ update_repo()
 }
 
 
-for repo in * ; do
+for repo in dom0-updates installer qubes-dom0 ; do
     echo "--> Processing repo: $repo..."
     check_repo $repo/rpm -o $repo/repodata
     update_repo $repo -o $repo/repodata
