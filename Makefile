@@ -90,7 +90,7 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 
 update-repo:
 	ln -f $(RPMS) build/yum/installer/rpm/
-	build/yum/installer/update_repo.sh
+	(cd build/yum && ./update_repo.sh)
 
 iso:
 	ln -sf `pwd`/build /tmp/qubes-installer-workdir
