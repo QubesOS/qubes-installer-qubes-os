@@ -66,7 +66,7 @@ void scsiWindow(const char * driver) {
         _("Loading %s driver"), driver);
 }
 
-int progressCallback(void *pbdata, long long pos, long long total) {
+void progressCallback(void *pbdata, long long pos, long long total) {
     struct progressCBdata *data = pbdata;
     char tickmark[2] = "-";
     char *ticks = "-\\|/";
@@ -77,7 +77,6 @@ int progressCallback(void *pbdata, long long pos, long long total) {
 
     newtLabelSetText(data->label, tickmark);
     newtRefresh();
-    return 0;
 }
 
 struct progressCBdata *winProgressBar(int width, int height, char *title, char *text, ...) {

@@ -75,7 +75,7 @@ int doMediaCheck(char *file, char *descr) {
     data.scale = scale;
     data.label = label;
 
-    rc = mediaCheckFile(file, progressCallback, (void*)&data);
+    rc = mediaCheckFile(file, progressCallback, &data);
 
     newtFormDestroy(f);
     newtPopWindow();
