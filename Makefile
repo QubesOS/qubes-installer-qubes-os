@@ -89,9 +89,9 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
 update-repo:
-	ln -f $(RPMS) build/yum/installer/rpm/
-	(cd build/yum && ./update_repo.sh)
+	ln -f $(RPMS) yum/installer/rpm/
+	(cd yum && ./update_repo.sh)
 
 iso:
-	ln -sf `pwd`/build /tmp/qubes-installer-workdir
+	ln -sf `pwd` /tmp/qubes-installer
 	revisor --cli --config=conf/qubes-install-respin.conf --model=qubes1-x86_64 --install-dvd
