@@ -65,6 +65,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/firstboot/themes/*
 %{_datadir}/anaconda/pixmaps/*
 %{_datadir}/plymouth/themes/charge/*
+%{_datadir}/pixmaps/splash/*
 /usr/lib/anaconda-runtime/*.jpg
 %{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png
 # should be ifarch i386
