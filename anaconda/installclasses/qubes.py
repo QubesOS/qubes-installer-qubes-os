@@ -1,7 +1,7 @@
 #
 # qubes.py
 #
-# Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
+# Copyright (C) 2011  Invisible Things Lab All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -83,6 +83,12 @@ class InstallClass(BaseInstallClass):
     def setSteps(self, anaconda):
         BaseInstallClass.setSteps(self, anaconda)
         anaconda.dispatch.skipStep("partition")
+        anaconda.dispatch.skipStep("language")
+        anaconda.dispatch.skipStep("reposetup")
+        anaconda.dispatch.skipStep("tasksel")
+        anaconda.dispatch.skipStep("basepkgsel")
+        anaconda.dispatch.skipStep("group-selection")
+        anaconda.dispatch.skipStep("postselection")
 
     def getBackend(self):
         if flags.livecdInstall:
@@ -92,27 +98,6 @@ class InstallClass(BaseInstallClass):
             return yuminstall.YumBackend
 
     def productMatches(self, oldprod):
-        if oldprod is None:
-            return False
-
-        if oldprod.startswith(productName):
-            return True
-
-        productUpgrades = {
-                "Fedora Core": ("Red Hat Linux", ),
-                "Fedora": ("Fedora Core", ),
-                "Qubes": ("Fedora", )
-        }
-
-        if productUpgrades.has_key(productName):
-            acceptable = productUpgrades[productName]
-        else:
-            acceptable = ()
-
-        for p in acceptable:
-            if oldprod.startswith(p):
-                return True
-
         return False
 
     def versionMatches(self, oldver):
