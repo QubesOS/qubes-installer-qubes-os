@@ -54,19 +54,6 @@ install -d -m 755 $RPM_BUILD_ROOT/etc/pki/rpm-gpg
 
 install -m 644 RPM-GPG-KEY* $RPM_BUILD_ROOT/etc/pki/rpm-gpg/
 
-# Install all the keys, link the primary keys to primary arch files
-# and to compat qubes location
-pushd $RPM_BUILD_ROOT/etc/pki/rpm-gpg/
-for dist in qubes-%{dist_version} fedora-%{fedora_base_version}
-  do
-  for arch in i386 x86_64 ppc ppc64
-    do
-    ln -s RPM-GPG-KEY-${dist}-primary RPM-GPG-KEY-${dist/-*}-$arch
-  done
-  ln -s RPM-GPG-KEY-${dist}-primary RPM-GPG-KEY-${dist/-*}
-done
-popd
-
 install -d -m 755 $RPM_BUILD_ROOT/etc/yum.repos.d
 for file in {qubes,fedora}*repo ; do
   install -m 644 $file $RPM_BUILD_ROOT/etc/yum.repos.d
