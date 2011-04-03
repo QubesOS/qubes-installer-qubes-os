@@ -237,6 +237,8 @@ static void queryCDMediaCheck(char *dev, char *location) {
     int rc;
     char *stage2loc;
 
+    return; // Nobody really checks the DVD before the install! Skip it!
+
     /* dont bother to test in automated installs */
     if (FL_KICKSTART(flags) && !FL_MEDIACHECK(flags))
         return;
