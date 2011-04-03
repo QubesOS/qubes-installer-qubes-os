@@ -94,4 +94,4 @@ update-repo:
 
 iso:
 	ln -sf `pwd` /tmp/qubes-installer
-	revisor --cli --config=conf/qubes-install-respin.conf --model=qubes1-x86_64 --install-dvd
+	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
