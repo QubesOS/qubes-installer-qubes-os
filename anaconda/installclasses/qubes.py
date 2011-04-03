@@ -80,6 +80,8 @@ class InstallClass(BaseInstallClass):
         BaseInstallClass.setSteps(self, anaconda)
         anaconda.dispatch.skipStep("partition")
         anaconda.dispatch.skipStep("language")
+        anaconda.dispatch.skipStep("network")
+        anaconda.network.hostname = "dom0"
         anaconda.dispatch.skipStep("tasksel")
         anaconda.dispatch.skipStep("group-selection")
 
