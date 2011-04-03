@@ -5,6 +5,7 @@ Summary: Graphical system installer
 Name:    anaconda
 Version: 13.42
 Release: 1%{?dist}
+Epoch:   1000
 License: GPLv2+
 Group:   Applications/System
 URL:     http://fedoraproject.org/wiki/Anaconda
