@@ -5,6 +5,7 @@ Name: firstboot
 URL: http://fedoraproject.org/wiki/FirstBoot
 Version: 1.110
 Release: 1%{?dist}
+Epoch: 1000
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
 # within this srpm.
