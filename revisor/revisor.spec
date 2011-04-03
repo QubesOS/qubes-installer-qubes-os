@@ -19,7 +19,7 @@
 Summary:        Fedora "Spin" Graphical User Interface
 Name:           revisor
 Version:        2.2
-Release:        2%{?dist}
+Release:        3%{?dist}
 License:        GPLv2
 Group:          Applications/System
 URL:            http://fedorahosted.org/revisor
@@ -131,6 +131,7 @@ Provides:       revisor-wui = %{version}-%{release}
 
 Source100: F13-buildinstall
 Patch100:  revisor-2.2-comps.patch
+Patch101:  revisor-2.2-release.patch
 
 %description cli
 Revisor provides a set of graphical tools for building customized, updated
@@ -352,6 +353,7 @@ This is the Revisor Web User Interface package
 %prep
 %setup -q
 %patch100 -p1
+%patch101 -p1
 
 %build
 %configure
