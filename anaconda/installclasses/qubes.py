@@ -48,10 +48,6 @@ class InstallClass(BaseInstallClass):
 
     bootloaderTimeoutDefault = 5
 
-    # Qubes comes preinstalled and does not support upgrade
-    showPackageSelection = False
-    showUpgrade = False
-
     tasks = [(N_("Minimal"), ["core", "qubes"]),
              (N_("Desktop"),
               ["backup-client", "base", "compat-libraries", "fonts",
