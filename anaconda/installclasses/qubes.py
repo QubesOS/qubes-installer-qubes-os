@@ -80,11 +80,8 @@ class InstallClass(BaseInstallClass):
         BaseInstallClass.setSteps(self, anaconda)
         anaconda.dispatch.skipStep("partition")
         anaconda.dispatch.skipStep("language")
-        anaconda.dispatch.skipStep("reposetup")
         anaconda.dispatch.skipStep("tasksel")
-        anaconda.dispatch.skipStep("basepkgsel")
         anaconda.dispatch.skipStep("group-selection")
-        anaconda.dispatch.skipStep("postselection")
 
     def getBackend(self):
         if flags.livecdInstall:
