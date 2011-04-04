@@ -23,6 +23,7 @@ from product import *
 from meh.filer import *
 from flags import flags
 import os
+import subprocess
 import types
 import iutil
 
@@ -84,6 +85,17 @@ class InstallClass(BaseInstallClass):
         anaconda.network.hostname = "dom0"
         anaconda.dispatch.skipStep("tasksel")
         anaconda.dispatch.skipStep("group-selection")
+
+    def postAction(self, anaconda):
+        # First disable all the useless services...
+        whitelisted = ['functions', 'killall', 'halt', 'single',
+                'rsyslog', 'haldaemon', 'messagebus', 'xenstored', 'xend', 'xenconsoled', 'firstboot',
+                'qubes_core', 'qubes_netvm']
+
+        for file in os.listdir(anaconda.rootPath + '/etc/init.d'):
+            if not file in whitelisted:
+                subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
+                    '/sbin/chkconfig', '--level', '5', file, 'off'])
 
     def getBackend(self):
         if flags.livecdInstall:
