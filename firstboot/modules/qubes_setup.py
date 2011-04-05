@@ -112,7 +112,7 @@ class moduleClass(Module):
             self.run_in_thread(self.do_set_dom0_networking)
 
     def start_qubes_networking (self):
-        self.show_stage(_("Starting Qubes networkig"))
+        self.show_stage(_("Starting Qubes networking"))
         self.run_in_thread(self.do_start_networking)
 
     def run_command(self, command):
