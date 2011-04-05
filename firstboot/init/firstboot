@@ -3,7 +3,7 @@
 # Provides: firstboot
 # Default-Start: 3 5
 # Default-Stop: 0 1 2 4 6
-# Required-Start:
+# Required-Start: qubes_core
 # Should-Start: $network
 # Short-Description: Starts the firstboot configuration program
 # Description: Firstboot runs the first time a machine is booted after
