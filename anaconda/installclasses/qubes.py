@@ -83,6 +83,7 @@ class InstallClass(BaseInstallClass):
         anaconda.dispatch.skipStep("language")
         anaconda.dispatch.skipStep("network")
         anaconda.network.hostname = "dom0"
+        anaconda.dispatch.skipStep("accounts")
         anaconda.dispatch.skipStep("tasksel")
         anaconda.dispatch.skipStep("group-selection")
 
