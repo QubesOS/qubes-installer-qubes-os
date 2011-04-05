@@ -38,14 +38,12 @@ class moduleClass(Module):
     def __init__(self):
         Module.__init__(self)
         self.priority = 10000
-        self.sidebarTitle = N_("Configure Qubes")
-        self.title = N_("Configure Qubes")
+        self.sidebarTitle = N_("Create Service VMs")
+        self.title = N_("Create Service VMs")
         self.icon = "qubes.png"
 
     def apply(self, interface, testing=False):
         try:
-            self.netvm_radio.set_sensitive(False)
-            self.dom0_radio.set_sensitive(False)
             if self.progress is None:
                 self.progress = gtk.ProgressBar()
                 self.progress.set_pulse_step(0.06)
@@ -57,7 +55,8 @@ class moduleClass(Module):
 
             self.create_default_netvm()
             self.create_default_fwvm()
-            self.set_networking_type(self.netvm_radio.get_active())
+            self.set_networking_type(netvm=True)
+            self.start_qubes_networking()
             self.configure_template()
             self.create_default_dvm()
 
@@ -77,10 +76,8 @@ class moduleClass(Module):
         self.progress.set_text(stage)
 
     def configure_template(self):
-        self.show_stage(_("Creating default NetworkVM"))
-        # copy /etc/localtime to template
-        # ...
-        # stop template
+        self.show_stage(_("Configuring default Temaple"))
+        self.run_in_thread(self.do_configure_template)
 
     def run_in_thread(self, method):
         thread = threading.Thread(target=method)
@@ -114,6 +111,10 @@ class moduleClass(Module):
             self.show_stage(_("Setting Dom0 networking"))
             self.run_in_thread(self.do_set_dom0_networking)
 
+    def start_qubes_networking (self):
+        self.show_stage(_("Starting Qubes networkig"))
+        self.run_in_thread(self.do_start_networking)
+
     def run_command(self, command):
         try:
             os.setgid(self.qubes_gid)
@@ -143,28 +144,31 @@ class moduleClass(Module):
     def do_set_dom0_networking(self):
         self.run_command(['/usr/bin/qvm-set-default-netvm', 'dom0'])
 
+    def do_start_networking(self):
+        subprocess.check_call(['/etc/init.d/qubes_netvm', 'start'])
+
+    def do_configure_template(self):
+        subprocess.check_call(['/bin/mkdir', '/mnt/template-root'])
+        subprocess.check_call(['/bin/mount', '-oloop',
+            '/var/lib/qubes/vm-templates/fedora-14-x64/root.img',
+            '/mnt/template-root'])
+        # Copy timezone setting from Dom0 to template
+        subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
+        subprocess.check_call(['/bin/umount', '/mnt/template-root'])
+
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
 
-        label = gtk.Label(_("Now we will configure your Qubes OS system.  "
-                            "This will take a few minutes, as I need to create and configure "
-                            "some default virtual machines for you to use.\n\n"
-                            "But first select the networking type you wish to have."))
+        label = gtk.Label(_("Almost there! We just need to create a few service VMs."
+                            "This will take a few minutes...\n\n"))
         label.set_line_wrap(True)
         label.set_alignment(0.0, 0.5)
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
-        self.netvm_radio = gtk.RadioButton(None, _("_NetVM networking"))
-        self.vbox.pack_start(self.netvm_radio, False, True)
-
-        self.dom0_radio = gtk.RadioButton(self.netvm_radio, _("_Dom0 networking (not recommended)"))
-        self.vbox.pack_start(self.dom0_radio, False, True)
-
         self.progress = None
 
     def initializeUI(self):
-        self.netvm_radio.set_active(True)
         self.qubes_gid = grp.getgrnam('qubes').gr_gid
         self.stage = "Initialization"
         self.process_error = None
