@@ -67,33 +67,13 @@ class CongratulationWindow (InstallWindow):
             a = gtk.Alignment ()
             a.add (pix)
             a.set (0.5, 0.5, 1.0, 1.0)
-	    a.set_size_request(200, -1)
+            a.set_size_request(200, -1)
             hbox.pack_start (a, False, False, 36)
 
-        if isinstance(anaconda.platform, platform.S390):
-            txt = _("Congratulations, your %s installation is complete.\n\n") % (productName,)
+        txt = _("Congratulations, your Qubes installation is complete.\n\n"
+                    "Please reboot to start useing the installed system.")
 
-            if not anaconda.canReIPL:
-                self.rebootButton.set_label(_("Shutdown"))
-
-                txt = txt + _("Please shutdown to use the installed system.\n")
-            else:
-                txt = txt + _("Please reboot to use the installed system.\n")
-
-            if not anaconda.reIPLMessage is None:
-                txt = txt + "\n" + anaconda.reIPLMessage + "\n\n"
-
-            txt = txt + _("Note that updates may be available to ensure the proper "
-                          "functioning of your system and installation of these "
-                          "updates is recommended after the reboot.")
-        else:
-            txt = _("Congratulations, your %s installation is complete.\n\n"
-                    "Please reboot to use the installed system.  "
-                    "Note that updates may be available to ensure the proper "
-                    "functioning of your system and installation of these "
-                    "updates is recommended after the reboot.") %(productName,)
-
-	label = gui.WrappingLabel(txt)
+        label = gui.WrappingLabel(txt)
         label.set_size_request(250, -1)
 
         hbox.pack_start (label, True, True)
