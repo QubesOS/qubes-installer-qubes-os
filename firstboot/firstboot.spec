@@ -71,6 +71,7 @@ fi
 %{_datadir}/firstboot/modules/date.py*
 %{_datadir}/firstboot/modules/eula.py*
 %{_datadir}/firstboot/modules/welcome.py*
+%{_datadir}/firstboot/modules/qubes_setup.py*
 %{_datadir}/firstboot/themes/default/*
 
 %changelog
