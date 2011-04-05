@@ -33,7 +33,7 @@ class moduleClass(Module):
         Module.__init__(self)
         self.priority = 1
         self.sidebarTitle = N_("Welcome")
-        self.title = N_("Welcome")
+        self.title = N_("Welcome to Qubes R1")
         self.icon = "workstation.png"
 
     def apply(self, interface, testing=False):
