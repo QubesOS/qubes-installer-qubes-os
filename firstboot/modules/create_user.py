@@ -211,9 +211,9 @@ class moduleClass(Module):
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=10)
 
-        label = gtk.Label(_("You must create a 'username' for regular (non-administrative) "
-                            "use of your system.  To create a system 'username', please "
-                            "provide the information requested below."))
+        label = gtk.Label(_("You must create a 'user' account.\n\n"
+            "In practice this is used only for locking your screen (via screensaver and KDM). This account is not accessible from the"
+            "network in any way (because there is no networking in the VM where the GUI runs and where you log in)"))
 
         label.set_line_wrap(True)
         label.set_alignment(0.0, 0.5)
