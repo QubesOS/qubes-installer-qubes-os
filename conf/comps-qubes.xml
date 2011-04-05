@@ -840,7 +840,6 @@
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">kernel-qubes-dom0</packagereq>
-      <packagereq type="mandatory">knetworkmanager</packagereq>
       <packagereq type="mandatory">qubes-core-dom0</packagereq>
       <packagereq type="mandatory">qubes-gui-dom0</packagereq>
       <packagereq type="mandatory">qubes-manager</packagereq>
