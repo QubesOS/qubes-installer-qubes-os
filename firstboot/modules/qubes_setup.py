@@ -79,6 +79,9 @@ class moduleClass(Module):
             md.destroy()
             self.show_stage("Failure...")
             self.progress.hide()
+
+            self.radio_dontdoanything.set_active()
+
             return RESULT_FAILURE
 
     def show_stage(self, stage):
@@ -180,8 +183,8 @@ class moduleClass(Module):
 
         label = gtk.Label(_("Almost there! We just need to create a few system service VMs "
             "(NetVm, FirewallVm, and DisposableVM template).\n\n"
-            "We can also create a few AppVMs that might be useful for most users: 'work', 'personal', and 'red'"
-            "(the latter for all the untrusted activities, such as random web browsing). "
+            "We can also create a few AppVMs that might be useful for most users: 'work', 'personal', and 'red' "
+            "(the latter for all the untrusted activities, such as random web browsing) "
             "... or you might prefer to do it yourself later.\n\n"
             "Choose an option below and click 'Finish'..."))
 
@@ -190,13 +193,13 @@ class moduleClass(Module):
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
-        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, perosnal, red),"))
+        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, perosnal, red)"))
         self.vbox.pack_start(self.radio_servicevms_and_appvms, False, True)
 
-        self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs, and I will take care of the rest myself,"))
+        self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs"))
         self.vbox.pack_start(self.radio_onlyservicevms, False, True)
 
-        self.radio_dontdoanything = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Do not create any VMs right now (not recommended, for advanced users only)."))
+        self.radio_dontdoanything = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Do not create any VMs right now (not recommended, for advanced users only)"))
         self.vbox.pack_start(self.radio_dontdoanything, False, True)
 
         self.progress = None
