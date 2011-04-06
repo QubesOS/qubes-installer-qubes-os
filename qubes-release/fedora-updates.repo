@@ -5,7 +5,7 @@ failovermethod=priority
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f13&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
 
 [updates-debuginfo]
 name=Fedora 13 - x86_64 - Updates - Debug
@@ -14,7 +14,7 @@ failovermethod=priority
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-debug-f13&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
 
 [updates-source]
 name=Fedora 13 - Updates Source
@@ -23,4 +23,4 @@ failovermethod=priority
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-source-f13&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
