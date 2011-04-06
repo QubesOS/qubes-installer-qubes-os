@@ -62,7 +62,7 @@ install -p -m 644 plymouth/plymouthd.defaults $RPM_BUILD_ROOT%{_datadir}/plymout
 rm -rf $RPM_BUILD_ROOT
 
 %post
-/usr/sbin/plymouth-set-default-theme script
+/usr/sbin/plymouth-set-default-theme script || :
 
 %files
 %defattr(-, root, root)
