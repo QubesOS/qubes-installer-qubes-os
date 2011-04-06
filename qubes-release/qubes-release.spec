@@ -55,7 +55,7 @@ install -d -m 755 $RPM_BUILD_ROOT/etc/pki/rpm-gpg
 install -m 644 RPM-GPG-KEY* $RPM_BUILD_ROOT/etc/pki/rpm-gpg/
 
 install -d -m 755 $RPM_BUILD_ROOT/etc/yum.repos.d
-for file in {qubes,fedora}*repo ; do
+for file in {qubes,fedora,fedora-updates}*repo ; do
   install -m 644 $file $RPM_BUILD_ROOT/etc/yum.repos.d
 done
 
@@ -84,6 +84,7 @@ rm -rf $RPM_BUILD_ROOT
 %config %attr(0644,root,root) /etc/system-release-cpe
 %dir /etc/yum.repos.d
 %config(noreplace) /etc/yum.repos.d/fedora.repo
+%config(noreplace) /etc/yum.repos.d/fedora-updates.repo
 %config(noreplace) /etc/yum.repos.d/qubes-r1-dom0.repo
 %config(noreplace) %attr(0644,root,root) /etc/issue
 %config(noreplace) %attr(0644,root,root) /etc/issue.net
