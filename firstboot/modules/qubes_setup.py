@@ -76,7 +76,7 @@ class moduleClass(Module):
         self.progress.set_text(stage)
 
     def configure_template(self):
-        self.show_stage(_("Configuring default Temaple"))
+        self.show_stage(_("Configuring default TemplateVM"))
         self.run_in_thread(self.do_configure_template)
 
     def run_in_thread(self, method):
