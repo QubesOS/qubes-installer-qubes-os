@@ -167,8 +167,6 @@
       <packagereq type="default">krb5-auth-dialog</packagereq>
       <packagereq type="default">openssh-askpass</packagereq>
       <packagereq type="default">plymouth-system-theme</packagereq>
-      <packagereq type="default">policycoreutils-gui</packagereq>
-      <packagereq type="default">setroubleshoot</packagereq>
       <packagereq type="default">system-config-date</packagereq>
       <packagereq type="default">system-config-firewall</packagereq>
       <packagereq type="default">system-config-network</packagereq>
@@ -254,14 +252,12 @@
       <packagereq type="mandatory">ncurses</packagereq>
       <packagereq type="mandatory">openssh-server</packagereq>
       <packagereq type="mandatory">passwd</packagereq>
-      <packagereq type="mandatory">policycoreutils</packagereq>
       <packagereq type="mandatory">procps</packagereq>
       <packagereq type="mandatory">qubes-release</packagereq>
       <packagereq type="mandatory">readline</packagereq>
       <packagereq type="mandatory">rootfiles</packagereq>
       <packagereq type="mandatory">rpm</packagereq>
       <packagereq type="mandatory">rsyslog</packagereq>
-      <packagereq type="mandatory">selinux-policy-targeted</packagereq>
       <packagereq type="mandatory">setserial</packagereq>
       <packagereq type="mandatory">setup</packagereq>
       <packagereq type="mandatory">shadow-utils</packagereq>
