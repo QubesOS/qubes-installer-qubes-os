@@ -56,7 +56,7 @@ for k in charge script; do
         install -p -m 644 $i $RPM_BUILD_ROOT%{_datadir}/plymouth/themes/$k/
     done
 done
-install -p -m 644 plymouth/plymouthd.defaults $RPM_BUILD_ROOT%{_datadir}/plymouth
+install -p -m 644 plymouth/plymouthd.defaults.qubes $RPM_BUILD_ROOT%{_datadir}/plymouth
 
 (cd anaconda; make DESTDIR=$RPM_BUILD_ROOT install)
 
@@ -64,6 +64,9 @@ install -p -m 644 plymouth/plymouthd.defaults $RPM_BUILD_ROOT%{_datadir}/plymout
 rm -rf $RPM_BUILD_ROOT
 
 %post
+cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymouthd.defaults
+cp -f %{_datadir}/plymouth/themes/script/progress_bar.png.qubes %{_datadir}/plymouth/themes/script/progress_bar.png
+cp -f %{_datadir}/plymouth/themes/script/progress_box.png.qubes %{_datadir}/plymouth/themes/script/progress_box.png
 /usr/sbin/plymouth-set-default-theme script || :
 
 %files
@@ -71,7 +74,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYING COPYING-kde-logo
 %{_datadir}/firstboot/themes/*
 %{_datadir}/anaconda/pixmaps/*
-%{_datadir}/plymouth/plymouthd.defaults
+%{_datadir}/plymouth/plymouthd.defaults.qubes
 %{_datadir}/plymouth/themes/charge/*
 %{_datadir}/plymouth/themes/script/*
 %{_datadir}/pixmaps/splash/*
