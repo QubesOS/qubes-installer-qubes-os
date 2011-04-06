@@ -17,6 +17,7 @@ Conflicts: anaconda-images <= 10
 Conflicts: redhat-artwork <= 5.0.5
 # For _kde4_appsdir macro:
 BuildRequires: kde-filesystem
+Requires: plymouth-theme-script
 
 
 %description
@@ -53,17 +54,22 @@ mkdir -p $RPM_BUILD_ROOT%{_datadir}/plymouth/themes/charge/
 for i in plymouth/charge/* ; do
     install -p -m 644 $i $RPM_BUILD_ROOT%{_datadir}/plymouth/themes/charge/
 done
+install -p -m 644 plymouth/plymouthd.defaults $RPM_BUILD_ROOT%{_datadir}/plymouth
 
 (cd anaconda; make DESTDIR=$RPM_BUILD_ROOT install)
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post
+/usr/sbin/plymouth-set-default-theme script
+
 %files
 %defattr(-, root, root)
 %doc COPYING COPYING-kde-logo
 %{_datadir}/firstboot/themes/*
 %{_datadir}/anaconda/pixmaps/*
+%{_datadir}/plymouth/plymouthd.defaults
 %{_datadir}/plymouth/themes/charge/*
 %{_datadir}/pixmaps/splash/*
 /usr/lib/anaconda-runtime/*.jpg
