@@ -63,10 +63,16 @@ install -p -m 644 plymouth/plymouthd.defaults.qubes $RPM_BUILD_ROOT%{_datadir}/p
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%post
+%triggerin -- plymouth
 cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymouthd.defaults
+/usr/sbin/plymouth-set-default-theme script || :
+
+%triggerin -- plymouth-theme-script
 cp -f %{_datadir}/plymouth/themes/script/progress_bar.png.qubes %{_datadir}/plymouth/themes/script/progress_bar.png
 cp -f %{_datadir}/plymouth/themes/script/progress_box.png.qubes %{_datadir}/plymouth/themes/script/progress_box.png
+/usr/sbin/plymouth-set-default-theme script || :
+
+%post
 /usr/sbin/plymouth-set-default-theme script || :
 
 %files
