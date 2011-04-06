@@ -33,7 +33,7 @@ N_ = lambda x: x
 
 class moduleClass(Module):
     netvm_name = "netvm"
-    fwvm_name  = "fwvm"
+    fwvm_name  = "firewallvm"
 
     def __init__(self):
         Module.__init__(self)
