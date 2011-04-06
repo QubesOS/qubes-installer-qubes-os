@@ -117,12 +117,6 @@ class moduleClass(Module):
             self.usernameEntry.grab_focus()
             return RESULT_FAILURE
 
-        fullName = self.fullnameEntry.get_text()
-
-        # Check for valid strings
-        if not userGroupCheck.isNameOk(fullName, self.fullnameEntry):
-            return RESULT_FAILURE
-
         # If a home directory for the user already exists, offer to reuse it
         # for the new user.
         try:
@@ -159,7 +153,6 @@ class moduleClass(Module):
         else:
             userEnt = user
 
-        userEnt.set(libuser.GECOS, [fullName])
         uidNumber = userEnt.get(libuser.UIDNUMBER)[0]
 
         groupEnt = self.admin.initGroup(username)
@@ -212,15 +205,14 @@ class moduleClass(Module):
         self.vbox = gtk.VBox(spacing=10)
 
         label = gtk.Label(_("You must create a 'user' account.\n\n"
-            "In practice this is used only for locking your screen (via screensaver and KDM). This account is not accessible from the"
-            "network in any way (because there is no networking in the VM where the GUI runs and where you log in)"))
+            "In practice this is used only for locking your screen (via screensaver and KDM). This account is not accessible from the "
+            "network in any way, because there is no networking in the VM where the GUI runs and where you log in (this VM is called Dom0)."))
 
         label.set_line_wrap(True)
         label.set_alignment(0.0, 0.5)
         label.set_size_request(500, -1)
 
         self.usernameEntry = gtk.Entry()
-        self.fullnameEntry = gtk.Entry()
         self.passwordEntry = gtk.Entry()
         self.passwordEntry.set_visibility(False)
         self.confirmEntry = gtk.Entry()
@@ -237,13 +229,6 @@ class moduleClass(Module):
         label.set_alignment(0.0, 0.5)
         table.attach(label, 0, 1, 0, 1, gtk.FILL)
         table.attach(self.usernameEntry, 1, 2, 0, 1, gtk.SHRINK, gtk.FILL, 5)
-
-        label = gtk.Label(_("Full Nam_e:"))
-        label.set_use_underline(True)
-        label.set_mnemonic_widget(self.fullnameEntry)
-        label.set_alignment(0.0, 0.5)
-        table.attach(label, 0, 1, 1, 2, gtk.FILL)
-        table.attach(self.fullnameEntry, 1, 2, 1, 2, gtk.SHRINK, gtk.FILL, 5)
 
         label = gtk.Label(_("_Password:"))
         label.set_use_underline(True)
