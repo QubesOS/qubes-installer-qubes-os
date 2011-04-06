@@ -132,7 +132,7 @@ class moduleClass(Module):
         self.run_command(['/usr/bin/qvm-create', '--net', '--label', 'red', self.netvm_name])
 
     def do_create_fwvm(self):
-        self.run_command(['/usr/bin/qvm-create', '--proxy', '--label', 'red', self.fwvm_name])
+        self.run_command(['/usr/bin/qvm-create', '--proxy', '--label', 'green', self.fwvm_name])
 
     def do_create_dvm(self):
         self.run_command(['/usr/bin/qvm-create-default-dvm', '--default-template', '--default-script'])
