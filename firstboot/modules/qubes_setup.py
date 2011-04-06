@@ -44,6 +44,10 @@ class moduleClass(Module):
 
     def apply(self, interface, testing=False):
         try:
+            self.radio_servicevms_and_appvms.set_sensitive(False)
+            self.radio_onlyservicevms.set_sensitive(False)
+            self.radio_dontdoanything.set_sensitive(False)
+
             if self.progress is None:
                 self.progress = gtk.ProgressBar()
                 self.progress.set_pulse_step(0.06)
@@ -53,12 +57,18 @@ class moduleClass(Module):
             if testing:
                 return RESULT_SUCCESS
 
+            if self.radio_dontdoanything.get_active():
+                return RESULT_SUCCESS
+
             self.create_default_netvm()
             self.create_default_fwvm()
             self.set_networking_type(netvm=True)
             self.start_qubes_networking()
             self.configure_template()
             self.create_default_dvm()
+
+            if self.radio_servicevms_and_appvms.get_active():
+                self.create_appvms()
 
             return RESULT_SUCCESS
         except Exception as e:
@@ -115,6 +125,10 @@ class moduleClass(Module):
         self.show_stage(_("Starting Qubes networking"))
         self.run_in_thread(self.do_start_networking)
 
+    def create_appvms (self):
+        self.show_stage(_("Creating handy AppVMs"))
+        self.run_in_thread(self.do_create_appvms)
+
     def run_command(self, command):
         try:
             os.setgid(self.qubes_gid)
@@ -156,19 +170,39 @@ class moduleClass(Module):
         subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
         subprocess.check_call(['/bin/umount', '/mnt/template-root'])
 
+    def do_create_appvms(self):
+        self.run_command(['/usr/bin/qvm-create', 'work', '--label', 'green'])
+        self.run_command(['/usr/bin/qvm-create', 'personal', '--label', 'yellow'])
+        self.run_command(['/usr/bin/qvm-create', 'red', '--label', 'red'])
+
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
 
-        label = gtk.Label(_("Almost there! We just need to create a few service VMs."
-                            "This will take a few minutes...\n\n"))
+        label = gtk.Label(_("Almost there! We just need to create a few system service VMs "
+            "(NetVm, FirewallVm, and DisposableVM template).\n\n"
+            "We can also create a few AppVMs that might be useful for most users: 'work', 'personal', and 'red'"
+            "(the latter for all the untrusted activities, such as random web browsing). "
+            "... or you might prefer to do it yourself later.\n\n"
+            "Choose an option below and click 'Finish'..."))
+
         label.set_line_wrap(True)
         label.set_alignment(0.0, 0.5)
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
+        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, perosnal, red),"))
+        self.vbox.pack_start(self.radio_servicevms_and_appvms, False, True)
+
+        self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs, and I will take care of the rest myself,"))
+        self.vbox.pack_start(self.radio_onlyservicevms, False, True)
+
+        self.radio_dontdoanything = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Do not create any VMs right now (not recommended, for advanced users only)."))
+        self.vbox.pack_start(self.radio_dontdoanything, False, True)
+
         self.progress = None
 
     def initializeUI(self):
+        self.radio_servicevms_and_appvms.set_active(True)
         self.qubes_gid = grp.getgrnam('qubes').gr_gid
         self.stage = "Initialization"
         self.process_error = None
