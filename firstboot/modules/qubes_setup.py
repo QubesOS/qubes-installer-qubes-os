@@ -181,11 +181,9 @@ class moduleClass(Module):
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
 
-        label = gtk.Label(_("Almost there! We just need to create a few system service VMs "
-            "(NetVm, FirewallVm, and DisposableVM template).\n\n"
-            "We can also create a few AppVMs that might be useful for most users: 'work', 'personal', and 'red' "
-            "(the latter for all the untrusted activities, such as random web browsing) "
-            "... or you might prefer to do it yourself later.\n\n"
+        label = gtk.Label(_("Almost there! We just need to create a few system service VM.\n\n"
+            "We can also create a few AppVMs that might be useful for most users "
+            "...or you might prefer to do it yourself later.\n\n"
             "Choose an option below and click 'Finish'..."))
 
         label.set_line_wrap(True)
@@ -193,7 +191,7 @@ class moduleClass(Module):
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
-        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, perosnal, red)"))
+        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, personal, red)"))
         self.vbox.pack_start(self.radio_servicevms_and_appvms, False, True)
 
         self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs"))
