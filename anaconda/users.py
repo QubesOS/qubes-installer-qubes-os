@@ -96,7 +96,7 @@ class Users:
     def __init__ (self, anaconda):
         self.anaconda = anaconda
         self.admin = libuser.admin()
-        self.rootPassword = { "isCrypted": False, "password": "", "lock": False }
+        self.rootPassword = { "isCrypted": False, "password": "", "lock": True }
 
     def createGroup (self, name=None, gid=None, root="/mnt/sysimage"):
         childpid = os.fork()
