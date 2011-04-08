@@ -1,8 +1,0 @@
-[Plymouth Theme]
-Name=Script
-Description=Script plugin. not much here atm
-ModuleName=script
-
-[script]
-ImageDir=/usr/share/plymouth/themes/script
-ScriptFile=/usr/share/plymouth/themes/script/script.script

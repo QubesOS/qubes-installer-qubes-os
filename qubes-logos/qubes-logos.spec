@@ -17,6 +17,8 @@ Conflicts: anaconda-images <= 10
 Conflicts: redhat-artwork <= 5.0.5
 # For _kde4_appsdir macro:
 BuildRequires: kde-filesystem
+Requires: plymouth-plugin-script
+
 
 
 %description
