@@ -146,10 +146,10 @@ class moduleClass(Module):
             self.process_error = str(e)
 
     def do_create_netvm(self):
-        self.run_command(['/usr/bin/qvm-create', '--net', '--label', 'red', self.netvm_name])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', '--net', '--label', 'red', self.netvm_name])
 
     def do_create_fwvm(self):
-        self.run_command(['/usr/bin/qvm-create', '--proxy', '--label', 'green', self.fwvm_name])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', '--proxy', '--label', 'green', self.fwvm_name])
 
     def do_create_dvm(self):
         self.run_command(['/usr/bin/qvm-create-default-dvm', '--default-template', '--default-script'])
@@ -174,9 +174,9 @@ class moduleClass(Module):
         subprocess.check_call(['/bin/umount', '/mnt/template-root'])
 
     def do_create_appvms(self):
-        self.run_command(['/usr/bin/qvm-create', 'work', '--label', 'green'])
-        self.run_command(['/usr/bin/qvm-create', 'personal', '--label', 'yellow'])
-        self.run_command(['/usr/bin/qvm-create', 'red', '--label', 'red'])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', 'work', '--label', 'green'])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', 'personal', '--label', 'yellow'])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', 'red', '--label', 'red'])
 
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
