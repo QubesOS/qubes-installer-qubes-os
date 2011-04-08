@@ -100,7 +100,7 @@ makeBootImages() {
 
 	# insert XEN boot options
 	sed -i 's/kernel vmlinuz/kernel mboot.c32/' $MBD_BOOTTREE/isolinux.cfg
-	sed -i "s/append initrd=.*/append $xenimage --- $kernelimage stage2=hd:LABEL=\"$CDLABEL\" rdblacklist=aesni-intel --- $initrd/" $MBD_BOOTTREE/isolinux.cfg
+	sed -i "s/append initrd=[^ ]*\(.*\)/append $xenimage --- $kernelimage stage2=hd:LABEL=\"$CDLABEL\" rdblacklist=aesni-intel\1 --- $initrd/" $MBD_BOOTTREE/isolinux.cfg
 
 	# copy in memtest if present
 	if [ -f $IMGPATH/usr/lib/anaconda-runtime/boot/memtest* ]; then
