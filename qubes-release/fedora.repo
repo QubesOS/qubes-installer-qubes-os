@@ -6,7 +6,7 @@ mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-13&arch=x86_64
 enabled=0
 metadata_expire=7d
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
 
 [fedora-debuginfo]
 name=Fedora 13 - x86_64 - Debug
@@ -16,7 +16,7 @@ mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-debug-13&arch=
 enabled=0
 metadata_expire=7d
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
 
 [fedora-source]
 name=Fedora 13 - Source
@@ -26,4 +26,4 @@ mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-source-13&arch
 enabled=0
 metadata_expire=7d
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
