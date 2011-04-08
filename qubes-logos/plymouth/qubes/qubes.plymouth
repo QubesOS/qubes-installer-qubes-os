@@ -5,4 +5,4 @@ ModuleName=script
 
 [script]
 ImageDir=/usr/share/plymouth/themes/qubes
-ScriptFile=/usr/share/plymouth/themes/script/qubes.script
+ScriptFile=/usr/share/plymouth/themes/qubes/qubes.script
