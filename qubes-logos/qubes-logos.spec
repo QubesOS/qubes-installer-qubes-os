@@ -1,7 +1,7 @@
 Name: qubes-logos
 Summary: Icons and pictures
 Version: 1
-Release: 2
+Release: 3
 Group: System Environment/Base
 Source0: qubes-logos-%{version}.tar.bz2
 License: GPLv2 and LGPL
@@ -17,7 +17,6 @@ Conflicts: anaconda-images <= 10
 Conflicts: redhat-artwork <= 5.0.5
 # For _kde4_appsdir macro:
 BuildRequires: kde-filesystem
-Requires: plymouth-theme-script
 
 
 %description
@@ -50,7 +49,7 @@ done
 mkdir -p $RPM_BUILD_ROOT%{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536
 install -p -m 644 ksplash/SolarComet-kde.png $RPM_BUILD_ROOT%{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png
 
-for k in charge script; do
+for k in charge qubes; do
     mkdir -p $RPM_BUILD_ROOT%{_datadir}/plymouth/themes/$k/
     for i in plymouth/$k/* ; do
         install -p -m 644 $i $RPM_BUILD_ROOT%{_datadir}/plymouth/themes/$k/
@@ -65,15 +64,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %triggerin -- plymouth
 cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymouthd.defaults
-/usr/sbin/plymouth-set-default-theme script || :
-
-%triggerin -- plymouth-theme-script
-cp -f %{_datadir}/plymouth/themes/script/progress_bar.png.qubes %{_datadir}/plymouth/themes/script/progress_bar.png
-cp -f %{_datadir}/plymouth/themes/script/progress_box.png.qubes %{_datadir}/plymouth/themes/script/progress_box.png
-/usr/sbin/plymouth-set-default-theme script || :
+/usr/sbin/plymouth-set-default-theme qubes || :
 
 %post
-/usr/sbin/plymouth-set-default-theme script || :
+/usr/sbin/plymouth-set-default-theme qubes || :
 
 %files
 %defattr(-, root, root)
@@ -82,7 +76,7 @@ cp -f %{_datadir}/plymouth/themes/script/progress_box.png.qubes %{_datadir}/plym
 %{_datadir}/anaconda/pixmaps/*
 %{_datadir}/plymouth/plymouthd.defaults.qubes
 %{_datadir}/plymouth/themes/charge/*
-%{_datadir}/plymouth/themes/script/*
+%{_datadir}/plymouth/themes/qubes/*
 %{_datadir}/pixmaps/splash/*
 /usr/lib/anaconda-runtime/*.jpg
 %{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png

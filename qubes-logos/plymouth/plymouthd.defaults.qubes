@@ -1,4 +1,4 @@
 # Distribution defaults. Changes to this file will get overwritten during
 # upgrades.
 [Daemon]
-Theme=script
+Theme=qubes
