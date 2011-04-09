@@ -5,9 +5,9 @@ qubes-gui-dom0-1.2.8-2.fc13.x86_64.rpm
 qubes-manager-1.0.9a-1.x86_64.rpm
 qubes-template-fedora-14-x64-1.2.8-1.noarch.rpm
 qubes-template-fedora-14-x64-1.2.9-1.noarch.rpm
-xen-3.4.3-7.qubes.x86_64.rpm
-xen-debuginfo-3.4.3-7.qubes.x86_64.rpm
-xen-doc-3.4.3-7.qubes.x86_64.rpm
-xen-hypervisor-3.4.3-7.qubes.x86_64.rpm
-xen-libs-3.4.3-7.qubes.x86_64.rpm
-xen-runtime-3.4.3-7.qubes.x86_64.rpm
+xen-3.4.3-8.qubes.x86_64.rpm
+xen-debuginfo-3.4.3-8.qubes.x86_64.rpm
+xen-doc-3.4.3-8.qubes.x86_64.rpm
+xen-hypervisor-3.4.3-8.qubes.x86_64.rpm
+xen-libs-3.4.3-8.qubes.x86_64.rpm
+xen-runtime-3.4.3-8.qubes.x86_64.rpm
