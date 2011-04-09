@@ -71,7 +71,7 @@ class CongratulationWindow (InstallWindow):
             hbox.pack_start (a, False, False, 36)
 
         txt = _("Congratulations, your Qubes installation is complete.\n\n"
-                    "Please reboot to start useing the installed system.")
+                    "Please reboot to start using the installed system.")
 
         label = gui.WrappingLabel(txt)
         label.set_size_request(250, -1)
