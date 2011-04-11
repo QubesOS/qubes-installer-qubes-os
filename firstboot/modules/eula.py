@@ -42,9 +42,9 @@ class moduleClass(Module):
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=10)
 
-        label = gtk.Label(("Thank you for installing Qubes. Qubes is a"
-            "compilation of software packages, each under its own license. The"
-            "compilation is made available under the GNU General Public License"
+        label = gtk.Label(("Thank you for installing Qubes. Qubes is a "
+            "compilation of software packages, each under its own license. The "
+            "compilation is made available under the GNU General Public License "
             "version 2."))
 
         label.set_line_wrap(True)
