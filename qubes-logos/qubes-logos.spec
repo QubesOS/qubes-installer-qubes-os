@@ -66,10 +66,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %triggerin -- plymouth
 cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymouthd.defaults
-/usr/sbin/plymouth-set-default-theme qubes || :
+/usr/bin/plymouth-set-default-theme qubes || :
 
 %post
-/usr/sbin/plymouth-set-default-theme qubes || :
+/usr/bin/plymouth-set-default-theme qubes || :
 
 %files
 %defattr(-, root, root)
