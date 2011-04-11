@@ -1,6 +1,6 @@
 kernel-2.6.34.1-14.xenlinux.qubes.x86_64.rpm
-qubes-core-dom0-1.5.21-1.fc13.x86_64.rpm
-qubes-core-dom0-vaio-fixes-1.5.21-1.fc13.x86_64.rpm
+qubes-core-dom0-1.5.22-1.fc13.x86_64.rpm
+qubes-core-dom0-vaio-fixes-1.5.22-1.fc13.x86_64.rpm
 qubes-gui-dom0-1.2.8-2.fc13.x86_64.rpm
 qubes-manager-1.0.10-1.x86_64.rpm
 qubes-template-fedora-14-x64-1.2.10-1.noarch.rpm
