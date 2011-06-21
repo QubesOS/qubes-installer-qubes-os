@@ -363,7 +363,6 @@ void loadKickstartModule(struct loaderData_s * loaderData,
     gchar *opts = NULL;
     gchar *module = NULL;
     gchar **args = NULL, **remaining = NULL;
-    gboolean rc;
     GOptionContext *optCon = g_option_context_new(NULL);
     GError *optErr = NULL;
     GOptionEntry ksDeviceOptions[] = {
@@ -404,7 +403,7 @@ void loadKickstartModule(struct loaderData_s * loaderData,
         args = g_strsplit(opts, " ", 0);
     }
 
-    rc = mlLoadModule(module, args);
+    mlLoadModule(module, args);
     g_strfreev(args);
     return;
 }

@@ -169,7 +169,6 @@ int beTelnet(void) {
             }
 
             if (fds[1].revents) {
-                int ret;
                 i = read(conn, buf, sizeof(buf));
 
                 /* connection went away */
@@ -177,7 +176,7 @@ int beTelnet(void) {
                     break;
 
                 i = telnet_process_input(&ts, buf, i);
-                ret = write(masterFd, buf, i);
+                write(masterFd, buf, i);
 #ifdef DEBUG_TELNET
                 {
                     int j;

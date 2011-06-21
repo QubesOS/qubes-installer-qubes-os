@@ -52,9 +52,8 @@ struct unmountInfo {
 void undoLoop(struct unmountInfo * fs, int numFs, int this);
 
 static void printstr(char * string) {
-    int ret;
     
-    ret = write(1, string, strlen(string));
+    write(1, string, strlen(string));
 }
 
 void undoMount(struct unmountInfo * fs, int numFs, int this) {
@@ -127,7 +126,6 @@ void unmountFilesystems(void) {
     int numFilesystems = 0;
     int i;
     struct loop_info li;
-    char * device;
     struct stat sb;
 
     fd = open("/proc/mounts", O_RDONLY, 0);
@@ -145,7 +143,6 @@ void unmountFilesystems(void) {
 
     chptr = buf;
     while (*chptr) {
-	device = chptr;
 	while (*chptr != ' ') chptr++;
 	*chptr++ = '\0';
 	start = chptr;

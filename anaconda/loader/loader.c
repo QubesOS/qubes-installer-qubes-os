@@ -1660,7 +1660,6 @@ static int manualDeviceCheck(struct loaderData_s *loaderData) {
  * with a '/' */
 static void migrate_runtime_directory(char * dirname) {
     char * runtimedir;
-    int ret;
 
     checked_asprintf(&runtimedir, "/mnt/runtime%s", dirname);
 
@@ -1670,10 +1669,10 @@ static void migrate_runtime_directory(char * dirname) {
             
             checked_asprintf(&olddir, "%s_old", dirname);
 
-            ret = rename(dirname, olddir);
+            rename(dirname, olddir);
             free(olddir);
         }
-        ret = symlink(runtimedir, dirname);
+        symlink(runtimedir, dirname);
     }
     free(runtimedir);
 }
@@ -1832,7 +1831,7 @@ static void loadScsiDhModules(void)
 }
 
 int main(int argc, char ** argv) {
-    int rc, ret, pid, status;
+    int rc, pid, status;
 
     struct stat sb;
     struct serial_struct si;
@@ -2128,7 +2127,7 @@ int main(int argc, char ** argv) {
     migrate_runtime_directory("/usr");
     migrate_runtime_directory("/lib");
     migrate_runtime_directory("/lib64");
-    ret = symlink("/mnt/runtime/etc/selinux", "/etc/selinux");
+    symlink("/mnt/runtime/etc/selinux", "/etc/selinux");
     copyDirectory("/mnt/runtime/etc","/etc", NULL, copyErrorFn);
     copyDirectory("/mnt/runtime/var","/var", NULL, copyErrorFn);
 
@@ -2216,11 +2215,11 @@ int main(int argc, char ** argv) {
     if (strncmp(url, "ftp:", 4)) {
         *argptr++ = url;
     } else {
-        int fd, ret;
+        int fd;
 
         fd = open("/tmp/ftp-stage2", O_CREAT | O_TRUNC | O_RDWR, 0600);
-        ret = write(fd, url, strlen(url));
-        ret = write(fd, "\r", 1);
+        write(fd, url, strlen(url));
+        write(fd, "\r", 1);
         close(fd);
         *argptr++ = "@/tmp/ftp-stage2";
     }
@@ -2315,11 +2314,11 @@ int main(int argc, char ** argv) {
             if (strncmp(loaderData.instRepo, "ftp:", 4)) {
                 *argptr++ = loaderData.instRepo;
             } else {
-                int fd, ret;
+                int fd;
 
                 fd = open("/tmp/ftp-repo", O_CREAT | O_TRUNC | O_RDWR, 0600);
-                ret = write(fd, loaderData.instRepo, strlen(loaderData.instRepo));
-                ret = write(fd, "\r", 1);
+                write(fd, loaderData.instRepo, strlen(loaderData.instRepo));
+                write(fd, "\r", 1);
                 close(fd);
                 *argptr++ = "@/tmp/ftp-repo";
             }
@@ -2331,15 +2330,15 @@ int main(int argc, char ** argv) {
             *argptr++ = strdup(loaderData.proxy);
 
             if (loaderData.proxyUser && strcmp(loaderData.proxyUser, "")) {
-                int fd, ret;
+                int fd;
 
                 fd = open("/tmp/proxy", O_CREAT|O_TRUNC|O_RDWR, 0600);
-                ret = write(fd, loaderData.proxyUser, strlen(loaderData.proxyUser));
-                ret = write(fd, "\r\n", 2);
+                write(fd, loaderData.proxyUser, strlen(loaderData.proxyUser));
+                write(fd, "\r\n", 2);
 
                 if (loaderData.proxyPassword && strcmp(loaderData.proxyPassword, "")) {
-                    ret = write(fd, loaderData.proxyPassword, strlen(loaderData.proxyPassword));
-                    ret = write(fd, "\r\n", 2);
+                    write(fd, loaderData.proxyPassword, strlen(loaderData.proxyPassword));
+                    write(fd, "\r\n", 2);
                 }
 
                 close(fd);
