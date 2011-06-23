@@ -252,10 +252,11 @@ class Users:
     def setUserPassword(self, username, password, isCrypted, lock, algo=None):
         user = self.admin.lookupUserByName(username)
 
-        if isCrypted:
-            self.admin.setpassUser(user, password, True)
-        else:
-            self.admin.setpassUser(user, cryptPassword(password, algo=algo), True)
+        if password:
+            if isCrypted:
+                self.admin.setpassUser(user, password, True)
+            else:
+                self.admin.setpassUser(user, cryptPassword(password, algo=algo), True)
 
         if lock:
             self.admin.lockUser(user)
