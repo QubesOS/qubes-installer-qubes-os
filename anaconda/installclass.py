@@ -176,9 +176,7 @@ class BaseInstallClass(object):
         return AnacondaBackend
 
     def setDefaultPartitioning(self, storage, platform):
-        autorequests = [PartSpec(mountpoint="/boot", fstype=storage.defaultBootFSType,
-                                 size=512, maxSize=2*1024, grow=False, asVol=False),
-                        PartSpec(mountpoint="/", fstype=storage.defaultFSType,
+        autorequests = [PartSpec(mountpoint="/", fstype=storage.defaultFSType,
                                  size=1024, grow=True, asVol=True, requiredSpace=50*1024)]
 
         bootreq = platform.setDefaultPartitioning()
