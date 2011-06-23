@@ -91,7 +91,7 @@ class InstallClass(BaseInstallClass):
         # First disable all the useless services...
         whitelisted = ['functions', 'killall', 'halt', 'single',
                 'rsyslog', 'haldaemon', 'messagebus', 'xenstored', 'xend', 'xenconsoled', 'firstboot',
-                'qubes_core', 'qubes_netvm']
+                'qubes_core', 'qubes_netvm', 'qubes_setupdvm']
 
         for file in os.listdir(anaconda.rootPath + '/etc/init.d'):
             if not file in whitelisted:
