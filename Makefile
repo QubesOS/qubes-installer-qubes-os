@@ -97,7 +97,7 @@ update-repo:
 iso:
 	ln -sf `pwd` /tmp/qubes-installer
 	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
-	rpm --checksig build/work/revisor-install/R1-Beta1/qubes-x86_64/x86_64/os/Packages/*.rpm | grep -v pgp && exit 1
+	rpm --checksig build/work/revisor-install/R1-Beta1/qubes-x86_64/x86_64/os/Packages/*.rpm | grep -v pgp && exit 1 || true
 
 clean:
 	rm -fr rpm/SOURCES/*.bz2
