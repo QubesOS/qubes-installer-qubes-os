@@ -18,6 +18,8 @@ Conflicts: redhat-artwork <= 5.0.5
 # For _kde4_appsdir macro:
 BuildRequires: kde-filesystem
 Requires: plymouth-plugin-script
+# For plymouth-set-default-theme
+Requires: plymouth
 
 
 
