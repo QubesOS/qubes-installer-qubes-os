@@ -1432,7 +1432,8 @@ class InstallControlWindow:
         if ics.getGrabNext():
             self.mainxml.get_widget("nextButton").grab_focus()
 
-        self.mainxml.get_widget("nextButton").set_flags(gtk.HAS_DEFAULT)
+        self.mainxml.get_widget("nextButton").set_flags(gtk.CAN_DEFAULT)
+        self.mainxml.get_widget("nextButton").grab_default()
 
     def __init__ (self, anaconda):
         self.reloadRcQueued = 0
