@@ -1077,6 +1077,7 @@ for KERNELARCH in $arches; do
 
         yumdownloader -c $yumconf --archlist=$KERNELARCH $kpackage
         kpackage="$kpackage.rpm"
+        rpm --checksig $kpackage.rpm | grep -v pgp && exit 1
         if [ ! -f "$kpackage" ]; then
             echo "kernel ($kernelvers) doesn't exist for $KERNELARCH.  skipping"
             continue
@@ -1101,12 +1102,14 @@ for KERNELARCH in $arches; do
         # expand out any available firmware too
         for p in $(repoquery -c $yumconf '*firmware*') ; do
             yumdownloader -c $yumconf $p
+            rpm --checksig *firmware*.rpm | grep -v pgp && exit 1
             rpm2cpio *firmware*.rpm | (cd $KERNELROOT; cpio --quiet -iumd)
             rm -f *firmware*.rpm
         done
         # and get XEN Hypervisor
         for p in $(repoquery -c $yumconf 'xen-hypervisor') ; do
             yumdownloader -c $yumconf $p
+            rpm --checksig xen-hypervisor*.rpm | grep -v pgp && exit 1
             rpm2cpio xen-hypervisor*.rpm | (cd $KERNELROOT; cpio --quiet -iumd)
             rm -f xen-hypervisor*.rpm
         done
