@@ -604,6 +604,8 @@ class InstallKeyWindow:
 
 class luksPassphraseWindow:
     def __init__(self, passphrase=None, preexist = False, parent = None):
+        def ok(*args):
+            self.win.response(gtk.RESPONSE_OK)
         luksxml = gtk.glade.XML(findGladeFile("lukspassphrase.glade"),
                                 domain="anaconda",
                                 root="luksPassphraseDialog")
@@ -637,6 +639,7 @@ class luksPassphraseWindow:
         if parent:
             self.win.set_transient_for(parent)
 
+        self.confirmEntry.connect('activate', ok)
         addFrame(self.win)
 
     def run(self):
