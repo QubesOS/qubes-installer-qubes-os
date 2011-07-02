@@ -202,6 +202,7 @@ else
     BASEARCH=`python -c "import rpmUtils.arch; \
       print rpmUtils.arch.getBaseArch(myarch=rpmUtils.arch.getCanonArch(skipRpmPlatform = True));"`
     yumdownloader -c $yumconf anaconda || exit 1
+    rpm --checksig anaconda*rpm | grep -v pgp && exit 1
     rpm2cpio anaconda*rpm | cpio --quiet -iumd './usr*'
     rm -f anaconda*rpm
     popd

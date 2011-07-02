@@ -49,7 +49,6 @@ static void performTerminations(void) {
 }
 
 static void performUnmounts(void) {
-	int ignore;
 
 	printf("disabling swap...\n");
 	disableSwap();
@@ -58,7 +57,7 @@ static void performUnmounts(void) {
 	unmountFilesystems();
 
 	printf("waiting for mdraid sets to become clean...\n"); 
-	ignore = system("/sbin/mdadm --wait-clean --scan");
+	system("/sbin/mdadm --wait-clean --scan");
 }
 
 static void performReboot(reboot_action rebootAction) {

@@ -78,31 +78,30 @@ telnet_negotiate(int socket, char ** term_type_ptr, int * heightPtr,
       IAC DO NAWS
       IAC SB TERMINAL_TYPE "\x01" IAC SE
       ;
-    int ret;
 
-    ret = write(socket, request, sizeof(request)-1);
+    write(socket, request, sizeof(request)-1);
 
     /* Read from the terminal until we get the terminal type. This will
        do bad things if the client doesn't send the terminal type, but
        those clients have existed for aeons (right?) */
 
     do {
-	ret = read(socket, &ch, 1);
+	read(socket, &ch, 1);
 	if (ch != '\xff') {
 	    abort();
 	}
 
-	ret = read(socket, &ch, 1);	    /* command */
+	read(socket, &ch, 1);	    /* command */
 
 	if (ch != '\xfa') {
-	    ret = read(socket, &ch, 1);   /* verb */
+	    read(socket, &ch, 1);   /* verb */
 	    continue;
 	}
 
-	ret = read(socket, &ch, 1);   /* suboption */
+	read(socket, &ch, 1);   /* suboption */
 	if (ch == '\x18') {
 	    state = ST_TERMTYPE;
-	    ret = read(socket, &ch, 1);	    /* should be 0x0! */
+	    read(socket, &ch, 1);	    /* should be 0x0! */
 	    done = 1;
 	} else if (ch == '\x1f') {
 	    state = ST_WINDOWSIZE;
@@ -110,7 +109,7 @@ telnet_negotiate(int socket, char ** term_type_ptr, int * heightPtr,
 	    state = ST_NONE;;
 	}
 
-	ret = read(socket, &ch, 1);   /* data */
+	read(socket, &ch, 1);   /* data */
 	while (ch != '\xff') {
 	    if (state == ST_TERMTYPE) {
 		if (termAlloced == termLength) {
@@ -124,10 +123,10 @@ telnet_negotiate(int socket, char ** term_type_ptr, int * heightPtr,
 		    *sizePtr++ = ch;
 	    }
 
-	    ret = read(socket, &ch, 1);   /* data */
+	    read(socket, &ch, 1);   /* data */
 	}
 
-	ret = read(socket, &ch, 1);   /* should be a SE */
+	read(socket, &ch, 1);   /* should be a SE */
 
     } while (!done);
 
@@ -254,7 +253,6 @@ void
 telnet_send_output(int sock, char *data, int len) {
     char *s, *d; /* source, destination */
     char *buf;
-    int ret;
 
     buf = alloca((len*2)+1);  /* max necessary size */
 
@@ -269,5 +267,5 @@ telnet_send_output(int sock, char *data, int len) {
     }
 
     /* now send it... */
-    ret = write(sock, buf, len);
+    write(sock, buf, len);
 }

@@ -3,7 +3,7 @@
 Window.SetBackgroundTopColor(0.234, 0.43, 0.705);
 Window.SetBackgroundBottomColor(0.16, 0.25, 0.44);
 
-logo.image = Image("special://logo");
+logo.image = Image("logo.png");
 logo.sprite = Sprite(logo.image);
 logo.opacity_angle = 0;
 

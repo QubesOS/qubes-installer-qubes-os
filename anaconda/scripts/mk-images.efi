@@ -169,6 +169,7 @@ prepareEfiTree() {
     ydcmd="yumdownloader -c $yumconf $grubpkg"
     echo "(grubpkg) $ydcmd"
     $ydcmd
+    rpm --checksig $grubpkg.rpm | grep -v pgp && exit 1
     rpm2cpio $grubpkg.rpm | (cd $KERNELROOT; cpio --quiet -iumd)
     cp -av $KERNELROOT/boot/efi/EFI/redhat/grub.efi $MBD_BOOTTREE_TMP/EFI/BOOT/grub.efi
 
@@ -195,6 +196,7 @@ prepareEfiTree() {
     ydcmd="yumdownloader -c ${yumconf} ${artpkg}"
     echo "(artpkg) $ydcmd"
     $ydcmd
+    rpm --checksig ${artpkg}.rpm | grep -v pgp && exit 1
     rpm2cpio ${artpkg}.rpm | (cd $KERNELROOT; cpio --quiet -iumd)
     cp -av $KERNELROOT/boot/grub/splash.xpm.gz $MBD_BOOTTREE_TMP/$SPLASHPATH
 
