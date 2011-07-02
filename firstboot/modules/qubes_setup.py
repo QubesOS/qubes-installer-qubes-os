@@ -175,15 +175,16 @@ class moduleClass(Module):
 
     def do_create_appvms(self):
         self.run_command(['/usr/bin/qvm-create', '--force-root', 'work', '--label', 'green'])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', 'banking', '--label', 'green'])
         self.run_command(['/usr/bin/qvm-create', '--force-root', 'personal', '--label', 'yellow'])
-        self.run_command(['/usr/bin/qvm-create', '--force-root', 'red', '--label', 'red'])
+        self.run_command(['/usr/bin/qvm-create', '--force-root', 'untrusted', '--label', 'red'])
 
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
 
         label = gtk.Label(_("Almost there! We just need to create a few system service VM.\n\n"
-            "We can also create a few AppVMs that might be useful for most users "
-            "...or you might prefer to do it yourself later.\n\n"
+            "We can also create a few AppVMs that might be useful for most users, "
+            "or you might prefer to do it yourself later.\n\n"
             "Choose an option below and click 'Finish'..."))
 
         label.set_line_wrap(True)
@@ -191,7 +192,7 @@ class moduleClass(Module):
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
-        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, personal, red)"))
+        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, banking, personal, untrusted)"))
         self.vbox.pack_start(self.radio_servicevms_and_appvms, False, True)
 
         self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs"))
