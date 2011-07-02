@@ -137,12 +137,13 @@ static inline int padoutfd(struct ourfd * fd, size_t * where, int modulo) {
 
 static int strntoul(const char * str, char ** endptr, int base, int num) {
     char * buf, * end;
+    unsigned long ret;
 
     buf = alloca(num + 1);
     strncpy(buf, str, num);
     buf[num] = '\0';
 
-    strtoul(buf, &end, base);
+    ret = strtoul(buf, &end, base);
     if (*end)
 	*endptr = (char *)(str + (end - buf));	/* XXX discards const */
     else
@@ -490,6 +491,7 @@ int myCpioInstallArchive(gzFile stream, struct cpioFileMapping * mappings,
     int linkNum = 0;
     struct cpioFileMapping * map = NULL;
     struct cpioFileMapping needle;
+    mode_t cpioMode;
     int olderr;
     struct cpioCallbackInfo cbInfo;
     struct hardLink * links = NULL;
@@ -521,6 +523,8 @@ int myCpioInstallArchive(gzFile stream, struct cpioFileMapping * mappings,
 	if (mappings && !map) {
 	    eatBytes(&fd, ch.size);
 	} else {
+	    cpioMode = ch.mode;
+
 	    if (map) {
 		if (map->mapFlags & CPIO_MAP_PATH) {
 		    free(ch.path);

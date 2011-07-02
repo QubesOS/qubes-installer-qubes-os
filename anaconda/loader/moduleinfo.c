@@ -93,6 +93,7 @@ int readModuleInfo(const char * filename, moduleInfoSet mis,
     int fd, isIndented;
     char * buf, * start, * next = NULL, * chptr;
     struct stat sb;
+    char oldch;
     struct moduleInfo * nextModule;
     int modulesAlloced;
     int i;
@@ -222,6 +223,7 @@ int readModuleInfo(const char * filename, moduleInfoSet mis,
                 chptr = start;
                 while (!isspace(*chptr) && *chptr) chptr++;
                 if (*chptr) {
+                    oldch = *chptr;
                     *chptr = '\0';
                     nextModule->args[nextModule->numArgs].arg = strdup(start);
 

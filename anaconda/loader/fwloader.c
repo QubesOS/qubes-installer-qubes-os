@@ -80,7 +80,7 @@ static inline int set_fd_coe(int fd, int enable)
 
 static int open_uevent_socket(struct fw_loader *fwl)
 {
-    int fd;
+    int fd, rc;
     struct sockaddr_nl sa;
 
     fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
@@ -102,14 +102,14 @@ static int open_uevent_socket(struct fw_loader *fwl)
 
     fd = open("/proc/sys/kernel/hotplug", O_RDWR);
     if (fd >= 0) {
-        ftruncate(fd, 0);
-        write(fd, "\n", 1);
+        rc = ftruncate(fd, 0);
+        rc = write(fd, "\n", 1);
         close(fd);
     }
 
     fd = open("/sys/class/firmware/timeout", O_RDWR);
     if (fd >= 0) {
-        write(fd, "10", 2);
+        rc = write(fd, "10", 2);
         close(fd);
     }
 
@@ -128,6 +128,7 @@ static void kill_hotplug_signal(int signum)
 static int daemonize(struct fw_loader *fwl)
 {
     int fd;
+    int rc;
 
     signal(SIGTERM, kill_hotplug_signal);
     signal(SIGSEGV, loaderSegvHandler);
@@ -141,11 +142,11 @@ static int daemonize(struct fw_loader *fwl)
     sigemptyset(&fwl->sigmask);
 
     prctl(PR_SET_NAME, "hotplug", 0, 0, 0);
-    chdir("/");
+    rc = chdir("/");
 
     fd = open("/proc/self/oom_adj", O_RDWR);
     if (fd >= 0) {
-        write(fd, "-17", 3);
+        rc = write(fd, "-17", 3);
         close(fd);
     }
 
@@ -341,6 +342,7 @@ fetcher(char *inpath, int outfd)
     size_t inlen;
     int count;
     int en = 0;
+    int rc;
 
     errno = 0;
     if (access(inpath, F_OK))
@@ -350,8 +352,8 @@ fetcher(char *inpath, int outfd)
         goto out;
 
     lseek(outfd, 0, SEEK_SET);
-    ftruncate(outfd, 0);
-    ftruncate(outfd, inlen);
+    rc = ftruncate(outfd, 0);
+    rc = ftruncate(outfd, inlen);
 
     count = 0;
     while (count < inlen) {

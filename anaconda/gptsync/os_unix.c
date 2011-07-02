@@ -185,6 +185,7 @@ int main(int argc, char *argv[])
     char        *filename;
     struct stat sb;
     int         filekind;
+    UINT64      filesize;
     char        *reason;
     int         status;
     
@@ -206,9 +207,10 @@ int main(int argc, char *argv[])
     }
     
     filekind = 0;
+    filesize = 0;
     reason = NULL;
     if (S_ISREG(sb.st_mode))
-        filekind = 0;
+        filesize = sb.st_size;
     else if (S_ISBLK(sb.st_mode))
         filekind = 1;
     else if (S_ISCHR(sb.st_mode))

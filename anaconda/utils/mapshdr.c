@@ -29,13 +29,13 @@
 int main(int argc, char ** argv) {
     struct kmapHeader h;
     struct kmapInfo info;
-    int i;
+    int i, x;
     struct stat sb;
     char * chptr;
 
     h.magic = KMAP_MAGIC;
     h.numEntries = argc - 1;
-    write(1, &h, sizeof(h));
+    x = write(1, &h, sizeof(h));
 
     for (i = 1; i < argc; i++) {
 	if (stat(argv[i], &sb)) {
@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
 	*chptr = '\0';
 
 	info.size = sb.st_size;
-	write(1, &info, sizeof(info));
+	x = write(1, &info, sizeof(info));
     }
 
     return 0;

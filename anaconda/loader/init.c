@@ -127,7 +127,8 @@ static void doExit(int result)
 }
 
 static void printstr(char * string) {
-    write(1, string, strlen(string));
+    int ret;
+    ret = write(1, string, strlen(string));
 }
 
 static void fatal_error(int usePerror) {
@@ -142,6 +143,7 @@ static void fatal_error(int usePerror) {
 /* sets up and launches syslog */
 static void startSyslog(void) {
     int conf_fd;
+    int ret;
     char addr[128];
     char forwardtcp[] = "*.* @@";
     
@@ -154,9 +156,9 @@ static void startSyslog(void) {
             printf("syslog forwarding will not be enabled\n");
             sleep(5);
         } else {
-            write(conf_fd, forwardtcp, strlen(forwardtcp));
-            write(conf_fd, addr, strlen(addr));
-            write(conf_fd, "\n", 1);
+            ret = write(conf_fd, forwardtcp, strlen(forwardtcp));
+            ret = write(conf_fd, addr, strlen(addr));
+            ret = write(conf_fd, "\n", 1);
             close(conf_fd);
         }
     }
@@ -363,7 +365,7 @@ static void getSyslog(char *addr) {
 }
 
 static int getInitPid(void) {
-    int fd = 0, pid = -1;
+    int fd = 0, pid = -1, ret;
     char * buf = calloc(1, 10);
 
     fd = open("/var/run/init.pid", O_RDONLY);
@@ -371,9 +373,9 @@ static int getInitPid(void) {
         fprintf(stderr, "Unable to find pid of init!!!\n");
         return -1;
     }
-    read(fd, buf, 9);
+    ret = read(fd, buf, 9);
     close(fd);
-    sscanf(buf, "%d", &pid);
+    ret = sscanf(buf, "%d", &pid);
     return pid;
 }
 
@@ -656,10 +658,11 @@ int main(int argc, char **argv) {
         tcsetattr(0, TCSANOW, &ts);
     }
 
-    sethostname("localhost.localdomain", 21);
+    int ret;
+    ret = sethostname("localhost.localdomain", 21);
     /* the default domainname (as of 2.0.35) is "(none)", which confuses 
      glibc */
-    setdomainname("", 0);
+    ret = setdomainname("", 0);
 
     printf("trying to remount root filesystem read write... ");
     if (mount("/", "/", "ext2", MS_REMOUNT | MS_MGC_VAL, NULL)) {
@@ -688,9 +691,10 @@ int main(int argc, char **argv) {
     /* write out a pid file */
     if ((fd = open("/var/run/init.pid", O_WRONLY|O_CREAT, 0644)) > 0) {
         char * buf = malloc(10);
+        int ret;
 
         snprintf(buf, 9, "%d", getpid());
-        write(fd, buf, strlen(buf));
+        ret = write(fd, buf, strlen(buf));
         close(fd);
         free(buf);
     } else {
@@ -755,8 +759,9 @@ int main(int argc, char **argv) {
            ctrl-alt-del handler */
         if (count == strlen(buf) &&
             (fd = open("/proc/sys/kernel/ctrl-alt-del", O_WRONLY)) != -1) {
+            int ret;
 
-            write(fd, "0", 1);
+            ret = write(fd, "0", 1);
             close(fd);
         }
     }

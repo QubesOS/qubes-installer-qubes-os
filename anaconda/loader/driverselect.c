@@ -121,6 +121,7 @@ static int getManualModuleArgs(struct moduleInfo * mod, gchar *** moduleArgs) {
 
 int chooseManualDriver(int class, struct loaderData_s *loaderData) {
     int i, numSorted, num = 0, done = 0;
+    enum driverMajor type;
     struct sortModuleList * sortedOrder;
     char giveArgs = ' ';
     gchar **moduleArgs = NULL;
@@ -129,6 +130,13 @@ int chooseManualDriver(int class, struct loaderData_s *loaderData) {
     newtComponent text, f, ok, back, argcheckbox, listbox;
     newtGrid grid, buttons;
     struct newtExitStruct es;
+
+    if (class == DEVICE_NETWORK)
+        type = DRIVER_NET;
+    else if (class == DEVICE_DISK || class == DEVICE_CDROM)
+        type = DRIVER_SCSI;
+    else
+        type = DRIVER_ANY;
 
     do {
         sortedOrder = malloc(sizeof(*sortedOrder) * modInfo->numModules);

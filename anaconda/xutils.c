@@ -262,5 +262,7 @@ getXatom(PyObject *s, PyObject *args)
 void 
 initxutils ()
 {
-    Py_InitModule ("xutils", xutilsMethods);
+    PyObject * d;
+
+    d = Py_InitModule ("xutils", xutilsMethods);
 }
