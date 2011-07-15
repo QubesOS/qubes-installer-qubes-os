@@ -19,7 +19,7 @@ Conflicts: redhat-artwork <= 5.0.5
 BuildRequires: kde-filesystem
 Requires: plymouth-plugin-script
 # For plymouth-set-default-theme
-Requires: plymouth
+Requires: plymouth-scripts
 
 
 
