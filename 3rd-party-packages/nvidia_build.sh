@@ -106,7 +106,7 @@ if [ $1 ]; then
 	KERNEL_VER=$1
 else
 	# Try to find kernel version
-	KERNEL_PKG=`ls ../yum/qubes-dom0/rpm/ |grep kernel`
+	KERNEL_PKG=`ls ../yum/qubes-dom0/rpm/ |grep kernel-[0-9]`
 	if [ "$KERNEL_PKG" ]; then
 		KERNEL_VER=$(echo $KERNEL_PKG | sed -e 's/kernel-//g;s/\.rpm//g')
 	else
