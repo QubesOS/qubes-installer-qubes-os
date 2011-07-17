@@ -97,6 +97,10 @@ class InstallClass(BaseInstallClass):
             if not file in whitelisted:
                 subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
                     '/sbin/chkconfig', '--level', '5', file, 'off'])
+        # Fix default initramfs (anaconda generates own one...)
+        for kernel in anaconda.backend.kernelVersionList(anaconda.rootPath):
+            subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
+                        '/usr/lib/qubes/regenerate_initramfs.sh', kernel[0]])
 
     def getBackend(self):
         if flags.livecdInstall:
