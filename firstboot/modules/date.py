@@ -65,6 +65,10 @@ class moduleClass(Module):
 	self.vbox.pack_start(label, False, True, padding=20)
 
 	self.scd = scdMainWindow(firstboot=True, showPages=["datetime"])
+	widget = self.scd.firstboot_widget()
+	for w in widget.get_nth_page(0):
+		if w.name == 'ntp_check':
+			w.hide()
 	self.vbox.pack_start(self.scd.firstboot_widget(), False, False)
 
     def initializeUI(self):
