@@ -19,6 +19,7 @@
 #
 #
 import gtk
+import libuser
 import os, string, sys, time
 import threading, subprocess, grp
 
@@ -41,9 +42,18 @@ class moduleClass(Module):
         self.sidebarTitle = N_("Create Service VMs")
         self.title = N_("Create Service VMs")
         self.icon = "qubes.png"
+        self.admin = libuser.admin()
 
     def apply(self, interface, testing=False):
         try:
+
+            qubes_users = self.admin.enumerateUsersByGroup('qubes')
+            if self.radio_servicevms_and_appvms.get_active() and len(qubes_users) < 1:
+                self._showErrorMessage(_("You must create a user account to create default AppVMs."))
+                return RESULT_FAILURE
+            else:
+                self.qubes_user = qubes_users[0]
+
             self.radio_servicevms_and_appvms.set_sensitive(False)
             self.radio_onlyservicevms.set_sensitive(False)
             self.radio_dontdoanything.set_sensitive(False)
@@ -175,10 +185,10 @@ class moduleClass(Module):
         subprocess.check_call(['/bin/umount', '/mnt/template-root'])
 
     def do_create_appvms(self):
-        self.run_command(['/usr/bin/qvm-create', '--force-root', 'work', '--label', 'green'])
-        self.run_command(['/usr/bin/qvm-create', '--force-root', 'banking', '--label', 'green'])
-        self.run_command(['/usr/bin/qvm-create', '--force-root', 'personal', '--label', 'yellow'])
-        self.run_command(['/usr/bin/qvm-create', '--force-root', 'untrusted', '--label', 'red'])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create banking --label green', '-', self.qubes_user])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create personal --label yellow', '-', self.qubes_user])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create untrusted --label red', '-', self.qubes_user])
 
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
