@@ -97,6 +97,11 @@ class InstallClass(BaseInstallClass):
             if not file in whitelisted:
                 subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
                     '/sbin/chkconfig', '--level', '5', file, 'off'])
+
+        # Import rpm keys, so that qubes-receive-updates can call rpm -K
+        subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
+            '/bin/bash', '-c', 'rpm --import /etc/pki/rpm-gpg/*'])
+
         # Fix default initramfs (anaconda generates own one...)
         for kernel in anaconda.backend.kernelVersionList(anaconda.rootPath):
             subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
