@@ -44,18 +44,11 @@ class InstallClass(BaseInstallClass):
                       "now.")
     _descriptionFields = (productName,)
     sortPriority = 20000
-    if not productName.startswith("Red Hat Enterprise"):
-        hidden = 1
+    hidden = 1
 
     bootloaderTimeoutDefault = 5
 
-    tasks = [(N_("Minimal"), ["core", "qubes"]),
-             (N_("Desktop"),
-              ["backup-client", "base", "compat-libraries", "fonts",
-               "core", "qubes", "basic-desktop", "desktop-platform",
-               "general-desktop", "graphical-admin-tools", "input-methods",
-               "legacy-x", "x11"]),
-              ]
+    tasks = [(N_("Minimal"), ["base", "base-x", "kde-desktop", "qubes" ]) ]
 
     bugFiler = BugzillaFiler("http://qubes-os.org/trac/",
                              "http://qubes-os.org/",
@@ -75,7 +68,7 @@ class InstallClass(BaseInstallClass):
 
     def setGroupSelection(self, anaconda):
         BaseInstallClass.setGroupSelection(self, anaconda)
-        map(lambda x: anaconda.backend.selectGroup(x), ["core"])
+        map(lambda x: anaconda.backend.selectGroup(x), ["base"])
 
     def setSteps(self, anaconda):
         BaseInstallClass.setSteps(self, anaconda)

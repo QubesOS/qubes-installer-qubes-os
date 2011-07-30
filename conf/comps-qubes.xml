@@ -4,832 +4,88 @@
   <group>
     <id>base</id>
     <name>Base</name>
-    <description>This group includes a minimal set of packages. Useful for creating small router/firewall boxes, for example.</description>
     <default>true</default>
-    <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">at</packagereq>
       <packagereq type="mandatory">authconfig</packagereq>
-      <packagereq type="mandatory">bc</packagereq>
-      <packagereq type="mandatory">bind-utils</packagereq>
       <packagereq type="mandatory">bzip2</packagereq>
-      <packagereq type="mandatory">crontabs</packagereq>
-      <packagereq type="mandatory">cyrus-sasl-plain</packagereq>
+      <packagereq type="mandatory">cryptsetup-luks</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
+      <packagereq type="mandatory">device-mapper-multipath</packagereq>
+      <packagereq type="mandatory">dmraid</packagereq>
+      <packagereq type="mandatory">dump</packagereq>
       <packagereq type="mandatory">ed</packagereq>
+      <packagereq type="mandatory">eject</packagereq>
+      <packagereq type="mandatory">gnupg2</packagereq>
+      <packagereq type="mandatory">irqbalance</packagereq>
       <packagereq type="mandatory">logrotate</packagereq>
       <packagereq type="mandatory">lsof</packagereq>
-      <packagereq type="mandatory">mailcap</packagereq>
       <packagereq type="mandatory">man</packagereq>
-      <packagereq type="mandatory">NetworkManager</packagereq>
+      <packagereq type="mandatory">man-pages</packagereq>
+      <packagereq type="mandatory">mcelog</packagereq>
+      <packagereq type="mandatory">mdadm</packagereq>
+      <packagereq type="mandatory">microcode_ctl</packagereq>
+      <packagereq type="mandatory">mlocate</packagereq>
+      <packagereq type="mandatory">nano</packagereq>
       <packagereq type="mandatory">ntsysv</packagereq>
+      <packagereq type="mandatory">numactl</packagereq>
       <packagereq type="mandatory">parted</packagereq>
       <packagereq type="mandatory">pciutils</packagereq>
-      <packagereq type="mandatory">psacct</packagereq>
+      <packagereq type="mandatory">pcmciautils</packagereq>
+      <packagereq type="mandatory">perf</packagereq>
+      <packagereq type="mandatory">pinfo</packagereq>
+      <packagereq type="mandatory">pm-utils</packagereq>
+      <packagereq type="mandatory">prelink</packagereq>
+      <packagereq type="mandatory">qubes-release-notes</packagereq>
       <packagereq type="mandatory">quota</packagereq>
+      <packagereq type="mandatory">readahead</packagereq>
+      <packagereq type="mandatory">smartmontools</packagereq>
+      <packagereq type="mandatory">sudo</packagereq>
+      <packagereq type="mandatory">symlinks</packagereq>
+      <packagereq type="mandatory">time</packagereq>
       <packagereq type="mandatory">tmpwatch</packagereq>
-      <packagereq type="mandatory">traceroute</packagereq>
-      <packagereq type="conditional" requires="aspell">aspell-en</packagereq>
-      <packagereq type="conditional" requires="hunspell">hunspell-en</packagereq>
-      <packagereq type="default">acpid</packagereq>
-      <packagereq type="default">ccid</packagereq>
-      <packagereq type="default">coolkey</packagereq>
-      <packagereq type="default">cpuspeed</packagereq>
-      <packagereq type="default">cryptsetup-luks</packagereq>
-      <packagereq type="default">device-mapper-multipath</packagereq>
-      <packagereq type="default">dmraid</packagereq>
-      <packagereq type="default">dos2unix</packagereq>
-      <packagereq type="default">dosfstools</packagereq>
-      <packagereq type="default">dump</packagereq>
-      <packagereq type="default">eject</packagereq>
-      <packagereq type="default">finger</packagereq>
-      <packagereq type="default">fprintd-pam</packagereq>
-      <packagereq type="default">ftp</packagereq>
-      <packagereq type="default">gnupg2</packagereq>
-      <packagereq type="default">hunspell</packagereq>
-      <packagereq type="default">iptstate</packagereq>
-      <packagereq type="default">irda-utils</packagereq>
-      <packagereq type="default">irqbalance</packagereq>
-      <packagereq type="default">jwhois</packagereq>
-      <packagereq type="default">krb5-workstation</packagereq>
-      <packagereq type="default">lftp</packagereq>
-      <packagereq type="default">man-pages</packagereq>
-      <packagereq type="default">mcelog</packagereq>
-      <packagereq type="default">mdadm</packagereq>
-      <packagereq type="default">microcode_ctl</packagereq>
-      <packagereq type="default">mlocate</packagereq>
-      <packagereq type="default">mtr</packagereq>
-      <packagereq type="default">nano</packagereq>
-      <packagereq type="default">nc</packagereq>
-      <packagereq type="default">nfs-utils</packagereq>
-      <packagereq type="default">nss_db</packagereq>
-      <packagereq type="default">nss_ldap</packagereq>
-      <packagereq type="default">ntfs-3g</packagereq>
-      <packagereq type="default">ntfsprogs</packagereq>
-      <packagereq type="default">numactl</packagereq>
-      <packagereq type="default">openssh-clients</packagereq>
-      <packagereq type="default">pam_ccreds</packagereq>
-      <packagereq type="default">pam_krb5</packagereq>
-      <packagereq type="default">pam_passwdqc</packagereq>
-      <packagereq type="default">pam_pkcs11</packagereq>
-      <packagereq type="default">pam_smb</packagereq>
-      <packagereq type="default">pcmciautils</packagereq>
-      <packagereq type="default">perf</packagereq>
-      <packagereq type="default">pinfo</packagereq>
-      <packagereq type="default">pm-utils</packagereq>
-      <packagereq type="default">prctl</packagereq>
-      <packagereq type="default">prelink</packagereq>
-      <packagereq type="default">qubes-release-notes</packagereq>
-      <packagereq type="default">rdate</packagereq>
-      <packagereq type="default">rdist</packagereq>
-      <packagereq type="default">readahead</packagereq>
-      <packagereq type="default">rng-utils</packagereq>
-      <packagereq type="default">rsh</packagereq>
-      <packagereq type="default">rsync</packagereq>
-      <packagereq type="default">sendmail</packagereq>
-      <packagereq type="default">setuptool</packagereq>
-      <packagereq type="default">smartmontools</packagereq>
-      <packagereq type="default">sos</packagereq>
-      <packagereq type="default">specspo</packagereq>
-      <packagereq type="default">sssd</packagereq>
-      <packagereq type="default">stunnel</packagereq>
-      <packagereq type="default">sudo</packagereq>
-      <packagereq type="default">symlinks</packagereq>
-      <packagereq type="default">system-config-firewall-tui</packagereq>
-      <packagereq type="default">system-config-network-tui</packagereq>
-      <packagereq type="default">talk</packagereq>
-      <packagereq type="default">tcpdump</packagereq>
-      <packagereq type="default">tcp_wrappers</packagereq>
-      <packagereq type="default">telnet</packagereq>
-      <packagereq type="default">time</packagereq>
-      <packagereq type="default">tree</packagereq>
-      <packagereq type="default">unix2dos</packagereq>
-      <packagereq type="default">unzip</packagereq>
-      <packagereq type="default">usbutils</packagereq>
-      <packagereq type="default">vconfig</packagereq>
-      <packagereq type="default">wget</packagereq>
-      <packagereq type="default">which</packagereq>
-      <packagereq type="default">wireless-tools</packagereq>
-      <packagereq type="default">words</packagereq>
-      <packagereq type="default">ypbind</packagereq>
-      <packagereq type="default">yum-presto</packagereq>
-      <packagereq type="default">yum-utils</packagereq>
-      <packagereq type="default">zip</packagereq>
-      <packagereq type="optional">apmd</packagereq>
-      <packagereq type="optional">authd</packagereq>
-      <packagereq type="optional">bridge-utils</packagereq>
-      <packagereq type="optional">brltty</packagereq>
-      <packagereq type="optional">btrfs-progs</packagereq>
-      <packagereq type="optional">fbset</packagereq>
-      <packagereq type="optional">gnupg2-smime</packagereq>
-      <packagereq type="optional">gpart</packagereq>
-      <packagereq type="optional">gpgme</packagereq>
-      <packagereq type="optional">gpm</packagereq>
-      <packagereq type="optional">hardlink</packagereq>
-      <packagereq type="optional">hfsutils</packagereq>
-      <packagereq type="optional">iscsi-initiator-utils</packagereq>
-      <packagereq type="optional">jfsutils</packagereq>
-      <packagereq type="optional">kexec-tools</packagereq>
-      <packagereq type="optional">ksh</packagereq>
-      <packagereq type="optional">logwatch</packagereq>
-      <packagereq type="optional">mgetty</packagereq>
-      <packagereq type="optional">mkbootdisk</packagereq>
-      <packagereq type="optional">mtools</packagereq>
-      <packagereq type="optional">pax</packagereq>
-      <packagereq type="optional">redhat-lsb</packagereq>
-      <packagereq type="optional">reiserfs-utils</packagereq>
-      <packagereq type="optional">squashfs-tools</packagereq>
-      <packagereq type="optional">star</packagereq>
-      <packagereq type="optional">tcsh</packagereq>
-      <packagereq type="optional">x86info</packagereq>
-      <packagereq type="optional">xfsprogs</packagereq>
-      <packagereq type="optional">yum-langpacks</packagereq>
-      <packagereq type="optional">yum-updatesd</packagereq>
+      <packagereq type="mandatory">tree</packagereq>
+      <packagereq type="mandatory">unzip</packagereq>
+      <packagereq type="mandatory">usbutils</packagereq>
+      <packagereq type="mandatory">which</packagereq>
+      <packagereq type="mandatory">yum-presto</packagereq>
+      <packagereq type="mandatory">yum-utils</packagereq>
+      <packagereq type="mandatory">zip</packagereq>
     </packagelist>
   </group>
   <group>
     <id>base-x</id>
     <name>X Window System</name>
-    <description>Install this group of packages to use the base graphical (X) user interface.</description>
     <default>true</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq type="mandatory">xorg-x11-drivers</packagereq>
-      <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
-      <packagereq type="mandatory">xorg-x11-xauth</packagereq>
-      <packagereq type="mandatory">xorg-x11-xinit</packagereq>
-      <packagereq type="default">authconfig-gtk</packagereq>
-      <packagereq type="default">cups-pk-helper</packagereq>
-      <packagereq type="default">desktop-backgrounds-basic</packagereq>
-      <packagereq type="default">firstboot</packagereq>
-      <packagereq type="default">glx-utils</packagereq>
-      <packagereq type="default">gnome-packagekit</packagereq>
-      <packagereq type="default">krb5-auth-dialog</packagereq>
-      <packagereq type="default">openssh-askpass</packagereq>
-      <packagereq type="default">plymouth-system-theme</packagereq>
-      <packagereq type="default">system-config-date</packagereq>
-      <packagereq type="default">system-config-firewall</packagereq>
-      <packagereq type="default">system-config-network</packagereq>
-      <packagereq type="default">system-config-printer</packagereq>
-      <packagereq type="default">system-config-services</packagereq>
-      <packagereq type="default">system-config-users</packagereq>
-      <packagereq type="default">xorg-x11-utils</packagereq>
-      <packagereq type="optional">alltray</packagereq>
-      <packagereq type="optional">aterm</packagereq>
-      <packagereq type="optional">bitmap-console-fonts</packagereq>
-      <packagereq type="optional">bitmap-fangsongti-fonts</packagereq>
-      <packagereq type="optional">bitmap-fixed-fonts</packagereq>
-      <packagereq type="optional">bitmap-lucida-typewriter-fonts</packagereq>
-      <packagereq type="optional">devilspie</packagereq>
-      <packagereq type="optional">gdm</packagereq>
-      <packagereq type="optional">gxmessage</packagereq>
-      <packagereq type="optional">lilyterm</packagereq>
-      <packagereq type="optional">lxpanel</packagereq>
-      <packagereq type="optional">roxterm</packagereq>
-      <packagereq type="optional">rss-glx</packagereq>
-      <packagereq type="optional">rss-glx-xscreensaver</packagereq>
-      <packagereq type="optional">rxvt</packagereq>
-      <packagereq type="optional">sakura</packagereq>
-      <packagereq type="optional">slim</packagereq>
-      <packagereq type="optional">switchdesk</packagereq>
-      <packagereq type="optional">system-config-display</packagereq>
-      <packagereq type="optional">system-switch-displaymanager</packagereq>
-      <packagereq type="optional">termit</packagereq>
-      <packagereq type="optional">tigervnc-server</packagereq>
-      <packagereq type="optional">ucs-miscfixed-fonts</packagereq>
-      <packagereq type="optional">uim-gtk2</packagereq>
-      <packagereq type="optional">workrave</packagereq>
-      <packagereq type="optional">xclip</packagereq>
-      <packagereq type="optional">xdaliclock</packagereq>
-      <packagereq type="optional">xguest</packagereq>
-      <packagereq type="optional">xkeycaps</packagereq>
-      <packagereq type="optional">xlockmore</packagereq>
-      <packagereq type="optional">xorg-x11-apps</packagereq>
-      <packagereq type="optional">xorg-x11-resutils</packagereq>
-      <packagereq type="optional">xorg-x11-server-Xnest</packagereq>
-      <packagereq type="optional">xorg-x11-server-Xvfb</packagereq>
-      <packagereq type="optional">xorg-x11-twm</packagereq>
-      <packagereq type="optional">xorg-x11-xfs</packagereq>
-      <packagereq type="optional">xorg-x11-xfs-utils</packagereq>
-      <packagereq type="optional">xorg-x11-xsm</packagereq>
-      <packagereq type="optional">xscreensaver</packagereq>
-      <packagereq type="optional">xscreensaver-base</packagereq>
-      <packagereq type="optional">xscreensaver-extras</packagereq>
-      <packagereq type="optional">xscreensaver-gl-extras</packagereq>
-      <packagereq type="optional">xterm</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>core</id>
-    <name>Core</name>
-    <description>Smallest possible installation</description>
-    <default>true</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq type="mandatory">acl</packagereq>
-      <packagereq type="mandatory">attr</packagereq>
-      <packagereq type="mandatory">audit</packagereq>
-      <packagereq type="mandatory">authconfig</packagereq>
-      <packagereq type="mandatory">basesystem</packagereq>
-      <packagereq type="mandatory">bash</packagereq>
-      <packagereq type="mandatory">coreutils</packagereq>
-      <packagereq type="mandatory">cpio</packagereq>
-      <packagereq type="mandatory">cronie</packagereq>
-      <packagereq type="mandatory">cronie-anacron</packagereq>
-      <packagereq type="mandatory">dhclient</packagereq>
-      <packagereq type="mandatory">e2fsprogs</packagereq>
-      <packagereq type="mandatory">file</packagereq>
-      <packagereq type="mandatory">filesystem</packagereq>
-      <packagereq type="mandatory">glibc</packagereq>
-      <packagereq type="mandatory">initscripts</packagereq>
-      <packagereq type="mandatory">iproute</packagereq>
-      <packagereq type="mandatory">iprutils</packagereq>
-      <packagereq type="mandatory">iptables</packagereq>
-      <packagereq type="mandatory">iptables-ipv6</packagereq>
-      <packagereq type="mandatory">iputils</packagereq>
-      <packagereq type="mandatory">kbd</packagereq>
-      <packagereq type="mandatory">libgcc</packagereq>
-      <packagereq type="mandatory">ncurses</packagereq>
-      <packagereq type="mandatory">openssh-server</packagereq>
-      <packagereq type="mandatory">passwd</packagereq>
-      <packagereq type="mandatory">procps</packagereq>
-      <packagereq type="mandatory">qubes-release</packagereq>
-      <packagereq type="mandatory">readline</packagereq>
-      <packagereq type="mandatory">rootfiles</packagereq>
-      <packagereq type="mandatory">rpm</packagereq>
-      <packagereq type="mandatory">rsyslog</packagereq>
-      <packagereq type="mandatory">setserial</packagereq>
-      <packagereq type="mandatory">setup</packagereq>
-      <packagereq type="mandatory">shadow-utils</packagereq>
-      <packagereq type="mandatory">sudo</packagereq>
-      <packagereq type="mandatory">util-linux-ng</packagereq>
-      <packagereq type="mandatory">vim-minimal</packagereq>
-      <packagereq type="mandatory">yum</packagereq>
-      <packagereq type="default">efibootmgr</packagereq>
-      <packagereq type="default">grub</packagereq>
-      <packagereq type="default">ppc64-utils</packagereq>
-      <packagereq type="default">s390utils</packagereq>
-      <packagereq type="default">sendmail</packagereq>
-      <packagereq type="default">silo</packagereq>
-      <packagereq type="default">yaboot</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>critical-path-base</id>
-    <name>Critical Path (Base)</name>
-    <description>A set of packages that provide the shared platform for Critical Path functionality on all Fedora spins</description>
-    <default>false</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq type="mandatory">anaconda</packagereq>
-      <packagereq type="mandatory">createrepo</packagereq>
-      <packagereq type="mandatory">dash</packagereq>
-      <packagereq type="mandatory">dracut</packagereq>
-      <packagereq type="mandatory">firstboot</packagereq>
-      <packagereq type="mandatory">gcc-c++</packagereq>
-      <packagereq type="mandatory">kernel</packagereq>
-      <packagereq type="mandatory">livecd-tools</packagereq>
-      <packagereq type="mandatory">mash</packagereq>
-      <packagereq type="mandatory">NetworkManager</packagereq>
-      <packagereq type="mandatory">pungi</packagereq>
-      <packagereq type="mandatory">redhat-rpm-config</packagereq>
-      <packagereq type="mandatory">rpm-build</packagereq>
-      <packagereq type="mandatory">yum</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>critical-path-gnome</id>
-    <name>Critical Path (GNOME)</name>
-    <description>A set of packages that provide the Critical Path functionality for the GNOME desktop</description>
-    <default>false</default>
-    <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
-      <packagereq type="mandatory">gdm</packagereq>
+      <packagereq type="mandatory">firstboot</packagereq>
+      <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">xorg-x11-drivers</packagereq>
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
+      <packagereq type="mandatory">xorg-x11-utils</packagereq>
       <packagereq type="mandatory">xorg-x11-xauth</packagereq>
       <packagereq type="mandatory">xorg-x11-xinit</packagereq>
-      <packagereq type="default">notification-daemon</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>fonts</id>
-    <name>Fonts</name>
-    <description>Fonts packages for rendering text on the desktop.</description>
-    <default>true</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq type="default">dejavu-sans-fonts</packagereq>
-      <packagereq type="default">dejavu-sans-mono-fonts</packagereq>
-      <packagereq type="default">dejavu-serif-fonts</packagereq>
-      <packagereq type="default">jomolhari-fonts</packagereq>
-      <packagereq type="default">kacst-art-fonts</packagereq>
-      <packagereq type="default">kacst-book-fonts</packagereq>
-      <packagereq type="default">kacst-decorative-fonts</packagereq>
-      <packagereq type="default">kacst-digital-fonts</packagereq>
-      <packagereq type="default">kacst-farsi-fonts</packagereq>
-      <packagereq type="default">kacst-letter-fonts</packagereq>
-      <packagereq type="default">kacst-naskh-fonts</packagereq>
-      <packagereq type="default">kacst-office-fonts</packagereq>
-      <packagereq type="default">kacst-one-fonts</packagereq>
-      <packagereq type="default">kacst-pen-fonts</packagereq>
-      <packagereq type="default">kacst-poster-fonts</packagereq>
-      <packagereq type="default">kacst-qurn-fonts</packagereq>
-      <packagereq type="default">kacst-screen-fonts</packagereq>
-      <packagereq type="default">kacst-title-fonts</packagereq>
-      <packagereq type="default">kacst-titlel-fonts</packagereq>
-      <packagereq type="default">khmeros-base-fonts</packagereq>
-      <packagereq type="default">liberation-mono-fonts</packagereq>
-      <packagereq type="default">liberation-sans-fonts</packagereq>
-      <packagereq type="default">liberation-serif-fonts</packagereq>
-      <packagereq type="default">lklug-fonts</packagereq>
-      <packagereq type="default">lohit-assamese-fonts</packagereq>
-      <packagereq type="default">lohit-bengali-fonts</packagereq>
-      <packagereq type="default">lohit-devanagari-fonts</packagereq>
-      <packagereq type="default">lohit-gujarati-fonts</packagereq>
-      <packagereq type="default">lohit-kannada-fonts</packagereq>
-      <packagereq type="default">lohit-oriya-fonts</packagereq>
-      <packagereq type="default">lohit-punjabi-fonts</packagereq>
-      <packagereq type="default">lohit-tamil-fonts</packagereq>
-      <packagereq type="default">lohit-telugu-fonts</packagereq>
-      <packagereq type="default">padauk-fonts</packagereq>
-      <packagereq type="default">paktype-naqsh-fonts</packagereq>
-      <packagereq type="default">paktype-tehreer-fonts</packagereq>
-      <packagereq type="default">paratype-pt-sans-fonts</packagereq>
-      <packagereq type="default">sil-abyssinica-fonts</packagereq>
-      <packagereq type="default">smc-meera-fonts</packagereq>
-      <packagereq type="default">stix-fonts</packagereq>
-      <packagereq type="default">thai-scalable-waree-fonts</packagereq>
-      <packagereq type="default">un-core-dotum-fonts</packagereq>
-      <packagereq type="default">vlgothic-fonts</packagereq>
-      <packagereq type="default">wqy-zenhei-fonts</packagereq>
-      <packagereq type="optional">adf-accanthis-2-fonts</packagereq>
-      <packagereq type="optional">adf-accanthis-3-fonts</packagereq>
-      <packagereq type="optional">adf-accanthis-fonts</packagereq>
-      <packagereq type="optional">adf-tribun-fonts</packagereq>
-      <packagereq type="optional">allgeyer-musiqwik-fonts</packagereq>
-      <packagereq type="optional">allgeyer-musisync-fonts</packagereq>
-      <packagereq type="optional">apa-new-athena-unicode-fonts</packagereq>
-      <packagereq type="optional">apanov-edrip-fonts</packagereq>
-      <packagereq type="optional">apanov-heuristica-fonts</packagereq>
-      <packagereq type="optional">aplus-fsf-KAPL-fonts</packagereq>
-      <packagereq type="optional">asana-math-fonts</packagereq>
-      <packagereq type="optional">baekmuk-ttf-batang-fonts</packagereq>
-      <packagereq type="optional">baekmuk-ttf-dotum-fonts</packagereq>
-      <packagereq type="optional">baekmuk-ttf-gulim-fonts</packagereq>
-      <packagereq type="optional">baekmuk-ttf-hline-fonts</packagereq>
-      <packagereq type="optional">beteckna-fonts</packagereq>
-      <packagereq type="optional">beteckna-lower-case-fonts</packagereq>
-      <packagereq type="optional">beteckna-small-caps-fonts</packagereq>
-      <packagereq type="optional">bitstream-vera-sans-fonts</packagereq>
-      <packagereq type="optional">bitstream-vera-sans-mono-fonts</packagereq>
-      <packagereq type="optional">bitstream-vera-serif-fonts</packagereq>
-      <packagereq type="optional">bpg-algeti-fonts</packagereq>
-      <packagereq type="optional">bpg-chveulebrivi-fonts</packagereq>
-      <packagereq type="optional">bpg-courier-fonts</packagereq>
-      <packagereq type="optional">bpg-courier-s-fonts</packagereq>
-      <packagereq type="optional">bpg-elite-fonts</packagereq>
-      <packagereq type="optional">bpg-excelsior-fonts</packagereq>
-      <packagereq type="optional">bpg-glaho-fonts</packagereq>
-      <packagereq type="optional">bpg-ingiri-fonts</packagereq>
-      <packagereq type="optional">bpg-nino-medium-cond-fonts</packagereq>
-      <packagereq type="optional">bpg-nino-medium-fonts</packagereq>
-      <packagereq type="optional">bpg-sans-fonts</packagereq>
-      <packagereq type="optional">bpg-sans-medium-fonts</packagereq>
-      <packagereq type="optional">bpg-sans-modern-fonts</packagereq>
-      <packagereq type="optional">bpg-sans-regular-fonts</packagereq>
-      <packagereq type="optional">bpg-serif-fonts</packagereq>
-      <packagereq type="optional">bpg-serif-modern-fonts</packagereq>
-      <packagereq type="optional">brettfont-fonts</packagereq>
-      <packagereq type="optional">cave9-mutante-fonts</packagereq>
-      <packagereq type="optional">cf-bonveno-fonts</packagereq>
-      <packagereq type="optional">chisholm-letterslaughing-fonts</packagereq>
-      <packagereq type="optional">chisholm-to-be-continued-fonts</packagereq>
-      <packagereq type="optional">cjkuni-ukai-fonts</packagereq>
-      <packagereq type="optional">cjkuni-uming-fonts</packagereq>
-      <packagereq type="optional">conakry-fonts</packagereq>
-      <packagereq type="optional">ctan-cm-lgc-roman-fonts</packagereq>
-      <packagereq type="optional">ctan-cm-lgc-sans-fonts</packagereq>
-      <packagereq type="optional">ctan-cm-lgc-typewriter-fonts</packagereq>
-      <packagereq type="optional">ctan-kerkis-calligraphic-fonts</packagereq>
-      <packagereq type="optional">ctan-kerkis-sans-fonts</packagereq>
-      <packagereq type="optional">ctan-kerkis-serif-fonts</packagereq>
-      <packagereq type="optional">darkgarden-fonts</packagereq>
-      <packagereq type="optional">dejavu-lgc-sans-fonts</packagereq>
-      <packagereq type="optional">dejavu-lgc-sans-mono-fonts</packagereq>
-      <packagereq type="optional">dejavu-lgc-serif-fonts</packagereq>
-      <packagereq type="optional">denemo-music-fonts</packagereq>
-      <packagereq type="optional">drehatlas-warender-bibliothek-fonts</packagereq>
-      <packagereq type="optional">drehatlas-widelands-fonts</packagereq>
-      <packagereq type="optional">drehatlas-xaporho-fonts</packagereq>
-      <packagereq type="optional">dustin-domestic-manners-fonts</packagereq>
-      <packagereq type="optional">dustin-dustismo-roman-fonts</packagereq>
-      <packagereq type="optional">dustin-dustismo-sans-fonts</packagereq>
-      <packagereq type="optional">ecolier-court-fonts</packagereq>
-      <packagereq type="optional">ecolier-court-lignes-fonts</packagereq>
-      <packagereq type="optional">extremetuxracer-papercuts-fonts</packagereq>
-      <packagereq type="optional">extremetuxracer-papercuts-outline-fonts</packagereq>
-      <packagereq type="optional">freecol-imperator-fonts</packagereq>
-      <packagereq type="optional">freecol-shadowedblack-fonts</packagereq>
-      <packagereq type="optional">gargi-fonts</packagereq>
-      <packagereq type="optional">gdouros-aegean-fonts</packagereq>
-      <packagereq type="optional">gdouros-aegyptus-fonts</packagereq>
-      <packagereq type="optional">gdouros-akkadian-fonts</packagereq>
-      <packagereq type="optional">gdouros-alexander-fonts</packagereq>
-      <packagereq type="optional">gdouros-analecta-fonts</packagereq>
-      <packagereq type="optional">gdouros-musica-fonts</packagereq>
-      <packagereq type="optional">gfs-ambrosia-fonts</packagereq>
-      <packagereq type="optional">gfs-artemisia-fonts</packagereq>
-      <packagereq type="optional">gfs-baskerville-fonts</packagereq>
-      <packagereq type="optional">gfs-bodoni-classic-fonts</packagereq>
-      <packagereq type="optional">gfs-bodoni-fonts</packagereq>
-      <packagereq type="optional">gfs-complutum-fonts</packagereq>
-      <packagereq type="optional">gfs-decker-fonts</packagereq>
-      <packagereq type="optional">gfs-didot-classic-fonts</packagereq>
-      <packagereq type="optional">gfs-didot-fonts</packagereq>
-      <packagereq type="optional">gfs-eustace-fonts</packagereq>
-      <packagereq type="optional">gfs-fleischman-fonts</packagereq>
-      <packagereq type="optional">gfs-garaldus-fonts</packagereq>
-      <packagereq type="optional">gfs-gazis-fonts</packagereq>
-      <packagereq type="optional">gfs-goschen-fonts</packagereq>
-      <packagereq type="optional">gfs-ignacio-fonts</packagereq>
-      <packagereq type="optional">gfs-jackson-fonts</packagereq>
-      <packagereq type="optional">gfs-neohellenic-fonts</packagereq>
-      <packagereq type="optional">gfs-nicefore-fonts</packagereq>
-      <packagereq type="optional">gfs-olga-fonts</packagereq>
-      <packagereq type="optional">gfs-philostratos-fonts</packagereq>
-      <packagereq type="optional">gfs-porson-fonts</packagereq>
-      <packagereq type="optional">gfs-pyrsos-fonts</packagereq>
-      <packagereq type="optional">gfs-solomos-fonts</packagereq>
-      <packagereq type="optional">gfs-theokritos-fonts</packagereq>
-      <packagereq type="optional">gnu-free-mono-fonts</packagereq>
-      <packagereq type="optional">gnu-free-sans-fonts</packagereq>
-      <packagereq type="optional">gnu-free-serif-fonts</packagereq>
-      <packagereq type="optional">google-droid-sans-fonts</packagereq>
-      <packagereq type="optional">google-droid-sans-mono-fonts</packagereq>
-      <packagereq type="optional">google-droid-serif-fonts</packagereq>
-      <packagereq type="optional">hanazono-fonts</packagereq>
-      <packagereq type="optional">hartke-aurulent-sans-fonts</packagereq>
-      <packagereq type="optional">hartke-aurulent-sans-mono-fonts</packagereq>
-      <packagereq type="optional">icelandic-fonts</packagereq>
-      <packagereq type="optional">inkboy-fonts</packagereq>
-      <packagereq type="optional">ipa-gothic-fonts</packagereq>
-      <packagereq type="optional">ipa-mincho-fonts</packagereq>
-      <packagereq type="optional">ipa-pgothic-fonts</packagereq>
-      <packagereq type="optional">ipa-pmincho-fonts</packagereq>
-      <packagereq type="optional">khmeros-battambang-fonts</packagereq>
-      <packagereq type="optional">khmeros-bokor-fonts</packagereq>
-      <packagereq type="optional">khmeros-handwritten-fonts</packagereq>
-      <packagereq type="optional">khmeros-metal-chrieng-fonts</packagereq>
-      <packagereq type="optional">khmeros-muol-fonts</packagereq>
-      <packagereq type="optional">khmeros-siemreap-fonts</packagereq>
-      <packagereq type="optional">kurdit-unikurd-web-fonts</packagereq>
-      <packagereq type="optional">levien-inconsolata-fonts</packagereq>
-      <packagereq type="optional">lilypond-aybabtu-fonts</packagereq>
-      <packagereq type="optional">lilypond-century-schoolbook-l-fonts</packagereq>
-      <packagereq type="optional">lilypond-emmentaler-fonts</packagereq>
-      <packagereq type="optional">lilypond-feta-alphabet-fonts</packagereq>
-      <packagereq type="optional">lilypond-feta-braces-fonts</packagereq>
-      <packagereq type="optional">lilypond-feta-fonts</packagereq>
-      <packagereq type="optional">lilypond-parmesan-fonts</packagereq>
-      <packagereq type="optional">linux-libertine-fonts</packagereq>
-      <packagereq type="optional">lohit-malayalam-fonts</packagereq>
-      <packagereq type="optional">madan-fonts</packagereq>
-      <packagereq type="optional">mathml-fonts</packagereq>
-      <packagereq type="optional">mgopen-canonica-fonts</packagereq>
-      <packagereq type="optional">mgopen-cosmetica-fonts</packagereq>
-      <packagereq type="optional">mgopen-modata-fonts</packagereq>
-      <packagereq type="optional">mgopen-moderna-fonts</packagereq>
-      <packagereq type="optional">mscore-fonts</packagereq>
-      <packagereq type="optional">msimonson-anonymouspro-fonts</packagereq>
-      <packagereq type="optional">myanmar3-unicode-fonts</packagereq>
-      <packagereq type="optional">nafees-web-naskh-fonts</packagereq>
-      <packagereq type="optional">ns-bola-fonts</packagereq>
-      <packagereq type="optional">ns-tiza-chalk-fonts</packagereq>
-      <packagereq type="optional">oflb-goudy-bookletter-1911-fonts</packagereq>
-      <packagereq type="optional">oflb-notcouriersans-fonts</packagereq>
-      <packagereq type="optional">oflb-prociono-fonts</packagereq>
-      <packagereq type="optional">oflb-riordonfancy-fonts</packagereq>
-      <packagereq type="optional">oflb-smonohand-fonts</packagereq>
-      <packagereq type="optional">oldstandard-sfd-fonts</packagereq>
-      <packagereq type="optional">openoffice.org-opensymbol-fonts</packagereq>
-      <packagereq type="optional">paratype-pt-sans-caption-fonts</packagereq>
-      <packagereq type="optional">roadstencil-fonts</packagereq>
-      <packagereq type="optional">saab-fonts</packagereq>
-      <packagereq type="optional">samyak-devanagari-fonts</packagereq>
-      <packagereq type="optional">samyak-gujarati-fonts</packagereq>
-      <packagereq type="optional">samyak-malayalam-fonts</packagereq>
-      <packagereq type="optional">samyak-oriya-fonts</packagereq>
-      <packagereq type="optional">samyak-tamil-fonts</packagereq>
-      <packagereq type="optional">sarai-fonts</packagereq>
-      <packagereq type="optional">sazanami-gothic-fonts</packagereq>
-      <packagereq type="optional">sazanami-mincho-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-fantuwua-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-hiwua-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-jiret-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-tint-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-wookianos-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-yebse-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-yigezu-bisrat-goffer-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-yigezu-bisrat-gothic-fonts</packagereq>
-      <packagereq type="optional">senamirmir-washra-zelan-fonts</packagereq>
-      <packagereq type="optional">serafettin-cartoon-fonts</packagereq>
-      <packagereq type="optional">sil-andika-fonts</packagereq>
-      <packagereq type="optional">sil-charis-compact-fonts</packagereq>
-      <packagereq type="optional">sil-charis-fonts</packagereq>
-      <packagereq type="optional">sil-doulos-fonts</packagereq>
-      <packagereq type="optional">sil-gentium-alt-fonts</packagereq>
-      <packagereq type="optional">sil-gentium-basic-book-fonts</packagereq>
-      <packagereq type="optional">sil-gentium-basic-fonts</packagereq>
-      <packagereq type="optional">sil-gentium-fonts</packagereq>
-      <packagereq type="optional">sil-lateef-fonts</packagereq>
-      <packagereq type="optional">sil-padauk-fonts</packagereq>
-      <packagereq type="optional">sil-scheherazade-fonts</packagereq>
-      <packagereq type="optional">silkscreen-expanded-fonts</packagereq>
-      <packagereq type="optional">silkscreen-fonts</packagereq>
-      <packagereq type="optional">sj-delphine-fonts</packagereq>
-      <packagereq type="optional">sj-stevehand-fonts</packagereq>
-      <packagereq type="optional">smc-anjalioldlipi-fonts</packagereq>
-      <packagereq type="optional">smc-dyuthi-fonts</packagereq>
-      <packagereq type="optional">smc-kalyani-fonts</packagereq>
-      <packagereq type="optional">smc-rachana-fonts</packagereq>
-      <packagereq type="optional">smc-raghumalayalam-fonts</packagereq>
-      <packagereq type="optional">smc-suruma-fonts</packagereq>
-      <packagereq type="optional">sportrop-fonts</packagereq>
-      <packagereq type="optional">stix-integrals-fonts</packagereq>
-      <packagereq type="optional">stix-pua-fonts</packagereq>
-      <packagereq type="optional">stix-sizes-fonts</packagereq>
-      <packagereq type="optional">stix-variants-fonts</packagereq>
-      <packagereq type="optional">thibault-essays1743-fonts</packagereq>
-      <packagereq type="optional">thibault-isabella-fonts</packagereq>
-      <packagereq type="optional">thibault-rockets-fonts</packagereq>
-      <packagereq type="optional">thibault-staypuft-fonts</packagereq>
-      <packagereq type="optional">tibetan-machine-uni-fonts</packagereq>
-      <packagereq type="optional">tiresias-info-fonts</packagereq>
-      <packagereq type="optional">tiresias-info-z-fonts</packagereq>
-      <packagereq type="optional">tiresias-key-v2-fonts</packagereq>
-      <packagereq type="optional">tiresias-lp-fonts</packagereq>
-      <packagereq type="optional">tiresias-pc-fonts</packagereq>
-      <packagereq type="optional">tiresias-pc-z-fonts</packagereq>
-      <packagereq type="optional">tiresias-sign-fonts</packagereq>
-      <packagereq type="optional">tiresias-sign-z-fonts</packagereq>
-      <packagereq type="optional">tulrich-tuffy-fonts</packagereq>
-      <packagereq type="optional">un-core-batang-fonts</packagereq>
-      <packagereq type="optional">un-core-dinaru-fonts</packagereq>
-      <packagereq type="optional">un-core-graphic-fonts</packagereq>
-      <packagereq type="optional">un-core-gungseo-fonts</packagereq>
-      <packagereq type="optional">un-core-pilgi-fonts</packagereq>
-      <packagereq type="optional">un-extra-fonts-bom</packagereq>
-      <packagereq type="optional">un-extra-fonts-jamobatang</packagereq>
-      <packagereq type="optional">un-extra-fonts-jamodotum</packagereq>
-      <packagereq type="optional">un-extra-fonts-jamonovel</packagereq>
-      <packagereq type="optional">un-extra-fonts-jamosora</packagereq>
-      <packagereq type="optional">un-extra-fonts-pen</packagereq>
-      <packagereq type="optional">un-extra-fonts-penheulim</packagereq>
-      <packagereq type="optional">un-extra-fonts-pilgia</packagereq>
-      <packagereq type="optional">un-extra-fonts-shinmun</packagereq>
-      <packagereq type="optional">un-extra-fonts-taza</packagereq>
-      <packagereq type="optional">un-extra-fonts-vada</packagereq>
-      <packagereq type="optional">un-extra-fonts-yetgul</packagereq>
-      <packagereq type="optional">vemana2000-fonts</packagereq>
-      <packagereq type="optional">vlgothic-p-fonts</packagereq>
-      <packagereq type="optional">vollkorn-fonts</packagereq>
-      <packagereq type="optional">woodardworks-laconic-fonts</packagereq>
-      <packagereq type="optional">woodardworks-laconic-shadow-fonts</packagereq>
-      <packagereq type="optional">wqy-microhei-fonts</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ethiopic</packagereq>
-      <packagereq type="optional">yanone-kaffeesatz-fonts</packagereq>
-      <packagereq type="optional">yanone-tagesschrift-fonts</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>hardware-support</id>
-    <name>Hardware Support</name>
-    <description>This group is a collection of tools for various hardware specific utilities.</description>
-    <default>true</default>
-    <uservisible>true</uservisible>
-    <packagelist>
-      <packagereq type="default">ar9170-firmware</packagereq>
-      <packagereq type="default">atmel-firmware</packagereq>
-      <packagereq type="default">b43-fwcutter</packagereq>
-      <packagereq type="default">b43-openfwwf</packagereq>
-      <packagereq type="default">ipw2100-firmware</packagereq>
-      <packagereq type="default">ipw2200-firmware</packagereq>
-      <packagereq type="default">ivtv-firmware</packagereq>
-      <packagereq type="default">iwl1000-firmware</packagereq>
-      <packagereq type="default">iwl3945-firmware</packagereq>
-      <packagereq type="default">iwl4965-firmware</packagereq>
-      <packagereq type="default">iwl5000-firmware</packagereq>
-      <packagereq type="default">iwl5150-firmware</packagereq>
-      <packagereq type="default">iwl6000-firmware</packagereq>
-      <packagereq type="default">libertas-usb8388-firmware</packagereq>
-      <packagereq type="default">printer-filters</packagereq>
-      <packagereq type="default">ql2100-firmware</packagereq>
-      <packagereq type="default">ql2200-firmware</packagereq>
-      <packagereq type="default">ql23xx-firmware</packagereq>
-      <packagereq type="default">ql2400-firmware</packagereq>
-      <packagereq type="default">ql2500-firmware</packagereq>
-      <packagereq type="default">rt61pci-firmware</packagereq>
-      <packagereq type="default">rt73usb-firmware</packagereq>
-      <packagereq type="default">zd1211-firmware</packagereq>
-      <packagereq type="optional">acpi</packagereq>
-      <packagereq type="optional">acpitool</packagereq>
-      <packagereq type="optional">cmospwd</packagereq>
-      <packagereq type="optional">ctapi-cyberjack</packagereq>
-      <packagereq type="optional">ctapi-cyberjack-pcsc</packagereq>
-      <packagereq type="optional">ctapi-cyberjack-tools</packagereq>
-      <packagereq type="optional">firmware-addon-dell</packagereq>
-      <packagereq type="optional">gpsd</packagereq>
-      <packagereq type="optional">gpsd-clients</packagereq>
-      <packagereq type="optional">gypsy</packagereq>
-      <packagereq type="optional">hddtemp</packagereq>
-      <packagereq type="optional">hdparm</packagereq>
-      <packagereq type="optional">i8kutils</packagereq>
-      <packagereq type="optional">iscan-firmware</packagereq>
-      <packagereq type="optional">isight-firmware-tools</packagereq>
-      <packagereq type="optional">libifp</packagereq>
-      <packagereq type="optional">lsscsi</packagereq>
-      <packagereq type="optional">multican</packagereq>
-      <packagereq type="optional">openct</packagereq>
-      <packagereq type="optional">opensc</packagereq>
-      <packagereq type="optional">s3switch</packagereq>
-      <packagereq type="optional">tpb</packagereq>
     </packagelist>
   </group>
   <group>
     <id>kde-desktop</id>
     <name>KDE Software Compilation</name>
-    <description>The KDE SC includes the KDE Plasma Desktop, a highly-configurable graphical user interface which includes a panel, desktop, system icons and desktop widgets, and many powerful KDE applications.</description>
     <default>true</default>
-    <uservisible>false</uservisible>
     <packagelist>
+      <packagereq type="mandatory">kcm_touchpad</packagereq>
+      <packagereq type="mandatory">kdeaccessibility</packagereq>
+      <packagereq type="mandatory">kdm</packagereq>
+      <packagereq type="mandatory">oxygen-icons-theme</packagereq>
       <packagereq type="mandatory">qubes-kde-dom0</packagereq>
-      <packagereq type="conditional" requires="gstreamer">gstreamer-plugins-good</packagereq>
-      <packagereq type="conditional" requires="ibus">ibus-qt</packagereq>
-      <packagereq type="conditional" requires="scim">scim-bridge-qt</packagereq>
-      <packagereq type="default">cups-pk-helper</packagereq>
-      <packagereq type="default">dejavu-sans-fonts</packagereq>
-      <packagereq type="default">dejavu-sans-mono-fonts</packagereq>
-      <packagereq type="default">dejavu-serif-fonts</packagereq>
-      <packagereq type="default">kcm-gtk</packagereq>
-      <packagereq type="default">kcm_touchpad</packagereq>
-      <packagereq type="default">kdeaccessibility</packagereq>
-      <packagereq type="default">kdeartwork-screensavers</packagereq>
-      <packagereq type="default">kdm</packagereq>
-      <packagereq type="default">kftpgrabber</packagereq>
-      <packagereq type="default">phonon-backend-gstreamer</packagereq>
-      <packagereq type="default">phonon-backend-xine</packagereq>
-      <packagereq type="default">pinentry-qt4</packagereq>
-      <packagereq type="default">xsettings-kde</packagereq>
-      <packagereq type="optional">basket</packagereq>
-      <packagereq type="optional">bespin</packagereq>
-      <packagereq type="optional">bilbo</packagereq>
-      <packagereq type="optional">compiz-kde</packagereq>
-      <packagereq type="optional">crystal</packagereq>
-      <packagereq type="optional">kbibtex</packagereq>
-      <packagereq type="optional">kbilliards</packagereq>
-      <packagereq type="optional">kchmviewer</packagereq>
-      <packagereq type="optional">kcoloredit</packagereq>
-      <packagereq type="optional">kcometen4</packagereq>
-      <packagereq type="optional">kdissert</packagereq>
-      <packagereq type="optional">kerry</packagereq>
-      <packagereq type="optional">kgrab</packagereq>
-      <packagereq type="optional">kiconedit</packagereq>
-      <packagereq type="optional">kio-ftps</packagereq>
-      <packagereq type="optional">kiosktool</packagereq>
-      <packagereq type="optional">kio_gopher</packagereq>
-      <packagereq type="optional">klamav</packagereq>
-      <packagereq type="optional">kmenu-gnome</packagereq>
-      <packagereq type="optional">kmid</packagereq>
-      <packagereq type="optional">kmymoney2</packagereq>
-      <packagereq type="optional">knemo</packagereq>
-      <packagereq type="optional">kobby</packagereq>
-      <packagereq type="optional">koffice-suite</packagereq>
-      <packagereq type="optional">koverartist</packagereq>
-      <packagereq type="optional">krecipes</packagereq>
-      <packagereq type="optional">krename</packagereq>
-      <packagereq type="optional">krusader</packagereq>
-      <packagereq type="optional">ksensors</packagereq>
-      <packagereq type="optional">kshutdown</packagereq>
-      <packagereq type="optional">ksig</packagereq>
-      <packagereq type="optional">kvirc</packagereq>
-      <packagereq type="optional">leonidas-kde-theme-landscape</packagereq>
-      <packagereq type="optional">leonidas-kde-theme-lion</packagereq>
-      <packagereq type="optional">metamonitor</packagereq>
-      <packagereq type="optional">oooqs2</packagereq>
-      <packagereq type="optional">polyester</packagereq>
-      <packagereq type="optional">qt-recordmydesktop</packagereq>
-      <packagereq type="optional">rekall</packagereq>
-      <packagereq type="optional">rsibreak</packagereq>
-      <packagereq type="optional">rss-glx-kde</packagereq>
-      <packagereq type="optional">scim-bridge-qt3</packagereq>
-      <packagereq type="optional">skanlite</packagereq>
-      <packagereq type="optional">smb4k</packagereq>
-      <packagereq type="optional">speedcrunch</packagereq>
-      <packagereq type="optional">transmission-qt</packagereq>
-      <packagereq type="optional">uim-qt3</packagereq>
-      <packagereq type="optional">yakuake</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>legacy-fonts</id>
-    <name>Legacy Fonts</name>
-    <description>Older bitmap and vector fonts packages</description>
-    <default>false</default>
-    <uservisible>true</uservisible>
-    <packagelist>
-      <packagereq type="default">xorg-x11-fonts-100dpi</packagereq>
-      <packagereq type="default">xorg-x11-fonts-ISO8859-15-100dpi</packagereq>
-      <packagereq type="default">xorg-x11-fonts-misc</packagereq>
-      <packagereq type="default">xorg-x11-fonts-Type1</packagereq>
-      <packagereq type="optional">artwiz-aleczapka-fonts</packagereq>
-      <packagereq type="optional">baekmuk-bdf-fonts</packagereq>
-      <packagereq type="optional">bitmap-console-fonts</packagereq>
-      <packagereq type="optional">bitmap-fangsongti-fonts</packagereq>
-      <packagereq type="optional">bitmap-fixed-fonts</packagereq>
-      <packagereq type="optional">bitmap-lucida-typewriter-fonts</packagereq>
-      <packagereq type="optional">ctan-musixtex-fonts</packagereq>
-      <packagereq type="optional">culmus-aharoni-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-caladings-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-david-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-drugulin-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-ellinia-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-frank-ruehl-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-miriam-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-miriam-mono-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-nachlieli-clm-fonts</packagereq>
-      <packagereq type="optional">culmus-yehuda-clm-fonts</packagereq>
-      <packagereq type="optional">efont-unicode-bdf</packagereq>
-      <packagereq type="optional">fonts-hebrew-fancy</packagereq>
-      <packagereq type="optional">fonts-ISO8859-2</packagereq>
-      <packagereq type="optional">fonts-ISO8859-2-100dpi</packagereq>
-      <packagereq type="optional">fonts-ISO8859-2-75dpi</packagereq>
-      <packagereq type="optional">fonts-KOI8-R</packagereq>
-      <packagereq type="optional">fonts-KOI8-R-100dpi</packagereq>
-      <packagereq type="optional">fonts-KOI8-R-75dpi</packagereq>
-      <packagereq type="optional">ghostscript-fonts</packagereq>
-      <packagereq type="optional">japanese-bitmap-fonts</packagereq>
-      <packagereq type="optional">jisksp16-1990-fonts</packagereq>
-      <packagereq type="optional">knm-new-fixed-fonts</packagereq>
-      <packagereq type="optional">libdockapp-fonts</packagereq>
-      <packagereq type="optional">lyx-cmex10-fonts</packagereq>
-      <packagereq type="optional">lyx-cmmi10-fonts</packagereq>
-      <packagereq type="optional">lyx-cmr10-fonts</packagereq>
-      <packagereq type="optional">lyx-cmsy10-fonts</packagereq>
-      <packagereq type="optional">lyx-esint10-fonts</packagereq>
-      <packagereq type="optional">lyx-eufm10-fonts</packagereq>
-      <packagereq type="optional">lyx-msam10-fonts</packagereq>
-      <packagereq type="optional">lyx-msbm10-fonts</packagereq>
-      <packagereq type="optional">lyx-wasy10-fonts</packagereq>
-      <packagereq type="optional">mona-bitmap-fonts</packagereq>
-      <packagereq type="optional">nethack-bitmap-fonts</packagereq>
-      <packagereq type="optional">nted-ntedfont-fonts</packagereq>
-      <packagereq type="optional">oflb-dignas-handwriting-fonts</packagereq>
-      <packagereq type="optional">rosegarden4-feta-fonts</packagereq>
-      <packagereq type="optional">rosegarden4-parmesan-fonts</packagereq>
-      <packagereq type="optional">taipeifonts</packagereq>
-      <packagereq type="optional">terminus-fonts</packagereq>
-      <packagereq type="optional">terminus-fonts-console</packagereq>
-      <packagereq type="optional">ucs-miscfixed-fonts</packagereq>
-      <packagereq type="optional">urw-fonts</packagereq>
-      <packagereq type="optional">wqy-bitmap-fonts</packagereq>
-      <packagereq type="optional">wqy-unibit-fonts</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-75dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-cyrillic</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ethiopic</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-1-100dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-1-75dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-14-100dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-14-75dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-15-75dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-2-100dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-2-75dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-9-100dpi</packagereq>
-      <packagereq type="optional">xorg-x11-fonts-ISO8859-9-75dpi</packagereq>
-      <packagereq type="optional">zvbi-fonts</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>legacy-software-support</id>
-    <name>Legacy Software Support</name>
-    <description/>
-    <default>false</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq type="default">compat-libgcc-296</packagereq>
-      <packagereq type="default">compat-libstdc++-296</packagereq>
-      <packagereq type="default">compat-libstdc++-33</packagereq>
-      <packagereq type="optional">compat-db</packagereq>
+      <packagereq type="mandatory">redhat-menus</packagereq>
+      <packagereq type="mandatory">xsettings-kde</packagereq>
     </packagelist>
   </group>
   <group>
     <id>qubes</id>
     <name>Qubes Environment</name>
-    <description/>
     <default>true</default>
-    <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">kernel-qubes-dom0</packagereq>
       <packagereq type="mandatory">qubes-core-dom0</packagereq>
