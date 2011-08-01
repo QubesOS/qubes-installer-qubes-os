@@ -80,6 +80,7 @@
       <packagereq type="mandatory">qubes-kde-dom0</packagereq>
       <packagereq type="mandatory">redhat-menus</packagereq>
       <packagereq type="mandatory">xsettings-kde</packagereq>
+      <packagereq type="mandatory">kpackagekit</packagereq>
     </packagelist>
   </group>
   <group>
