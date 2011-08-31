@@ -39,6 +39,7 @@
       <packagereq type="mandatory">qubes-release-notes</packagereq>
       <packagereq type="mandatory">quota</packagereq>
       <packagereq type="mandatory">readahead</packagereq>
+      <packagereq type="mandatory">rsyslog</packagereq>
       <packagereq type="mandatory">smartmontools</packagereq>
       <packagereq type="mandatory">sudo</packagereq>
       <packagereq type="mandatory">symlinks</packagereq>
