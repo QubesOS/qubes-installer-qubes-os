@@ -95,10 +95,8 @@ class InstallClass(BaseInstallClass):
         subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
             '/bin/bash', '-c', 'rpm --import /etc/pki/rpm-gpg/*'])
 
-        # Fix default initramfs (anaconda generates own one...)
-        for kernel in anaconda.backend.kernelVersionList(anaconda.rootPath):
-            subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
-                        '/usr/lib/qubes/regenerate_initramfs.sh', kernel[0]])
+        subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
+            '/sbin/dracut', '--force', '/boot/initramfs-' + kernel[0] + '.img'])
 
     def getBackend(self):
         if flags.livecdInstall:
