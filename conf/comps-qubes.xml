@@ -63,6 +63,7 @@
       <packagereq type="mandatory">firstboot</packagereq>
       <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">gnome-packagekit</packagereq>
+      <packagereq type="mandatory">libgnomeui</packagereq>
       <packagereq type="mandatory">xorg-x11-drivers</packagereq>
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
       <packagereq type="mandatory">xorg-x11-utils</packagereq>
