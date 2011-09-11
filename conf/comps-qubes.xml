@@ -94,7 +94,6 @@
       <packagereq type="mandatory">qubes-gui-dom0</packagereq>
       <packagereq type="mandatory">qubes-manager</packagereq>
       <packagereq type="mandatory">qubes-template-fedora-14-x64</packagereq>
-      <packagereq type="mandatory">anti-evil-maid</packagereq>
     </packagelist>
   </group>
 </comps>
