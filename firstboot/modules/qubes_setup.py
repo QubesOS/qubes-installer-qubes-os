@@ -20,7 +20,7 @@
 #
 import gtk
 import libuser
-import os, string, sys, time
+import os, string, sys, time, re
 import threading, subprocess, grp
 
 from firstboot.config import *
@@ -155,8 +155,29 @@ class moduleClass(Module):
         except Exception as e:
             self.process_error = str(e)
 
+    def find_net_devices():
+        p = subprocess.Popen (["lspci", "-mm", "-n"], stdout=subprocess.PIPE)
+        result = p.communicate()
+        retcode = p.returncode
+        if (retcode != 0):
+            print "ERROR when executing lspci!"
+            raise IOError
+
+        net_devices = set()
+        rx_netdev = re.compile (r"^([0-9][0-9]:[0-9][0-9].[0-9]) \"02")
+        for dev in str(result[0]).splitlines():
+            match = rx_netdev.match (dev)
+            if match is not None:
+                dev_bdf = match.group(1)
+                assert dev_bdf is not None
+                net_devices.add (dev_bdf)
+
+        return  net_devices
+
     def do_create_netvm(self):
         self.run_command(['/usr/bin/qvm-create', '--force-root', '--net', '--label', 'red', self.netvm_name])
+        for dev in find_net_devices():
+            self.run_command(['/usr/bin/qvm-pci', '-a', self.netvm_name, dev])
 
     def do_create_fwvm(self):
         self.run_command(['/usr/bin/qvm-create', '--force-root', '--proxy', '--label', 'green', self.fwvm_name])
