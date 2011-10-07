@@ -82,7 +82,7 @@ class InstallClass(BaseInstallClass):
 
     def postAction(self, anaconda):
         # First disable all the useless services...
-        whitelisted = ['functions', 'killall', 'halt', 'single',
+        whitelisted = ['functions', 'killall', 'halt', 'single', 'crond',
                 'rsyslog', 'haldaemon', 'messagebus', 'xenstored', 'xenconsoled', 'firstboot',
                 'qubes_core', 'qubes_netvm', 'qubes_setupdvm']
 
