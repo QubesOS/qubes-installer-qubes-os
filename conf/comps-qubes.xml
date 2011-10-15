@@ -72,7 +72,7 @@
     </packagelist>
   </group>
   <group>
-    <id>kde-desktop</id>
+    <id>kde-desktop-qubes</id>
     <name>KDE Software Compilation</name>
     <default>true</default>
     <packagelist>
