@@ -92,6 +92,7 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 
 update-repo:
 	ln -f $(RPMS) yum/installer/rpm/
+	export NO_SIGN
 	(cd yum && ./update_repo.sh)
 
 iso:

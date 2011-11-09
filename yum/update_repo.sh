@@ -24,6 +24,9 @@ update_repo()
 for repo in dom0-updates installer qubes-dom0 ; do
     echo "--> Processing repo: $repo..."
     check_repo $repo/rpm -o $repo/repodata || continue
+    if [ x$NO_SIGN != x"1" ]; then
+        check_repo $repo/rpm -o $repo/repodata || continue
+    fi
     update_repo $repo -o $repo/repodata
 done
 
