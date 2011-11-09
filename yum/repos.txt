@@ -1,4 +1,4 @@
-fedora13-repo <-- a copy of the fedora repo from F13 installation DVD
-dom0-update   <-- select updated packages retrieved from F13 'update' repo
+dom0-update   <-- select update packages from Dom0, such as new Xorg drivers 
+                  (see dom0-updates repo)
 qubes-dom0    <-- all qubes-related packages
 installer     <-- packages needed for anaconda
