@@ -4,7 +4,7 @@
 # $1 -- path to rpm dir
 check_repo()
 {
-    if rpm --checksig $1/*.rpm | grep -v pgp > /dev/null ; then
+    if ! ../rpm_verify $1/*.rpm ; then
         echo "ERROR: There are unsigned RPM packages in $1 repo:"
         echo "---------------------------------------"
         rpm --checksig $1/*.rpm | grep -v pgp 
@@ -28,9 +28,7 @@ for repo in dom0-updates installer qubes-dom0 ; do
         echo "Empty repo, skipping..."
         continue
     fi
-    if [ x$NO_SIGN != x"1" ]; then
-        check_repo $repo/rpm -o $repo/repodata || continue
-    fi
+    check_repo $repo/rpm -o $repo/repodata
     update_repo $repo -o $repo/repodata
 done
 

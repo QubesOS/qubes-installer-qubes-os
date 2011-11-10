@@ -92,13 +92,13 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 
 update-repo:
 	ln -f $(RPMS) yum/installer/rpm/
-	export NO_SIGN
 	(cd yum && ./update_repo.sh)
 
 iso:
+	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
-	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
-	rpm --checksig build/work/revisor-install/R1-*/qubes-x86_64/x86_64/os/Packages/*.rpm | grep -v pgp && exit 1 || true
+	NO_SIGN=$(NO_SIGN) revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd -d99
+	rpm_verify build/work/revisor-install/R1-*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean:
 	rm -fr rpm/SOURCES/*.bz2

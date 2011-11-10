@@ -1,0 +1,40 @@
+#!/bin/sh
+
+verify_rpm() {
+RPM=$1
+
+if ! rpm --checksig $1 > /dev/null; then
+    echo "Wrong PGP signature!"
+    exit 1
+fi
+
+# Even if rpm returns success (ret = 0) that doesn't
+# mean that the rpm has been signed! It might simply
+# have no PGP signature at all. Yes, stupidity...
+
+if ! rpm --checksig $1 | grep pgp > /dev/null ; then
+    echo "No PGP signature found!"
+
+    if [ "$NO_SIGN" == "1" ] ; then
+        # When signing is disabed in qubes-builder
+        # This is used to build unsigned ISO
+        # This should only be used for testing builds
+        exit 0
+    fi
+
+    exit 2
+fi
+}
+
+
+echo "NO_SIGN = $NO_SIGN"
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <rpm file>"
+    exit 1
+fi
+
+for FILE in "$@"; do
+        echo -n "Veryfing: $FILE... "
+        verify_rpm $FILE && echo OK.
+done
+
