@@ -97,7 +97,7 @@ update-repo:
 iso:
 	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
-	NO_SIGN=$(NO_SIGN) revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
+	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
 	rpm_verify build/work/revisor-install/R1-*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean:
