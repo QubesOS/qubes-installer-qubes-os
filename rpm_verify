@@ -24,7 +24,7 @@ if ! rpm --checksig $RPM | grep pgp > /dev/null ; then
         # When signing is disabed in qubes-builder
         # This is used to build unsigned ISO
         # This should only be used for testing builds
-        exit 0
+        return 0
     fi
 
     exit 2
