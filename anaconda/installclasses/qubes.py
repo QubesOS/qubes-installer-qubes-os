@@ -48,7 +48,7 @@ class InstallClass(BaseInstallClass):
 
     bootloaderTimeoutDefault = 5
 
-    tasks = [(N_("Minimal"), ["base", "base-x", "kde-desktop", "qubes" ]) ]
+    tasks = [(N_("Minimal"), ["base", "base-x", "kde-desktop-qubes", "qubes" ]) ]
 
     bugFiler = BugzillaFiler("http://qubes-os.org/trac/",
                              "http://qubes-os.org/",
@@ -67,8 +67,9 @@ class InstallClass(BaseInstallClass):
                                                 anaconda.platform)
 
     def setGroupSelection(self, anaconda):
-        BaseInstallClass.setGroupSelection(self, anaconda)
-        map(lambda x: anaconda.backend.selectGroup(x), ["base"])
+        #BaseInstallClass.setGroupSelection(self, anaconda)
+        anaconda.backend.resetPackageSelections()
+        map(lambda x: anaconda.backend.selectGroup(x), ["base", "base-x", "kde-desktop-qubes", "qubes"])
 
     def setSteps(self, anaconda):
         BaseInstallClass.setSteps(self, anaconda)

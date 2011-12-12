@@ -17,7 +17,7 @@ check_repo()
 
 update_repo()
 {
-    createrepo --update $1
+    createrepo -g ../../conf/comps-qubes.xml --update $1
 }
 
 
