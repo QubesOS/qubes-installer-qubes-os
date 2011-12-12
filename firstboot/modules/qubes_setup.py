@@ -176,7 +176,7 @@ class moduleClass(Module):
 
     def do_create_netvm(self):
         self.run_command(['/usr/bin/qvm-create', '--force-root', '--net', '--label', 'red', self.netvm_name])
-        for dev in find_net_devices():
+        for dev in self.find_net_devices():
             self.run_command(['/usr/bin/qvm-pci', '-a', self.netvm_name, dev])
 
     def do_create_fwvm(self):
