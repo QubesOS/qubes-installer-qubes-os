@@ -2,3 +2,4 @@ po/*.mo
 src/*.pyc
 src/modules/*.pyc
 installer
+*~
