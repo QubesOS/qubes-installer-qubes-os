@@ -156,7 +156,7 @@ class moduleClass(Module):
             self.process_error = str(e)
 
     def find_net_devices():
-        p = subprocess.Popen (["lspci", "-mm", "-n"], stdout=subprocess.PIPE)
+        p = subprocess.Popen (["/sbin/lspci", "-mm", "-n"], stdout=subprocess.PIPE)
         result = p.communicate()
         retcode = p.returncode
         if (retcode != 0):
