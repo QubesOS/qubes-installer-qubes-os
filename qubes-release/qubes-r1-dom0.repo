@@ -1,6 +1,6 @@
 [qubes-dom0-current]
 name = Qubes Dom0 Repository (updates)
-baseurl = http://yum.qubes-os.org/r1-beta2/current/dom0
+baseurl = http://yum.qubes-os.org/r1/current/dom0
 enabled = 1
 metadata_expire = 7d
 gpgcheck = 1
@@ -8,7 +8,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
 
 [qubes-dom0-current-testing]
 name = Qubes Dom0 Repository (updates-testing)
-baseurl = http://yum.qubes-os.org/r1-beta2/current-testing/dom0
+baseurl = http://yum.qubes-os.org/r1/current-testing/dom0
 enabled = 0
 metadata_expire = 7d
 gpgcheck = 1
@@ -16,7 +16,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
 
 [qubes-dom0-unstable]
 name = Qubes Dom0 Repository (unstable)
-baseurl = http://yum.qubes-os.org/r1-beta2/unstable/dom0
+baseurl = http://yum.qubes-os.org/r1/unstable/dom0
 enabled = 0
 metadata_expire = 7d
 gpgcheck = 1
