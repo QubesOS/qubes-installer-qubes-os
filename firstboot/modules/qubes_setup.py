@@ -196,7 +196,7 @@ class moduleClass(Module):
         subprocess.check_call(['/etc/init.d/qubes_netvm', 'start'])
 
     def do_configure_template(self):
-        subprocess.check_call(['/bin/mkdir', '/mnt/template-root'])
+        subprocess.check_call(['/bin/mkdir', '-p', '/mnt/template-root'])
         subprocess.check_call(['/bin/mount', '-oloop',
             '/var/lib/qubes/vm-templates/fedora-14-x64/root.img',
             '/mnt/template-root'])
