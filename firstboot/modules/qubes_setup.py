@@ -155,7 +155,7 @@ class moduleClass(Module):
         except Exception as e:
             self.process_error = str(e)
 
-    def find_net_devices():
+    def find_net_devices(self):
         p = subprocess.Popen (["/sbin/lspci", "-mm", "-n"], stdout=subprocess.PIPE)
         result = p.communicate()
         retcode = p.returncode
