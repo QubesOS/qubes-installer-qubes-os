@@ -198,7 +198,7 @@ class moduleClass(Module):
     def do_configure_template(self):
         subprocess.check_call(['/bin/mkdir', '-p', '/mnt/template-root'])
         subprocess.check_call(['/bin/mount', '-oloop',
-            '/var/lib/qubes/vm-templates/fedora-14-x64/root.img',
+            '/var/lib/qubes/vm-templates/fedora-15-x64/root.img',
             '/mnt/template-root'])
         # Copy timezone setting from Dom0 to template
         subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
