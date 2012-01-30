@@ -9,6 +9,7 @@
       <packagereq type="mandatory">at</packagereq>
       <packagereq type="mandatory">authconfig</packagereq>
       <packagereq type="mandatory">bzip2</packagereq>
+      <packagereq type="mandatory">cronie</packagereq>
       <packagereq type="mandatory">cryptsetup-luks</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
       <packagereq type="mandatory">device-mapper-multipath</packagereq>
