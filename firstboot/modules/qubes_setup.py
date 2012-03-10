@@ -90,7 +90,7 @@ class moduleClass(Module):
             self.show_stage("Failure...")
             self.progress.hide()
 
-            self.radio_dontdoanything.set_active()
+            self.radio_dontdoanything.set_active(True)
 
             return RESULT_FAILURE
 
