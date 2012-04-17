@@ -99,7 +99,7 @@ iso:
 	ln -sf `pwd` /tmp/qubes-installer
 	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
 	isohybrid build/ISO/qubes-x86_64/iso/*.iso
-	rpm_verify build/work/revisor-install/R1-*/qubes-x86_64/x86_64/os/Packages/*.rpm
+	rpm_verify build/work/revisor-install/R?-*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean:
 	rm -fr rpm/SOURCES/*.bz2
