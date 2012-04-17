@@ -13,7 +13,7 @@
       <packagereq type="mandatory">cryptsetup-luks</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
       <packagereq type="mandatory">device-mapper-multipath</packagereq>
-      <packagereq type="mandatory">diff</packagereq>
+      <packagereq type="mandatory">diffutils</packagereq>
       <packagereq type="mandatory">dmraid</packagereq>
       <packagereq type="mandatory">dump</packagereq>
       <packagereq type="mandatory">ed</packagereq>
