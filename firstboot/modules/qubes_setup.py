@@ -90,7 +90,7 @@ class moduleClass(Module):
             self.show_stage("Failure...")
             self.progress.hide()
 
-            self.radio_dontdoanything.set_active()
+            self.radio_dontdoanything.set_active(True)
 
             return RESULT_FAILURE
 
@@ -187,10 +187,10 @@ class moduleClass(Module):
 
     def do_set_netvm_networking(self):
         self.run_command(['/usr/bin/qvm-prefs', '--set', self.fwvm_name, 'netvm', self.netvm_name])
-        self.run_command(['/usr/bin/qvm-set-default-netvm', self.fwvm_name])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', self.fwvm_name])
 
     def do_set_dom0_networking(self):
-        self.run_command(['/usr/bin/qvm-set-default-netvm', 'dom0'])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'dom0'])
 
     def do_start_networking(self):
         subprocess.check_call(['/etc/init.d/qubes_netvm', 'start'])

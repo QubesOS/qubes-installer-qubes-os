@@ -13,6 +13,7 @@
       <packagereq type="mandatory">cryptsetup-luks</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
       <packagereq type="mandatory">device-mapper-multipath</packagereq>
+      <packagereq type="mandatory">diffutils</packagereq>
       <packagereq type="mandatory">dmraid</packagereq>
       <packagereq type="mandatory">dump</packagereq>
       <packagereq type="mandatory">ed</packagereq>
@@ -49,6 +50,7 @@
       <packagereq type="mandatory">tree</packagereq>
       <packagereq type="mandatory">unzip</packagereq>
       <packagereq type="mandatory">usbutils</packagereq>
+      <packagereq type="mandatory">vim-enhanced</packagereq>
       <packagereq type="mandatory">which</packagereq>
       <packagereq type="mandatory">yum-presto</packagereq>
       <packagereq type="mandatory">yum-utils</packagereq>
