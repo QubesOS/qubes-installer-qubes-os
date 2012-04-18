@@ -5,7 +5,7 @@
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	1
-Release:	1
+Release:	3
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
@@ -70,6 +70,13 @@ cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
 %%qbs%{dist_version}		1
 %%fc%{fedora_base_version}		1
 EOF
+
+%post
+# On Mar 31, 2012, the Qubes signing key has changed
+# The new key is brought by this RPM, but we also
+# need to explicitly import it to RPM DB
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
