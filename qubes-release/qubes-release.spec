@@ -75,7 +75,9 @@ EOF
 # On Mar 31, 2012, the Qubes signing key has changed
 # The new key is brought by this RPM, but we also
 # need to explicitly import it to RPM DB
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
+if [ $1 -gt 1 ]; then
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
+fi
 
 
 %clean
