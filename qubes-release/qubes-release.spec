@@ -75,7 +75,9 @@ EOF
 # On Mar 31, 2012, the Qubes signing key has changed
 # The new key is brought by this RPM, but we also
 # need to explicitly import it to RPM DB
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
+if [ $1 -gt 1 ]; then
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-1-primary
+fi
 
 
 %clean
@@ -93,6 +95,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/yum.repos.d/fedora.repo
 %config(noreplace) /etc/yum.repos.d/fedora-updates.repo
 %config(noreplace) /etc/yum.repos.d/qubes-r1-dom0.repo
+%config(noreplace) /etc/yum.repos.d/qubes-pro-dom0.repo
 %config(noreplace) %attr(0644,root,root) /etc/issue
 %config(noreplace) %attr(0644,root,root) /etc/issue.net
 %config %attr(0644,root,root) /etc/rpm/macros.dist

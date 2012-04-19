@@ -101,6 +101,7 @@
       <packagereq type="mandatory">qubes-manager</packagereq>
       <packagereq type="mandatory">qubes-template-fedora-15-x64</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
+      <packagereq type="default">qubes-core-dom0-pvdrivers-win7</packagereq>
     </packagelist>
   </group>
 </comps>
