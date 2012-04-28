@@ -18,7 +18,7 @@
 #
 
 SYSLINUX=$IMGPATH/usr/share/syslinux/syslinux-nomtools
-CDLABEL=$PRODUCT
+CDLABEL="$PRODUCT $VERSION x86_64 DVD"
 
 if [ ! -f $SYSLINUX ]; then
   echo "Warning: nomtools syslinux doesn't exist"
