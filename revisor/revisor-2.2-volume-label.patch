@@ -1,0 +1,12 @@
+diff -ru revisor-2.2.orig/revisor/pungi.py revisor-2.2/revisor/pungi.py
+--- revisor-2.2.orig/revisor/pungi.py	2010-06-04 15:36:04.000000000 +0200
++++ revisor-2.2/revisor/pungi.py	2012-04-28 02:32:04.675002111 +0200
+@@ -584,7 +584,7 @@
+         if mt["discs"] > 1:
+             volume = "%s%d" % (volume, disc)
+ 
+-        extraargs.extend(['"%s"' % volume])
++        extraargs.extend(['%s' % volume])
+         extraargs.extend(['-o', isofile])
+ 
+         if not self.cfg.include_bootiso:
