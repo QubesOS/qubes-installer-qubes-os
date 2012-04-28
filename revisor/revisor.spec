@@ -19,7 +19,7 @@
 Summary:        Fedora "Spin" Graphical User Interface
 Name:           revisor
 Version:        2.2
-Release:        4%{?dist}
+Release:        5%{?dist}
 License:        GPLv2
 Group:          Applications/System
 URL:            http://fedorahosted.org/revisor
