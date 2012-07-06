@@ -83,7 +83,7 @@
       <packagereq type="mandatory">kdeaccessibility</packagereq>
       <packagereq type="mandatory">kdm</packagereq>
       <packagereq type="mandatory">mesa-libEGL</packagereq>
-      <packagereq type="mandatory">oxygen-icons-theme</packagereq>
+      <packagereq type="mandatory">oxygen-icon-theme</packagereq>
       <packagereq type="mandatory">qubes-kde-dom0</packagereq>
       <packagereq type="mandatory">redhat-menus</packagereq>
       <packagereq type="mandatory">xsettings-kde</packagereq>
