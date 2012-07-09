@@ -24,6 +24,7 @@ RPMBUILD_DEFINES := --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/rpm/SOUR
 
 spec_version = $(shell sed -n '/^Version:/s/.*:[ \t]\+//p' $(1))
 package = $(shell \
+	mkdir -p rpm/SOURCES; \
 	cd rpm/SOURCES; \
 	rm -f $(1)-$(2)*; \
 	ln -s ../../$(1) $(1)-$(2); \
