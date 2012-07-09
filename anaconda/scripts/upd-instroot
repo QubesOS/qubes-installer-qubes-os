@@ -366,6 +366,8 @@ etc/hosts
 etc/im_palette.pal
 etc/imrc
 etc/iscsid.conf
+etc/ld.so.conf
+etc/ld.so.conf.d/*
 etc/man.config
 etc/mke2fs.conf
 etc/netconfig
@@ -390,6 +392,7 @@ etc/shells
 etc/sysconfig/network-scripts/network-functions*
 etc/udev
 etc/wpa_supplicant/wpa_supplicant.conf
+etc/X11/fontpath.d
 etc/yum.repos.d/*
 etc/yum/pluginconf.d/blacklist.conf
 etc/yum/pluginconf.d/fedorakmod.conf
@@ -629,11 +632,13 @@ usr/share/fonts/*/lklug.ttf
 usr/share/fonts/lohit*/*
 usr/share/fonts/*/lklug.ttf
 usr/share/fonts/cjkuni*/uming*.ttc
+usr/share/fonts/default
 usr/share/fonts/dejavu/DejaVuSans-Bold.ttf
 usr/share/fonts/dejavu/DejaVuSans.ttf
 usr/share/fonts/dejavu/DejaVuSansMono.ttf
 usr/share/fonts/kacst/KacstFarsi.ttf
 usr/share/fonts/kacst/KacstQura.ttf
+usr/share/fonts/liberation
 usr/share/fonts/madan/Madan.ttf
 usr/share/fonts/un-core/UnDotum.ttf
 usr/share/fonts/*/VL-Gothic-Regular.ttf
