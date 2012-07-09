@@ -54,7 +54,7 @@ help:
 .PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor \
 	update-repo update-repo-testing clean
 
-rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor rpms_misc
+rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
 rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2: anaconda anaconda/anaconda.spec
@@ -84,13 +84,9 @@ rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 rpms_revisor: revisor/revisor-$(REVISOR_VERSION).tar.gz revisor/revisor.spec
 	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/revisor" -bb revisor/revisor.spec
 
-rpms_misc:
-	rpmbuild $(RPMBUILD_DEFINES) -bb misc/kernel-qubes-dom0-virtual.spec
-
 RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/revisor*-$(REVISOR_VERSION)-*.rpm \
-	rpm/noarch/kernel-qubes-dom0-virtual-1.0-*.rpm \
 	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
