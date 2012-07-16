@@ -24,6 +24,7 @@ RPMBUILD_DEFINES := --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/rpm/SOUR
 
 spec_version = $(shell sed -n '/^Version:/s/.*:[ \t]\+//p' $(1))
 package = $(shell \
+	mkdir -p rpm/SOURCES; \
 	cd rpm/SOURCES; \
 	rm -f $(1)-$(2)*; \
 	ln -s ../../$(1) $(1)-$(2); \
@@ -98,7 +99,8 @@ iso:
 	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
 	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
-	rpm_verify build/work/revisor-install/R1-*/qubes-x86_64/x86_64/os/Packages/*.rpm
+	isohybrid build/ISO/qubes-x86_64/iso/*.iso
+	rpm_verify build/work/revisor-install/R?-*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean:
 	rm -fr rpm/SOURCES/*.bz2

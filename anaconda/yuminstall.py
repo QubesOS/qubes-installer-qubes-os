@@ -492,6 +492,10 @@ class AnacondaYum(YumSorter):
                 self._switchCD(1)
                 self.mediagrabber = self.mediaHandler
                 self._baseRepoURL = "file://%s" % self.tree
+            elif m.startswith("file:"):
+                self.tree = m[5:]
+                self._baseRepoURL = "file://%s" % self.tree
+
         else:
             # No methodstr was given.  In order to find an installation source,
             # we should first check to see if there's a CD/DVD with packages

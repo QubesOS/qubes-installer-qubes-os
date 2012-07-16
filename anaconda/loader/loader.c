@@ -1232,9 +1232,75 @@ static char *doLoaderMain(struct loaderData_s *loaderData,
      * That will also then bypass any method selection UI in loader.
      */
     if (!FL_ASKMETHOD(flags)) {
-        url = findAnacondaCD("/mnt/stage2");
+        int stage2ok = 0;
+        // marmarek hack for USB install
+        if (loaderData->method == METHOD_HD) {
+            char *location = "/mnt/stage2";
+            char *device = ((struct hdInstallData *)loaderData->stage2Data)->partition;
+            char *stage2loc = "/mnt/stage2/images/install.img";
+            char *stage2img;
+            int stage2inram;
+
+            if (!(rc=doPwMount(device, location, "auto", "ro", NULL))) {
+                if (!access(stage2loc, R_OK)) {
+                    char *updpath;
+
+                    //TODO? queryCDMediaCheck(device, location);
+
+                    /* if in rescue mode lets copy stage 2 into RAM so we can */
+                    /* free up the CD drive and user can have it avaiable to  */
+                    /* aid system recovery.                                   */
+                    if (FL_RESCUE(flags) && !FL_TEXT(flags) &&
+                            totalMemory() > MIN_GUI_RAM ) {
+                        rc = copyFile(stage2loc, "/tmp/install.img");
+                        stage2img = strdup("/tmp/install.img");
+                        stage2inram = 1;
+                    } else {
+                        stage2img = strdup(stage2loc);
+                        stage2inram = 0;
+                    }
+
+                    rc = mountStage2(stage2img);
+                    free(stage2img);
+
+                    if (!rc) {
+                        checked_asprintf(&updpath, "%s/images/updates.img", location);
+
+                        logMessage(INFO, "Looking for updates in %s", updpath);
+                        copyUpdatesImg(updpath);
+                        free(updpath);
+
+                        checked_asprintf(&updpath, "%s/images/product.img", location);
+
+                        logMessage(INFO, "Looking for product in %s", updpath);
+                        copyProductImg(updpath);
+                        free(updpath);
+
+                        /* if in rescue mode and we copied stage2 to RAM */
+                        /* we can now unmount the CD                     */
+                        if (FL_RESCUE(flags) && stage2inram) {
+                            umount(location);
+                        }
+                        stage2ok = 1;
+                        checked_asprintf(&url, "file://%s", location);
+                    } else {
+                        logMessage(INFO, "mounting stage2 failed");
+                        umount(location);
+                    }
+                } else {
+                    /* this wasnt the CD we were looking for, clean up and */
+                    /* try the next CD drive                               */
+                    umount(location);
+                }
+            } else {
+                logMessage(WARNING, "Mount failed for %s at %s", device, location);
+            }
+        }
+        if (!url)
+            url = findAnacondaCD("/mnt/stage2");
         if (url) {
-            setStage2LocFromCmdline(url, loaderData);
+            if (!stage2ok)
+                setStage2LocFromCmdline(url, loaderData);
             skipMethodDialog = 1;
 
             logMessage(INFO, "Detected stage 2 image on CD (url: %s)", url);

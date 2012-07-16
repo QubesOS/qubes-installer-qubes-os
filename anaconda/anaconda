@@ -1113,10 +1113,13 @@ if __name__ == "__main__":
             doStartupX11Actions(opts.runres)
             xserver_pid = proc.pid
         except (OSError, RuntimeError):
-            stdoutLog.warning(" X startup failed, falling back to text mode")
-            anaconda.displayMode = 't'
-            graphical_failed = 1
+            stdoutLog.warning(" X startup failed, aborting installation")
             time.sleep(2)
+            sys.exit(1)
+            #stdoutLog.warning(" X startup failed, falling back to text mode")
+            #anaconda.displayMode = 't'
+            #graphical_failed = 1
+            #time.sleep(2)
         finally:
             signal.signal(signal.SIGUSR1, old_sigusr1)
             signal.signal(signal.SIGCHLD, old_sigchld)
