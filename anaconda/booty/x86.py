@@ -349,7 +349,7 @@ class x86BootloaderInfo(efiBootloaderInfo):
 
                 if initrd:
                     f.write('\tmodule %s%s\n' % (cfPath, initrd))
-            elif version.find("xenlinux") >= 0:
+            elif version.find("xenlinux") >= 0 || version.find("pvops") >= 0:
                 # Qubes kernel
                 hvFile = "%sxen.gz" %(cfPath)
                 f.write('\tkernel %s console=com1\n' %(hvFile,))
