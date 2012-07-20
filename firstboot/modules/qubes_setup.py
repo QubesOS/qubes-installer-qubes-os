@@ -197,13 +197,14 @@ class moduleClass(Module):
 
     def do_configure_template(self):
         subprocess.check_call(['/bin/mkdir', '-p', '/mnt/template-root'])
-        subprocess.check_call(['/bin/mount', '-oloop',
-            '/var/lib/qubes/vm-templates/fedora-15-x64/root.img',
-            '/mnt/template-root'])
-        # Copy timezone setting from Dom0 to template
-        subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
-        subprocess.check_call(['cp', '/etc/ntp.conf', '/mnt/template-root/etc'])
-        subprocess.check_call(['/bin/umount', '/mnt/template-root'])
+        for template in os.listdir('/var/lib/qubes/vm-templates'):
+            subprocess.check_call(['/bin/mount', '-oloop',
+                '/var/lib/qubes/vm-templates/%s/root.img' % template,
+                '/mnt/template-root'])
+            # Copy timezone setting from Dom0 to template
+            subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
+            subprocess.check_call(['cp', '/etc/ntp.conf', '/mnt/template-root/etc'])
+            subprocess.check_call(['/bin/umount', '/mnt/template-root'])
 
     def do_create_appvms(self):
         self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
