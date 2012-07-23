@@ -80,7 +80,6 @@
     <default>true</default>
     <packagelist>
       <packagereq type="mandatory">kcm_touchpad</packagereq>
-      <packagereq type="mandatory">kdeaccessibility</packagereq>
       <packagereq type="mandatory">kdm</packagereq>
       <packagereq type="mandatory">mesa-libEGL</packagereq>
       <packagereq type="mandatory">oxygen-icon-theme</packagereq>
