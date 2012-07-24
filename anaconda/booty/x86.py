@@ -352,7 +352,7 @@ class x86BootloaderInfo(efiBootloaderInfo):
             elif version.find("qubes") >= 0:
                 # Qubes kernel
                 hvFile = "%sxen.gz" %(cfPath)
-                f.write('\tkernel %s console=com1\n' %(hvFile,))
+                f.write('\tkernel %s console=none\n' %(hvFile,))
                 f.write('\tmodule %s ro%s' %(kernelFile, realroot))
                 if self.args.get():
                     f.write(' %s' % self.args.get())
