@@ -64,7 +64,7 @@ class MainBootloaderWindow(InstallWindow):
             self.bl.setUseGrub(1)
 
         # set the password
-        self.bl.setPassword(self.blpass.getPassword(), isCrypted = 0)
+        self.bl.setPassword(None, isCrypted = 0)
 
         # set the bootloader images based on what's in our list
         self.oslist.setBootloaderImages()
@@ -72,7 +72,7 @@ class MainBootloaderWindow(InstallWindow):
     def bootloaderChanged(self, *args):
         active = self.grubCB.get_active()
 
-        for widget in [ self.oslist.getWidget(), self.blpass.getWidget(), self.deviceButton ]:
+        for widget in [ self.oslist.getWidget(), self.deviceButton ]:
             widget.set_sensitive(active)
 
 
@@ -231,10 +231,6 @@ class MainBootloaderWindow(InstallWindow):
         hb.pack_start(self.deviceButton, False)
 
         thebox.pack_start(hb, False)
-
-        # control whether or not there's a boot loader password and what it is
-        self.blpass = BootloaderPasswordWidget(anaconda, self.parent)
-        thebox.pack_start(self.blpass.getWidget(), False)
 
         # configure the systems available to boot from the boot loader
         self.oslist = OSBootWidget(anaconda, self.parent)
