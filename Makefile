@@ -37,6 +37,11 @@ QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
 REVISOR_VERSION := $(call spec_version,revisor/revisor.spec)
 
+REVISOR_OPTS := --install-dvd
+ifdef RELEASE
+    REVISOR_OPTS += --product-version="$(RELEASE)"
+endif
+
 help:
 	@echo "make rpms             <--- make all rpms and sign them";\
 	    echo "make rpms_anaconda    <--- create binary rpms for Anaconda"; \
@@ -98,9 +103,9 @@ update-repo:
 iso:
 	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
-	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 --install-dvd
+	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 $(REVISOR_OPTS)
 	isohybrid build/ISO/qubes-x86_64/iso/*.iso
-	rpm_verify build/work/revisor-install/R?*/qubes-x86_64/x86_64/os/Packages/*.rpm
+	rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean:
 	rm -fr rpm/SOURCES/*.bz2
