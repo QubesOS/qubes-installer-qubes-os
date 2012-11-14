@@ -63,6 +63,10 @@ help:
 rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
+rpms-dom0: rpms
+
+rpms-vm:
+
 rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2: anaconda anaconda/anaconda.spec
 	$(call package,anaconda,$(ANACONDA_VERSION))
 
