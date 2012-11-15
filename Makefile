@@ -38,8 +38,8 @@ QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
 REVISOR_VERSION := $(call spec_version,revisor/revisor.spec)
 
 REVISOR_OPTS := --install-dvd
-ifdef RELEASE
-    REVISOR_OPTS += --product-version="$(RELEASE)"
+ifdef QUBES_RELEASE
+    REVISOR_OPTS += --product-version="$(QUBES_RELEASE)"
 endif
 
 help:
