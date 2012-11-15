@@ -1,11 +1,11 @@
-%define release_name R1
-%define dist_version 1
+%define dist_version 2
+%define release_name R%{dist_version}
 %define fedora_base_version 13
 
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
-Release:	3
+Release:	1
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
