@@ -4,7 +4,7 @@
 
 Summary:	Qubes release files
 Name:		qubes-release
-Version:	1
+Version:	%{dist_version}
 Release:	3
 License:	GPLv2
 Group:		System Environment/Base
