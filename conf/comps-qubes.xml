@@ -99,9 +99,9 @@
       <packagereq type="mandatory">qubes-logos</packagereq>
       <packagereq type="mandatory">qubes-manager</packagereq>
       <packagereq type="mandatory">qubes-template-fedora-17-x64</packagereq>
+      <packagereq type="default">qubes-core-dom0-pvdrivers-win7</packagereq>
       <packagereq type="default">qubes-doc-dom0</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
-      <packagereq type="default">qubes-core-dom0-pvdrivers-win7</packagereq>
     </packagelist>
   </group>
 </comps>
