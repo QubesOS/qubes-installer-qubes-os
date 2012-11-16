@@ -22,7 +22,7 @@
 TOP := $(shell pwd)
 RPMBUILD_DEFINES := --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/rpm/SOURCES"
 
-spec_version = $(shell sed -n '/^Version:/s/.*:[ \t]\+//p' $(1))
+spec_version = $(shell rpm -q --qf "%{VERSION}\n" --specfile $(1)| head -1)
 package = $(shell \
 	mkdir -p rpm/SOURCES; \
 	cd rpm/SOURCES; \
