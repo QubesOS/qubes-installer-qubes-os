@@ -17,13 +17,13 @@ check_repo()
 
 update_repo()
 {
-    createrepo -g ../../conf/comps-qubes.xml --update $1
+    createrepo -q -g ../../conf/comps-qubes.xml --update $1
 }
 
 
 for repo in dom0-updates installer qubes-dom0 ; do
-    echo "--> Processing repo: $repo..."
-    ls $repo/rpm/*.rpm 2>/dev/null
+    echo "---> Processing repo: $repo..."
+    ls $repo/rpm/*.rpm 2>/dev/null 1>&2
     if [ $? -ne 0 ]; then
         echo "Empty repo, skipping..."
         continue
