@@ -111,6 +111,10 @@ iso:
 	isohybrid build/ISO/qubes-x86_64/iso/*.iso
 	rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
+clean-repos:
+	@echo "--> Removing old rpms from the installer repos..."
+	@(cd yum && ./clean_repos.sh)
+
 clean:
 	rm -fr rpm/SOURCES/*.bz2
 	rm -fr rpm/noarch/*.rpm
