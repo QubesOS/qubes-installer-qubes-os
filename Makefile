@@ -108,7 +108,7 @@ update-repo:
 iso:
 	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
-	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 $(REVISOR_OPTS)
+	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 $(REVISOR_OPTS) -d99
 	isohybrid build/ISO/qubes-x86_64/iso/*.iso
 	rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
