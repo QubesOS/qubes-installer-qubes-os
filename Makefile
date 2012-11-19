@@ -101,8 +101,9 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
 update-repo:
-	ln -f $(RPMS) yum/installer/rpm/
-	(cd yum && ./update_repo.sh)
+	@ln -f $(RPMS) yum/installer/rpm/
+	@echo "--> Updating Installer repos..."
+	@(cd yum && ./update_repo.sh)
 
 iso:
 	cp rpm_verify /usr/local/bin/
