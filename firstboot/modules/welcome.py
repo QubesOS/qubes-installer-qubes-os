@@ -31,9 +31,12 @@ N_ = lambda x: x
 class moduleClass(Module):
     def __init__(self):
         Module.__init__(self)
+        f = open('/etc/qubes-release', 'r')
+        version = f.read().strip()
+        f.close()
         self.priority = 1
         self.sidebarTitle = N_("Welcome")
-        self.title = N_("Welcome to Qubes R1")
+        self.title = N_("Welcome to %s") % version
         self.icon = "workstation.png"
 
     def apply(self, interface, testing=False):
