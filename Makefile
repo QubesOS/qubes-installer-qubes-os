@@ -117,6 +117,7 @@ clean-repos:
 	@(cd yum && ./clean_repos.sh)
 
 clean:
+	sudo rm -fr build/*
 	rm -fr rpm/SOURCES/*.bz2
 	rm -fr rpm/noarch/*.rpm
 	rm -fr rpm/x86_64/*.rpm
