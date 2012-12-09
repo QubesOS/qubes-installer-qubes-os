@@ -105,6 +105,15 @@ update-repo:
 	@echo "--> Updating Installer repos..."
 	@(cd yum && ./update_repo.sh)
 
+update-repo-current:
+	ln -f $(RPMS) ../yum/current-release/current/dom0/rpm/
+
+update-repo-current-testing:
+	ln -f $(RPMS) ../yum/current-release/current-testing/dom0/rpm/
+
+update-repo-unstable:
+	ln -f $(RPMS) ../yum/current-release/unstable/dom0/rpm/
+
 iso:
 	cp rpm_verify /usr/local/bin/
 	ln -sf `pwd` /tmp/qubes-installer
