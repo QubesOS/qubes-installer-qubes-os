@@ -42,6 +42,7 @@ rm -rf %{buildroot}
 make DESTDIR=%{buildroot} SITELIB=%{python_sitelib} install
 rm %{buildroot}/%{_datadir}/firstboot/modules/additional_cds.py*
 %find_lang %{name}
+install -m 0755 -D firstboot-qubes-text %{buildroot}%{_sbindir}/firstboot-qubes-text
 
 %clean
 rm -rf %{buildroot}
@@ -67,6 +68,7 @@ fi
 %config %{_initrddir}/firstboot
 %{python_sitelib}/*
 %{_sbindir}/firstboot
+%{_sbindir}/firstboot-qubes-text
 %{_datadir}/firstboot/modules/create_user.py*
 %{_datadir}/firstboot/modules/date.py*
 %{_datadir}/firstboot/modules/eula.py*

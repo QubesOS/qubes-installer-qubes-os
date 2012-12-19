@@ -67,7 +67,7 @@ case "$1" in
 
         /usr/bin/plymouth --hide-splash
 
-        /usr/sbin/firstboot $args
+        /usr/sbin/firstboot $args || /usr/sbin/firstboot-qubes-text
         RETVAL=$?
 
         /usr/bin/plymouth --show-splash

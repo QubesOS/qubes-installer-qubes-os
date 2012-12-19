@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Failsafe minimal text-mode firstboot
+
+# Welcome
+
+echo "########################################################"
+echo "###                                                  ###"
+echo "### Welcome to `cat /etc/qubes-release`                  ###"
+echo "###                                                  ###"
+echo "########################################################"
+echo
+echo "This is failsafe text-mode firstboot. If you see this message, you have"
+echo "some problem with Xorg (most probably video driver)"
+echo
+echo "Anyway some basic setup is needed to continue:"
+
+# User creation
+
+echo
+echo "1. Setup user account"
+user=
+while [ -z "$user" ]; do
+    echo -n "Enter desired username: "
+    read user
+    if echo "$user" | grep -q "[^a-z0-9]"; then
+        echo "ERROR: Invalid characters in username, try again"
+    elif id $user > /dev/null 2>&1; then
+        echo "ERROR: This user already exists, try again"
+    else
+        break
+    fi
+done
+useradd -G qubes -m "$user" || exit 1
+while ! passwd "$user"; do true; done
+
+
+# Create default VMs
+
+echo
+echo "2. Create default VMs"
+echo
+echo "Choose one option:"
+echo "  1. Create default service VMs, and pre-defined AppVMs (work, banking, personal, untrusted)"
+echo "  2. Just create default service VMs"
+echo "  3. Do not create any VMs right now (not recommended, for advanced users only)"
+vms_option=
+while true; do
+    echo -n "Enter your choice (1/2/3): "
+    read vms_option
+    if [ "$vms_option" == "1" ]; then
+        vms_service=yes
+        vms_app=yes
+        break
+    elif [ "$vms_option" == "2" ]; then
+        vms_service=yes
+        break
+    elif [ "$vms_option" == "3" ]; then
+        break
+    else
+        echo "ERROR: Invalid choice, try again"
+    fi
+done
+
+set -e
+
+if [ "$vms_service" == "yes" ]; then
+    echo "-> Creating default netvm..."
+    su -c "/usr/bin/qvm-create --net --label red netvm" - $user
+    for dev in `/sbin/lspci -mm -n | sed -ne 's/^\([0-9][0-9]:[0-9][0-9].[0-9]\) "02.*/\1/p'`; do
+        su -c "/usr/bin/qvm-pci -a netvm $dev" - $user
+    done 
+    echo "-> Creating default firewallvm..."
+    su -c "/usr/bin/qvm-create --proxy --label green firewallvm" - $user
+    su -c "/usr/bin/qvm-prefs --set firewallvm netvm netvm" - $user
+    su -c "/usr/bin/qubes-prefs --set default-netvm firewallvm" - $user
+    echo "-> Configuring template..."
+    /bin/mkdir -p /mnt/template-root
+    for template in `ls /var/lib/qubes/vm-templates`; do
+        /bin/mount -oloop "/var/lib/qubes/vm-templates/$template/root.img" /mnt/template-root
+        cp /etc/localtime /mnt/template-root/etc
+        cp /etc/ntp.conf /mnt/template-root/etc
+        umount /mnt/template-root
+    done
+    echo "-> Starting network..."
+    /etc/init.d/qubes_netvm start
+    echo "-> Creating DispVM savefile (can take long time)..."
+    su -c "/usr/bin/qvm-create-default-dvm --default-template --default-script" - $user
+fi
+
+if [ "$vms_app" == "yes" ]; then
+    echo "-> Creating default AppVMs..."
+    su -c "/usr/bin/qvm-create work --label green" - $user
+    su -c "/usr/bin/qvm-create banking --label green" - $user
+    su -c "/usr/bin/qvm-create personal --label yellow" - $user
+    su -c "/usr/bin/qvm-create untrusted --label red" - $user
+fi
+echo "-> Done."
