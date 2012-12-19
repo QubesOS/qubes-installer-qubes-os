@@ -96,6 +96,7 @@ rpms_revisor: revisor/revisor-$(REVISOR_VERSION).tar.gz revisor/revisor.spec
 
 RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
+	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/revisor*-$(REVISOR_VERSION)-*.rpm \
 	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
