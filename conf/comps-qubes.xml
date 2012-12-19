@@ -20,6 +20,7 @@
       <packagereq type="mandatory">eject</packagereq>
       <packagereq type="mandatory">gnupg2</packagereq>
       <packagereq type="mandatory">irqbalance</packagereq>
+      <packagereq type="mandatory">linux-firmware</packagereq>
       <packagereq type="mandatory">logrotate</packagereq>
       <packagereq type="mandatory">lsof</packagereq>
       <packagereq type="mandatory">man</packagereq>
