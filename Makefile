@@ -35,7 +35,6 @@ ANACONDA_VERSION := $(call spec_version,anaconda/anaconda.spec)
 FIRSTBOOT_VERSION := $(call spec_version,firstboot/firstboot.spec)
 QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
-REVISOR_VERSION := $(call spec_version,revisor/revisor.spec)
 
 PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
@@ -48,7 +47,6 @@ help:
 	    echo "make rpms_firstboot   <--- create binary rpms for Firstboot"; \
 	    echo "make rpms_logos       <--- create binary rpms for Qubes Logos package"; \
 	    echo "make rpms_release     <--- create binary rpms for Qubes Release package"; \
-	    echo "make rpms_revisor     <--- create binary rpms for Revisor"; \
 	    echo; \
 	    echo "make update-repo      <-- copy newly generated rpms to installer yum repo";\
 		echo "make iso              <== \o/";\
@@ -57,10 +55,10 @@ help:
 	    echo; \
 	    exit 0;
 
-.PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor \
+.PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release \
 	update-repo update-repo-testing clean
 
-rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_revisor
+rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
 rpms-dom0: rpms
@@ -91,13 +89,9 @@ rpms_logos: rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2
 rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb qubes-release/qubes-release.spec
 
-rpms_revisor: revisor/revisor-$(REVISOR_VERSION).tar.gz revisor/revisor.spec
-	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/revisor" -bb revisor/revisor.spec
-
 RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
-	rpm/noarch/revisor*-$(REVISOR_VERSION)-*.rpm \
 	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
