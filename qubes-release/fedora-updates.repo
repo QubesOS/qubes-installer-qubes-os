@@ -1,26 +1,26 @@
 [updates]
-name=Fedora 13 - x86_64 - Updates
+name=Fedora 18 - x86_64 - Updates
 failovermethod=priority
-#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/13/x86_64/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f13&arch=x86_64
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/18/x86_64/
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f18&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
 
 [updates-debuginfo]
-name=Fedora 13 - x86_64 - Updates - Debug
+name=Fedora 18 - x86_64 - Updates - Debug
 failovermethod=priority
-#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/13/x86_64/debug/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-debug-f13&arch=x86_64
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/18/x86_64/debug/
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-debug-f18&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
 
 [updates-source]
-name=Fedora 13 - Updates Source
+name=Fedora 18 - Updates Source
 failovermethod=priority
-#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/13/SRPMS/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-source-f13&arch=x86_64
+#baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/18/SRPMS/
+mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-source-f18&arch=x86_64
 enabled=0
 gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-13-primary
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
