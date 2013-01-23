@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>AnacondaMountpointSelector</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.77.1">
+<link rel="home" href="index.html" title="The AnacondaWidgets Library Reference Manual">
+<link rel="up" href="disks.html" title="Disk-Related Widgets">
+<link rel="prev" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview">
+<link rel="next" href="miscellaneous.html" title="Miscellaneous Widgets">
+<meta name="generator" content="GTK-Doc V1.18 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="AnacondaDiskOverview.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="disks.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">The AnacondaWidgets Library Reference Manual</th>
+<td><a accesskey="n" href="miscellaneous.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#AnacondaMountpointSelector.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#AnacondaMountpointSelector.description" class="shortcut">Description</a>
+                   | 
+                  <a href="#AnacondaMountpointSelector.object-hierarchy" class="shortcut">Object Hierarchy</a>
+                   | 
+                  <a href="#AnacondaMountpointSelector.implemented-interfaces" class="shortcut">Implemented Interfaces</a>
+                   | 
+                  <a href="#AnacondaMountpointSelector.properties" class="shortcut">Properties</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="AnacondaMountpointSelector"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="AnacondaMountpointSelector.top_of_page"></a>AnacondaMountpointSelector</span></h2>
+<p>AnacondaMountpointSelector — A graphical way to select a mount point.</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="AnacondaMountpointSelector.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">struct              <a class="link" href="AnacondaMountpointSelector.html#AnacondaMountpointSelector-struct" title="struct AnacondaMountpointSelector">AnacondaMountpointSelector</a>;
+struct              <a class="link" href="AnacondaMountpointSelector.html#AnacondaMountpointSelectorClass" title="struct AnacondaMountpointSelectorClass">AnacondaMountpointSelectorClass</a>;
+<span class="returnvalue">gboolean</span>            <a class="link" href="AnacondaMountpointSelector.html#anaconda-mountpoint-selector-get-chosen" title="anaconda_mountpoint_selector_get_chosen ()">anaconda_mountpoint_selector_get_chosen</a>
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> *widget</code></em>);
+<span class="returnvalue">GtkWidget</span> *         <a class="link" href="AnacondaMountpointSelector.html#anaconda-mountpoint-selector-new" title="anaconda_mountpoint_selector_new ()">anaconda_mountpoint_selector_new</a>    ();
+<span class="returnvalue">void</span>                <a class="link" href="AnacondaMountpointSelector.html#anaconda-mountpoint-selector-set-chosen" title="anaconda_mountpoint_selector_set_chosen ()">anaconda_mountpoint_selector_set_chosen</a>
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> *widget</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> is_chosen</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.object-hierarchy"></a><h2>Object Hierarchy</h2>
+<pre class="synopsis">
+  GObject
+   +----GInitiallyUnowned
+         +----GtkWidget
+               +----GtkContainer
+                     +----GtkBin
+                           +----GtkEventBox
+                                 +----AnacondaMountpointSelector
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.implemented-interfaces"></a><h2>Implemented Interfaces</h2>
+<p>
+AnacondaMountpointSelector implements
+ AtkImplementorIface and  GtkBuildable.</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.properties"></a><h2>Properties</h2>
+<pre class="synopsis">
+  "<a class="link" href="AnacondaMountpointSelector.html#AnacondaMountpointSelector--mountpoint" title='The "mountpoint" property'>mountpoint</a>"               <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaMountpointSelector.html#AnacondaMountpointSelector--name" title='The "name" property'>name</a>"                     <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaMountpointSelector.html#AnacondaMountpointSelector--size" title='The "size" property'>size</a>"                     <span class="type">gchar</span>*                : Read / Write
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.description"></a><h2>Description</h2>
+<p>
+A <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> is a widget that appears on the custom partitioning
+Mountpoint and allows the user to select a single mount point to do additional
+configuration.
+</p>
+<p>
+As a <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> is a subclass of a <span class="type">GtkEventBox</span>, any signals
+may be caught.  However ::button-press-event is the most important one and is
+how we determine what should be displayed on the rest of the screen.
+</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="AnacondaMountpointSelector-struct"></a><h3>struct AnacondaMountpointSelector</h3>
+<pre class="programlisting">struct AnacondaMountpointSelector;</pre>
+<p>
+The AnacondaMountpointSelector struct contains only private fields and should
+not be directly accessed.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaMountpointSelectorClass"></a><h3>struct AnacondaMountpointSelectorClass</h3>
+<pre class="programlisting">struct AnacondaMountpointSelectorClass {
+    GtkEventBoxClass parent_class;
+};
+</pre>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="type">GtkEventBoxClass</span> <em class="structfield"><code><a name="AnacondaMountpointSelectorClass.parent-class"></a>parent_class</code></em>;</span></p></td>
+<td>The object class structure needs to be the first element in
+the widget class structure in order for the class mechanism
+to work correctly.  This allows an AnacondaMountpointSelectorClass
+pointer to be cast to a <span class="type">GtkEventBox</span> pointer.</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-mountpoint-selector-get-chosen"></a><h3>anaconda_mountpoint_selector_get_chosen ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            anaconda_mountpoint_selector_get_chosen
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> *widget</code></em>);</pre>
+<p>
+Returns whether or not this mountpoint has been chosen by the user.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>widget</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Whether <em class="parameter"><code>widget</code></em> has been chosen.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-mountpoint-selector-new"></a><h3>anaconda_mountpoint_selector_new ()</h3>
+<pre class="programlisting"><span class="returnvalue">GtkWidget</span> *         anaconda_mountpoint_selector_new    ();</pre>
+<p>
+Creates a new <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a>, which is a selectable display for a
+single mountpoint.  Many mountpoints may be put together into a list, displaying
+all configured filesystems at once.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>A new <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a>.</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-mountpoint-selector-set-chosen"></a><h3>anaconda_mountpoint_selector_set_chosen ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                anaconda_mountpoint_selector_set_chosen
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a> *widget</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> is_chosen</code></em>);</pre>
+<p>
+Specifies whether the mountpoint shown by this selector has been chosen by
+the user.  If so, a special background will be set as a visual indicator.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>widget</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector"><span class="type">AnacondaMountpointSelector</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>is_chosen</code></em> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if this mountpoint is chosen.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="AnacondaMountpointSelector.property-details"></a><h2>Property Details</h2>
+<div class="refsect2">
+<a name="AnacondaMountpointSelector--mountpoint"></a><h3>The <code class="literal">"mountpoint"</code> property</h3>
+<pre class="programlisting">  "mountpoint"               <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :mountpoint string is where on the filesystem this is mounted.
+</p>
+<p>Default value: ""</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaMountpointSelector--name"></a><h3>The <code class="literal">"name"</code> property</h3>
+<pre class="programlisting">  "name"                     <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :name string is the primary text displayed for a given mountpoint.
+</p>
+<p>Default value: "Root"</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaMountpointSelector--size"></a><h3>The <code class="literal">"size"</code> property</h3>
+<pre class="programlisting">  "size"                     <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :size string is the size of the mountpoint, including whatever units
+it is measured in.
+</p>
+<p>Default value: "0 GB"</p>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.18</div>
+</body>
+</html>

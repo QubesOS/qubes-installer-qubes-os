@@ -1,0 +1,4062 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Red Hat, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Translators:
+# Baurzhan Muftakhidinov <baurthefirst@gmail.com>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Anaconda\n"
+"Report-Msgid-Bugs-To: anaconda-devel-list@redhat.com\n"
+"POT-Creation-Date: 2013-01-07 16:55-0800\n"
+"PO-Revision-Date: 2013-01-04 23:55+0000\n"
+"Last-Translator: Brian Lane <bcl@redhat.com>\n"
+"Language-Team: Kazakh (http://www.transifex.com/projects/p/fedora/language/"
+"kk/)\n"
+"Language: kk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: anaconda:344
+#, c-format
+msgid ""
+"%s requires %s MB of memory to install, but you only have %s MB on this "
+"machine.\n"
+msgstr "%s орнатылу үшін %s МБ жады керек, ал бұл машинада тек %s МБ бар.\n"
+
+#: anaconda:346
+#, c-format
+msgid ""
+"The %s graphical installer requires %s MB of memory, but you only have %s MB."
+msgstr ""
+"%s графикалық орнатқышы %s МБ жадыны талап етеді, ал сізде тек %s МБ бар."
+
+#: anaconda:351
+msgid "Not enough RAM"
+msgstr "Жады жеткіліксіз"
+
+#: anaconda:352
+msgid ""
+" Try the text mode installer by running:\n"
+"\n"
+"'/usr/bin/liveinst -T'\n"
+"\n"
+" from a root terminal."
+msgstr ""
+" Мәтіндік режимде орнатқышты көру үшін орындаңыз:\n"
+"\n"
+"'/usr/bin/liveinst -T'\n"
+"\n"
+" осыны әкімші (root) терминалынан жасаңыз."
+
+#: anaconda:355
+msgid " Starting text mode."
+msgstr " Мәтіндік режимді бастау."
+
+#: anaconda:382 pyanaconda/rescue.py:268 pyanaconda/rescue.py:301
+#: pyanaconda/rescue.py:314 pyanaconda/rescue.py:382 pyanaconda/rescue.py:398
+#: pyanaconda/rescue.py:409
+msgid "OK"
+msgstr "ОК"
+
+#: anaconda:484
+msgid ""
+"Text mode provides a limited set of installation options. It does not allow "
+"you to specify your own partitioning layout or package selections. Would you "
+"like to use VNC mode instead?"
+msgstr ""
+"Мәтіндік режим орнатқышы шектелген орнату опцияларын қолдайды. Мысалы, дискт"
+"(ерд)і өзіңіздің схемаңыз бойынша бөлу немесе дестелерді таңдауды "
+"қолдамайды. Оның орнына VNC режимін қолдануды қалайсыз ба?"
+
+#: anaconda:508
+msgid "DISPLAY variable not set. Starting text mode."
+msgstr "DISPLAY айнымалысы орнатылмаған. Мәтіндік режимді бастау."
+
+#: anaconda:516
+msgid "Graphical installation is not available. Starting text mode."
+msgstr "Графикалық түрде орнату қолжетерсіз. Мәтіндік режимді бастау."
+
+#: anaconda:627
+#, c-format
+msgid "Please ssh install@%s to begin the install."
+msgstr "Орнатуды бастау үшін орындаңыз: ssh install@%s."
+
+#: anaconda:629
+msgid "Please ssh install@<host> to continue installation."
+msgstr "Орнатуды жалғастыру үшін орындаңыз: ssh install@<host>."
+
+#: pyanaconda/bootloader.py:239
+msgid "/boot filesystem"
+msgstr "/boot файлдық жүйесі"
+
+#: pyanaconda/bootloader.py:388
+#, python-format
+msgid ""
+"RAID sets that contain '%s' must have one of the following raid levels: %s."
+msgstr ""
+"'%s' кіретін RAID массивінің raid деңгейі келесіден біреу болуы тиіс: %s."
+
+#: pyanaconda/bootloader.py:396
+#, python-format
+msgid ""
+"RAID sets that contain '%s' must have one of the following metadata "
+"versions: %s."
+msgstr ""
+"'%s' кіретін RAID массивінің метаақпарат нұсқасы келесіден біреу болуы тиіс: "
+"%s."
+
+#: pyanaconda/bootloader.py:404
+#, python-format
+msgid ""
+"RAID sets that contain '%s' must have one of the following device types: %s."
+msgstr ""
+"'%s' кіретін RAID массивінің құрылғы түрі келесіден біреу болуы тиіс: %s."
+
+#: pyanaconda/bootloader.py:420
+#, python-format
+msgid "%s must have one of the following disklabel types: %s."
+msgstr "%s диск белгісінің түрі келесіден біреу болуы тиіс: %s."
+
+#: pyanaconda/bootloader.py:432
+#, python-format
+msgid "%s cannot be of type %s."
+msgstr "%s түрі %s болуы мүмкін емес."
+
+#: pyanaconda/bootloader.py:438
+#, python-format
+msgid "%s must be mounted on one of %s."
+msgstr "%s келесі тіркеу нүктелерінің біреуіне тіркелуі тиіс: %s."
+
+#: pyanaconda/bootloader.py:450
+#, python-format
+msgid "%s must be between %d and %d MB in size"
+msgstr "%s өлшемі %d және %d МБ арасында болуы тиіс"
+
+#: pyanaconda/bootloader.py:455
+#, python-format
+msgid "%s must not be smaller than %dMB."
+msgstr "%s өлшемі %d МБ-тан аз болмауы тиіс."
+
+#: pyanaconda/bootloader.py:464
+#, python-format
+msgid "%s must not be larger than %dMB."
+msgstr "%s өлшемі %d МБ-тан үлкен болмауы тиіс."
+
+#: pyanaconda/bootloader.py:482
+#, python-format
+msgid "%s must be within the first %dMB of the disk."
+msgstr "%s дисктің бірінші %d МБ ішінде жатуы тиіс."
+
+#: pyanaconda/bootloader.py:492
+#, python-format
+msgid "%s must be on a primary partition."
+msgstr "%s бірінішілік бөлімде орналасуы тиіс."
+
+#: pyanaconda/bootloader.py:616 pyanaconda/bootloader.py:706
+#, python-format
+msgid "%s cannot be on an encrypted block device."
+msgstr "%s шифрленген блоктық құрылғысында орналасуы мүмкін емес."
+
+#: pyanaconda/bootloader.py:664
+#, python-format
+msgid "%s cannot be of type %s"
+msgstr "%s түрі %s болуы мүмкін емес"
+
+#: pyanaconda/bootloader.py:1585
+#, python-format
+msgid ""
+"%s may not have enough space for grub2 to embed core.img when using the %s "
+"filesystem on %s"
+msgstr ""
+"%s ішінде grub2 өз core.img орнату үшін орны жеткіліксіз болуы мүмкін, %s "
+"файлдық жүйесін %s үшін қолданғанда"
+
+#: pyanaconda/cmdline.py:66
+msgid "Completed"
+msgstr "Аяқталды"
+
+#: pyanaconda/cmdline.py:74
+msgid "In progress"
+msgstr "Орындалуда"
+
+#: pyanaconda/cmdline.py:87
+#, python-format
+msgid ""
+"(%s)\n"
+"Command line mode requires all choices to be specified in a kickstart "
+"configuration file."
+msgstr ""
+"(%s)\n"
+"Командалық жол режимі барлық таңдаулар kickstart баптау файлында болуын "
+"талап етеді."
+
+#: pyanaconda/cmdline.py:104
+#, python-format
+msgid ""
+"The following error was found while parsing the kickstart configuration "
+"file:\n"
+"\n"
+"%s"
+msgstr ""
+"Келесі қате kickstart баптаулар файлын талдау кезінде анықталды:\n"
+"\n"
+"%s"
+
+#: pyanaconda/cmdline.py:113
+#, python-format
+msgid ""
+"(%s)\n"
+"%s"
+msgstr ""
+"(%s)\n"
+"%s"
+
+#: pyanaconda/cmdline.py:126 pyanaconda/cmdline.py:131
+#: pyanaconda/cmdline.py:137 pyanaconda/cmdline.py:142
+#: pyanaconda/ui/tui/hubs/summary.py:58
+msgid "Can't have a question in command line mode!"
+msgstr "Командалық жол режимінде сұрақтар болмауы тиіс!"
+
+#: pyanaconda/cmdline.py:161
+#, python-format
+msgid "In interactive step can't continue. (%s)"
+msgstr "Интерактивті қадамда тоқтау. (%s)"
+
+#: pyanaconda/constants.py:57
+msgid ""
+"An unhandled exception has occurred.  This is most likely a bug.  Please "
+"save a copy of the detailed exception and file a bug report"
+msgstr ""
+"Өңделмеген ережеден тыс жағдай орын алды. Бұл қате сияқты. Ережеден тыс "
+"жағдайдың толық ақпаратын сақтап, қате жөнінде есептемені жіберіңіз"
+
+#: pyanaconda/constants.py:63
+msgid " with the provider of this software."
+msgstr " бұл бағдарламалық қамтама ұсынушысына."
+
+#: pyanaconda/constants.py:67
+#, python-format
+msgid " against anaconda at %s"
+msgstr " Anaconda үшін (%s)"
+
+#: pyanaconda/constants.py:95
+msgid "Start VNC"
+msgstr "VNC іске қосу"
+
+#: pyanaconda/constants.py:96
+msgid "Use text mode"
+msgstr "Мәтіндік режимді қолдану"
+
+#: pyanaconda/install.py:59
+msgid "Configuring installed system"
+msgstr "Орнатылған жүйені баптау"
+
+#: pyanaconda/install.py:71
+msgid "Writing network configuration"
+msgstr "Желі баптауларын жазу"
+
+#: pyanaconda/install.py:75
+msgid "Creating users"
+msgstr "Пайдаланушыларды жасау"
+
+#: pyanaconda/install.py:82
+msgid "Running post install scripts"
+msgstr "Орнатудан кеінгі скриптерін орындау"
+
+#: pyanaconda/install.py:130 pyanaconda/packaging/livepayload.py:133
+#: pyanaconda/packaging/yumpayload.py:1631
+msgid "Performing post-install setup tasks"
+msgstr "Орнатудан кейінгі тапсырмаларды орындау"
+
+#: pyanaconda/install.py:134
+msgid "Installing bootloader"
+msgstr "Жүктеушіні орнату"
+
+#: pyanaconda/installclass.py:68
+msgid "Install on System"
+msgstr "Жүйеге орнату"
+
+#: pyanaconda/installinterfacebase.py:51
+msgid "Error Setting Up Repository"
+msgstr "Репозиторийді іске қосу қатесі"
+
+#: pyanaconda/installinterfacebase.py:52
+#, python-format
+msgid ""
+"The following error occurred while setting up the installation repository:\n"
+"\n"
+"%(e)s\n"
+"\n"
+"Installation can not continue."
+msgstr ""
+"Келесі қате орнату репозиторийін іске қосу кезінде орын алды:\n"
+"\n"
+"%(e)s\n"
+"\n"
+"Орнатуды жалғастыру мүмкін емес."
+
+#: pyanaconda/installinterfacebase.py:58
+msgid "Exit installer"
+msgstr "Орнатқыштан шығу"
+
+#: pyanaconda/installinterfacebase.py:62
+#, python-format
+msgid ""
+"The installation was stopped due to what seems to be a problem with your "
+"hardware. The exact error message is:\n"
+"\n"
+"%s.\n"
+"\n"
+" The installer will now terminate."
+msgstr ""
+"Орнату құрылғылық сияқты қате салдарынан тоқтатылды. Нақты қате "
+"хабарламасы:\n"
+"\n"
+"%s.\n"
+"\n"
+" Орнатқыш өз жұмысын аяқтайды."
+
+#: pyanaconda/installinterfacebase.py:65
+msgid "Hardware Error Encountered"
+msgstr "Құрылғылық қате кездесті"
+
+#: pyanaconda/installinterfacebase.py:69 pyanaconda/yuminstall.py:263
+#: pyanaconda/yuminstall.py:409 pyanaconda/yuminstall.py:835
+#: pyanaconda/yuminstall.py:1013 pyanaconda/yuminstall.py:1018
+#: pyanaconda/yuminstall.py:1055 pyanaconda/yuminstall.py:1107
+#: pyanaconda/yuminstall.py:1113 pyanaconda/yuminstall.py:1269
+#: pyanaconda/yuminstall.py:1284 pyanaconda/yuminstall.py:1339
+#: pyanaconda/yuminstall.py:1534 pyanaconda/yuminstall.py:1567
+#: pyanaconda/yuminstall.py:1590
+msgid "_Exit installer"
+msgstr "Орнатқы_штан шығу"
+
+#: pyanaconda/iutil.py:898
+msgid "the device containing /boot"
+msgstr "/boot орналасқан құрылғысы"
+
+#: pyanaconda/iutil.py:900
+#, python-format
+msgid ""
+"After shutdown, please perform a manual IPL from %s to continue installation."
+msgstr ""
+"Сөндіргеннен кейін, орнатуды жалғастыру үшін, қолмен IPL, %s жерінен жасаңыз."
+
+#: pyanaconda/kickstart.py:155
+#, python-format
+msgid "Escrow certificate %s requires the network."
+msgstr "%s escrow сертификаты желіні талап етеді."
+
+#: pyanaconda/kickstart.py:163
+#, python-format
+msgid ""
+"The following error was encountered while downloading the escrow "
+"certificate:\n"
+"\n"
+"%s"
+msgstr ""
+"Келесі қате escrow сертификатын жүктеп алу кезінде орын алды:\n"
+"\n"
+"%s"
+
+#: pyanaconda/kickstart.py:482
+#, python-format
+msgid "%s is missing. Cannot setup firewall."
+msgstr "%s жоқ болып тұр. Файрволды баптау мүмкін емес."
+
+#: pyanaconda/kickstart.py:1466
+msgid "Running pre-installation scripts"
+msgstr "Орнату алдындағы скриптерді орындау"
+
+#: pyanaconda/network.py:94
+msgid "Hostname cannot be None or an empty string."
+msgstr "Хост аты None не бос жол болмауы тиіс."
+
+#: pyanaconda/network.py:97
+msgid "Hostname must be 255 or fewer characters in length."
+msgstr "Хост аты 255 не одан аз таңбадан тұруы тиіс."
+
+#: pyanaconda/network.py:103
+msgid ""
+"Hostname must start with a valid character in the ranges 'a-z', 'A-Z', or "
+"'0-9'"
+msgstr ""
+"Хост аты 'a-z', 'A-Z', не '0-9' аймақтарында жататын таңбадан басталуы тиіс"
+
+#: pyanaconda/network.py:111
+msgid ""
+"Hostnames can only contain the characters 'a-z', 'A-Z', '0-9', '-', or '.', "
+"parts between periods must contain something and cannot start or end with "
+"'-'."
+msgstr ""
+"Хост аттарында тек 'a-z', 'A-Z', '0-9', '-', не '.' таңбалары болуы тиіс, "
+"нүктелер арасындағы бөліктерде бір нәрсе болуы тиіс және ол бөліктер '-' "
+"таңбасынан басталмауы тиіс."
+
+#: pyanaconda/network.py:168
+msgid "IP address is missing."
+msgstr "IP адресі жоқ."
+
+#: pyanaconda/network.py:172
+msgid ""
+"IPv4 addresses must contain four numbers between 0 and 255, separated by "
+"periods."
+msgstr ""
+"IPv4 адрес құрамында 0 мен 255 арасында жататын, нүктелермен ажыратылған, "
+"төрт саннан тұруы тиіс."
+
+#: pyanaconda/network.py:175
+#, python-format
+msgid "'%s' is not a valid IPv6 address."
+msgstr "'%s' дұрыс IPv6 адресі емес."
+
+#: pyanaconda/network.py:177
+#, python-format
+msgid "'%s' is an invalid IP address."
+msgstr "'%s' дұрыс IP адресі емес."
+
+#: pyanaconda/platform.py:58
+msgid "bootloader device"
+msgstr "жүктеуші құрылғысы"
+
+#: pyanaconda/platform.py:59
+msgid "RAID Device"
+msgstr "RAID құрылғысы"
+
+#: pyanaconda/platform.py:60
+msgid "First sector of boot partition"
+msgstr "Жүктелу бөлімінің бірінші секторы"
+
+#: pyanaconda/platform.py:158 pyanaconda/platform.py:341
+msgid "Master Boot Record"
+msgstr "Басты жүктелу жазбасы"
+
+#: pyanaconda/platform.py:194
+msgid "EFI System Partition"
+msgstr "EFI System бөлімі"
+
+#: pyanaconda/platform.py:223
+msgid "Apple EFI Boot Partition"
+msgstr "Apple EFI Boot бөлімі"
+
+#: pyanaconda/platform.py:248
+msgid "PReP Boot Partition"
+msgstr "PReP Boot бөлімі"
+
+#: pyanaconda/platform.py:271
+msgid "Apple Bootstrap Partition"
+msgstr "Apple Bootstrap бөлімі"
+
+#: pyanaconda/platform.py:300
+msgid "DASD"
+msgstr "DASD"
+
+#: pyanaconda/platform.py:301
+msgid "zFCP"
+msgstr "zFCP"
+
+#: pyanaconda/platform.py:366
+msgid "U-Boot Partition"
+msgstr "U-Boot бөлімі"
+
+#: pyanaconda/product.py:54
+#, python-format
+msgid "%(productName)s %(productVersion)s INSTALLATION"
+msgstr "%(productName)s %(productVersion)s ОРНАТУ"
+
+#: pyanaconda/rescue.py:171 pyanaconda/rescue.py:290 pyanaconda/rescue.py:375
+#, python-format
+msgid "Run %s to unmount the system when you are finished."
+msgstr "Аяқтағаннан кейін жүйені тіркеуден босату үшін %s орындаңыз."
+
+#: pyanaconda/rescue.py:174
+msgid "When finished please exit from the shell and your system will reboot."
+msgstr ""
+"Аяқтаған кезде, қоршамнан шығыңыз, жүйеңіз автоматты түрде қайта қосылады."
+
+#: pyanaconda/rescue.py:188
+msgid "Unable to find /bin/sh to execute!  Not starting shell"
+msgstr "Орындау үшін /bin/sh табылмады!  Қоршам іске қосылмайды"
+
+#: pyanaconda/rescue.py:224 pyanaconda/rescue.py:297 pyanaconda/rescue.py:307
+#: pyanaconda/rescue.py:378 pyanaconda/rescue.py:409
+msgid "Rescue"
+msgstr "Қалпына келтіру"
+
+#: pyanaconda/rescue.py:225
+#, python-format
+msgid ""
+"The rescue environment will now attempt to find your Linux installation and "
+"mount it under the directory %s.  You can then make any changes required to "
+"your system.  If you want to proceed with this step choose 'Continue'.  You "
+"can also choose to mount your file systems read-only instead of read-write "
+"by choosing 'Read-Only'.  \n"
+"\n"
+"If for some reason this process fails you can choose 'Skip' and this step "
+"will be skipped and you will go directly to a command shell.\n"
+"\n"
+msgstr ""
+"Қалпына келтіру режимі қазір сіздің Linux орнатуын тауып, %s бумасына тіркеп "
+"көреді.  Одан кейін жүйеге керек өзгерістерді жасауға болады. Осыны қалайтын "
+"болсаңыз, \"Жалғастыру\" таңдаңыз.  Файлдық жүйелерді оқу мен жазу режимі "
+"орнына тек оқу режимінде тіркеу үшін, \"Тек оқу үшін\" таңдаңыз.  \n"
+"\n"
+"Егер бұл әрекет сәтсіз болса, \"Аттап кету\" таңдаңыз, командалық қоршам "
+"ашылады.\n"
+"\n"
+
+#: pyanaconda/rescue.py:235 pyanaconda/storage/devicetree.py:96
+msgid "Continue"
+msgstr "Жалғастыру"
+
+#: pyanaconda/rescue.py:235 pyanaconda/rescue.py:241
+msgid "Read-Only"
+msgstr "Тек оқу үшін"
+
+#: pyanaconda/rescue.py:235 pyanaconda/rescue.py:237
+msgid "Skip"
+msgstr "Аттап кету"
+
+#: pyanaconda/rescue.py:265
+msgid "System to Rescue"
+msgstr "Қалпына келтіру үшін жүйе"
+
+#: pyanaconda/rescue.py:266
+msgid "Which device holds the root partition of your installation?"
+msgstr "Орнатылған жүйеңіздің түбірлік бөлімі қай құрылғыда жатыр?"
+
+#: pyanaconda/rescue.py:268 pyanaconda/rescue.py:272
+msgid "Exit"
+msgstr "Шығу"
+
+#: pyanaconda/rescue.py:287 pyanaconda/rescue.py:372
+msgid "The system will reboot automatically when you exit from the shell."
+msgstr "Жүйе қоршамнан шыққан кезде автоматты түрде қайта іске қосылады."
+
+#: pyanaconda/rescue.py:298
+#, python-format
+msgid ""
+"Your system had dirty file systems which you chose not to mount.  Press "
+"return to get a shell from which you can fsck and mount your partitions. %s"
+msgstr ""
+"Жүйеңізде сіз тіркемеуге таңдаған \"кір\" файлдық жүйелері бар. Қоршамды алу "
+"үшін, Enter басыңыз, оның ішінен сіз бөлімдерді тексеріп, тіркей аласыз. %s"
+
+#: pyanaconda/rescue.py:308
+#, python-format
+msgid ""
+"Your system has been mounted under %(rootPath)s.\n"
+"\n"
+"Press <return> to get a shell. If you would like to make your system the "
+"root environment, run the command:\n"
+"\n"
+"\tchroot %(rootPath)s\n"
+"\n"
+"%(msg)s"
+msgstr ""
+"Жүйеңіз келесі жерге тіркелді: %(rootPath)s.\n"
+"\n"
+"Қоршамды алу үшін Enter басыңыз. Жүйеңізді түбірлік (root) орта қылу үшін, "
+"келесі команданы орындаңыз:\n"
+"\n"
+"\tchroot %(rootPath)s\n"
+"\n"
+"%(msg)s"
+
+#: pyanaconda/rescue.py:379
+#, python-format
+msgid ""
+"An error occurred trying to mount some or all of your system. Some of it may "
+"be mounted under %s.\n"
+"\n"
+"Press <return> to get a shell."
+msgstr ""
+"Файлдық жүйелердің кейбіреулерін/барлығын тіркеп көру кезінде қате орын "
+"алды. Олардың кейбіреулер келесі жерде тіркелген болуы мүмкін: %s.\n"
+"\n"
+"Қоршамды алу үшін Enter басыңыз."
+
+#: pyanaconda/rescue.py:387
+msgid "You don't have any Linux partitions.  Rebooting.\n"
+msgstr "Linux диск бөлімдері жоқ.  Қайта іске қосылу.\n"
+
+#: pyanaconda/rescue.py:391
+msgid " The system will reboot automatically when you exit from the shell."
+msgstr " Жүйе қоршамнан шыққан кезде автоматты түрде қайта іске қосылады."
+
+#: pyanaconda/rescue.py:395
+msgid "Rescue Mode"
+msgstr "Қалпына келтіру режимі"
+
+#: pyanaconda/rescue.py:396
+#, python-format
+msgid "You don't have any Linux partitions. Press return to get a shell.%s"
+msgstr "Linux диск бөлімдері жоқ. Қоршамға өту үшін Enter басыңыз.%s"
+
+#: pyanaconda/rescue.py:408
+#, python-format
+msgid "Your system is mounted under the %s directory."
+msgstr "Жүйеңіз %s бумасына тіркелген."
+
+#: pyanaconda/vnc.py:61
+#, python-format
+msgid "%(productName)s %(productVersion)s installation"
+msgstr "%(productName)s %(productVersion)s орнатылуы"
+
+#: pyanaconda/vnc.py:118
+#, python-format
+msgid "%(productName)s %(productVersion)s installation on host %(name)s"
+msgstr "%(productName)s %(productVersion)s орнатылуы, хост аты %(name)s"
+
+#: pyanaconda/vnc.py:137
+#, python-format
+msgid "Attempting to connect to vnc client on host %s..."
+msgstr "%s хостындағы vnc клиентіне байланыс орнату..."
+
+#: pyanaconda/vnc.py:151
+msgid "Connected!"
+msgstr "Байланысқан!"
+
+#: pyanaconda/vnc.py:154
+msgid "Will try to connect again in 15 seconds..."
+msgstr "Қайта байланыс орнату талабы 15 секундтан кейін орындалады..."
+
+#: pyanaconda/vnc.py:160
+#, python-format
+msgid "Giving up attempting to connect after %d try!\n"
+msgid_plural "Giving up attempting to connect after %d tries!\n"
+msgstr[0] "%d талаптан кейін байланыс орнатуды қою!\n"
+
+#: pyanaconda/vnc.py:171
+#, python-format
+msgid "Please manually connect your vnc client to %s to begin the install."
+msgstr ""
+"Орнатуды бастау үшін vnc клиентіңізден %s адресімен байланыс орнатыңыз."
+
+#: pyanaconda/vnc.py:173
+#, python-format
+msgid ""
+"Please manually connect your vnc client to <IP ADDRESS>:%s to begin the "
+"install. Switch to the shell (Ctrl-B 2) and run 'ip addr' to find the <IP "
+"ADDRESS>."
+msgstr ""
+
+#: pyanaconda/vnc.py:178
+msgid "Starting VNC..."
+msgstr "VNC іске қосу..."
+
+#: pyanaconda/vnc.py:220
+msgid "The VNC server is now running."
+msgstr "VNC сервері жұмыс істеуде."
+
+#: pyanaconda/vnc.py:224
+msgid ""
+"\n"
+"\n"
+"You chose to connect to a listening vncviewer. \n"
+"This does not require a password to be set.  If you \n"
+"set a password, it will be used in case the connection \n"
+"to the vncviewer is unsuccessful\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Тындап тұрған VNC клиентіне байланыс орнату таңдалды. \n"
+"Бұл парольді талап етпейді.  Егер пароль көрсетілсе, \n"
+"ол пароль VNC клиентіне байланыс орнату сәтсіз болған кезде \n"
+"қолданылады.\n"
+"\n"
+
+#: pyanaconda/vnc.py:229
+msgid ""
+"\n"
+"\n"
+"WARNING!!! VNC server running with NO PASSWORD!\n"
+"You can use the vncpassword=<password> boot option\n"
+"if you would like to secure the server.\n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"НАЗАР АУДАРЫҢЫЗ!!! VNC сервері ПАРОЛЬСІЗ жұмыс істеуде!\n"
+"Серверге байланысты қорғау үшін vncpassword=<пароль>\n"
+"жүктелу опциясын қолдануға болады.\n"
+"\n"
+
+#: pyanaconda/vnc.py:233
+msgid ""
+"\n"
+"\n"
+"You chose to execute vnc with a password. \n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"vnc-ді парольсіз орындау таңдалды. \n"
+"\n"
+
+#: pyanaconda/vnc.py:235
+msgid ""
+"\n"
+"\n"
+"Unknown Error.  Aborting. \n"
+"\n"
+msgstr ""
+"\n"
+"\n"
+"Белгісіз қате.  Үзу. \n"
+"\n"
+
+#: pyanaconda/vnc.py:255
+msgid ""
+"VNC password provided was not at least 6 characters long.\n"
+"Please enter a new one.  Leave blank for no password."
+msgstr ""
+"Көрсетілген VNC пароль ұзындығы кем дегенде 6 таңбаға жетпеген.\n"
+"Жаңа парольді көрсетіңіз.  Парольсіз қалдыру үшін бос қалдырыңыз."
+
+#: pyanaconda/yuminstall.py:87
+#, python-format
+msgid "%s MB"
+msgstr "%s МБ"
+
+#: pyanaconda/yuminstall.py:90
+#, python-format
+msgid "%s KB"
+msgstr "%s КБ"
+
+#: pyanaconda/yuminstall.py:92
+#, python-format
+msgid "%s Byte"
+msgid_plural "%s Bytes"
+msgstr[0] "%s байт"
+
+#: pyanaconda/yuminstall.py:134 pyanaconda/ui/gui/hubs/progress.glade:83
+msgid "Preparing to install"
+msgstr "Орнатуға дайындалу"
+
+#: pyanaconda/yuminstall.py:135 pyanaconda/packaging/yumpayload.py:1536
+msgid "Preparing transaction from installation source"
+msgstr "Қайнар көзінен транзакцияны бастау"
+
+#: pyanaconda/yuminstall.py:170
+#, python-format
+msgid "<b>Upgrading %(pkgStr)s</b> (%(size)s)\n"
+msgstr "<b>Жаңартылуда %(pkgStr)s</b> (%(size)s)\n"
+
+#: pyanaconda/yuminstall.py:173
+#, python-format
+msgid "<b>Installing %(pkgStr)s</b> (%(size)s)\n"
+msgstr "<b>Орнатылуда %(pkgStr)s</b> (%(size)s)\n"
+
+#: pyanaconda/yuminstall.py:218
+#, python-format
+msgid "Packages completed: %(donepkgs)d of %(numpkgs)d"
+msgid_plural "Packages completed: %(donepkgs)d of %(numpkgs)d"
+msgstr[0] "Дайын дестелер: %(donepkgs)d, барлығы %(numpkgs)d"
+
+#: pyanaconda/yuminstall.py:232
+#, python-format
+msgid "<b>Cleaning up %s</b>"
+msgstr "<b>Тазарту %s</b>"
+
+#: pyanaconda/yuminstall.py:252
+msgid "cpio"
+msgstr "cpio"
+
+#: pyanaconda/yuminstall.py:254
+msgid "unpack"
+msgstr "тарқату"
+
+#: pyanaconda/yuminstall.py:256
+msgid "script"
+msgstr "скрипт"
+
+#: pyanaconda/yuminstall.py:257
+msgid "Error Installing Package"
+msgstr "Дестені орнату қатесі"
+
+#: pyanaconda/yuminstall.py:258
+#, python-format
+msgid ""
+"A %s error occurred when installing the %s package.  This could indicate "
+"errors when reading the installation media.  Installation cannot continue."
+msgstr ""
+"%s қатесі %s дестесін орнату кезінде орын алды. Бұл орнату тасушысын оқу "
+"қатесін сипаттауы мүмкін. Орнатуды жалғастыру мүмкін емес."
+
+#: pyanaconda/yuminstall.py:406
+msgid "Wrong Disc"
+msgstr "Қате диск"
+
+#: pyanaconda/yuminstall.py:407
+#, python-format
+msgid "That's not the correct %s disc."
+msgstr "Бұл - дұрыс %s дискі емес."
+
+#: pyanaconda/yuminstall.py:564
+#, python-format
+msgid "Repository %r is missing name in configuration, using id"
+msgstr "%r репозиторий баптауларында оның атауы жоқ, id қолданылады"
+
+#: pyanaconda/yuminstall.py:830 pyanaconda/yuminstall.py:1264
+msgid "No Network Available"
+msgstr "Қолжетерлік желілер жоқ"
+
+#: pyanaconda/yuminstall.py:831 pyanaconda/yuminstall.py:1265
+msgid ""
+"Some of your software repositories require networking, but there was an "
+"error enabling the network on your system."
+msgstr ""
+"Бағд. қамтама репозиторийлеріңіздің кейбіреулері желілік байланысты талап "
+"етеді, бірақ, жүйеңізде желіні іске қосу сәтсіз аяқталды."
+
+#: pyanaconda/yuminstall.py:919 pyanaconda/yuminstall.py:921
+msgid "Re_boot"
+msgstr "Қа_йта қосу"
+
+#: pyanaconda/yuminstall.py:919
+msgid "_Eject"
+msgstr "_Шығару"
+
+#: pyanaconda/yuminstall.py:921 pyanaconda/yuminstall.py:1284
+#: pyanaconda/yuminstall.py:1339 pyanaconda/yuminstall.py:1567
+msgid "_Retry"
+msgstr "Қа_йталау"
+
+#: pyanaconda/yuminstall.py:924 pyanaconda/yuminstall.py:1011
+#: pyanaconda/yuminstall.py:1016 pyanaconda/yuminstall.py:1289
+#: pyanaconda/yuminstall.py:1349 pyanaconda/yuminstall.py:1561
+#: pyanaconda/yuminstall.py:1583 pyanaconda/storage/zfcp.py:375
+#: pyanaconda/ui/tui/__init__.py:38
+msgid "Error"
+msgstr "Қате"
+
+#: pyanaconda/yuminstall.py:925
+#, python-format
+msgid ""
+"The file %s cannot be opened.  This is due to a missing file, a corrupt "
+"package or corrupt media.  Please verify your installation source.\n"
+"\n"
+"If you exit, your system will be left in an inconsistent state that will "
+"likely require reinstallation.\n"
+"\n"
+msgstr ""
+"%s файлын ашу мүмкін емес.  Бұл жоқ болып тұрған файл немесе зақымдалған "
+"десте/тасушы салдарынан болуы мүмкін. Орнатудың қайнар көзін тексеріңіз\n"
+"\n"
+"Шығатын болсаңыз, жүйе тұрақсыз, мүмкін, қайта орнатуды талап ететін күйде "
+"қалатын болады.\n"
+"\n"
+
+#: pyanaconda/yuminstall.py:972
+msgid "Retrying"
+msgstr "Қайта көру"
+
+#: pyanaconda/yuminstall.py:972
+msgid "Retrying download."
+msgstr "Жүктеп алуды қайта көру."
+
+#: pyanaconda/yuminstall.py:1007
+#, python-format
+msgid ""
+"There was an error running your transaction for the following reason: %s\n"
+msgstr ""
+"Транзакцияңыз орындалу кезінде келесі себеп бойынша қате орын алды: %s\n"
+
+#: pyanaconda/yuminstall.py:1018 pyanaconda/yuminstall.py:1113
+#: pyanaconda/yuminstall.py:1536 pyanaconda/yuminstall.py:1590
+msgid "_Back"
+msgstr "Ар_тқа"
+
+#: pyanaconda/yuminstall.py:1051
+#, python-format
+msgid ""
+"There was an error running your transaction for the following reason: %s.\n"
+msgstr ""
+"Транзакцияңыз орындалу кезінде келесі себеп бойынша қате орын алды: %s.\n"
+
+#: pyanaconda/yuminstall.py:1053 pyanaconda/yuminstall.py:1105
+#: pyanaconda/yuminstall.py:1110
+msgid "Error Running Transaction"
+msgstr "Транзакцияны орындау қатесі"
+
+#: pyanaconda/yuminstall.py:1059 pyanaconda/yuminstall.py:1060
+msgid "file conflicts"
+msgstr "файлдар ерегістері"
+
+#: pyanaconda/yuminstall.py:1061
+msgid "older package(s)"
+msgstr "ескірек десте(лер)"
+
+#: pyanaconda/yuminstall.py:1062
+msgid "insufficient disk space"
+msgstr "диск орны жеткіліксіз"
+
+#: pyanaconda/yuminstall.py:1063
+msgid "insufficient disk inodes"
+msgstr "дискте inode жеткіліксіз"
+
+#: pyanaconda/yuminstall.py:1064
+msgid "package conflicts"
+msgstr "десте ерегістері"
+
+#: pyanaconda/yuminstall.py:1065
+msgid "package already installed"
+msgstr "десте орнатылған болып тұр"
+
+#: pyanaconda/yuminstall.py:1066
+msgid "required package"
+msgstr "талап етілетін десте"
+
+#: pyanaconda/yuminstall.py:1067
+msgid "package for incorrect arch"
+msgstr "десте дұрыс емес архитектура үшін"
+
+#: pyanaconda/yuminstall.py:1068
+msgid "package for incorrect os"
+msgstr "десте дұрыс емес ОЖ үшін"
+
+#: pyanaconda/yuminstall.py:1082 pyanaconda/packaging/yumpayload.py:1364
+msgid "You need more space on the following file systems:\n"
+msgstr "Келесі файлдық жүйелерде көбірек орын керек:\n"
+
+#: pyanaconda/yuminstall.py:1095
+#, python-format
+msgid ""
+"There were file conflicts when checking the packages to be installed:\n"
+"%s\n"
+msgstr ""
+"Орнату үшін дестелерді тексеру кезінде файлдар ерегістері орын алды:\n"
+"%s\n"
+
+#: pyanaconda/yuminstall.py:1098
+#, python-format
+msgid ""
+"There was an error running your transaction for the following reason(s): "
+"%s.\n"
+msgstr ""
+"Транзакцияңыз орындалу кезінде келесі себеп(тер) бойынша қате орын алды: "
+"%s.\n"
+
+#: pyanaconda/yuminstall.py:1290
+msgid ""
+"Unable to read group information from repositories.  This is a problem with "
+"the generation of your install tree."
+msgstr ""
+"Репозиторийлерден топтар ақпаратын оқу мүмкін емес. Бұл - орнату ағашын "
+"генерациялау қатесі."
+
+#: pyanaconda/yuminstall.py:1339
+msgid "Edit"
+msgstr "Түзету"
+
+#: pyanaconda/yuminstall.py:1344 pyanaconda/yuminstall.py:1534
+#: pyanaconda/ui/gui/spokes/storage.glade:43
+#: pyanaconda/ui/gui/spokes/storage.glade:952
+#: widgets/src/StandaloneWindow.c:53
+msgid "_Continue"
+msgstr "Жалға_стыру"
+
+#: pyanaconda/yuminstall.py:1350 pyanaconda/yuminstall.py:1562
+#, python-format
+msgid ""
+"Unable to read package metadata. This may be due to a missing repodata "
+"directory.  Please ensure that your install tree has been correctly "
+"generated.\n"
+"\n"
+"%s"
+msgstr ""
+"Десте метаақпаратын оқу мүмкін емес. Бұл жоқ болып тұрған repodata бумасы "
+"салдарынан болуы мүмкін.  Орнатудың бумалар құрылысы (ағашы) дұрыс "
+"жасалғанын тексеріңіз.\n"
+"\n"
+"%s"
+
+#: pyanaconda/yuminstall.py:1538
+msgid "Warning"
+msgstr "Ескерту"
+
+#: pyanaconda/yuminstall.py:1539
+msgid ""
+"Some of the packages you have selected for install are missing "
+"dependencies.  You can exit the installation, go back and change your "
+"package selections, or continue installing these packages without their "
+"dependencies.  If you continue, these packages may not work correctly due to "
+"missing components."
+msgstr ""
+"Орнату үшін таңдалған кейбір дестелердің тәуелділіктері табылмады. Орнатудан "
+"шығып, артқа қайтып, дестелер таңдауын өзгертуге, немесе бұл дестелерді "
+"олардың тәуелділіктерін орнатпай-ақ орнатуға болады. Осылай жалғастырсаңыз, "
+"бұл дестелер жетіспейтін құрама салдарынан дұрыс жұмыс істемеуі мүмкін."
+
+#: pyanaconda/yuminstall.py:1584
+#, python-format
+msgid ""
+"Your selected packages require %d MB of free space for installation, but you "
+"do not have enough available.  You can change your selections or exit the "
+"installer."
+msgstr ""
+"Таңдалған дестелерді орнату үшін %d МБ бос орын керек, сізде орын "
+"жеткіліксіз. Таңдауыңызды өзгертуге, немесе орнатқыштан шығуға болады."
+
+#: pyanaconda/yuminstall.py:1669
+msgid "Post Upgrade"
+msgstr "Жаңартудан кейін"
+
+#: pyanaconda/yuminstall.py:1670
+msgid "Performing post-upgrade configuration"
+msgstr "Жаңартудан кейінгі баптауларды жасау"
+
+#: pyanaconda/yuminstall.py:1672
+msgid "Post Installation"
+msgstr "Орнатудан кейін"
+
+#: pyanaconda/yuminstall.py:1673
+msgid "Performing post-installation configuration"
+msgstr "Орнатудан кейінгі баптауларды жасау"
+
+#: pyanaconda/yuminstall.py:1832
+msgid "Installation Starting"
+msgstr "Орнату басталды"
+
+#: pyanaconda/yuminstall.py:1833
+msgid "Starting installation process"
+msgstr "Орнату үрдісі басталуда"
+
+#: pyanaconda/yuminstall.py:1871
+msgid "Dependency Check"
+msgstr "Тәуелділіктерді тексеру"
+
+#: pyanaconda/yuminstall.py:1872
+msgid "Checking dependencies in packages selected for installation"
+msgstr "Орнату үшін таңдалған дестелер тәуелділіктерін тексеру"
+
+#: pyanaconda/yuminstall.py:1928 pyanaconda/yuminstall.py:1944
+msgid "Retrieving installation information."
+msgstr "Орнату ақпаратын алу"
+
+#: pyanaconda/yuminstall.py:1930 pyanaconda/yuminstall.py:1946
+#, python-format
+msgid "Retrieving installation information for %s."
+msgstr "Орнату ақпаратын алу, келесі үшін: %s."
+
+#: pyanaconda/yuminstall.py:1931 pyanaconda/yuminstall.py:1947
+msgid "Installation Progress"
+msgstr "Орнату үрдісі"
+
+#: pyanaconda/installclasses/fedora.py:35
+msgid "_Fedora"
+msgstr "_Fedora"
+
+#: pyanaconda/installclasses/fedora.py:36
+#, python-format
+msgid ""
+"The default installation of %s includes a set of software applicable for "
+"general internet usage. You can optionally select a different set of "
+"software now."
+msgstr ""
+"%s үнсіз келісім бойынша орнатуы интернетті қолдану бағдарламалар жинағын "
+"қамтиды. Қазір қосымша түрде басқа бағд. қамтама жинағын таңдай аласыз."
+
+#: pyanaconda/installclasses/fedora.py:45
+msgid "Graphical Desktop"
+msgstr "Графикалық жұмыс үстелі"
+
+#: pyanaconda/installclasses/fedora.py:50
+msgid "Software Development"
+msgstr "Бағдарламалық қамтаманы өндіру"
+
+#: pyanaconda/installclasses/fedora.py:56
+msgid "Web Server"
+msgstr "Веб сервер"
+
+#: pyanaconda/installclasses/fedora.py:60 pyanaconda/installclasses/rhel.py:39
+msgid "Minimal"
+msgstr "Минималды"
+
+#: pyanaconda/installclasses/rhel.py:28
+msgid "Red Hat Enterprise Linux"
+msgstr "Red Hat Enterprise Linux"
+
+#: pyanaconda/installclasses/rhel.py:29
+#, python-format
+msgid ""
+"The default installation of %s is a minimum install. You can optionally "
+"select a different set of software now."
+msgstr ""
+"%s үнсіз келісім бойынша минималды түрде орнатылады. Қазір қосымша түрде "
+"басқа бағд. қамтама жинағын таңдай аласыз."
+
+#: pyanaconda/packaging/livepayload.py:72
+#: pyanaconda/packaging/livepayload.py:90
+msgid "Installing software"
+msgstr "Бағд. қамтаманы орнату"
+
+#: pyanaconda/packaging/yumpayload.py:1300
+msgid "Starting package installation process"
+msgstr "Дестелерді орнату үрдісін бастау"
+
+#: pyanaconda/packaging/yumpayload.py:1556
+msgid "Upgrading"
+msgstr "Жаңартылуда"
+
+#: pyanaconda/packaging/yumpayload.py:1558
+msgid "Installing"
+msgstr "Орнатылуда"
+
+#: pyanaconda/storage/__init__.py:974
+msgid "This partition is holding the data for the hard drive install."
+msgstr ""
+"Бұл бөлімде қатты дискіден орнату режимінде қолданылатын файлдар жатыр."
+
+#: pyanaconda/storage/__init__.py:979
+msgid "You cannot delete a partition of a LDL formatted DASD."
+msgstr "LDL етіп пішімделген DASD ішінен бөлімді өшіруге болмайды."
+
+#: pyanaconda/storage/__init__.py:985
+#, python-format
+msgid "This device is part of the RAID device %s."
+msgstr "Бұл құрылғы %s RAID құрылғысының бөлігі болып табылады."
+
+#: pyanaconda/storage/__init__.py:988
+msgid "This device is part of a RAID device."
+msgstr "Бұл құрылғы RAID құрылғысының бөлігі болып табылады."
+
+#: pyanaconda/storage/__init__.py:991
+msgid "This device is part of an inconsistent LVM Volume Group."
+msgstr "Бұл құрылғы келесілмеген LVM томдар тобының мүшесі."
+
+#: pyanaconda/storage/__init__.py:996
+#, python-format
+msgid "This device is part of the LVM volume group '%s'."
+msgstr "Бұл құрылғы '%s' LVM томдар тобының бөлігі болып табылады."
+
+#: pyanaconda/storage/__init__.py:999
+msgid "This device is part of a LVM volume group."
+msgstr "Бұл құрылғы LVM томдар тобының бөлігі болып табылады."
+
+#: pyanaconda/storage/__init__.py:1015
+msgid ""
+"This device is an extended partition which contains logical partitions that "
+"cannot be deleted:\n"
+"\n"
+msgstr ""
+"Бұл құрылғы құрамында өшіруге болмайтын логикалық бөлімдері бар кеңейтілген "
+"диск бөлімі болып табылады:\n"
+"\n"
+
+#: pyanaconda/storage/__init__.py:1262 pyanaconda/ui/gui/spokes/custom.py:1006
+msgid "You must create a new filesystem on the root device."
+msgstr "Түбірлік құрылғыда жаңа файлдық жүйені жасауыңыз керек."
+
+#: pyanaconda/storage/__init__.py:1450
+#, python-format
+msgid ""
+"You have not defined a root partition (/), which is required for "
+"installation of %s to continue."
+msgstr ""
+"%s орнатуын жалғастыру үшін керек түбірлік (root) бөлімі (/) көрсетілмеді."
+
+#: pyanaconda/storage/__init__.py:1455
+#, python-format
+msgid ""
+"Your root partition is less than 250 megabytes which is usually too small to "
+"install %s."
+msgstr "Түбірлік (root) көлемі 250 МБ-тан кем, ол %s орнату үшін тым аз."
+
+#: pyanaconda/storage/__init__.py:1469
+msgid ""
+"This platform requires /boot on a dedicated partition or logical volume.  If "
+"you do not want a /boot volume, you must place / on a dedicated non-LVM "
+"partition."
+msgstr ""
+"Бұл платформа /boot бөлімін жеке бөлімде не логикалық томда болуын талап "
+"етеді. Егер жеке /boot бөлімін қаламасаңыз, түбірлік (/) бумасын жеке LVM-"
+"емес бөліміне орналастыру керек. "
+
+#: pyanaconda/storage/__init__.py:1478
+#, python-format
+msgid ""
+"Your %(mount)s partition is less than %(size)s megabytes which is lower than "
+"recommended for a normal %(productName)s install."
+msgstr ""
+"%(mount)s бөлімінің өлшемі %(size)s мегабайттан аз, бұл қалыпты "
+"%(productName)s орнатуы үшін ұсынылатын шамадан аз."
+
+#: pyanaconda/storage/__init__.py:1488
+#, python-format
+msgid ""
+"Your %(mount)s partition is too small for %(format)s formatting (allowable "
+"size is %(minSize)d MB to %(maxSize)d MB)"
+msgstr ""
+"%(mount)s бөлімі %(format)s пішімдеуі үшін тым кіші (рұқсат етілетін өлшемі "
+"%(minSize)d МБ-тан бастап, %(maxSize)d МБ-қа дейін)"
+
+#: pyanaconda/storage/__init__.py:1493
+#, python-format
+msgid ""
+"Your %(mount)s partition is too large for %(format)s formatting (allowable "
+"size is %(minSize)d MB to %(maxSize)d MB)"
+msgstr ""
+"%(mount)s бөлімі %(format)s пішімдеуі үшін тым үлкен (рұқсат етілетін өлшемі "
+"%(minSize)d МБ-тан бастап, %(maxSize)d МБ-қа дейін)"
+
+#: pyanaconda/storage/__init__.py:1520
+msgid ""
+"Installing on a USB device.  This may or may not produce a working system."
+msgstr ""
+"USB құрылғысына орнату.  Бұл нәтижесінде жұмыс істей алатын жүйе шықпауы де "
+"мүмкін."
+
+#: pyanaconda/storage/__init__.py:1523
+msgid ""
+"Installing on a FireWire device.  This may or may not produce a working "
+"system."
+msgstr ""
+"FireWire құрылғысына орнату.  Бұл нәтижесінде жұмыс істей алатын жүйе "
+"шықпауы де мүмкін."
+
+#: pyanaconda/storage/__init__.py:1529
+msgid "you have not created a bootloader stage1 target device"
+msgstr "жүктеушінің stage1 мақсат құрылғысы жасалмады"
+
+#: pyanaconda/storage/__init__.py:1538
+msgid "You have not created a bootable partition."
+msgstr "Жүктелетін бөлім жасалмады."
+
+#: pyanaconda/storage/__init__.py:1559
+#, python-format
+msgid ""
+"Your BIOS-based system needs a special partition to boot with %s's new disk "
+"label format (GPT). To continue, please create a 1MB 'BIOS Boot' type "
+"partition."
+msgstr ""
+"Сіздің BIOS-қа негізделген жүйеңіз %s жаңа диск белгісімен (GPT) жүктелу "
+"үшін арнайы бөлімді талап етеді. Жалғастыру үшін, өлшемі 1 МБ 'BIOS Boot' "
+"түріндегі бөлімді жасаңыз."
+
+#: pyanaconda/storage/__init__.py:1572
+#, python-format
+msgid ""
+"You have not specified a swap partition.  %(requiredMem)s MB of memory is "
+"required to continue installation without a swap partition, but you only "
+"have %(installedMem)s MB."
+msgstr ""
+"Swap бөлімі көрсетілмеді. Swap бөлімсіз орнатуды жалғастыру үшін "
+"%(requiredMem)s МБ жады керек, ал сізде тек %(installedMem)s МБ бар."
+
+#: pyanaconda/storage/__init__.py:1578
+msgid ""
+"You have not specified a swap partition.  Although not strictly required in "
+"all cases, it will significantly improve performance for most installations."
+msgstr ""
+"Swap бөлімі көрсетілмеді. Swap бөлімі міндетті емес болғанымен де, көп "
+"жағдайда орнатудың өнімділігін арттыра алады."
+
+#: pyanaconda/storage/__init__.py:1584
+msgid ""
+"At least one of your swap devices does not have a UUID, which is common in "
+"swap space created using older versions of mkswap. These devices will be "
+"referred to by device path in /etc/fstab, which is not ideal since device "
+"paths can change under a variety of circumstances. "
+msgstr ""
+"Swap құрылғылардың кем дегенде біреуінде UUID жоқ, бұл mkswap-тың ескі "
+"нұсқаларымен жасалған swap аймағына тән қасиет. Осындай құрылғылар /etc/"
+"fstab ішінде құрылғы жолы арқылы көрсетіледі, ал, құрылғылар жолдары көп "
+"себептен өзгере алатындықтан, бұл ең тиімді шешім емес."
+
+#: pyanaconda/storage/__init__.py:1594
+#, python-format
+msgid ""
+"This mount point is invalid.  The %s directory must be on the / file system."
+msgstr "Бұл тіркеу нүктесі қате.  %s бумасы / файлдық жүйесінде болуы тиіс."
+
+#: pyanaconda/storage/__init__.py:1598
+#, python-format
+msgid "The mount point %s must be on a linux file system."
+msgstr "%s тіркеу нүктесі linux файлдық жүйесінде болуы тиіс."
+
+#: pyanaconda/storage/__init__.py:3199
+#, python-format
+msgid "Linux on %s"
+msgstr "Linux, орналасқан жері %s"
+
+#: pyanaconda/storage/__init__.py:3204
+msgid "Unknown Linux"
+msgstr "Белгісіз Linux"
+
+#: pyanaconda/storage/__init__.py:3206
+#, python-format
+msgid "%(product)s Linux %(version)s for %(arch)s"
+msgstr "%(product)s Linux %(version)s, %(arch)s үшін"
+
+#: pyanaconda/storage/dasd.py:159
+msgid "Formatting DASD Device"
+msgid_plural "Formatting DASD Devices"
+msgstr[0] "DASD құрылғысын пішімдеу"
+
+#: pyanaconda/storage/dasd.py:160
+#, python-format
+msgid "Preparing %d DASD device for use with Linux..."
+msgid_plural "Preparing %d DASD devices for use with Linux..."
+msgstr[0] "%d DASD құрылғыны Linux-пен қолдануға дайындау..."
+
+#: pyanaconda/storage/deviceaction.py:419
+#, python-format
+msgid "Creating %(type)s on %(device)s"
+msgstr "%(type)s жасау %(device)s құрылғысында"
+
+#: pyanaconda/storage/deviceaction.py:559
+#, python-format
+msgid "Resizing filesystem on %(device)s"
+msgstr "%(device)s құрылғысында файлдық жүйе өлшемін өзгерту"
+
+#: pyanaconda/storage/deviceaction.py:608
+#, python-format
+msgid "Migrating filesystem on %(device)s"
+msgstr "Файлдық жүйені %(device)s құрылғысына жылжыту"
+
+#: pyanaconda/storage/devicelibs/lvm.py:310
+#, python-format
+msgid "vginfo failed for %s"
+msgstr "vginfo сәтсіз %s үшін"
+
+#: pyanaconda/storage/devicelibs/lvm.py:339
+#, python-format
+msgid "lvs failed for %s"
+msgstr "lvs сәтсіз %s үшін"
+
+#: pyanaconda/storage/devices.py:2672
+#, python-format
+msgid "A RAID%(raidLevel)d set requires at least %(minMembers)d member"
+msgid_plural "A RAID%(raidLevel)d set requires at least %(minMembers)d members"
+msgstr[0] ""
+"RAID%(raidLevel)d массиві кем дегенде %(minMembers)d мүшені талап етеді"
+
+#: pyanaconda/storage/devicetree.py:96
+msgid "Back"
+msgstr "Артқа"
+
+#: pyanaconda/storage/devicetree.py:105
+msgid "Confirm"
+msgstr "Растау"
+
+#: pyanaconda/storage/devicetree.py:106
+#, python-format
+msgid ""
+"Are you sure you want to skip entering a passphrase for device %s?\n"
+"\n"
+"If you skip this step the device's contents will not be available during "
+"installation."
+msgstr ""
+"%s құрылғысы үшін парольді енгізуді аттап кетуді шынымен қалайсыз ба?\n"
+"\n"
+"Аттап кетсеңіз, орнату кезінде құрылғы құрамасы қолжетерсіз болады."
+
+#: pyanaconda/storage/fcoe.py:110
+msgid "FCoE not available"
+msgstr "FCoE қолжетерсіз"
+
+#: pyanaconda/storage/formats/fs.py:104
+msgid "filesystem configuration missing a type"
+msgstr "файлдық жүйе баптауында оның түрі көрсетілмеген"
+
+#: pyanaconda/storage/formats/fs.py:483
+#, python-format
+msgid "Unknown return code: %d."
+msgstr "Белгісіз қайтару коды: %d."
+
+#: pyanaconda/storage/formats/fs.py:504
+#, python-format
+msgid "%(type)s filesystem check failure on %(device)s: "
+msgstr "%(type)s файлдық жүйесін %(device)s құрылғысында тексеру қатесі: "
+
+#: pyanaconda/storage/formats/fs.py:511
+msgid ""
+"Errors like this usually mean there is a problem with the filesystem that "
+"will require user interaction to repair.  Before restarting installation, "
+"reboot to rescue mode or another system that allows you to repair the "
+"filesystem interactively.  Restart installation after you have corrected the "
+"problems on the filesystem."
+msgstr ""
+"Бұл сияқты қателер әдетте файлдық жүйеде пайдаланушының қатынауын талап "
+"ететін мәселелер бар болып тұрғанын көрсетеді. Орнатуды қайта қосқанға "
+"дейін, файлдық жүйені интерактивті түрде қалпына келітіруге мүмкін ететін "
+"қалпына келтіру режимін не басқа жүйені іске қосыңыз. Файлдық жүйе "
+"мәселелерін түзеткеннен кейін орнатуды қайта бастаңыз."
+
+#: pyanaconda/storage/formats/fs.py:519
+msgid "Unrecoverable Error"
+msgstr "Жөнделмейтін қате"
+
+#: pyanaconda/storage/formats/fs.py:883
+msgid "File system errors left uncorrected."
+msgstr "Файлдық жүйе қателері түзетілмей қалдырылды."
+
+#: pyanaconda/storage/formats/fs.py:884
+msgid "Operational error."
+msgstr "Әрекет қатесі."
+
+#: pyanaconda/storage/formats/fs.py:885
+msgid "Usage or syntax error."
+msgstr "Қолдану не синтаксис қатесі."
+
+#: pyanaconda/storage/formats/fs.py:886
+msgid "e2fsck cancelled by user request."
+msgstr "e2fsck жұмысын пайдаланушы тоқтатты."
+
+#: pyanaconda/storage/formats/fs.py:887
+msgid "Shared library error."
+msgstr "Ортақ жинақ қатесі."
+
+#: pyanaconda/storage/formats/fs.py:1062
+msgid ""
+"Recoverable errors have been detected or dosfsck has discovered an internal "
+"inconsistency."
+msgstr "Жөнделетін қателер табылды немесе dosfsck ішкі сәйкессіздікті тапты."
+
+#: pyanaconda/storage/formats/fs.py:1064
+msgid "Usage error."
+msgstr "Қолдану қатесі."
+
+#: pyanaconda/storage/formats/luks.py:48
+msgid "Encrypted"
+msgstr "Шифрленген"
+
+#: pyanaconda/storage/iscsi.py:123
+msgid "Unable to change iSCSI initiator name once set"
+msgstr "Берілгеннен кейін, iSCSI-инициатор атын өзгерту мүмкін емес"
+
+#: pyanaconda/storage/iscsi.py:125
+msgid "Must provide an iSCSI initiator name"
+msgstr "iSCSI-инициатор аты көрсетілуі тиіс"
+
+#: pyanaconda/storage/iscsi.py:293
+msgid "iSCSI not available"
+msgstr "iSCSI қолжетерсіз"
+
+#: pyanaconda/storage/iscsi.py:295
+msgid "No initiator name set"
+msgstr "iSCSI-инициатор аты көрсетілмеген"
+
+#: pyanaconda/storage/iscsi.py:334
+msgid "Logging in to iSCSI node"
+msgstr "iSCSI торабына кіру"
+
+#: pyanaconda/storage/iscsi.py:335
+#, python-format
+msgid "Logging in to iSCSI node %s"
+msgstr "iSCSI %s торабына кіру"
+
+#: pyanaconda/storage/iscsi.py:369
+msgid "No iSCSI nodes discovered"
+msgstr "iSCSI тораптары табылмады"
+
+#: pyanaconda/storage/iscsi.py:391
+msgid "No new iSCSI nodes discovered"
+msgstr "Жаңа iSCSI тораптары табылмады"
+
+#: pyanaconda/storage/iscsi.py:394
+msgid "Could not log in to any of the discovered nodes"
+msgstr "Табылған тораптардың біреуіне де кіре алмадық"
+
+#: pyanaconda/storage/partitioning.py:291
+msgid "No usable disks selected"
+msgstr "Қолдануға болатын бірде-бір диск таңдалмады"
+
+#: pyanaconda/storage/partitioning.py:299
+msgid "Not enough free space on disks for automatic partitioning"
+msgstr "Автоматты түрде бөлімдеу үшін дисктерде бос орын жеткіліксіз"
+
+#: pyanaconda/storage/partitioning.py:629
+msgid "unable to allocate aligned partition"
+msgstr "тураланған бөлімді орналастыру мүмкін емес"
+
+#: pyanaconda/storage/partitioning.py:637
+msgid "requested size exceeds maximum allowed"
+msgstr "сұралған өлшемі максималды рұқсат етілгеннен асып тұр"
+
+#: pyanaconda/storage/partitioning.py:728
+msgid "can't allocate partitions without platform data"
+msgstr "платформа ақпараты жоқ бөлімдерді орналастыру мүмкін емес"
+
+#: pyanaconda/storage/partitioning.py:739
+#, python-format
+msgid "disk %s inaccessible"
+msgstr "%s дискі қолжетерсіз"
+
+#: pyanaconda/storage/partitioning.py:793
+#, python-format
+msgid ""
+"partition is too small for %(format)s formatting (allowable size is "
+"%(minSize)d MB to %(maxSize)d MB)"
+msgstr ""
+"диск бөлімі %(format)s пішімделуі үшін тым кіші (рұқсат етілген өлшемі "
+"%(minSize)d МБ бастап, %(maxSize)d МБ дейін)"
+
+#: pyanaconda/storage/partitioning.py:798
+#, python-format
+msgid ""
+"partition is too large for %(format)s formatting (allowable size is "
+"%(minSize)d MB to %(maxSize)d MB)"
+msgstr ""
+"диск бөлімі %(format)s пішімделуі үшін тым үлкен (рұқсат етілген өлшемі "
+"%(minSize)d МБ бастап, %(maxSize)d МБ дейін)"
+
+#: pyanaconda/storage/partitioning.py:1039
+msgid "not enough free space on disks"
+msgstr "дисктердегі бос орын жеткіліксіз"
+
+#: pyanaconda/storage/partitioning.py:1060
+msgid "not enough free space after creating extended partition"
+msgstr "кеңейтілген бөлімді жасағаннан кейін бос орын жеткіліксіз"
+
+#: pyanaconda/storage/partitioning.py:1232
+msgid "cannot reclaim more than request has grown"
+msgstr "сұраным өскен шамасынан көбірек орынды қайта бөлу мүмкін емес"
+
+#: pyanaconda/storage/partitioning.py:1412
+msgid "DiskChunk requests must be of type PartitionRequest"
+msgstr "DiskChunk сұранымдары PartitionRequest түрінде болуы тиіс"
+
+#: pyanaconda/storage/partitioning.py:1425
+msgid "partitions allocated outside disklabel limits"
+msgstr "disklabel шегінен тыс орналасқан бөлімдер"
+
+#: pyanaconda/storage/partitioning.py:1505
+msgid "VGChunk requests must be of type LVRequest"
+msgstr "VGChunk сұранымдары LVRequest түрінде болуы тиіс"
+
+#: pyanaconda/storage/partitioning.py:1934
+msgid "not enough space for LVM requests"
+msgstr "LVM сұранымдары үшін орын жеткіліксіз"
+
+#: pyanaconda/storage/zfcp.py:51
+msgid "You have not specified a device number or the number is invalid"
+msgstr "Құрылғы нөмірі көрсетілмеді, немесе қате нөмір көрсетілді"
+
+#: pyanaconda/storage/zfcp.py:53
+msgid "You have not specified a worldwide port name or the name is invalid."
+msgstr "Құрылғының жалпы порт аты көрсетілмеді, немесе қате көрсетілді."
+
+#: pyanaconda/storage/zfcp.py:55
+msgid "You have not specified a FCP LUN or the number is invalid."
+msgstr "FCP LUN көрсетілмеді, немесе нөмір қате көрсетілді."
+
+#: pyanaconda/storage/zfcp.py:133
+#, python-format
+msgid "zFCP device %s not found, not even in device ignore list."
+msgstr "zFCP %s құрылғысы табылмады, елемеу үшін тізімде де жоқ."
+
+#: pyanaconda/storage/zfcp.py:143
+#, python-format
+msgid "Could not set zFCP device %(devnum)s online (%(e)s)."
+msgstr "zFCP %(devnum)s құрылғысын жұмыс режиміне келтіру сәтсіз (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:154
+#, python-format
+msgid "Could not add WWPN %(wwpn)s to zFCP device %(devnum)s (%(e)s)."
+msgstr ""
+"WWPN %(wwpn)s zFCP %(devnum)s құрылғысы ішіне қосу мүмкін емес (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:161
+#, python-format
+msgid "WWPN %(wwpn)s not found at zFCP device %(devnum)s."
+msgstr "WWPN %(wwpn)s zFCP %(devnum)s құрылғысы ішінен табылмады."
+
+#: pyanaconda/storage/zfcp.py:176
+#, python-format
+msgid ""
+"Could not add LUN %(fcplun)s to WWPN %(wwpn)s on zFCP device %(devnum)s "
+"(%(e)s)."
+msgstr ""
+"LUN %(fcplun)s WWPN %(wwpn)s ішіне қосу мүмкін емес, орналасуы zFCP "
+"%(devnum)s құрылғысында (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:182
+#, python-format
+msgid ""
+"LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s already configured."
+msgstr ""
+"LUN %(fcplun)s  бапталған болып тұр, орналасуы WWPN %(wwpn)s ішінде, zFCP "
+"%(devnum)s құрылғысында."
+
+#: pyanaconda/storage/zfcp.py:194
+#, python-format
+msgid ""
+"Could not read failed attribute of LUN %(fcplun)s at WWPN %(wwpn)s on zFCP "
+"device %(devnum)s (%(e)s)."
+msgstr ""
+"LUN %(fcplun)s ішінен \"failed\" атрибутын оқу мүмкін емес, орналасқан жері "
+"WWPN %(wwpn)s, zFCP %(devnum)s құрылғысында (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:203
+#, python-format
+msgid ""
+"Failed LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s removed "
+"again."
+msgstr ""
+"Ақаулығы бар LUN %(fcplun)s қайта өшірілді, орналасқан жері WWPN %(wwpn)s, "
+"zFCP %(devnum)s құрылғысында."
+
+#: pyanaconda/storage/zfcp.py:260
+#, python-format
+msgid ""
+"Could not correctly delete SCSI device of zFCP %(devnum)s %(wwpn)s "
+"%(fcplun)s (%(e)s)."
+msgstr ""
+"SCSI құрылғысын дұрыс өшіру мүмкін емес, орналасқан жері zFCP %(devnum)s "
+"%(wwpn)s %(fcplun)s (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:269
+#, python-format
+msgid ""
+"Could not remove LUN %(fcplun)s at WWPN %(wwpn)s on zFCP device %(devnum)s "
+"(%(e)s)."
+msgstr ""
+"LUN %(fcplun)s өшіру мүмкін емес, орналасқан жері WWPN %(wwpn)s zFCP "
+"%(devnum)s құрылғысында (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:287
+#, python-format
+msgid "Could not remove WWPN %(wwpn)s on zFCP device %(devnum)s (%(e)s)."
+msgstr "WWPN %(wwpn)s zFCP %(devnum)s құрылғысында өшіру мүмкін емес (%(e)s)."
+
+#: pyanaconda/storage/zfcp.py:313
+#, python-format
+msgid "Could not set zFCP device %(devnum)s offline (%(e)s)."
+msgstr "zFCP %(devnum)s құрылғысын сөндіру мүмкін емес (%(e)s)."
+
+#: pyanaconda/ui/lib/space.py:33
+#, python-format
+msgid ""
+"Not enough space in filesystems for the current software selection. An "
+"additional %s is needed."
+msgstr ""
+"Ағымдағы бағдарламалық қамтама таңдауы үшін орын жеткіліксіз. Қосымша %s "
+"керек."
+
+#: pyanaconda/ui/tui/hubs/progress.py:37
+msgid "Installation Hub"
+msgstr "Орнату торабы"
+
+#: pyanaconda/ui/tui/hubs/progress.py:117
+msgid "\tInstallation complete.  Press return to quit"
+msgstr "\tОрнату аяқталды. Шығу үшін Enter басыңыз"
+
+#: pyanaconda/ui/tui/hubs/summary.py:32
+msgid "Install hub"
+msgstr "Орнату торабы"
+
+#: pyanaconda/ui/tui/hubs/summary.py:38
+msgid "Starting automated install"
+msgstr "Автоматты орнатуды бастау"
+
+#: pyanaconda/ui/tui/hubs/__init__.py:43
+msgid "Default HUB title"
+msgstr "Тораптың үнсіз келісім бойынша аты"
+
+#: pyanaconda/ui/tui/hubs/__init__.py:104
+#: pyanaconda/ui/tui/simpleline/base.py:301
+msgid "c"
+msgstr "c"
+
+#: pyanaconda/ui/tui/hubs/__init__.py:107
+msgid "Please complete all spokes before continuing"
+msgstr "Жалғастыру алдында барлық өрістерді толтырыңыз"
+
+#: pyanaconda/ui/tui/simpleline/base.py:306
+msgid "q"
+msgstr "q"
+
+#: pyanaconda/ui/tui/simpleline/base.py:308
+msgid "Do you really want to quit?"
+msgstr "Шығуды шынымен қалайсыз ба?"
+
+#: pyanaconda/ui/tui/simpleline/base.py:407
+msgid "  Please make your choice from above ['q' to quit | 'c' to continue]: "
+msgstr "  Жоғарыдан таңдаңыз ['q' шығу | 'c' жалғастыру үшін]: "
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:32
+msgid "VNC"
+msgstr "VNC"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:43
+msgid ""
+"X was unable to start on your machine.  Would you like to start VNC to "
+"connect to this computer from another computer and perform a graphical "
+"install or continue with a text mode install?"
+msgstr ""
+"X сервері компьютеріңізде іске қосыла алмады. Басқа компьютерден байланысып, "
+"графикалық орнатуды орындау үшін VNC-ді іске қосуды немесе мәтіндік режимде "
+"орнатуды жалғастыруды қалайсыз ба?"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:95
+msgid "VNC Password"
+msgstr "VNC паролі"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:104
+msgid ""
+"Please provide VNC password. You will have to type it twice. \n"
+"Leave blank for no password"
+msgstr ""
+"VNC паролін орнатыңыз. Оны екі рет енгізу керек болады. \n"
+"Парольсіз қалдыру үшін бос қалдырыңыз"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:123
+#: pyanaconda/ui/tui/spokes/password.py:64
+msgid "Password: "
+msgstr "Пароль:"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:124
+#: pyanaconda/ui/tui/spokes/password.py:65
+msgid "Password (confirm): "
+msgstr "Пароль (растау):"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:127
+msgid "Passwords do not match!"
+msgstr "Парольдер өзара сәйкес келмейді!"
+
+#: pyanaconda/ui/tui/spokes/askvnc.py:130
+msgid "The password must be at least six characters long."
+msgstr "Пароль ұзындығы кем дегенде алты таңба болуы тиіс."
+
+#: pyanaconda/ui/tui/spokes/password.py:35
+msgid "Set root password"
+msgstr "Әкімші (root) паролін орнату"
+
+#: pyanaconda/ui/tui/spokes/password.py:49
+msgid "Password is set."
+msgstr "Пароль орнатылды."
+
+#: pyanaconda/ui/tui/spokes/password.py:51
+msgid "Root account is disabled."
+msgstr "Root тіркелгісі сөндірулі."
+
+#: pyanaconda/ui/tui/spokes/password.py:53
+msgid "Password is not set."
+msgstr "Пароль орнатылмаған."
+
+#: pyanaconda/ui/tui/spokes/password.py:58
+msgid "Please select new root password. You will have to type it twice."
+msgstr ""
+"Әкімші (root) үшін жаңа парольді көрсетіңіз. Оны екі рет теруіңіз керек "
+"болады."
+
+#: pyanaconda/ui/tui/spokes/password.py:76
+#, python-format
+msgid "You have provided a weak password: %s. "
+msgstr "Сіз көрсеткен пароль әлсіз: %s. "
+
+#: pyanaconda/ui/tui/spokes/password.py:77
+msgid ""
+"\n"
+"Would you like to use it anyway?"
+msgstr ""
+"\n"
+"Сонда да оны қолдануды қалайсыз ба?"
+
+#: pyanaconda/ui/tui/spokes/storage.py:47
+msgid "Use All Space"
+msgstr "Бүкіл орынды қолдану"
+
+#: pyanaconda/ui/tui/spokes/storage.py:48
+msgid "Replace Existing Linux system(s)"
+msgstr "Бар болып тұрған Linux жүйесін(жүйелерін) алмастыру"
+
+#: pyanaconda/ui/tui/spokes/storage.py:49
+msgid "Use Free Space"
+msgstr "Бос орынды қолдану"
+
+#: pyanaconda/ui/tui/spokes/storage.py:92
+msgid "Install Destination"
+msgstr "Орнатылатын жері"
+
+#: pyanaconda/ui/tui/spokes/storage.py:120
+#: pyanaconda/ui/gui/spokes/storage.py:439
+msgid "No disks selected"
+msgstr "Дисктер таңдалмады"
+
+#: pyanaconda/ui/tui/spokes/storage.py:127
+#: pyanaconda/ui/gui/spokes/storage.py:446
+msgid "Error checking storage configuration"
+msgstr "Жинақтаушының баптауларын тексеру қатесі"
+
+#: pyanaconda/ui/tui/spokes/storage.py:130
+#: pyanaconda/ui/gui/spokes/storage.py:448
+msgid "Automatic partitioning selected"
+msgstr "Автобөлімдеу таңдалды"
+
+#: pyanaconda/ui/tui/spokes/storage.py:132
+#: pyanaconda/ui/gui/spokes/storage.py:450
+msgid "Custom partitioning selected"
+msgstr "Таңдауыңызша бөлімдеу таңдалды"
+
+#: pyanaconda/ui/tui/spokes/storage.py:168
+#: pyanaconda/ui/gui/spokes/storage.py:582
+msgid ""
+"No disks detected.  Please shut down the computer, connect at least one "
+"disk, and restart to complete installation."
+msgstr ""
+"Бірде-бір диск табылмады. Компьютерді өшіріп, кем дегенде бір диск қосыңыз, "
+"одан кейін компьютерді қайта іске қосыңыз."
+
+#: pyanaconda/ui/tui/spokes/storage.py:170
+#: pyanaconda/ui/gui/spokes/storage.py:584
+msgid "No disks selected; please select at least one disk to install to."
+msgstr ""
+"Бірде-бір диск таңдалмады; орнату үшін кем дегенде бір дискті таңдаңыз."
+
+#: pyanaconda/ui/tui/spokes/storage.py:185
+#: pyanaconda/ui/gui/spokes/source.py:671
+#: pyanaconda/ui/gui/spokes/storage.py:514
+msgid "Probing storage..."
+msgstr "Жинақтаушыларды іздеу..."
+
+#: pyanaconda/ui/tui/spokes/storage.py:263
+msgid "Generating updated storage configuration"
+msgstr "Жаңартылған жинақтаушылар баптауларын жасау"
+
+#: pyanaconda/ui/tui/spokes/storage.py:268
+#, python-format
+msgid "storage configuration failed: %s"
+msgstr "жинақтаушы(лар) баптау сәтсіз: %s"
+
+#: pyanaconda/ui/tui/spokes/storage.py:277
+#: pyanaconda/ui/gui/spokes/storage.py:307
+msgid "Checking storage configuration..."
+msgstr "Жинақтаушылар баптауларын тексеру..."
+
+#: pyanaconda/ui/tui/spokes/storage.py:311
+msgid "Autopartitioning Options"
+msgstr "Автобөлімдеу баптаулары"
+
+#: pyanaconda/ui/tui/spokes/storage.py:342
+msgid ""
+"Installation requires partitioning of your hard drive.  Select what space to "
+"use for the install target."
+msgstr ""
+"Орнату үрдісі қатты дискіңізді бөлімдеуді қамтиды.  Орнату жері ретінде "
+"қолдалылатын орынды таңдаңыз."
+
+#: pyanaconda/ui/tui/spokes/time.py:30
+msgid "Timezone settings"
+msgstr "Уақыт белдеуі баптаулары"
+
+#: pyanaconda/ui/tui/spokes/time.py:53 pyanaconda/ui/tui/spokes/time.py:55
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:379
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:384
+#, python-format
+msgid "%s timezone"
+msgstr "%s уақыт белдеуі"
+
+#: pyanaconda/ui/tui/spokes/time.py:57
+msgid "Timezone is not set."
+msgstr "Уақыт белдеуі орнатылмаған."
+
+#: pyanaconda/ui/tui/spokes/time.py:65
+#, python-format
+msgid "Available timezones in region %s"
+msgstr "%s аймағындағы қолжетерлік уақыт белдеулері"
+
+#: pyanaconda/ui/tui/spokes/time.py:68
+msgid "Available regions"
+msgstr "Қолжетерлік аймақтар"
+
+#: pyanaconda/ui/tui/spokes/time.py:131
+msgid ""
+"Please select the timezone.\n"
+"Use numbers or type names directly [b to region list, q to quit]: "
+msgstr ""
+"Уақыт белдеуіңізді таңдаңыз.\n"
+"Сандарды қолданыңыз немесе атауды теріңіз [b - аймақтар тізімі үшін, q - "
+"шығу]: "
+
+#: pyanaconda/ui/tui/spokes/__init__.py:44
+msgid "Default spoke title"
+msgstr "Еске сақтау үшін қалыпты атауы"
+
+#: pyanaconda/ui/tui/spokes/__init__.py:54
+msgid "testing status..."
+msgstr "қалып-күйді тексеру..."
+
+#: pyanaconda/ui/tui/__init__.py:58
+msgid "Press enter to exit."
+msgstr "Шығу үшін Enter басыңыз."
+
+#: pyanaconda/ui/tui/__init__.py:67
+msgid "Question"
+msgstr "Сұрақ"
+
+#: pyanaconda/ui/tui/__init__.py:90
+msgid "Please respond 'yes' or 'no': "
+msgstr "Тек 'yes' не 'no' жауап беріңіз: "
+
+#: pyanaconda/ui/tui/__init__.py:93
+msgid "yes"
+msgstr "yes"
+
+#: pyanaconda/ui/tui/__init__.py:98
+msgid "no"
+msgstr "no"
+
+#: pyanaconda/ui/gui/__init__.py:144
+msgid "_Exit Installer"
+msgstr "Орнатқы_штан шығу"
+
+#: pyanaconda/ui/gui/__init__.py:153 pyanaconda/ui/gui/spokes/software.py:333
+#: pyanaconda/ui/gui/spokes/storage.py:770 pyanaconda/ui/gui/main.glade:36
+#: pyanaconda/ui/gui/hubs/summary.glade:77 widgets/src/StandaloneWindow.c:52
+msgid "_Quit"
+msgstr "_Шығу"
+
+#: pyanaconda/ui/gui/__init__.py:169
+msgid "_No"
+msgstr "Ж_оқ"
+
+#: pyanaconda/ui/gui/__init__.py:169
+msgid "_Yes"
+msgstr "_Иә"
+
+#: pyanaconda/ui/gui/categories/__init__.py:44
+msgid "DEFAULT TITLE"
+msgstr "БАСТАПҚЫ АТАУЫ"
+
+#: pyanaconda/ui/gui/categories/localization.py:31
+msgid "LOCALIZATION"
+msgstr "ЛОКАЛИЗАЦИЯ"
+
+#: pyanaconda/ui/gui/categories/software.py:31
+msgid "SOFTWARE"
+msgstr "БАҒД. ҚАМТАМА"
+
+#: pyanaconda/ui/gui/categories/storage.py:32
+msgid "STORAGE"
+msgstr "STORAGE"
+
+#: pyanaconda/ui/gui/categories/user_settings.py:32
+msgid "USER SETTINGS"
+msgstr "ПАЙДАЛАНУШЫЛАР"
+
+#: pyanaconda/ui/gui/hubs/__init__.py:226
+msgid ""
+"When all items marked with this icon are complete, installation will "
+"automatically continue."
+msgstr ""
+"Бұл таңбашамен белгіленген барлық нәрсе дайын болған кезде, орнату автоматты "
+"түрде жалғастырылады."
+
+#: pyanaconda/ui/gui/hubs/__init__.py:228
+msgid ""
+"Please complete items marked with this icon before continuing to the next "
+"step."
+msgstr ""
+"Келесі қадамға өтер алдында бұл таңбашамен белгіленген барлық нәрсені "
+"аяқтаңыз."
+
+#: pyanaconda/ui/gui/hubs/progress.py:254
+msgid "Complete!"
+msgstr "Аяқталды!"
+
+#: pyanaconda/ui/gui/spokes/custom.py:99
+#, python-format
+msgid "New %s %s Installation"
+msgstr "Жаңа %s %s орнатуы"
+
+#: pyanaconda/ui/gui/spokes/custom.py:100
+msgid "Create a new volume group ..."
+msgstr "Жаңа томдар тобын жасау ..."
+
+#: pyanaconda/ui/gui/spokes/custom.py:101
+msgid ""
+"Storage configuration reset due to unrecoverable error. Click for details."
+msgstr ""
+"Жинақтаушылар баптаулары жөнделмейтін қате салдарынан тасталды. Көбірек білу "
+"үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:103
+msgid "Device reconfiguration failed. Click for details."
+msgstr "Құрылғыны қайта баптау сәтсіз. Көбірек білу үшін шерітңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:106
+msgid "Please enter a valid mountpoint."
+msgstr "Дұрыс тіркеу нүктесін көрсетіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:107
+msgid "That mount point is invalid. Try something else?"
+msgstr "Бұл тіркеу нүктесі дұрыс емес. Басқасын көру керек пе?"
+
+#: pyanaconda/ui/gui/spokes/custom.py:108
+msgid "That mount point is already in use. Try something else?"
+msgstr "Бұл тіркеу нүктесі қолдануда болып тұр. Басқасын көру керек пе?"
+
+#: pyanaconda/ui/gui/spokes/custom.py:120
+msgid "LVM"
+msgstr "LVM"
+
+#: pyanaconda/ui/gui/spokes/custom.py:121
+msgid "RAID"
+msgstr "RAID"
+
+#: pyanaconda/ui/gui/spokes/custom.py:122
+msgid "Standard Partition"
+msgstr "Қалыпты бөлім"
+
+#: pyanaconda/ui/gui/spokes/custom.py:123
+msgid "BTRFS"
+msgstr "BTRFS"
+
+#: pyanaconda/ui/gui/spokes/custom.py:124
+#: pyanaconda/ui/gui/spokes/custom.glade:2088
+#: pyanaconda/ui/gui/spokes/custom.glade:2289
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:140
+msgid "Disk"
+msgstr "Диск"
+
+#: pyanaconda/ui/gui/spokes/custom.py:439
+#: pyanaconda/ui/gui/spokes/custom.glade:389
+msgid "MANUAL PARTITIONING"
+msgstr "ҚОЛМЕН БӨЛУ"
+
+#: pyanaconda/ui/gui/spokes/custom.py:636
+#, python-format
+msgid "%d storage device selected"
+msgid_plural "%d storage devices selected"
+msgstr[0] "%d жинақтаушылар құрылғы таңдалды"
+
+#: pyanaconda/ui/gui/spokes/custom.py:789
+#: pyanaconda/ui/gui/spokes/network.py:585
+#: pyanaconda/ui/gui/spokes/network.py:1001
+msgid "Unknown"
+msgstr "Белгісіз"
+
+#: pyanaconda/ui/gui/spokes/custom.py:818
+msgid ""
+"The 'swap' area on your computer is used by the operating\n"
+"system when running low on memory."
+msgstr ""
+"Дискідегі 'swap' бөлімін операциялық жүйе бос жады азайған\n"
+"кезде қолданады."
+
+#: pyanaconda/ui/gui/spokes/custom.py:821
+msgid ""
+"The 'boot' area on your computer is where files needed\n"
+"to start the operating system are stored."
+msgstr ""
+"Дискідегі 'boot' бөлімінде операциялық жүйесін іске қосу үшін\n"
+"керек файлдар сақталады."
+
+#: pyanaconda/ui/gui/spokes/custom.py:824
+msgid ""
+"The 'root' area on your computer is where core system\n"
+"files and applications are stored."
+msgstr "Дискідегі 'root' бөлімінде қолданбалар мен жүйелік файлдар сақталады."
+
+#: pyanaconda/ui/gui/spokes/custom.py:827
+msgid ""
+"The 'home' area on your computer is where all your personal\n"
+"data is stored."
+msgstr "Дискідегі 'home' бөлімінде жеке мәліметтеріңіз сақталады."
+
+#: pyanaconda/ui/gui/spokes/custom.py:830
+msgid ""
+"The BIOS boot partition is required to enable booting\n"
+"from GPT-partitioned disks on BIOS hardware."
+msgstr ""
+"BIOS негізіндегі жүйеде GPT түрінде бөлімделген дисктерден\n"
+"жүктелу үшін BIOS жүктелу бөлімі керек."
+
+#: pyanaconda/ui/gui/spokes/custom.py:833
+msgid ""
+"The PReP boot partition is required as part of the\n"
+"bootloader configuration on some PPC platforms."
+msgstr ""
+"Кейбір PPC жүйелерінде жүктеуші баптауларының бөлігі\n"
+"ретінде PReP жүктелу бөлімі керек."
+
+#: pyanaconda/ui/gui/spokes/custom.py:995
+#, python-format
+msgid "/boot/efi must be on a device of type %s"
+msgstr "/boot/efi %s түріндегі құрылғыда болуы тиіс"
+
+#: pyanaconda/ui/gui/spokes/custom.py:999
+#, python-format
+msgid "%s must be on a device of type %s"
+msgstr "%s %s түріндегі бөлімде болуы тиіс"
+
+#: pyanaconda/ui/gui/spokes/custom.py:1002
+#: pyanaconda/ui/gui/spokes/custom.py:1004
+#, python-format
+msgid "%s cannot be encrypted"
+msgstr "%s шифрлеу мүмкін емес"
+
+#: pyanaconda/ui/gui/spokes/custom.py:1008
+#, python-format
+msgid "Devices of type %s require a valid RAID level selection."
+msgstr "%s түріндегі құрылғылар дұрыс RAID деңгейін таңдауды талап етеді."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1014
+msgid ""
+"The RAID level you have selected requires more disks than you currently have "
+"selected."
+msgstr ""
+"Таңдалған RAID деңгейі ағымдағы таңдалып тұрған дисктер санынан көбірек "
+"дискті талап етеді."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1173
+msgid "Device resize request failed. Click for details."
+msgstr "Құрылғы өлшемін өзгертуге сұраным сәтсіз. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1227
+#, python-format
+msgid "Specified name %s already in use."
+msgstr "Көрсетілген %s атауы қолдануда болып тұр."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1294
+msgid "Device reformat request failed. Click for details."
+msgstr "Құрылғыны қайта пішімдеуге сұраным сәтсіз. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1558
+msgid "This file system does not support labels."
+msgstr "Бұл файлдық жүйе белгіні қолдамайды."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1576
+msgid "This file system may not be resized."
+msgstr "Бұл файлдық жүйенің өлшемін өзгерті мүмкін емес."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1848
+#, python-format
+msgid "Added new %s to existing container %s."
+msgstr "Жаңа %s бар болып тұрған %s контейнеріне қосылды."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1856
+msgid "Failed to add new device. Click for details."
+msgstr "Жаңа құрылғыны қосу сәтсіз. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1862
+msgid "Invalid partition size set. Use a valid integer."
+msgstr "Бөлім өлшемі қате көрсетілді. Дұрыс бүтін санды енгізіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:1882
+msgid "Device removal request failed. Click for details."
+msgstr "Құрылғыны өшіруге сұраным сәтсіз. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2077
+#, python-format
+msgid "Volume Group name %s is already in use. Not saving changes."
+msgstr "%s томдар тобының атауы қолдануда болып тұр. Өзгерістер сақталмайды."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2168
+#, python-format
+msgid ""
+"This Software RAID array is missing %d of %d member partitions. You can "
+"remove it or select a different device."
+msgstr ""
+"Бұл бағдарламалық RAID массивінде %d қатысушы бөлім жетіспейді (жалпы саны "
+"%d болуы тиіс). Оны өшіре аласыз не басқа құрылғыны таңдай аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2174
+#, python-format
+msgid ""
+"This LVM Volume Group is missing %d of %d physical volumes. You can remove "
+"it or select a different device."
+msgstr ""
+"Бұл LVM томдар тобында %d физикалық том жетіспейді (жалпы саны %d болуы "
+"тиіс). Оны өшіре аласыз не басқа құрылғыны таңдай аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2247
+msgid "No disks selected."
+msgstr "Бірде-бір диск таңдалмады."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2253
+msgid "Not enough free space on selected disks."
+msgstr "Таңдалған дисктерде бос орын жеткіліксіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2259
+msgid "Automatic partitioning failed. Click for details."
+msgstr "Автобөлімдеу сәтсіз аяқталды. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/custom.py:2499
+msgid "Failed to unlock encrypted block device. Click for details"
+msgstr "Шифрленген блоктық құрылғыны босату сәтсіз. Көбірек білу үшін шертіңіз"
+
+#: pyanaconda/ui/gui/spokes/custom.py:2522
+#, python-format
+msgid ""
+"You have chosen to manually set up the filesystems for your new "
+"%(productName)s installation. Before you begin, you might want to take a "
+"minute to learn the lay of the land. Quite a bit has changed.\n"
+"\n"
+"The most important change is that creation of new filesystems has been "
+"streamlined. You no longer have to build complex devices like LVM logical "
+"volumes in stages (physical volume, then volume group, then logical volume) "
+"-- now you just create a logical volume and we'll handle the legwork of "
+"setting up the physical volumes and volume group to contain it. We'll also "
+"handle adjusting the volume group as you add, remove, and resize logical "
+"volumes so you don't have to worry about the mundane details.\n"
+"\n"
+"\n"
+"Screen Layout\n"
+"\n"
+"The left-hand side of the screen shows the OS installations we were able to "
+"find on this computer. The new %(productName)s installation is at the top of "
+"the list. You can click on the names of the installations to see what "
+"filesystems they contain.\n"
+"\n"
+"Below the various installations and mountpoints on the left-hand side there "
+"are buttons to add a new filesystem, remove the selected filesystem, or "
+"configure the selected filesystem.\n"
+"\n"
+"The right-hand side of the screen is where you can customize the currently-"
+"selected mountpoint.\n"
+"\n"
+"On the bottom-left you will see a summary of the disks you have chosen to "
+"use for the installation. You can click on the blue text to see more "
+"detailed information about your selected disks.\n"
+"\n"
+"\n"
+"How to create a new filesystem on a new device\n"
+"\n"
+"1. Click on the + button.\n"
+"2. Enter the mountpoint and size. (Hint: Hover the mouse pointer over either "
+"of the text entry areas for help.)\n"
+"3. Select the new mountpoint under \"New %(productName)s Installation\" on "
+"the left-hand side of the screen and customize it to suit your needs.\n"
+"\n"
+"\n"
+"How to reformat a device/filesystem that already exists on your disk\n"
+"\n"
+"1. Select the filesystem from the left-hand side of the screen.\n"
+"2. Click on the \"Customize\" expander in the mountpoint customization area "
+"on the right-hand side of the screen.\n"
+"3. Activate the \"Reformat\" checkbutton, select a filesystem type and, if "
+"applicable, enter a mountpoint above in the \"Mountpoint\" text entry area.\n"
+"4. Click on \"Apply changes\"\n"
+"\n"
+"\n"
+"How to set a mountpoint for a filesystem that already exists on your disk\n"
+"\n"
+"1. Select the filesystem from the left-hand side of the screen.\n"
+"2. Enter a mountpoint in the \"Mountpoint\" text entry area in the "
+"mountpoint customization area.\n"
+"3. Click on \"Apply changes\"\n"
+"\n"
+"\n"
+"How to remove a filesystem that already exists on your disk\n"
+"\n"
+"1. Select the filesystem you wish to remove on the left-hand side of the "
+"screen.\n"
+"2. Click the - button.\n"
+"\n"
+"Hint: Removing a device that already exists on your disk from the \"New "
+"%(productName)s Installation\" does not remove it from the disk. It only "
+"resets that device to its original state. To remove a device that already "
+"exists on your disk, you must select it from under any of the other detected "
+"installations (or \"Unknown\") and hit the - button.\n"
+"\n"
+"\n"
+"Tips and hints\n"
+"\n"
+"You can enter sizes for new filesystems that are greater than the total "
+"available free space. The installer will come as close as possible to the "
+"size you request.\n"
+"\n"
+"By default, new devices use any/all of your selected disks.\n"
+"\n"
+"You can change which disks a new device may be allocated from by clicking "
+"the configure button (the one with a tools graphic) while that device is "
+"selected.\n"
+"\n"
+"When adding a new mountpoint by clicking the + button, leave the size entry "
+"blank to make the new device use all available free space.\n"
+"\n"
+"When you remove the last device from a container device like an LVM volume "
+"group, we will automatically remove that container device to make room for "
+"new devices.\n"
+"\n"
+"When the last partition is removed from a disk, that disk may be "
+"reinitialized with a new partition table if we think there is a more "
+"appropriate type for that disk.\n"
+msgstr ""
+"Сіз өзіңіздің жаңа %(productName)s орнатуы үшін файлдық жүйелерді қолмен "
+"көрсетуді таңдадыңыз. Бастар алдында, осымен танысуды қалайтын шығарсыз. Көп "
+"нәрсе өзгерді.\n"
+"\n"
+"Ең маңызды өзгеріс - жаңа файлдық жүйелерді жасау реттелді. LVM логикалық "
+"томдар сияқты комплексті құрылғыларды енді қадамдар бойынша жасау керек емес "
+"(физикалық том, одан кейін томдар тобы, одан кейін логикалық том) -- енді "
+"логикалық томды жасау жеткілікті, орнатқыш физикалық томдарды мен томдар "
+"топтарын жасау жұмысын өзі атқарады. Сонымен қатар, сіз логикалық томдарды "
+"қосқан, өшірген не өлшемін өзгерткен кезде, томдар тобы автоматты түрде "
+"орнатқышпен түзетіледі.\n"
+"\n"
+"\n"
+"Экран бөлінуі\n"
+"\n"
+"Экранның сол жағында бұл компьютерден табылған ОЖ орнатулары көрсетілген . "
+"Жаңа %(productName)s орнатуы тізімнің басында көрсетіледі. ОЖ орнатуларының "
+"үстінен шертіп, оларда қандай файлдық жүйелер бар екенін көруге болады.\n"
+"\n"
+"Түрлі орнатулар мен тіркеу нүктелері көрсетілген экранның сол жақ аймағының "
+"астында жаңа файлдық жүйені қосу, таңдалған файлдық жүйені өшіру не оны "
+"баптау батырмалары орналасқан.\n"
+"\n"
+"Экранның оң жағында ағымдағы таңдалып тұрған тіркеу нүктесін баптай аласыз.\n"
+"\n"
+"Сол жақ астында орнату үшін таңдалып тұрған дискілер жөніндегі жинақы "
+"ақпаратты көруге болады. Сіз таңдаған дисктер жөнінде толығырақ ақпаратты "
+"алу үшін көк мәтінге шертуге болады.\n"
+"\n"
+"\n"
+"Жаңа файлдық жүйені жаңа құрылғыда қалай жасау керек\n"
+"\n"
+"1. + батырмасына шертіңіз.\n"
+"2. Тіркеу нүктесін мен өлшемін енгізіңіз. (Кеңес: Көмек үшін тышқан курсорын "
+"мәтіндік өрістердің біреуіне апарып ұстаңыз.)\n"
+"3. Экранның сол жақ жағындағы \"Жаңа %(productName)s орнату\" астынан тіркеу "
+"нүктесін таңдап, оны баптауға болады.\n"
+"\n"
+"\n"
+"Дискіңізде бар болып тұрған файлдық жүйе/құрылғыны қалай қайта пішімдеуге "
+"болады\n"
+"\n"
+"1. Экранның сол жақ жағынан файлдық жүйені таңдаңыз.\n"
+"2. Тіркеу нүктесін баптау аймағында \"Баптау\" жазық қылу батырмасын "
+"басыңыз.\n"
+"3. \"Қайта пішімдеу\" белгішесін орнатыңыз, файлдық жүйе түрін мен, керек "
+"болса, жоғарыдағы \"Тіркеу нүктесі\" өрісіне тіркеу нүктесін көрсетіңіз.\n"
+"4. \"Өзгерістерді іске асыру\" батырмасын басыңыз\"\n"
+"\n"
+"\n"
+"Дискіде бар болып тұрған файлдық жүйе үшін тіркеу нүктесін орнату\n"
+"\n"
+"1. Файлдық жүйені экранның сол жағынан таңдаңыз.\n"
+"2. \"Тіркеу нүктесі\" мәтіндік өрісінде тіркеу нүктесін енгізіңіз.\n"
+"3. \"Өзгерістерді іске асыру\" батырмасын басыңыз\n"
+"\n"
+"\n"
+"Дискіде бар болып тұрған файлдық жүйені өшіру\n"
+"\n"
+"1. Өшіргіңіз келетін файлдық жүйені экранның сол жағынан таңдаңыз.\n"
+"2. - батырмасына басыңыз.\n"
+"\n"
+"Кеңес: Дискіңізде бар болып тұрған құрылғыны \"Жаңа %(productName)s орнатуы"
+"\" ішінен өшіру ол құрылғыны дисктен өшірмейді. Ол тек сол құрылғыны "
+"бастапқы күйіне тастайды. Дискіңізде бар болып тұрған құрылғыны өшіру үшін, "
+"ол құрылғыны басқа анықталған ОЖ орнатулардың кез-келгені (немесе \"Белгісіз"
+"\") ішінен таңдап, - батырмасын басуыңыз керек.\n"
+"\n"
+"\n"
+"Кеңестер мен құлықтар\n"
+"\n"
+"Жаңа файлдық жүйелер өлшемдерін дисктегі қолжетерлік бос орнынан үлкенірек "
+"етіп көрсетуге болады. Орнатқыш сіз сұраған өлшемге мүмкіндігінше жақын "
+"шаманы орнатады.\n"
+"\n"
+"Үнсіз келісім бойынша, жаңа құрылғылар таңдалған дисктердің кез-келгенін/"
+"барлығын қолданады.\n"
+"\n"
+"Жаңа құрылғы орналаса алатын дисктерді таңдау үшін, ол құрылғы таңдалып "
+"тұрған кезінде баптау батырмасына басыңыз (сайман суретшесі бар).\n"
+"\n"
+"Жаңа файлдық жүйені + батырмасын басу арқылы қосу кезінде, құрылғыны "
+"қолжетерлік бос орынды толығымен қолданатындай етіп орнату үшін, өлшемді "
+"көрсету өрісін бос қалдырыңыз.\n"
+"\n"
+"LVM томдар тобы сияқты контейнер құрылғысынан соңғы құрылғыны өшіру кезінде, "
+"жаңа құрылғыларға жол ашу үшін ол контейнер құрылғысының өзі де өшіріледі.\n"
+"\n"
+"Дисктен соңғы бөлім өшірілген кезде, ол диск жаңа бөлімдеу кестесімен қайта "
+"инициализациядан өтуі мүмкін, егер ол диск үшін сәйкес келетін түрі "
+"табылса.\n"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:56
+msgid "Note: pool servers may not be available all the time"
+msgstr "Ескерту: серверлер барлық уақытта қолжетелік болмауы де мүмкін"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:296
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:31
+msgid "DATE & TIME"
+msgstr "КҮН МЕН УАҚЫТ"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:381
+msgid "Invalid timezone"
+msgstr "Уақыт белдеуі қате"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:813
+msgid "You need to set up networking first if you want to use NTP"
+msgstr "NTP қолданбас бұрын желіні баптау керек"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.py:817
+msgid "You have no working NTP server configured"
+msgstr "Жұмыс істейтін бірде-бір NTP сервері бапталмаған"
+
+#: pyanaconda/ui/gui/spokes/keyboard.py:40
+#, python-format
+msgid "%s to switch layouts."
+msgstr "%s жаймаларды ауыстыру үшін."
+
+#: pyanaconda/ui/gui/spokes/keyboard.py:261
+msgid "KEYBOARD"
+msgstr "ПЕРНЕТАҚТА"
+
+#: pyanaconda/ui/gui/spokes/keyboard.py:318
+msgid "Testing layouts configuration not available."
+msgstr "Жаймалар баптауларын сынау қолжетерсіз."
+
+#: pyanaconda/ui/gui/spokes/keyboard.py:372
+msgid "Layout switching not configured."
+msgstr "Жаймаларды ауыстыру бапталмаған."
+
+#: pyanaconda/ui/gui/spokes/network.py:92
+msgid "Status unknown (missing)"
+msgstr "Қалып-күйі белгісіз (жоқ болып тұр)"
+
+#: pyanaconda/ui/gui/spokes/network.py:96
+msgid "Status unknown"
+msgstr "Қалып-күйі белгісіз"
+
+#: pyanaconda/ui/gui/spokes/network.py:98
+msgid "Unmanaged"
+msgstr "Басқарылмайтын"
+
+#: pyanaconda/ui/gui/spokes/network.py:101
+msgid "Firmware missing"
+msgstr "Firmware жоқ"
+
+#: pyanaconda/ui/gui/spokes/network.py:104
+msgid "Cable unplugged"
+msgstr "Кабель ажыратылды"
+
+#: pyanaconda/ui/gui/spokes/network.py:106
+msgid "Unavailable"
+msgstr "Қолжетерсіз"
+
+#: pyanaconda/ui/gui/spokes/network.py:108
+msgid "Disconnected"
+msgstr "Ажыратылған"
+
+#: pyanaconda/ui/gui/spokes/network.py:113
+msgid "Connecting"
+msgstr "Байланыс орнату"
+
+#: pyanaconda/ui/gui/spokes/network.py:115
+msgid "Authentication required"
+msgstr "Аутентификация керек"
+
+#: pyanaconda/ui/gui/spokes/network.py:117
+msgid "Connected"
+msgstr "Байланысқан"
+
+#: pyanaconda/ui/gui/spokes/network.py:119
+msgid "Disconnecting"
+msgstr "Байланысты үзу"
+
+#: pyanaconda/ui/gui/spokes/network.py:121
+msgid "Connection failed"
+msgstr "Байланысу сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/network.py:574
+msgid "unplugged"
+msgstr "ажыратылған"
+
+#: pyanaconda/ui/gui/spokes/network.py:587
+msgid "Ethernet"
+msgstr "Ethernet"
+
+#: pyanaconda/ui/gui/spokes/network.py:589
+msgid "Wireless"
+msgstr "Сымсыз"
+
+#: pyanaconda/ui/gui/spokes/network.py:683
+#: pyanaconda/ui/gui/spokes/network.glade:349
+#: pyanaconda/ui/gui/spokes/network.glade:702
+msgid "IPv4 Address"
+msgstr "IPv4 адресі"
+
+#: pyanaconda/ui/gui/spokes/network.py:684
+#: pyanaconda/ui/gui/spokes/network.glade:363
+#: pyanaconda/ui/gui/spokes/network.glade:716
+#: pyanaconda/ui/gui/spokes/network.glade:1335
+msgid "IPv6 Address"
+msgstr "IPv6 адресі"
+
+#: pyanaconda/ui/gui/spokes/network.py:686
+#: pyanaconda/ui/gui/spokes/network.py:688
+#: pyanaconda/ui/gui/spokes/network.glade:1321
+msgid "IP Address"
+msgstr "IP адресі"
+
+#: pyanaconda/ui/gui/spokes/network.py:753
+#, python-format
+msgid "%d Mb/s"
+msgstr "%d Мб/с"
+
+#: pyanaconda/ui/gui/spokes/network.py:930
+msgid "WEP"
+msgstr "WEP"
+
+#: pyanaconda/ui/gui/spokes/network.py:933
+msgid "WPA"
+msgstr "WPA"
+
+#: pyanaconda/ui/gui/spokes/network.py:936
+msgid "WPA2"
+msgstr "WPA2"
+
+#: pyanaconda/ui/gui/spokes/network.py:940
+msgid "Enterprise"
+msgstr "Enterprise"
+
+#: pyanaconda/ui/gui/spokes/network.py:945 widgets/src/SpokeSelector.c:54
+msgid "None"
+msgstr "Ешнәрсе"
+
+#: pyanaconda/ui/gui/spokes/network.py:967
+#: pyanaconda/ui/gui/spokes/network.glade:37
+#: pyanaconda/ui/gui/spokes/network.glade:109
+msgid "NETWORK CONFIGURATION"
+msgstr "ЖЕЛІ БАПТАУЛАРЫ"
+
+#: pyanaconda/ui/gui/spokes/network.py:1005
+msgid "Connecting..."
+msgstr "Байланыс орнату..."
+
+#: pyanaconda/ui/gui/spokes/network.py:1007
+msgid "Disconnecting..."
+msgstr "Байланысты үзу..."
+
+#: pyanaconda/ui/gui/spokes/network.py:1014
+#, python-format
+msgid "Wireless connected to %s"
+msgstr "Сымсыз желісіне байланысқан: %s"
+
+#: pyanaconda/ui/gui/spokes/network.py:1017
+#, python-format
+msgid "Wired (%s) connected"
+msgstr "(%s) сымды желісі байланысқан"
+
+#: pyanaconda/ui/gui/spokes/network.py:1027
+#, python-format
+msgid "Connected: %s"
+msgstr "Байланысқан: %s"
+
+#: pyanaconda/ui/gui/spokes/network.py:1029
+msgid "Not connected"
+msgstr "Байланыспаған"
+
+#: pyanaconda/ui/gui/spokes/network.py:1032
+#: pyanaconda/ui/gui/spokes/network.glade:2085
+msgid "No network devices available"
+msgstr "Қолжетерлік желілік құрылғылар жоқ"
+
+#: pyanaconda/ui/gui/spokes/network.py:1072
+#: pyanaconda/ui/gui/spokes/network.py:1142
+#, python-format
+msgid "Hostname is not valid: %s"
+msgstr "Хост аты қате: %s"
+
+#: pyanaconda/ui/gui/spokes/password.py:48
+#: pyanaconda/ui/gui/spokes/password.glade:9
+msgid "ROOT PASSWORD"
+msgstr "ROOT ПАРОЛІ"
+
+#: pyanaconda/ui/gui/spokes/password.py:77
+msgid "Error setting root password"
+msgstr "Root паролін орнату сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/password.py:79
+msgid "Root password is set"
+msgstr "Root паролі орнатылды"
+
+#: pyanaconda/ui/gui/spokes/password.py:81
+msgid "Root account is disabled"
+msgstr "Root тіркелгісі сөндірулі"
+
+#: pyanaconda/ui/gui/spokes/password.py:83
+msgid "Root password is not set"
+msgstr "Әкімші (root) паролі орнатылмаған"
+
+#: pyanaconda/ui/gui/spokes/password.py:103
+msgid "You must provide and confirm a password."
+msgstr "Сізге парольді көрсетіп, оны растау керек."
+
+#: pyanaconda/ui/gui/spokes/password.py:113
+#, python-format
+msgid "You have provided a weak password: %s.  Press Done again to use anyway."
+msgstr ""
+"Сіз көрсеткен пароль әлсіз: %s.  Сонда да оны қолдану үшін Дайын батырмасын "
+"басыңыз."
+
+#: pyanaconda/ui/gui/spokes/software.py:53
+#: pyanaconda/ui/gui/spokes/software.glade:31
+msgid "SOFTWARE SELECTION"
+msgstr "БАҒДАРЛАМА ТАҢДАУ"
+
+#: pyanaconda/ui/gui/spokes/software.py:107
+#: pyanaconda/ui/gui/spokes/source.py:612
+msgid "Checking software dependencies..."
+msgstr "Бағд. қамтама тәуелділіктерін тексеру..."
+
+#: pyanaconda/ui/gui/spokes/software.py:113
+msgid "Error checking software dependencies"
+msgstr "Бағд. қамтама тәуелділіктерін тексеру сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/software.py:150
+msgid "Error checking software selection"
+msgstr "Бағд. қамтама таңдауды тексеру сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/software.py:153
+msgid "Installation source not set up"
+msgstr "Орнатудың қайнар көзі бапталмаған"
+
+#: pyanaconda/ui/gui/spokes/software.py:156
+msgid "Source changed - please verify"
+msgstr "Қайнар көзі ауысты - тексеріңіз"
+
+#: pyanaconda/ui/gui/spokes/software.py:164
+msgid "Custom software selected"
+msgstr "Таңдауыңызша бағд. қамтама таңдалған"
+
+#: pyanaconda/ui/gui/spokes/software.py:166
+#: pyanaconda/ui/gui/spokes/source.py:597
+#: pyanaconda/ui/gui/spokes/source.py:630
+msgid "Nothing selected"
+msgstr "Ешнәрсе таңдалмады"
+
+#: pyanaconda/ui/gui/spokes/software.py:175
+#: pyanaconda/ui/gui/spokes/source.py:50
+msgid "Downloading package metadata..."
+msgstr "Дестелер метаақпараты жүктелуде..."
+
+#: pyanaconda/ui/gui/spokes/software.py:181
+msgid "Downloading group metadata..."
+msgstr "Топтар метаақпараты жүктелуде..."
+
+#: pyanaconda/ui/gui/spokes/software.py:215
+#: pyanaconda/ui/gui/spokes/source.py:589
+msgid "No installation source available"
+msgstr "Қолжетерлік орнатудың қайнар көзі жоқ"
+
+#: pyanaconda/ui/gui/spokes/software.py:265
+msgid "Error checking software dependencies.  Click for details."
+msgstr ""
+"Бағд. қамтама тәуелділіктерін тексеру қатесі. Көбірек білу үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/software.py:329
+msgid ""
+"The following software marked for installation has errors.  This is likely "
+"caused by an error with\n"
+"your installation source.  You can attempt to remove these packages from "
+"your installation.\n"
+"change your installation source, or quit the installer."
+msgstr ""
+"Орнату үшін белгіленген келесі бағд. қамтамада қателер бар. Бұл орнатудың "
+"қайнар\n"
+"көзіндегі қатеге ұқсайды. Бұл дестелерді орнату үшін белгілемеу, "
+"қолданылатын\n"
+"орнатудың қайнар көзін ауыстыру немесе орнатқыштан шығуға болады."
+
+#: pyanaconda/ui/gui/spokes/software.py:333
+#: pyanaconda/ui/gui/spokes/storage.glade:613
+#: pyanaconda/ui/gui/spokes/source.glade:592
+#: pyanaconda/ui/gui/spokes/custom.glade:91
+#: pyanaconda/ui/gui/spokes/custom.glade:341
+#: pyanaconda/ui/gui/spokes/custom.glade:1956
+#: pyanaconda/ui/gui/spokes/custom.glade:2194 pyanaconda/ui/gui/main.glade:20
+msgid "_Cancel"
+msgstr "Ба_с тарту"
+
+#: pyanaconda/ui/gui/spokes/software.py:334
+msgid "_Remove Packages"
+msgstr "Дестелерді ө_шіру"
+
+#: pyanaconda/ui/gui/spokes/software.py:335
+msgid "_Modify Software Source"
+msgstr "Бағд. қамтама қайнар кө_зін түзету"
+
+#: pyanaconda/ui/gui/spokes/source.py:49
+msgid "Setting up installation source..."
+msgstr "Орнатудың қайнар көзін баптау..."
+
+#: pyanaconda/ui/gui/spokes/source.py:51
+msgid "Error downloading package metadata..."
+msgstr "Дестелер метаақпаратын жүктеп алу сәтсіз..."
+
+#: pyanaconda/ui/gui/spokes/source.py:144
+msgid "This media is good to install from."
+msgstr "Бұл тасушыдан орнатуды жүргізуге болады."
+
+#: pyanaconda/ui/gui/spokes/source.py:146
+msgid "This media is not good to install from."
+msgstr "Бұл тасушыдан орнатуды жүргізуге болмайды."
+
+#: pyanaconda/ui/gui/spokes/source.py:347
+msgid "Getting info about requested repository"
+msgstr "Сұралған репозиторий ақпаратын алу"
+
+#: pyanaconda/ui/gui/spokes/source.py:370
+#: pyanaconda/ui/gui/spokes/source.glade:257
+msgid "enter URL of your desired repository"
+msgstr "қолдану үшін репозиторийдің сілтемесін енгізіңіз"
+
+#: pyanaconda/ui/gui/spokes/source.py:428
+#: pyanaconda/ui/gui/spokes/source.glade:827
+msgid "INSTALLATION SOURCE"
+msgstr "ОРНАТУДЫҢ ҚАЙНАР КӨЗІ"
+
+#: pyanaconda/ui/gui/spokes/source.py:561
+msgid "Failed to set up install source"
+msgstr "Орнатудың қайнар көзін баптау сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/source.py:563
+#: pyanaconda/ui/gui/spokes/source.py:577
+msgid "Failed to set up install source, check the repo url"
+msgstr ""
+"Орнатудың қайнар көзін баптау сәтсіз, репозиторий сілтемесін тексеріңіз"
+
+#: pyanaconda/ui/gui/spokes/source.py:565
+msgid "Failed to set up install source, check the repo url and proxy settings"
+msgstr ""
+"Орнатудың қайнар көзін баптау сәтсіз, репозиторий сілтемесін мен прокси "
+"баптауларын тексеріңіз"
+
+#: pyanaconda/ui/gui/spokes/source.py:614
+msgid "Not ready"
+msgstr "Дайын емес"
+
+#: pyanaconda/ui/gui/spokes/source.py:616
+#: pyanaconda/ui/gui/spokes/source.py:625
+msgid "Error setting up software source"
+msgstr "Бағд. қамтаманың қайнар көзін баптау сәтсіз"
+
+#: pyanaconda/ui/gui/spokes/source.py:620
+#, python-format
+msgid "NFS server %s"
+msgstr "NFS сервері %s"
+
+#: pyanaconda/ui/gui/spokes/source.py:622
+msgid "CD/DVD drive"
+msgstr "CD/DVD құрылғысы"
+
+#: pyanaconda/ui/gui/spokes/source.py:628
+msgid "Closest mirror"
+msgstr "Жақын айна"
+
+#: pyanaconda/ui/gui/spokes/storage.py:151
+#, python-format
+msgid ""
+"You have plenty of space to install <b>%s</b>, so we can automatically\n"
+"configure the rest of the installation for you.\n"
+"\n"
+"You're all set!"
+msgstr ""
+"<b>%s</b> орнату үшін бос орын жетіп тұр, орнатудың\n"
+"қалған бөлігін автоматты түрде баптауға болады.\n"
+"\n"
+"Бәрі де дайын!"
+
+#: pyanaconda/ui/gui/spokes/storage.py:170
+#, python-format
+msgid ""
+"Your current <b>%s</b> software selection requires <b>%s</b> of available "
+"space."
+msgstr ""
+"Ағымдағы <b>%s</b> бағд. қамтама таңдауы үшін <b>%s</b> бос орын керек."
+
+#: pyanaconda/ui/gui/spokes/storage.py:243
+#, python-format
+msgid ""
+"%s\n"
+"The disks you've selected have the following amounts of free space:"
+msgstr ""
+"%s\n"
+"Таңдалған дисктерде бос орын көлемі келесідей:"
+
+#: pyanaconda/ui/gui/spokes/storage.py:252
+#, python-format
+msgid ""
+"<b>You don't have enough space available to install %s</b>, but we can help "
+"you\n"
+"reclaim space by shrinking or removing existing partitions."
+msgstr ""
+"<b>%s орнату үшін бос орын жеткіліксіз</b>, бірақ, бар болып тұрған диск\n"
+"бөлімдерінің көлемін азайту не оларды өшіру арқылы бос орынды алуға болады."
+
+#: pyanaconda/ui/gui/spokes/storage.py:274
+#, python-format
+msgid ""
+"%s\n"
+"You don't have enough space available to install <b>%s</b>, even if you used "
+"all of the free space\n"
+"available on the selected disks."
+msgstr ""
+"%s\n"
+"<b>%s</b> орнату үшін дискідегі орын жеткіліксіз, таңдалған дискілердегі "
+"барлық\n"
+"бос орын қолданылатын болса да."
+
+#: pyanaconda/ui/gui/spokes/storage.py:285
+#, python-format
+msgid ""
+"<b>You don't have enough space available to install %s</b>, even if you used "
+"all of the free space\n"
+"available on the selected disks.  You could add more disks for additional "
+"space,\n"
+"modify your software selection to install a smaller version of <b>%s</b>, or "
+"quit the installer."
+msgstr ""
+"<b>%s орнату үшін дискідегі орын жеткіліксіз</b>, таңдалған дискілердегі "
+"барлық бос орын\n"
+"қолданылатын болса да. Көбірек орын үшін тағы дисктерді қосуға, <b>%s</b> "
+"кішірек нұсқасын\n"
+"орнату үшін таңдалған бағд. қамтаманы түзетуге, немесе орнатқыштан шығуға "
+"болады."
+
+#: pyanaconda/ui/gui/spokes/storage.py:325
+#: pyanaconda/ui/gui/spokes/storage.glade:844
+msgid "INSTALLATION DESTINATION"
+msgstr "ОРНАТУ МАҚСАТЫ"
+
+#: pyanaconda/ui/gui/spokes/storage.py:397
+msgid "Saving storage configuration..."
+msgstr "Жинақтаушылар баптауларын сақтау..."
+
+#: pyanaconda/ui/gui/spokes/storage.py:404
+msgid "Failed to save storage configuration..."
+msgstr "Жинақтаушылар баптауларын сақтау сәтсіз..."
+
+#: pyanaconda/ui/gui/spokes/storage.py:496
+msgid "Error checking storage configuration.  Click for details."
+msgstr ""
+"Жинақтаушылардың баптауларын тексеру сәтсіз. Көбірек ақпарат үшін шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/storage.py:575
+#, python-format
+msgid "%d disk selected; %s capacity; %s free"
+msgid_plural "%d disks selected; %s capacity; %s free"
+msgstr[0] "%d диск таңдалды; жалпы орны %s; бос орны %s"
+
+#: pyanaconda/ui/gui/spokes/storage.py:627
+msgid ""
+"You have chosen to skip bootloader installation.  Your system may not be "
+"bootable."
+msgstr ""
+"Жүктеушіні орнатуды аттап кету таңдалды. Жүйе жүктеле алмайтын болуы мүмкін."
+
+#: pyanaconda/ui/gui/spokes/storage.py:767
+msgid ""
+"The following errors were encountered when checking your storage "
+"configuration.  You can modify your storage layout\n"
+"or quit the installer."
+msgstr ""
+"Жинақтаушы құрылғылар баптауларын тексеру кезінде келесі қателер орын алды. "
+"Жинақтаушы құрылғылар\n"
+"схемасын өзгертуге не орнатқыштан шығуға болады."
+
+#: pyanaconda/ui/gui/spokes/storage.py:770
+msgid "_Modify Storage Layout"
+msgstr "_Жинақтаушылар схемасын өзгерту"
+
+#: pyanaconda/ui/gui/spokes/welcome.py:310
+msgid "LANGUAGE"
+msgstr "ТІЛ"
+
+#: pyanaconda/ui/gui/spokes/lib/accordion.py:130
+msgid "DATA"
+msgstr "МӘЛІМЕТТЕР"
+
+#: pyanaconda/ui/gui/spokes/lib/accordion.py:135
+msgid "SYSTEM"
+msgstr "ЖҮЙЕ"
+
+#: pyanaconda/ui/gui/spokes/lib/accordion.py:235
+#, python-format
+msgid "You haven't created any mount points for your %s %s installation yet:"
+msgstr "%s %s орнатуы үшін әлі бірде-бір тіркеу нүктесі жасалмады:"
+
+#: pyanaconda/ui/gui/spokes/lib/accordion.py:240
+msgid "Click here to create them automatically."
+msgstr "Оларды автоматты түрде жасау үшін осында шертіңіз."
+
+#: pyanaconda/ui/gui/spokes/lib/accordion.py:250
+msgid "Or, create new mount points below with the '+' icon."
+msgstr ""
+"Немесе, жаңа тіркеу нүктелерін төмендегі '+' таңбашасына басу арқылы жасаңыз."
+
+#: pyanaconda/ui/gui/spokes/lib/cart.py:138
+#, python-format
+msgid ""
+"<b>%d disk; %s capacity; %s free space</b> (unpartitioned and in filesystems)"
+msgid_plural ""
+"<b>%d disks; %s capacity; %s free space</b> (unpartitioned and in "
+"filesystems)"
+msgstr[0] ""
+"<b>%d диск; жалпы орны %s; бос орны %s</b> (бөлінбеген және файлдық "
+"жүйелердегі)"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.py:190
+msgid "_Do not install bootloader"
+msgstr "Жүктеушіні ор_натпау"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.py:192
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:190
+msgid "_Set as Boot Device"
+msgstr "Жүктелу құрылғысы ретінде ор_нату"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:38
+#, python-format
+msgid ""
+"Warning: Your current keyboard layout is <b>%s</b>.If you change your "
+"keyboard layout, you may not be able to decrypt your disks after install."
+msgstr ""
+"Ескерту: Ағымдағы пернетақта жаймасы - <b>%s</b>. Егер ол өзгертілсе, "
+"орнатудан кейін дисктерді дешифрлеу мүмкін емес болуы мүмкін."
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:42
+#, python-format
+msgid "You have provided a weak passphrase: %s"
+msgstr "Сіз енгізген пароль әлсіз: %s"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:43
+msgid "Passphrases do not match."
+msgstr "Парольдер өзара сәйкес емес."
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:116
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:165
+msgid "Weak"
+msgstr "Әлсіз"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:119
+msgid "Fair"
+msgstr "Қалыпты"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:122
+msgid "Good"
+msgstr "Жақсы"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.py:125
+msgid "Strong"
+msgstr "Күшті"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:46
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:216
+msgid "Preserve"
+msgstr "Сақтау"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:47
+msgid "Shrink"
+msgstr "Кішірейту"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:48
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:228
+msgid "Delete"
+msgstr "Өшіру"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:134
+msgid "Whole disks are not editable."
+msgstr "Дисктерті түгелімен түзету мүмкін емес."
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:151
+msgid "This device contains the installation source."
+msgstr "Бұл дискте орнатудың қайнар көзі орналасқан."
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:158
+#, python-format
+msgid "%s of %s"
+msgstr "%s, барлығы %s"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:175
+msgid ""
+"You don't have enough free space available for this installation.\n"
+"\n"
+"You can remove existing filesystems you no longer need to free up space for "
+"this installation.  Removing a filesystem will permanently delete all of the "
+"data it contains."
+msgstr ""
+"Бұл орнату үшін бос орын жеткіліксіз.\n"
+"\n"
+"Орнату үшін орынды босату мақсатында керек емес диск бөлімдерін өшіруге "
+"болады.  Диск бөлімі өшірілсе, ондағы сақталған мәліметтерді қайтаруға "
+"мүмкін емес болады."
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:191
+#, python-format
+msgid "<b>%s disk; %s reclaimable space</b> (in filesystems)"
+msgid_plural "<b>%s disks; %s reclaimable space</b> (in filesystems)"
+msgstr[0] "<b>%s диск; %s алынатын орын</b> (файлдық жүйелерде)"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.py:197
+#, python-format
+msgid "Total selected space to reclaim: <b>%s</b>"
+msgstr "Қайта бөлу арқылы алу үшін толық диск орны : <b>%s</b>"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:87
+msgid "Region:"
+msgstr "Аймақ:"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:120
+msgid "City:"
+msgstr "Қала:"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:164
+msgid "Network Time"
+msgstr "Желілік уақыт"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:257
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:289
+msgid "00"
+msgstr "00"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:273
+msgid ":"
+msgstr ":"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:401
+msgid " "
+msgstr " "
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:417
+msgid "PM"
+msgstr "PM"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:461
+msgid "24-hour"
+msgstr "24 сағат"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:479
+msgid "AM/PM"
+msgstr "AM/PM"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:646
+msgid "Add and mark for usage NTP servers"
+msgstr "NTP серверлерін қосу және қолдану үшін белгілеу"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:727
+msgid "Hostname"
+msgstr "Хост аты"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:742
+msgid "Working"
+msgstr "Жұмыс істеуде"
+
+#: pyanaconda/ui/gui/spokes/datetime_spoke.glade:750
+msgid "Use"
+msgstr "Қолдану"
+
+#: pyanaconda/ui/gui/spokes/network.glade:78
+msgid ""
+"We'll need network access to fetch information about your location and to "
+"make software\n"
+"updates available for you."
+msgstr ""
+"Орналасқан жеріңізді анықтау мен бағд. қамтама жаңартуларын қолжетерлік қылу "
+"үшін,\n"
+"желілік байланыс қажет."
+
+#: pyanaconda/ui/gui/spokes/network.glade:321
+#: pyanaconda/ui/gui/spokes/network.glade:674
+msgid "Hardware Address"
+msgstr "Құрылғылық адрес"
+
+#: pyanaconda/ui/gui/spokes/network.glade:335
+#: pyanaconda/ui/gui/spokes/network.glade:688
+#: pyanaconda/ui/gui/spokes/network.glade:1176
+msgid "Speed"
+msgstr "Жылдамдығы"
+
+#: pyanaconda/ui/gui/spokes/network.glade:377
+msgid "Subnet Mask"
+msgstr "Желі маскасы"
+
+#: pyanaconda/ui/gui/spokes/network.glade:391
+#: pyanaconda/ui/gui/spokes/network.glade:730
+#: pyanaconda/ui/gui/spokes/network.glade:1349
+msgid "Default Route"
+msgstr "Негізгі бағдар"
+
+#: pyanaconda/ui/gui/spokes/network.glade:406
+#: pyanaconda/ui/gui/spokes/network.glade:745
+#: pyanaconda/ui/gui/spokes/network.glade:1364
+msgid "DNS"
+msgstr "DNS"
+
+#: pyanaconda/ui/gui/spokes/network.glade:553
+msgid "C_onfigure..."
+msgstr "Ба_птау..."
+
+#: pyanaconda/ui/gui/spokes/network.glade:867
+msgid "Security"
+msgstr "Қауіпсіздік"
+
+#: pyanaconda/ui/gui/spokes/network.glade:881
+msgid "_Network Name"
+msgstr "Желі а_тауы"
+
+#: pyanaconda/ui/gui/spokes/network.glade:897
+msgid "Network Name"
+msgstr "Желі атауы"
+
+#: pyanaconda/ui/gui/spokes/network.glade:911
+msgid "Security Key"
+msgstr "Қауіпсіздік кілті"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1001
+msgid "_Use as Hotspot..."
+msgstr "Қат_ынау нүкте ретінде қолдану..."
+
+#: pyanaconda/ui/gui/spokes/network.glade:1020
+msgid "_Stop Hotspot..."
+msgstr "Қа_тынау нүктесін тоқтату..."
+
+#: pyanaconda/ui/gui/spokes/network.glade:1039
+#: pyanaconda/ui/gui/spokes/network.glade:1391
+#: pyanaconda/ui/gui/spokes/network.glade:1676
+msgid "_Configure..."
+msgstr "Бап_тау..."
+
+#: pyanaconda/ui/gui/spokes/network.glade:1162
+msgid "IMEI"
+msgstr "IMEI"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1190
+msgid "Provider"
+msgstr "Провайдер"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1504
+msgid "VPN Type"
+msgstr "VPN түрі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1518
+msgid "Gateway"
+msgstr "Шлюз"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1532
+msgid "Group Name"
+msgstr "Топ аты"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1546
+msgid "Group Password"
+msgstr "Топ паролі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1560
+msgid "Username"
+msgstr "Пайдаланушы аты"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1803
+msgid "_Method"
+msgstr "Тә_сіл"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1831
+msgid "_Configuration URL"
+msgstr "_Баптау URL-ы"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1861
+msgid "_HTTP Proxy"
+msgstr "HTTP _проксиі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1877
+msgid "H_TTPS Proxy"
+msgstr "HTTPS п_роксиі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1893
+msgid "_FTP Proxy"
+msgstr "FTP пр_оксиі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:1909
+msgid "_Socks Host"
+msgstr "Socks _хосты"
+
+#: pyanaconda/ui/gui/spokes/network.glade:2153
+msgid "Unlock"
+msgstr "Босату"
+
+#: pyanaconda/ui/gui/spokes/network.glade:2173
+msgid "Air_plane Mode"
+msgstr "Ұ_шу режимі"
+
+#: pyanaconda/ui/gui/spokes/network.glade:2207
+msgid "Hostname:"
+msgstr "Компьютер аты:"
+
+#: pyanaconda/ui/gui/spokes/software.glade:86
+msgid "Choose your environment"
+msgstr "Ортаңызды таңдаңыз"
+
+#: pyanaconda/ui/gui/spokes/software.glade:106
+msgid "Choose your add-ons"
+msgstr "Қосымшалаларды таңдаңыз"
+
+#: pyanaconda/ui/gui/spokes/software.glade:143
+#: pyanaconda/ui/gui/spokes/software.glade:158
+#: pyanaconda/ui/gui/spokes/software.glade:215
+#: pyanaconda/ui/gui/spokes/software.glade:230
+msgid "column"
+msgstr "баған"
+
+#: pyanaconda/ui/gui/spokes/software.glade:266
+msgid "_Add custom add-on..."
+msgstr "Па_йдаланушы қосымшасын қосу..."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:26
+#: pyanaconda/ui/gui/spokes/storage.glade:221
+msgid "Cancel & _add more disks"
+msgstr "Бас тарту мен кө_бірек дискті қосу"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:79
+#: pyanaconda/ui/gui/spokes/storage.glade:293
+#: pyanaconda/ui/gui/spokes/storage.glade:650
+msgid "INSTALLATION OPTIONS"
+msgstr "ОРНАТУ ОПЦИЯЛАРЫ"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:96
+#: pyanaconda/ui/gui/spokes/storage.glade:327
+#: pyanaconda/ui/gui/spokes/storage.glade:806
+msgid "Here we'll describe what your options are."
+msgstr "Осында біз таңдауға келетін нұсқаларды жазамыз."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:122
+#: pyanaconda/ui/gui/spokes/storage.glade:477
+msgid "<b>Partition type:</b>"
+msgstr "<b>Бөлім түрі:</b>"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:155
+#: pyanaconda/ui/gui/spokes/storage.glade:510
+msgid "Partition scheme configuration"
+msgstr "Бөлімдеу схемасын баптау"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:170
+msgid "Let me customize the _partitioning of the disks instead."
+msgstr "Оның орнына дисктер бөлі_мдеуін баптау."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:238
+#: pyanaconda/ui/gui/spokes/storage.glade:594
+msgid "_Modify software selection"
+msgstr "Бағд. қамтама таң_дауын өзгерту"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:242
+#: pyanaconda/ui/gui/spokes/storage.glade:598
+msgid "Please wait... software metadata still loading."
+msgstr "Күте тұрыңыз...бағд. қамтама метаақпараты әлі жүктелуде."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:257
+msgid "Reclaim _space"
+msgstr "Ор_ынды қайта бөлу"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:310
+#: pyanaconda/ui/gui/spokes/storage.glade:666
+msgid ""
+"Here we'll describe how much space is needed for the current software "
+"selection."
+msgstr "Осында біз таңдалған бағд. қамтама үшін керек орынды жазып отырамыз."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:353
+#: pyanaconda/ui/gui/spokes/storage.glade:692
+msgid "disk free"
+msgstr "диск бос"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:371
+#: pyanaconda/ui/gui/spokes/storage.glade:709
+msgid "Free space available for use."
+msgstr "Қолдану үшін қолжетерлік бос орын."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:389
+#: pyanaconda/ui/gui/spokes/storage.glade:727
+msgid "fs free"
+msgstr "файлдық жүйе бос"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:407
+#: pyanaconda/ui/gui/spokes/storage.glade:745
+msgid "Free space unavailable but reclaimable from existing partitions."
+msgstr "Бос орын жоқ бірақ оны басқа бөлімдерден алуға болады."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:425
+#: pyanaconda/ui/gui/spokes/storage.glade:763
+msgid "disks size"
+msgstr "дисктер өлшемі"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:443
+#: pyanaconda/ui/gui/spokes/storage.glade:781
+msgid "Space in selected disks reclaimable by deleting existing partitions."
+msgstr ""
+"Таңдалған дисктердегі бар болып тұрған бөлімдерді өшіру арқылы алынатын орын."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:525
+msgid "I don't need help; let me customize disk _partitioning."
+msgstr "Маған көмек керек емес; диск _бөлімдеуді өзім баптаймын."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:577
+msgid "_Quit installer"
+msgstr "_Орнатқыштан шығу"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:891
+msgid "Local Standard Disks"
+msgstr "Жергілікті қалыпты дисктер"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:972
+msgid "Full disk summary and options..."
+msgstr "Диск бойынша жинақы ақпарат пен опциялар..."
+
+#: pyanaconda/ui/gui/spokes/storage.glade:997
+#: pyanaconda/ui/gui/spokes/custom.glade:1900
+msgid "summary"
+msgstr "жинақы"
+
+#: pyanaconda/ui/gui/spokes/storage.glade:1011
+msgid "Encrypt my data. I'll set a passphrase later."
+msgstr "Менің мәліметтерімді шифрлеу. Мен парольді кейінірек орнатамын."
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:68
+msgid "ADD A KEYBOARD LAYOUT"
+msgstr "ПЕРНЕТАҚТА ЖАЙМАСЫН ҚОСУ"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:85
+msgid "You may add a keyboard layout by selecting it below:"
+msgstr "Төменнен таңдау арқылы пернетақта жаймасын қоса аласыз:"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:121
+msgid "Name"
+msgstr "Аты"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:182
+msgid "KEYBOARD LAYOUT"
+msgstr "ПЕРНЕТАҚТА ЖАЙМАСЫ"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:223
+msgid ""
+"Which keyboard layouts would you like to use on this system?  You may move "
+"any layout to the top of the list to select it as the default."
+msgstr ""
+"Бұл жүйеде қай пернетақта жаймаларын қолданғыңыз келеді? Жайманы негізгі "
+"ретінде орнату үшін оны тізімнің басына жылжытыңыз."
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:262
+msgid ""
+"Changes here will only apply to the installed system. Use the desktop's tool "
+"to configure the keyboard for the installation process."
+msgstr ""
+"Осындағы өзгертулер тек орнатылатын жүйе үшін іске асырылады. Орнату "
+"кезіндегі пернетақта жаймасын баптау үшін жұмыс үстел сайманын қолданыңыз."
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:319
+msgid "name"
+msgstr "аты"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:355
+msgid "Add layout"
+msgstr "Жайманы қосу"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:370
+msgid "Remove layout"
+msgstr "Жайманы өшіру"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:385
+msgid "Move selected layout up"
+msgstr "Таңдалған жайманы жоғары жылжыту"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:400
+msgid "Move selected layout down"
+msgstr "Таңдалған жайманы төмен жылжыту"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:416
+msgid "Preview layout"
+msgstr "Жайманы алдын-ала қарау"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:453
+msgid "Test the selected layout below:"
+msgstr "Таңдалған жайманы төменнен тексере аласыз:"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:492
+msgid "Alt + Shift to switch layouts."
+msgstr "Жайманы ауыстыру үшін Alt + Shift."
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:506
+msgid "_Options"
+msgstr "Опция_лар"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:623
+msgid "LAYOUT SWITCHING OPTIONS"
+msgstr "ЖАЙМАНЫ АУЫСТЫРУ ОПЦИЯЛАРЫ"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:640
+msgid ""
+"Which combination(s) would you prefer for switching between keyboard layouts?"
+msgstr ""
+"Пернетақта жаймаларын ауыстыру үшін пернелердің қай комбинациясын қолдануды "
+"қалайсыз?"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:676
+msgid "use"
+msgstr "қолдану"
+
+#: pyanaconda/ui/gui/spokes/keyboard.glade:689
+msgid "description"
+msgstr "анықтамасы"
+
+#: pyanaconda/ui/gui/spokes/password.glade:52
+msgid "Root Password:"
+msgstr "Root паролі:"
+
+#: pyanaconda/ui/gui/spokes/password.glade:67
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:127
+msgid "Confirm:"
+msgstr "Растау:"
+
+#: pyanaconda/ui/gui/spokes/password.glade:123
+msgid ""
+"The root account is used for administering the system.  Enter a password for "
+"the root user."
+msgstr ""
+"Әкімші (root) тіркелгісі жүйеге әкімшілік қызметтер ету үшін қолданылады. "
+"Әкімші (root) пайдаланушысы үшін парольді енгізіңіз."
+
+#: pyanaconda/ui/gui/spokes/source.glade:35
+#: pyanaconda/ui/gui/spokes/source.glade:607
+msgid "_Add"
+msgstr "Қ_осу"
+
+#: pyanaconda/ui/gui/spokes/source.glade:66
+msgid "ADD A CUSTOM ADD-ON"
+msgstr "ПАЙДАЛАНУШЫ ҚОСЫМШАСЫН ҚОСУ"
+
+#: pyanaconda/ui/gui/spokes/source.glade:82
+msgid "Where is the yum repository for your add-on?"
+msgstr "Пайдаланушы қосымшаңыз үшін yum репозиторийі қайда орналасқан?"
+
+#: pyanaconda/ui/gui/spokes/source.glade:140
+msgid "Repository"
+msgstr "Репозиторий"
+
+#: pyanaconda/ui/gui/spokes/source.glade:189
+msgid "Fedora People Repositories"
+msgstr "Fedora People репозиторийлері"
+
+#: pyanaconda/ui/gui/spokes/source.glade:306
+msgid "Standard YUM repository:"
+msgstr "Қалыпты YUM репозиторийі:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:439 widgets/src/SpokeWindow.c:46
+msgid "_Done"
+msgstr "Д_айын"
+
+#: pyanaconda/ui/gui/spokes/source.glade:472
+msgid "MEDIA VERIFICATION"
+msgstr "ТАСУШЫНЫ ТЕКСЕРУ"
+
+#: pyanaconda/ui/gui/spokes/source.glade:499
+msgid "Verifying media, please wait..."
+msgstr "Тасушыны тексеру, күте тұрыңыз..."
+
+#: pyanaconda/ui/gui/spokes/source.glade:635
+msgid "_Enable HTTP Proxy"
+msgstr "HTTP _проксиді іске қосу"
+
+#: pyanaconda/ui/gui/spokes/source.glade:668
+msgid "<b>Proxy URL</b>"
+msgstr "<b>Прокси сілтемесі</b>"
+
+#: pyanaconda/ui/gui/spokes/source.glade:683
+msgid "<span size=\"small\"><b>Example:</b> squid.mysite.org:3128</span>"
+msgstr "<span size=\"small\"><b>Мысалы:</b> squid.mysite.org:3128</span>"
+
+#: pyanaconda/ui/gui/spokes/source.glade:716
+msgid "_Use Authentication"
+msgstr "_Аутентификацияны қолдану"
+
+#: pyanaconda/ui/gui/spokes/source.glade:743
+msgid "<b>Username</b>"
+msgstr "<b>Пайдаланушы аты</b>"
+
+#: pyanaconda/ui/gui/spokes/source.glade:758
+msgid "<b>Password</b>"
+msgstr "<b>Пароль</b>"
+
+#: pyanaconda/ui/gui/spokes/source.glade:869
+msgid "Which installation source would you like to use?"
+msgstr "Орнатудың қай қайнар көзін қолдануды қалайсыз?"
+
+#: pyanaconda/ui/gui/spokes/source.glade:883
+msgid "_Auto-detected install media:"
+msgstr "_Автоанықталған орнату тасушысы:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:938
+#: pyanaconda/ui/gui/spokes/source.glade:1031
+msgid "_Verify"
+msgstr "_Растау"
+
+#: pyanaconda/ui/gui/spokes/source.glade:961
+msgid "_ISO file:"
+msgstr "ISO фа_йлы:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:988
+msgid "Device:"
+msgstr "Құрылғы:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:1016
+msgid "_Choose an ISO"
+msgstr "ISO ф_айлын таңдаңыз"
+
+#: pyanaconda/ui/gui/spokes/source.glade:1054
+msgid "On the _network:"
+msgstr "Ж_еліде:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:1129
+msgid "_Proxy setup..."
+msgstr "_Проксиді баптау..."
+
+#: pyanaconda/ui/gui/spokes/source.glade:1147
+msgid "This URL refers to a _mirror list."
+msgstr "Бұл сілтеме а_йналар тізіміне көрсетіп тұр."
+
+#: pyanaconda/ui/gui/spokes/source.glade:1182
+msgid "NFS mount options:"
+msgstr "NFS тіркеу опциялары:"
+
+#: pyanaconda/ui/gui/spokes/source.glade:1195
+#: pyanaconda/ui/gui/spokes/source.glade:1196
+msgid "This field is optional."
+msgstr "Бұл өріс қосымша."
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:21
+msgid "_Get me out of here!"
+msgstr "Ос_ыдан кеткім келеді!"
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:35
+msgid "_I accept my fate."
+msgstr "Ке_лісемін."
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:66
+msgid "This is unstable, pre-release software."
+msgstr "Бұл тұрақсыз, шығарылымға дейінгі бағд. қамтама."
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:99
+msgid ""
+"You wake up inside an OS installer in Timbuktu, and it's six months in the "
+"future.  But, there are bugs.  Bugs everywhere.  Bugs you must live with.  "
+"This OS of the future isn't a stable OS you can rely on.  It's for testing "
+"purposes only."
+msgstr ""
+"Тимбуктуда ОЖ орнатқышында ояндыңыз, ол болса, әлі де алты ай болашақта. "
+"Бірақ, қателері бар. Қателер әр жерде.  Келісу керек қателер. Болашақтың ОЖ-"
+"і сенуге болатын ОЖ емес. Ол тек сынау үшін арналған."
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:251
+msgid "WELCOME TO %s %s."
+msgstr "%s %s ішіне қош келдіңіз."
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:269
+msgid "What language would you like to use during the installation process?"
+msgstr "Орнату кезінде қай тілді қолданғыңыз келеді?"
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:319
+msgid "nativeName"
+msgstr "nativeName"
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:335
+msgid "englishName"
+msgstr "englishName"
+
+#: pyanaconda/ui/gui/spokes/welcome.glade:389
+msgid "Set _keyboard to default layout for selected language."
+msgstr "Пер_нетақтаны таңдалған тіл үшін негізгі жаймаға орнату."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:8
+#: pyanaconda/ui/gui/spokes/custom.glade:1741
+msgid "Help"
+msgstr "Көмек"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:106
+msgid "_Add mount point"
+msgstr "_Тіркеу нүктесін қосу"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:139
+msgid "<b>Desired Capacity:</b>"
+msgstr "<b>Керек өлшемі:</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:154
+#: pyanaconda/ui/gui/spokes/custom.glade:558
+msgid "<b>Mount Point:</b>"
+msgstr "<b>Тіркелу нүктесі:</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:170
+msgid "ADD A NEW MOUNT POINT"
+msgstr "ЖАҢА ТІРКЕУ НҮКТЕСІН ҚОСУ"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:188
+msgid ""
+"More customization options are available\n"
+"after creating the mount point below."
+msgstr ""
+"Төменде тіркеу нүктесін жасағаннан кейін\n"
+"көбірек баптау опциялары қолжетерлік болады."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:206
+msgid "eg: \"/\", \"/home\", \"swap\" (minus the quotation marks)"
+msgstr "мыс: \"/\", \"/home\", \"swap\" (тырнақшасыз)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:239
+msgid ""
+"That mount point is already in\n"
+"use.  Try something else?"
+msgstr ""
+"Бұл тіркелу нүктесі қолдануда\n"
+"болып тұр. Басқасын көру керек пе?"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:265
+msgid "eg: \"20 GB\", \"500mb\" (minus the quotation marks)"
+msgstr "мыс.: \"20 GB\", \"500mb\" (тырнақшасыз)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:308
+msgid "Are you sure you want to delete all of the data on %s?"
+msgstr "%s ішіндегі барлық мәліметті өшіруді шынымен қалайсыз ба?"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:322
+msgid "Delete all other filesystems in the %s root as well."
+msgstr "Сонымен қатар, %s түбіріндегі басқа барлық файлдық жүйелерді өшіру."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:357
+msgid "_Delete It"
+msgstr "О_ны өшіру"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:390
+msgid "_Back to destination selection"
+msgstr "_Орнату мақсатын таңдауға оралу"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:476
+msgid ""
+"When you create mount points for your %s %s install,\n"
+"you'll be able to view their details here."
+msgstr ""
+"%s %s орнатуы үшін тіркеу нүктелерін жасағаннан кейін,\n"
+"осында олардың ақпаратын көре аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:499
+#: pyanaconda/ui/gui/spokes/custom.glade:1362
+#: pyanaconda/ui/gui/spokes/custom.glade:1504
+#: pyanaconda/ui/gui/spokes/custom.glade:1591
+msgid "Selected Device"
+msgstr "Таңдалған құрылғы"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:517
+#: pyanaconda/ui/gui/spokes/custom.glade:1380
+#: pyanaconda/ui/gui/spokes/custom.glade:1522
+#: pyanaconda/ui/gui/spokes/custom.glade:1609
+msgid "Device description"
+msgstr "Құрылғы анықтамасы"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:588
+msgid "<b>Label:</b>"
+msgstr "<b>Белгі:</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:604
+msgid "<b>Desired Capacity (MB):</b>"
+msgstr "<b>Керек өлшемі (МБ):</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:651
+#: pyanaconda/ui/gui/spokes/custom.glade:2036
+msgid "Name:"
+msgstr "Аты:"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:712
+msgid "<b>Device Type:</b>"
+msgstr "<b>Құрылғы түрі:</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:727
+msgid "<b>File System:</b>"
+msgstr "<b>Файлдық жүйесі:</b>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:773
+msgid "_Encrypt"
+msgstr "_Шифрлеу"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:806
+#: pyanaconda/ui/gui/spokes/custom.glade:903
+#: pyanaconda/ui/gui/spokes/custom.glade:1144
+msgid "Redundancy (mirror)"
+msgstr "Артық (айна)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:825
+#: pyanaconda/ui/gui/spokes/custom.glade:868
+#: pyanaconda/ui/gui/spokes/custom.glade:922
+#: pyanaconda/ui/gui/spokes/custom.glade:965
+#: pyanaconda/ui/gui/spokes/custom.glade:1008
+#: pyanaconda/ui/gui/spokes/custom.glade:1052
+#: pyanaconda/ui/gui/spokes/custom.glade:1084
+#: pyanaconda/ui/gui/spokes/custom.glade:1163
+#: pyanaconda/ui/gui/spokes/custom.glade:1206
+msgid "(-0Gb)"
+msgstr "(-0Гб)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:850
+#: pyanaconda/ui/gui/spokes/custom.glade:947
+#: pyanaconda/ui/gui/spokes/custom.glade:1188
+msgid "Optimized performance (stripe)"
+msgstr "Оптимизацияланған өнімділік (араласу)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:990
+msgid "Error detection (parity)"
+msgstr "Қателерді анықтау (жұптық)"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1034
+msgid "Distributed"
+msgstr "Таратылған"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1065
+msgid "Redundant"
+msgstr "Артық"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1243
+msgid "Reformat"
+msgstr "Қайта пішімдеу"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1262
+msgid "Volume Group:"
+msgstr "Томдар тобы:"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1291
+msgid "Modify ..."
+msgstr "Өзгерту ..."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1310
+msgid "_Customize..."
+msgstr "Ба_птау..."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1323
+msgid "_Apply Changes"
+msgstr "Өзгерістерді іске _асыру"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1414
+msgid ""
+"This device is encrypted and cannot be read without a valid passphrase. You "
+"may unlock it below."
+msgstr ""
+"Бұл құрылғы шифрленген, орны дұрыс шифрлеу парольсіз оқуға мүмкін емес. Оны "
+"төменде аша аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1435
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:97
+msgid "Passphrase:"
+msgstr "Пароль:"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1461
+msgid "_Unlock"
+msgstr "Бо_сату"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1556
+msgid ""
+"This device cannot be edited directly. You can remove it or select a "
+"different device."
+msgstr ""
+"Бұл құрылғыны тікелей түзету мүмкін емес. Оны өшіре аласыз, немесе басқа "
+"құрылғыны таңдай аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1644
+msgid ""
+"This %s device is missing %d of %d %s. You can remove it or select a "
+"different device."
+msgstr ""
+"Бұл  %s құрылғысында %d (жалпы саны %d болуы тиіс) %s жетіспейді. Оны өшіре "
+"аласыз не басқа құрылғыны таңдай аласыз."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1690
+msgid "Add a new mountpoint."
+msgstr "Жаңа тіркеу нүктесін қосу."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1691
+msgid "addButton"
+msgstr "addButton"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1708
+msgid "Remove the selected mountpoint(s.)"
+msgstr "Таңдалған тіркеу нүкте(лер) өшіру."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1709
+msgid "removeButton"
+msgstr "removeButton"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1726
+msgid "Configure selected mountpoint."
+msgstr "Таңдалған тіркеу нүктесін баптау."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1727
+msgid "configureButton"
+msgstr "configureButton"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1742
+msgid "Click for help"
+msgstr "Көмек алу үшін шертіңіз"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1790
+msgid "<span size=\"small\" foreground=\"white\">AVAILABLE SPACE</span>"
+msgstr "<span size=\"small\" foreground=\"white\">ҚОЛЖЕТЕРЛІК ОРНЫ</span>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1842
+msgid "<span size=\"small\" foreground=\"white\">TOTAL SPACE</span>"
+msgstr "<span size=\"small\" foreground=\"white\">БҮКІЛ ОРНЫ</span>"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1881
+msgid "_Finish Partitioning"
+msgstr "Бөлімдеуді а_яқтау"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:1971
+msgid "_Save"
+msgstr "_Сақтау"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2003
+msgid "CONFIGURE VOLUME GROUP"
+msgstr "ТОМДАР ТОБЫН БАПТАУ"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2018
+msgid ""
+"Please create a name for your volume group and select at least one disk "
+"below."
+msgstr ""
+"Томдар тобы үшін атын көрсетіңіз және төмендегі дисктерден кем дегенде "
+"біреуін таңдаңыз."
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2101
+#: pyanaconda/ui/gui/spokes/custom.glade:2302
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:138
+msgid "Capacity"
+msgstr "Сыйымдылығы"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2114
+#: pyanaconda/ui/gui/spokes/custom.glade:2315
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:151
+msgid "Free"
+msgstr "Бос"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2127
+#: pyanaconda/ui/gui/spokes/custom.glade:2328
+msgid "ID"
+msgstr "ID"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2209
+msgid "_Select"
+msgstr "Таң_дау"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2241
+msgid "CONFIGURE MOUNT POINT"
+msgstr "ТІРКЕУ НҮКТЕСІН БАПТАУ"
+
+#: pyanaconda/ui/gui/spokes/custom.glade:2256
+msgid "Select one or more disks this device may reside on."
+msgstr "Бұл құрылғы орналаса алатын бір немесе бірнеше дискті таңдаңыз."
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:25
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:79
+msgid "SELECTED DISKS"
+msgstr "ТАҢДАЛҒАН ДИСКТЕР"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:43
+msgid "_Close"
+msgstr "_Жабу"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:111
+msgid "Boot"
+msgstr "Boot"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:125
+msgid "Description"
+msgstr "Сипаттамасы"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:163
+msgid "Id"
+msgstr "Id"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:207
+msgid "_Remove"
+msgstr "Ө_шіру"
+
+#: pyanaconda/ui/gui/spokes/lib/cart.glade:235
+msgid "Disk summary goes here"
+msgstr "Диск ақпараты осында"
+
+#: pyanaconda/ui/gui/spokes/lib/detailederror.glade:24
+msgid "An unknown error occurred during installation.  Details are below."
+msgstr "Орнату кезінде белгісіз қате орын алды. Көбірек ақпараты төменде."
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:20
+msgid "DISK ENCRYPTION PASSPHRASE"
+msgstr "ДИСКТІ ШИФРЛЕУ ПАРОЛІ"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:52
+msgid "Save Passphrase"
+msgstr "Парольді сақтау"
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:77
+msgid ""
+"You have chosen to encrypt some of your data. You will need to create a "
+"passphrase that you will use to access your data when you start your "
+"computer."
+msgstr ""
+"Сіз мәліметтеріңіздің бір бөлігін шифрлеуді таңдадыңыз. Мәліметтеріңізге "
+"қатынау үшін қолданылатын, компьютеріңізді іске қосқан кезде енгізілетін "
+"кілттік фразаны жасауыңыз керек."
+
+#: pyanaconda/ui/gui/spokes/lib/passphrase.glade:212
+msgid "keymap warning label"
+msgstr "пернетақта жаймасы ескерту белгісі"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:58
+msgid "_Reclaim space"
+msgstr "Ор_ынды қайта бөлу"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:92
+msgid "RECLAIM DISK SPACE"
+msgstr "ДИСК ОРНЫН ҚАЙТА БӨЛУ"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:109
+msgid "Description goes here."
+msgstr "Анықтамасы осында."
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:151
+msgid "Filesystem"
+msgstr "Файлдық жүйе"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:162
+msgid "Reclaimable Space"
+msgstr "Қайта бөлінетін орын"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:184
+msgid "Action"
+msgstr "Әрекет"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:249
+msgid "<b>%s disks; %s reclaimable space</b> (in filesystems)"
+msgstr "<b>%s диск; қайта бөлінетін орын %s</b> (файлдық жүйелерде)"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:264
+msgid "Total selected space to reclaim:  <b>%s</b>"
+msgstr "Қайта бөлуге таңдалған жалпы орын:  <b>%s</b>"
+
+#: pyanaconda/ui/gui/spokes/lib/resize.glade:279
+msgid "Installation requires a total of <b>%s</b> for system data."
+msgstr "Орнату үрдісі жүйелік мәліметтер үшін жалпы <b>%s</b> талап етеді."
+
+#: pyanaconda/ui/gui/main.glade:80
+msgid ""
+"Are you sure you wish to quit the\n"
+"installation process?"
+msgstr ""
+"Орнату бағдарламасынан шығуды\n"
+"шынымен қалайсыз ба?"
+
+#: pyanaconda/ui/gui/hubs/summary.glade:11
+msgid "INSTALLATION SUMMARY"
+msgstr "ОРНАТУДЫҢ ЖИНАҚЫ АҚПАРАТЫ"
+
+#: pyanaconda/ui/gui/hubs/summary.glade:95
+msgid "_Begin Installation"
+msgstr "Орнатуды _бастау"
+
+#: pyanaconda/ui/gui/hubs/progress.glade:9
+msgid "CONFIGURATION"
+msgstr "БАПТАУ"
+
+#: pyanaconda/ui/gui/hubs/progress.glade:128
+msgid ""
+"%s is now successfully installed on your system, but some configuration "
+"still needs to be done. \n"
+"Finish it and then click the Finish configuration button please."
+msgstr ""
+"%s жүйеңізге сәтті орнатылды, бірақ әлі де орындалу керек баптаулар қалды. \n"
+"Оларды аяқтап, Баптауды аяқтау батырмасын басыңыз."
+
+#: pyanaconda/ui/gui/hubs/progress.glade:140
+msgid "_Finish configuration"
+msgstr "Бап_тауды аяқтау"
+
+#: pyanaconda/ui/gui/hubs/progress.glade:181
+msgid ""
+"%s is now successfully installed on your system and ready\n"
+"for you to use!  Go ahead and reboot to start using it!"
+msgstr ""
+"%s енді сіздің жүйеңізге сәтті орнатылды және қолдануға дайын!\n"
+"Оны қолдануды бастау үшін жүйеңізді қайта қосыңыз!"
+
+#: pyanaconda/ui/gui/hubs/progress.glade:193
+msgid "_Reboot"
+msgstr "Қа_йта қосу"
+
+#: widgets/src/BaseWindow.c:85
+msgid "DISTRIBUTION INSTALLATION"
+msgstr "ДИСТРИБУТИВТІ ОРНАТУ"
+
+#: widgets/src/BaseWindow.c:86
+msgid "SPOKE NAME"
+msgstr "Еске сақтау үшін атауы"
+
+#: widgets/src/BaseWindow.c:87
+msgid "PRE-RELEASE / TESTING"
+msgstr "ШЫҒАРЫЛЫМҒА-ДЕЙІНГІ / СЫНАЛУДА"
+
+#: widgets/src/DiskOverview.c:50
+msgid "New Device"
+msgstr "Жаңа құрылғы"
+
+#: widgets/src/DiskOverview.c:52
+msgid "0 MB"
+msgstr "0 МБ"
+
+#: widgets/src/MountpointSelector.c:48
+msgid "Root"
+msgstr "Root"
+
+#: widgets/src/MountpointSelector.c:49
+msgid "0 GB"
+msgstr "0 ГБ"
+
+#: widgets/src/SpokeSelector.c:55
+msgid "New Selector"
+msgstr "Жаңа таңдаушы"
+
+#: data/liveinst/gnome/fedora-welcome:64
+msgid "Welcome to Fedora"
+msgstr "Fedora-ға қош келдіңіз"
+
+#: data/liveinst/gnome/fedora-welcome:93
+msgid "Try Fedora"
+msgstr "Fedora қолданып көріңіз"
+
+#: data/liveinst/gnome/fedora-welcome:111
+msgid ""
+"You are currently running Fedora from live media.\n"
+"You can install Fedora now, or choose \"Install to Hard Drive\" in the "
+"Activities Overview at any later time."
+msgstr ""
+"Fedora-ны қазір тірі тасушыдан қолданудасыз.\n"
+"Fedora-ны дәл қазір орната аласыз, немесе кейін де, \"Қатты дискіге орнату\" "
+"нұсқасын Әрекеттерді шолудан таңдай аласыз."
+
+#: data/liveinst/gnome/fedora-welcome:129
+msgid ""
+"You can choose \"Install to Hard Drive\"\n"
+"in the Activities Overview at any later time."
+msgstr ""
+"\"Қатты дискіге орнату\" нұсқасын кейін де\n"
+"Әрекеттерді шолудан таңдай аласыз."
+
+#: data/liveinst/gnome/fedora-welcome:132
+msgid "Close"
+msgstr "Жабу"
+
+#: data/liveinst/liveinst.desktop.in.h:1
+msgid "Install to Hard Drive"
+msgstr "Қатты дискіге орнату"
+
+#: data/liveinst/liveinst.desktop.in.h:2
+msgid "Install"
+msgstr "Орнату"
+
+#: data/liveinst/liveinst.desktop.in.h:3
+msgid "Install the live CD to your hard disk"
+msgstr "Тірі CD-ін қатты дискіңізге орнату"
+
+#: liveinst:5
+msgid "Starting Install to Hard Drive"
+msgstr "Қатты дискіге орнатуды бастау"

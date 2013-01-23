@@ -1,9 +1,8 @@
 #!/usr/bin/python
 #
 # makeupdates - Generate an updates.img containing changes since the last
-#               tag, but only changes that do not need to be compiled.  If
-#               you need an updated _isys.so or a new loader, you should
-#               still compile things as usual.
+#               tag, but only changes to the main anaconda runtime.
+#               initrd/stage1 updates have to be created separately.
 #
 # Copyright (C) 2009  Red Hat, Inc.
 #
@@ -101,7 +100,21 @@ def copyUpdatedFiles(tag, updates, cwd):
 
         return lst
 
+    def install_to_dir(fname, relpath):
+        sys.stdout.write("Including %s\n" % fname)
+        outdir = os.path.join(updates, relpath)
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
+        shutil.copy2(file, outdir)
+
     subdirs = []
+
+    # Updates get overlaid onto the runtime filesystem. Anaconda expects them
+    # to be in /run/install/updates, so put them in
+    # $updatedir/run/install/updates.
+    tmpupdates = updates.rstrip('/')
+    if not tmpupdates.endswith("/run/install/updates"):
+        tmpupdates = os.path.join(tmpupdates, "run/install/updates")
 
     lines = doGitDiff(tag)
     for line in lines:
@@ -121,38 +134,59 @@ def copyUpdatedFiles(tag, updates, cwd):
            file.endswith('.sh') or file == 'configure.ac':
             continue
 
-        if file.find('/') != -1:
+        if file.endswith('.glade'):
+            # Some UI files should go under ui/<dir> where dir is the
+            # directory above the file.glade
+            dir_parts = os.path.dirname(file).split(os.path.sep)
+            g_idx = dir_parts.index("gui")
+            uidir = os.path.sep.join(dir_parts[g_idx+1:])
+            path_comps = [tmpupdates, "ui"]
+            if uidir:
+                path_comps.append(uidir)
+            install_to_dir(file, os.path.join(*path_comps))
+        elif file.startswith('pyanaconda/'):
+            # pyanaconda stuff goes into /tmp/updates/[path]
+            dirname = os.path.join(tmpupdates, os.path.dirname(file))
+            install_to_dir(file, dirname)
+        elif file == 'anaconda':
+            # anaconda itself we just overwrite
+            install_to_dir(file, "usr/sbin")
+        elif file.endswith('.service') or file.endswith(".target"):
+            # same for systemd services
+            install_to_dir(file, "lib/systemd/system")
+        elif file.endswith('/anaconda-generator'):
+            # yeah, this should probably be more clever..
+            install_to_dir(file, "lib/systemd/system-generators")
+        elif file == "data/tmux.conf":
+            install_to_dir(file, "usr/share/anaconda")
+        elif file == "data/interactive-defaults.ks":
+            install_to_dir(file, "usr/share/anaconda")
+        elif file == "data/liveinst/liveinst":
+            install_to_dir(file, "usr/sbin")
+        elif file == "data/70-anaconda.rules":
+            install_to_dir(file, "lib/udev/rules.d")
+        elif file.startswith("data/pixmaps"):
+            install_to_dir(file, "usr/share/anaconda/pixmaps")
+        elif file.startswith("data/ui/"):
+            install_to_dir(file, "usr/share/anaconda/ui")
+        elif file.startswith("data/post-scripts/"):
+            install_to_dir(file, "usr/share/anaconda/post-scripts")
+        elif file.find('/') != -1:
             fields = file.split('/')
             subdir = fields[0]
-
-            if subdir == 'installclasses' or subdir == 'storage' or \
-               subdir == 'booty':
-                subupdates = os.path.realpath(updates + '/' + subdir)
-                if os.path.isdir(subupdates):
-                    shutil.rmtree(subupdates)
-
-                if not subdir in subdirs:
-                    sys.stdout.write("Including %s/\n" % (subdir,))
-                    subdirs.append(subdir)
-
-                shutil.copytree(os.path.realpath(cwd + '/' + subdir),
-                                subupdates, ignore=pruneFile)
-            elif subdir == 'loader' or subdir == 'po' or \
-                 subdir =='scripts' or subdir == 'command-stubs' or \
-                 subdir == 'tests' or subdir == 'bootdisk' or \
-                 subdir == 'docs' or subdir == 'fonts' or \
-                 subdir == 'utils' or subdir == 'gptsync' or \
-                 subdir == 'liveinst':
+            if subdir in ['po', 'scripts','command-stubs', 'tests',
+                          'docs', 'fonts', 'utils',
+                          'liveinst', 'dracut', 'data']:
                 continue
             else:
                 sys.stdout.write("Including %s\n" % (file,))
-                shutil.copy2(file, updates)
+                install_to_dir(file, tmpupdates)
         else:
             sys.stdout.write("Including %s\n" % (file,))
-            shutil.copy2(file, updates)
+            install_to_dir(file, tmpupdates)
 
-def isysChanged(tag):
-    lines = doGitDiff(tag, ['isys'])
+def _compilableChanged(tag, compilable):
+    lines = doGitDiff(tag, [compilable])
 
     for line in lines:
         fields = line.split()
@@ -172,6 +206,12 @@ def isysChanged(tag):
 
     return False
 
+def isysChanged(tag):
+    return _compilableChanged(tag, 'pyanaconda/isys')
+
+def widgetsChanged(tag):
+    return _compilableChanged(tag, 'widgets')
+
 def copyUpdatedIsys(updates, cwd):
     os.chdir(cwd)
 
@@ -182,9 +222,55 @@ def copyUpdatedIsys(updates, cwd):
 
     os.system('make')
 
-    isysmodule = os.path.realpath(cwd + '/isys/.libs/_isys.so')
+    # Updates get overlaid onto the runtime filesystem. Anaconda expects them
+    # to be in /run/install/updates, so put them in
+    # $updatedir/run/install/updates.
+    tmpupdates = updates.rstrip('/')
+    if not tmpupdates.endswith("/run/install/updates/pyanaconda"):
+        tmpupdates = os.path.join(tmpupdates, "run/install/updates/pyanaconda")
+
+    isysmodule = os.path.realpath(cwd + '/pyanaconda/isys/.libs/_isys.so')
     if os.path.isfile(isysmodule):
-        shutil.copy2(isysmodule, updates)
+        shutil.copy2(isysmodule, tmpupdates)
+
+def copyUpdatedWidgets(updates, cwd):
+    os.chdir(cwd)
+
+    if os.path.isdir("/lib64"):
+        libdir = "/lib64/"
+    else:
+        libdir = "/lib/"
+
+    if not os.path.isdir(updates + libdir):
+        os.makedirs(updates + libdir)
+
+    if not os.path.isdir(updates + libdir + "girepository-1.0"):
+        os.makedirs(updates + libdir + "girepository-1.0")
+
+    if not os.path.isfile('Makefile'):
+        if not os.path.isfile('configure'):
+            os.system('./autogen.sh')
+        os.system('./configure --enable-gtk-doc --enable-introspection')
+
+    os.system('make')
+
+    files = ["libAnacondaWidgets.so", "libAnacondaWidgets.so.0", "libAnacondaWidgets.so.0.0.0"]
+    for f in files:
+        path = os.path.normpath(cwd + "/widgets/src/.libs/" + f)
+        if os.path.islink(path) and not os.path.exists(updates + libdir + os.path.basename(path)):
+            os.symlink(os.readlink(path), updates + libdir + os.path.basename(path))
+        elif os.path.isfile(path):
+            shutil.copy2(path, updates + libdir)
+
+    typelib = os.path.realpath(cwd + "/widgets/src/AnacondaWidgets-1.0.typelib")
+    if os.path.isfile(typelib):
+        shutil.copy2(typelib, updates + libdir + "girepository-1.0")
+
+def addRpms(updates, add_rpms):
+    for rpm in add_rpms:
+        cmd = "cd %s && rpm2cpio %s | cpio -dium" % (updates, rpm)
+        sys.stdout.write(cmd+"\n")
+        os.system(cmd)
 
 def createUpdatesImage(cwd, updates):
     os.chdir(updates)
@@ -199,6 +285,7 @@ def usage(cmd):
     sys.stdout.write("    -h, --help       Display this help and exit.\n")
     sys.stdout.write("    -t, --tag        Make image from TAG to HEAD.\n")
     sys.stdout.write("    -o, --offset     Make image from (latest_tag - OFFSET) to HEAD.\n")
+    sys.stdout.write("    -a, --add        Add contents of rpm to the update\n")
 
 def main(argv):
     prog = os.path.basename(sys.argv[0])
@@ -210,10 +297,11 @@ def main(argv):
     tag = None
     opts = []
     offset = 0
+    add_rpms = []
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 't:o:kc?',
-                                   ['tag=', 'offset=',
+        opts, args = getopt.getopt(sys.argv[1:], 'a:t:o:kc?',
+                                   ['add=', 'tag=', 'offset=',
                                     'keep', 'compile', 'help'])
     except getopt.GetoptError:
         help = True
@@ -229,6 +317,8 @@ def main(argv):
             tag = a
         elif o in ('-o', '--offset'):
             offset = int(a)
+        elif o in ('-a', '--add'):
+            add_rpms.append(os.path.abspath(a))
         else:
             unknown = True
 
@@ -259,6 +349,12 @@ def main(argv):
     if compile:
         if isysChanged(tag):
             copyUpdatedIsys(updates, cwd)
+
+        if widgetsChanged(tag):
+            copyUpdatedWidgets(updates, cwd)
+
+    if add_rpms:
+        addRpms(updates, add_rpms)
 
     createUpdatesImage(cwd, updates)
 

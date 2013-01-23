@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>AnacondaDiskOverview</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.77.1">
+<link rel="home" href="index.html" title="The AnacondaWidgets Library Reference Manual">
+<link rel="up" href="disks.html" title="Disk-Related Widgets">
+<link rel="prev" href="disks.html" title="Disk-Related Widgets">
+<link rel="next" href="AnacondaMountpointSelector.html" title="AnacondaMountpointSelector">
+<meta name="generator" content="GTK-Doc V1.18 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="disks.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="disks.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">The AnacondaWidgets Library Reference Manual</th>
+<td><a accesskey="n" href="AnacondaMountpointSelector.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#AnacondaDiskOverview.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#AnacondaDiskOverview.description" class="shortcut">Description</a>
+                   | 
+                  <a href="#AnacondaDiskOverview.object-hierarchy" class="shortcut">Object Hierarchy</a>
+                   | 
+                  <a href="#AnacondaDiskOverview.implemented-interfaces" class="shortcut">Implemented Interfaces</a>
+                   | 
+                  <a href="#AnacondaDiskOverview.properties" class="shortcut">Properties</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="AnacondaDiskOverview"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="AnacondaDiskOverview.top_of_page"></a>AnacondaDiskOverview</span></h2>
+<p>AnacondaDiskOverview — A widget that displays basic information about a disk</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="AnacondaDiskOverview.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">struct              <a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview-struct" title="struct AnacondaDiskOverview">AnacondaDiskOverview</a>;
+struct              <a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverviewClass" title="struct AnacondaDiskOverviewClass">AnacondaDiskOverviewClass</a>;
+<span class="returnvalue">gboolean</span>            <a class="link" href="AnacondaDiskOverview.html#anaconda-disk-overview-get-chosen" title="anaconda_disk_overview_get_chosen ()">anaconda_disk_overview_get_chosen</a>   (<em class="parameter"><code><a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> *widget</code></em>);
+<span class="returnvalue">GtkWidget</span> *         <a class="link" href="AnacondaDiskOverview.html#anaconda-disk-overview-new" title="anaconda_disk_overview_new ()">anaconda_disk_overview_new</a>          ();
+<span class="returnvalue">void</span>                <a class="link" href="AnacondaDiskOverview.html#anaconda-disk-overview-set-chosen" title="anaconda_disk_overview_set_chosen ()">anaconda_disk_overview_set_chosen</a>   (<em class="parameter"><code><a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> *widget</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> is_chosen</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.object-hierarchy"></a><h2>Object Hierarchy</h2>
+<pre class="synopsis">
+  GObject
+   +----GInitiallyUnowned
+         +----GtkWidget
+               +----GtkContainer
+                     +----GtkBin
+                           +----GtkEventBox
+                                 +----AnacondaDiskOverview
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.implemented-interfaces"></a><h2>Implemented Interfaces</h2>
+<p>
+AnacondaDiskOverview implements
+ AtkImplementorIface and  GtkBuildable.</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.properties"></a><h2>Properties</h2>
+<pre class="synopsis">
+  "<a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview--capacity" title='The "capacity" property'>capacity</a>"                 <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview--description" title='The "description" property'>description</a>"              <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview--kind" title='The "kind" property'>kind</a>"                     <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview--os" title='The "os" property'>os</a>"                       <span class="type">gchar</span>*                : Read / Write
+  "<a class="link" href="AnacondaDiskOverview.html#AnacondaDiskOverview--popup-info" title='The "popup-info" property'>popup-info</a>"               <span class="type">gchar</span>*                : Read / Write
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.description"></a><h2>Description</h2>
+<p>
+A <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> is a potentially selectable widget that displays a
+disk device's size, kind, and a prominant icon based on the kind of device.
+This widget can come in different sizes, depending on where it needs to be
+used.
+</p>
+<p>
+As a <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> is a subclass of a <span class="type">GtkEventBox</span>, any signals
+may be caught.  The <span class="type">"button-press-event"</span> signal is already
+handled internally to change the background color, but may also be handled
+by user code in order to take some action based on the disk clicked upon.
+</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="AnacondaDiskOverview-struct"></a><h3>struct AnacondaDiskOverview</h3>
+<pre class="programlisting">struct AnacondaDiskOverview;</pre>
+<p>
+The AnacondaDiskOverview struct contains only private fields and should not
+be directly accessed.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaDiskOverviewClass"></a><h3>struct AnacondaDiskOverviewClass</h3>
+<pre class="programlisting">struct AnacondaDiskOverviewClass {
+    GtkEventBoxClass parent_class;
+};
+</pre>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="type">GtkEventBoxClass</span> <em class="structfield"><code><a name="AnacondaDiskOverviewClass.parent-class"></a>parent_class</code></em>;</span></p></td>
+<td>The object class structure needs to be the first element in
+the widget class structure in order for the class mechanism
+to work correctly.  This allows a AnacondaDiskOverviewClass
+pointer to be cast to a <span class="type">GtkEventBox</span> pointer.</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-disk-overview-get-chosen"></a><h3>anaconda_disk_overview_get_chosen ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            anaconda_disk_overview_get_chosen   (<em class="parameter"><code><a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> *widget</code></em>);</pre>
+<p>
+Returns whether or not this disk has been chosen by the user.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>widget</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Whether <em class="parameter"><code>widget</code></em> has been chosen.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-disk-overview-new"></a><h3>anaconda_disk_overview_new ()</h3>
+<pre class="programlisting"><span class="returnvalue">GtkWidget</span> *         anaconda_disk_overview_new          ();</pre>
+<p>
+Creates a new <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a>, which is a potentially selectable
+widget that displays basic information about a single storage device, be
+that a regular disk or a more complicated network device.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>A new <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a>.</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-disk-overview-set-chosen"></a><h3>anaconda_disk_overview_set_chosen ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                anaconda_disk_overview_set_chosen   (<em class="parameter"><code><a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> *widget</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> is_chosen</code></em>);</pre>
+<p>
+Specifies whether the disk shown by this overview has been chosen by
+the user for inclusion in installation.  If so, a special background will
+be set as a visual indicator.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>widget</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>is_chosen</code></em> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if this disk is chosen.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="AnacondaDiskOverview.property-details"></a><h2>Property Details</h2>
+<div class="refsect2">
+<a name="AnacondaDiskOverview--capacity"></a><h3>The <code class="literal">"capacity"</code> property</h3>
+<pre class="programlisting">  "capacity"                 <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :capacity string is the total size of the disk, plus units.
+</p>
+<p>Default value: "0 MB"</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaDiskOverview--description"></a><h3>The <code class="literal">"description"</code> property</h3>
+<pre class="programlisting">  "description"              <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :description string is a very basic description of the device
+and is displayed in bold letters under the icon.
+</p>
+<p>Default value: "New Device"</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaDiskOverview--kind"></a><h3>The <code class="literal">"kind"</code> property</h3>
+<pre class="programlisting">  "kind"                     <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :kind string specifies what type of disk device this is, used to
+figure out what icon to be displayed.  This should be something like
+"drive-harddisk", "drive-removable-media", etc.
+</p>
+<p>Default value: "drive-harddisk"</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaDiskOverview--os"></a><h3>The <code class="literal">"os"</code> property</h3>
+<pre class="programlisting">  "os"                       <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :os string describes any operating system found on this device.
+</p>
+<p>Default value: ""</p>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaDiskOverview--popup-info"></a><h3>The <code class="literal">"popup-info"</code> property</h3>
+<pre class="programlisting">  "popup-info"               <span class="type">gchar</span>*                : Read / Write</pre>
+<p>
+The :popup-info string is text that should appear in a tooltip when the
+<a class="link" href="AnacondaDiskOverview.html" title="AnacondaDiskOverview"><span class="type">AnacondaDiskOverview</span></a> is hovered over.  For normal disk devices, this
+could be available space information.  For more complex devics, this
+could be WWID, LUN, and so forth.
+</p>
+<p>Default value: ""</p>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.18</div>
+</body>
+</html>

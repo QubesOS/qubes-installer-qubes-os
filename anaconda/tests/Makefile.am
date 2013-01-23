@@ -17,8 +17,6 @@
 #
 # Author: David Cantrell <dcantrell@redhat.com>
 
-SUBDIRS = storage
-
-EXTRA_DIST = *.py
+SUBDIRS = mock kickstart_test storage_test regex pyanaconda_test pylint logpicker_test
 
 MAINTAINERCLEANFILES = Makefile.in

@@ -19,125 +19,70 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = isys po loader booty storage textw utils scripts bootdisk \
-          installclasses iw command-stubs ui docs pixmaps tests fonts \
-          gptsync liveinst
+SUBDIRS = pyanaconda po data \
+	  tests utils scripts docs dracut widgets
 
-EXTRA_DIST = config.rpath COPYING pychecker-false-positives \
-             pycheckrc-for-anaconda runpychecker.sh lang-table \
+EXTRA_DIST = config.rpath COPYING \
              anaconda.spec.in
 
 MAINTAINERCLEANFILES = Makefile.in config.guess config.h.in config.sub \
                        depcomp install-sh ltmain.sh missing ABOUT-NLS \
                        INSTALL aclocal.m4 configure *.pyc py-compile
 
-CLEANFILES = *~ lang-names anaconda.spec
+CLEANFILES = *~ anaconda.spec
 
 MOSTLYCLEANDIRS = m4
 
 dist_noinst_DATA      = $(PACKAGE_NAME).spec
 
-bin_PROGRAMS          = mini-wm
 dist_sbin_SCRIPTS     = anaconda
 
-mini_wm_CFLAGS        = $(X11_CFLAGS) $(XCOMPOSITE_CFLAGS) $(GTK_X11_CFLAGS)
-mini_wm_LDFLAGS       = $(X11_LIBS) $(XCOMPOSITE_LIBS) $(GTK_X11_LIBS)
-mini_wm_SOURCES       = mini-wm.c
-
-udevdir               = /lib/udev/rules.d
-dist_udev_DATA        = 70-anaconda.rules
-
-langdir               = $(libdir)/$(PACKAGE_NAME)
-lang_DATA             = lang-names
-dist_lang_DATA        = lang-table
-
-pkgpyexecdir          = $(libdir)/$(PACKAGE_NAME)
-pkgpythondir          = $(libdir)/$(PACKAGE_NAME)
-
-pkgpyexec_LTLIBRARIES = xutils.la
-xutils_la_CFLAGS      = $(PYTHON_INCLUDES) $(GDK_CFLAGS) -fno-strict-aliasing
-xutils_la_LDFLAGS     = -module -avoid-version $(PYTHON_LDFLAGS) $(GDK_LDFLAGS)
-xutils_la_LIBADD      = $(PYTHON_LIBS) $(GDK_LIBS)
-xutils_la_SOURCES     = xutils.c
-
-# anaconda Python code
-anacondadir = $(libdir)/$(PACKAGE_NAME)
-anaconda_PYTHON = *.py
-
-PYCHECKERPATH = isys:textw:iw:installclasses:/usr/share/system-config-date
-PYCHECKEROPTS = -F pycheckrc-for-anaconda
 ARCHIVE_TAG   = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_RELEASE)
 
 sed_verbose = $(sed_verbose_$(V))
 sed_verbose_ = $(sed_verbose_$(AM_DEFAULT_VERBOSITY))
 sed_verbose_0 = @echo "  SED    "$@;
 
+TX_PULL_ARGS = -a --disable-overwrite
+TX_PUSH_ARGS = -s
+
 $(PACKAGE_NAME).spec: $(PACKAGE_NAME).spec.in
 	$(sed_verbose)sed -e 's/#VERSION#/$(PACKAGE_VERSION)/' < $< > $@
-
-lang-names: lang-table
-	PYTHONPATH="." $(PYTHON) scripts/getlangnames.py > lang-names
-
-testiso: install
-	@if [ "$(REPO)" = "" ]; then echo "ERROR: Need a repo to pull packages from!" ; exit 1 ; fi
-	@pushd scripts ; sudo ./buildinstall --version $(PACKAGE_VERSION) --product $(PACKAGE_NAME) --release $(PACKAGE_NAME)-$(PACKAGE_VERSION) --output $(shell pwd)/outiso --updates $(DESTDIR) $(REPO) ; popd ; cp outiso/images/boot.iso ./boot.iso ; sudo rm -rf outiso
-	@echo
-	@echo "Test iso is located at ./boot.iso"
 
 tag:
 	@git tag -s -a -m "Tag as $(ARCHIVE_TAG)" $(ARCHIVE_TAG)
 	@echo "Tagged as $(ARCHIVE_TAG)"
 
-scratch:
+po-pull:
+	rm -f po/en@boldquot.gmo po/en@boldquot.po
+	rm -f po/en@quot.gmo po/en@quot.po
+	rpm -q transifex-client &>/dev/null || ( echo "need to run: yum install transifex-client"; exit 1 )
+	tx pull $(TX_PULL_ARGS)
+
+scratch: po-pull
 	$(MAKE) ARCHIVE_TAG=HEAD dist
-
-archive:
-	$(MAKE) tag
-	$(MAKE) dist
 	git checkout -- po/$(PACKAGE_NAME).pot
-	( cd po ; for f in *.po ; do git checkout -- $$f 2>/dev/null ; done )
 
-release: archive
-
-src: archive
-	@rpmbuild -ts --nodeps $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.bz2 || exit 1
-	@rm -f $(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.bz2
-
-pycheck:
-	PYTHONPATH=$(PYCHECKERPATH) pychecker $(PYCHECKEROPTS) *.py textw/*.py iw/*.py installclasses/*.py storage/*.py | grep -v "__init__() not called"
-
-pycheck-file:
-	PYTHONPATH=.:$(PYCHECKERPATH) pychecker $(PYCHECKEROPTS) $(CHECK) | grep -v "__init__() not called"
+release:
+	$(MAKE) dist && $(MAKE) tag && git checkout -- po/$(PACKAGE_NAME).pot
 
 api:
 	doxygen docs/api.cfg
 
-rpmlog:
-	@git log --pretty="format:- %s (%ae)" \
-		$(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_RELEASE).. | \
-		sed -e 's/@.*)/)/' | sed -e 's/%/%%/g' | \
-		grep -v -- "- l10n: " | \
-		grep -v -- "- Merge commit "
-
-bumpver:
-	@LAST=$$(echo $(PACKAGE_VERSION) | grep "\." -o | wc -l) ; \
-	FIELD=$$(($${LAST} + 1)) ; \
-	NEWSUBVER=$$((`echo $(PACKAGE_VERSION) | cut -d . -f $${FIELD}` + 1)) ; \
-	NEWVERSION="`echo $(PACKAGE_VERSION) | cut -d . -f 1-$${LAST}`.$$NEWSUBVER" ; \
-	DATELINE="* `date "+%a %b %d %Y"` `git config user.name` <`git config user.email`> - $$NEWVERSION-1"  ; \
-	cl=`grep -n %changelog anaconda.spec.in |cut -d : -f 1` ; \
-	tail --lines=+$$(($$cl + 1)) anaconda.spec.in > speclog ; \
-	make --quiet rpmlog 2>/dev/null | fold -s -w 77 | while read line ; do \
-		if [ ! "$$(echo $$line | cut -c-2)" = "- " ]; then \
-			echo "  $$line" ; \
-		else \
-			echo "$$line" ; \
-		fi ; \
-	done > newspeclog ; \
-	(head -n $$cl anaconda.spec.in ; echo "$$DATELINE" ; cat newspeclog ; echo ""; cat speclog) > anaconda.spec.in.new ; \
-	mv anaconda.spec.in.new anaconda.spec.in ; rm -f speclog ; rm -f newspeclog ; \
-	sed -i "s/AC_INIT(\[$(PACKAGE_NAME)\], \[$(PACKAGE_VERSION)\], \[$(PACKAGE_BUGREPORT\])/AC_INIT(\[$(PACKAGE_NAME)\], \[$$NEWVERSION\], \[$(PACKAGE_BUGREPORT\])/" configure.ac
-	$(MAKE) -C po $(PACKAGE_NAME).pot-update
+bumpver: po-pull
+	@opts="-n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
+	if [ ! -z "$(IGNORE)" ]; then \
+		opts="$${opts} -i $(IGNORE)" ; \
+	fi ; \
+	if [ ! -z "$(MAP)" ]; then \
+		opts="$${opts} -m $(MAP)" ; \
+	fi ; \
+	if [ ! -z "$(BZDEBUG)" ]; then \
+		opts="$${opts} -d" ; \
+	fi ; \
+	scripts/makebumpver $${opts} || exit 1 ; \
+	$(MAKE) -C po $(PACKAGE_NAME).pot-update ; \
+	tx push $(TX_PUSH_ARGS)
 
 install-buildrequires:
 	yum install $$(grep BuildRequires: anaconda.spec.in | cut -d ' ' -f 2)
@@ -155,5 +100,60 @@ updates:
 	fi ; \
 	scripts/makeupdates $${opts}
 
-# DEPRECATED TARGETS:
-archive-no-tag: dist
+# UNIT TESTING TARGETS
+unittest:
+	PYTHONPATH=tests/:. nosetests --exclude=logpicker -a \!acceptance,\!slow  tests/
+
+unittests-logpicker:
+	PYTHONPATH=tests/:.:utils/ nosetests tests/logpicker_test
+
+# GUI TESTING
+runspoke:
+	ANACONDA_DATA=${PWD}/data \
+	ANACONDA_WIDGETS_OVERRIDES=${PWD}/widgets/python \
+	ANACONDA_WIDGETS_DATA=${PWD}/widgets/data \
+	ANACONDA_INSTALL_CLASSES=${PWD}/pyanaconda/installclasses \
+	PYTHONPATH=.:pyanaconda/isys/.libs:widgets/python/:widgets/src/.libs/ \
+	LD_LIBRARY_PATH=widgets/src/.libs \
+	UIPATH=pyanaconda/ui/gui/ \
+	GI_TYPELIB_PATH=widgets/src/ \
+	pyanaconda/ui/gui/tools/run-spoke.py ${SPOKE_MODULE} ${SPOKE_CLASS}
+
+runhub:
+	ANACONDA_DATA=${PWD}/data \
+	ANACONDA_WIDGETS_OVERRIDES=${PWD}/widgets/python \
+	ANACONDA_WIDGETS_DATA=${PWD}/widgets/data \
+	ANACONDA_INSTALL_CLASSES=${PWD}/pyanaconda/installclasses \
+	PYTHONPATH=.:pyanaconda/isys/.libs:widgets/python/:widgets/src/.libs/ \
+	LD_LIBRARY_PATH=widgets/src/.libs \
+	UIPATH=pyanaconda/ui/gui/ \
+	GI_TYPELIB_PATH=widgets/src/ \
+	pyanaconda/ui/gui/tools/run-hub.py ${HUB_MODULE} ${HUB_CLASS}
+
+runtextspoke:
+	ANACONDA_DATA=${PWD}/data \
+	ANACONDA_INSTALL_CLASSES=${PWD}/pyanaconda/installclasses \
+	PYTHONPATH=.:pyanaconda/isys/.libs:widgets/python/:widgets/src/.libs/ \
+	LD_LIBRARY_PATH=widgets/src/.libs \
+	pyanaconda/ui/tui/tools/run-text-spoke.py ${SPOKE_MODULE} ${SPOKE_CLASS}
+
+runtexthub:
+	ANACONDA_DATA=${PWD}/data \
+	ANACONDA_INSTALL_CLASSES=${PWD}/pyanaconda/installclasses \
+	PYTHONPATH=.:pyanaconda/isys/.libs:widgets/python/:widgets/src/.libs/ \
+	LD_LIBRARY_PATH=widgets/src/.libs \
+	pyanaconda/ui/tui/tools/run-text-hub.py ${HUB_MODULE} ${HUB_CLASS}
+
+
+runglade:
+	ANACONDA_DATA=${PWD}/data \
+	ANACONDA_WIDGETS_OVERRIDES=${PWD}/widgets/python \
+	ANACONDA_WIDGETS_DATA=${PWD}/widgets/data \
+	ANACONDA_INSTALL_CLASSES=${PWD}/pyanaconda/installclasses \
+	PYTHONPATH=.:pyanaconda/isys/.libs:widgets/python/:widgets/src/.libs/ \
+	LD_LIBRARY_PATH=widgets/src/.libs \
+	UIPATH=pyanaconda/ui/gui/ \
+	GI_TYPELIB_PATH=widgets/src/ \
+	GLADE_CATALOG_SEARCH_PATH=${PWD}/widgets/glade \
+	GLADE_MODULE_SEARCH_PATH=${PWD}/widgets/src/.libs \
+	glade ${GLADE_FILE}

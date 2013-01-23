@@ -20,10 +20,9 @@
 m4_define(python_required_version, 2.5)
 
 AC_PREREQ([2.63])
-AC_INIT([anaconda], [13.42], [anaconda-devel-list@redhat.com])
+AC_INIT([anaconda], [18.37.11], [anaconda-devel-list@redhat.com])
 AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2])
 
-AC_CONFIG_SRCDIR([loader/loader.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -54,10 +53,6 @@ AC_CHECK_LIB([blkid], [blkid_get_cache],
              [AC_SUBST(BLKID_LIBS, [-lblkid])],
              [AC_MSG_FAILURE([*** libblkid not usable.])])
 
-AC_CHECK_LIB([checkisomd5], [mediaCheckFile],
-             [AC_SUBST(CHECKISOMD5_LIBS, [-lcheckisomd5])],
-             [AC_MSG_FAILURE([*** libcheckisomd5 not usable.])])
-
 AC_CHECK_LIB([ext2fs], [ext2fs_initialize],
              [AC_SUBST(EXT2FS_LIBS, [-lext2fs])],
              [AC_MSG_FAILURE([*** libext2fs not usable.])])
@@ -65,14 +60,6 @@ AC_CHECK_LIB([ext2fs], [ext2fs_initialize],
 AC_CHECK_LIB([iscsi], [libiscsi_get_firmware_network_config],
              [AC_SUBST(ISCSI_LIBS, [-liscsi])],
              [AC_MSG_FAILURE([*** libiscsi not usable.])])
-
-AC_CHECK_LIB([newt], [newtInit],
-             [AC_SUBST(NEWT_LIBS, [-lnewt])],
-             [AC_MSG_FAILURE([*** libnewt not usable.])])
-
-AC_CHECK_LIB([slang], [SLang_get_int_size],
-             [AC_SUBST(SLANG_LIBS, [-lslang])],
-             [AC_MSG_FAILURE([*** libslang not usable.])])
 
 AC_CHECK_LIB([z], [zlibVersion],
              [AC_SUBST(ZLIB_LIBS, [-lz])],
@@ -131,8 +118,8 @@ PKG_PROG_PKG_CONFIG([0.23])
 PKG_CHECK_MODULES([X11], [x11 >= 1.3])
 PKG_CHECK_MODULES([XCOMPOSITE], [xcomposite >= 0.4.1])
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.1])
-PKG_CHECK_MODULES([GTK_X11], [gtk+-x11-2.0 >= 2.16.1])
-PKG_CHECK_MODULES([GDK], [gdk-2.0 >= 2.16.1])
+PKG_CHECK_MODULES([GTK_X11], [gtk+-x11-3.0 >= 3.0])
+PKG_CHECK_MODULES([GDK], [gdk-3.0])
 PKG_CHECK_MODULES([NETWORKMANAGER], [NetworkManager >= 0.7.1])
 PKG_CHECK_MODULES([LIBNL], [libnl-1 >= 1.0])
 PKG_CHECK_MODULES([LIBNM_GLIB], [libnm-glib >= 0.7.1 libnm-util >= 0.7.1])
@@ -143,7 +130,7 @@ PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 2.7.902a])
 
 # Set $RPM_OPT_FLAGS if we don't have it
 if test -z $RPM_OPT_FLAGS ; then
-    CFLAGS="$CFLAGS -O2 -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions"
+    CFLAGS="$CFLAGS -g -pipe -Wp,-D_FORTIFY_SOURCE=2 -fexceptions"
 else
     CFLAGS="$CFLAGS $RPM_OPT_FLAGS"
 fi
@@ -185,8 +172,12 @@ if test x$ipv6 = xyes ; then
     AC_SUBST(IPV6_CFLAGS, [-DENABLE_IPV6])
 fi
 
+# GCC likes to bomb out on some ridiculous warnings.  Add your favorites
+# here.
+SHUT_UP_GCC="-Wno-unused-result"
+
 # Add remaining compiler flags we want to use
-CFLAGS="$CFLAGS -Wall -Werror -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
+CFLAGS="$CFLAGS -Wall -Werror $SHUT_UP_GCC -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE"
 
 # Filter CFLAGS (remove duplicate flags)
 cflags_filter() {
@@ -219,9 +210,6 @@ AC_SUBST(PACKAGE_RELEASE, [$rel])
 s_arch="`uname -m | sed -e s/i.86/i386/ -e s/sparc.*/sparc/ -e s/ppc.*/ppc/`"
 AC_SUBST(ARCH, [$s_arch])
 
-AM_CONDITIONAL(IS_FONT_ARCH,
-  [test x$s_arch != xs390 && test x$s_arch != xs390x])
-
 AM_CONDITIONAL(IS_LIVEINST_ARCH,
   [test x$s_arch == xppc || test x$s_arch == xi386 || test x$s_arch == xx86_64])
 
@@ -246,34 +234,70 @@ AM_CONDITIONAL(IS_X86_64,
 AM_CONDITIONAL(IS_SPARC,
   [test x$s_arch == xsparc || test x$s_arch == xsparc64])
 
+AC_CONFIG_SUBDIRS([widgets])
+
 AC_CONFIG_FILES([Makefile
-                 bootdisk/Makefile
-                 bootdisk/i386/Makefile
-                 bootdisk/ppc/Makefile
-                 bootdisk/s390x/Makefile
-                 bootdisk/x86_64/Makefile
-                 booty/Makefile
-                 command-stubs/Makefile
+                 data/Makefile
+                 data/command-stubs/Makefile
                  docs/Makefile
-                 fonts/Makefile
-                 gptsync/Makefile
-                 installclasses/Makefile
-                 isys/Makefile
-                 iw/Makefile
-                 liveinst/Makefile
-                 liveinst/console.apps/Makefile
-                 liveinst/pam.d/Makefile
-                 loader/Makefile
-                 pixmaps/Makefile
+                 dracut/Makefile
+                 pyanaconda/installclasses/Makefile
+                 data/liveinst/Makefile
+                 data/liveinst/console.apps/Makefile
+                 data/liveinst/gnome/Makefile
+                 data/liveinst/pam.d/Makefile
+                 data/pixmaps/Makefile
+                 data/icons/Makefile
+                 data/icons/hicolor/Makefile
+                 data/icons/hicolor/16x16/Makefile
+                 data/icons/hicolor/16x16/apps/Makefile
+                 data/icons/hicolor/22x22/Makefile
+                 data/icons/hicolor/22x22/apps/Makefile
+                 data/icons/hicolor/24x24/Makefile
+                 data/icons/hicolor/24x24/apps/Makefile
+                 data/icons/hicolor/32x32/Makefile
+                 data/icons/hicolor/32x32/apps/Makefile
+                 data/icons/hicolor/48x48/Makefile
+                 data/icons/hicolor/48x48/apps/Makefile
+                 data/icons/hicolor/256x256/Makefile
+                 data/icons/hicolor/256x256/apps/Makefile
+                 data/systemd/Makefile
                  po/Makefile.in
                  scripts/Makefile
-                 storage/Makefile
-                 storage/devicelibs/Makefile
-                 storage/formats/Makefile
+                 pyanaconda/Makefile
+                 pyanaconda/isys/Makefile
+                 pyanaconda/packaging/Makefile
+                 pyanaconda/storage/Makefile
+                 pyanaconda/storage/devicelibs/Makefile
+                 pyanaconda/storage/formats/Makefile
+                 pyanaconda/ui/Makefile
+                 pyanaconda/ui/lib/Makefile
+                 pyanaconda/ui/gui/categories/Makefile
+                 pyanaconda/ui/gui/hubs/Makefile
+                 pyanaconda/ui/gui/spokes/Makefile
+                 pyanaconda/ui/gui/spokes/lib/Makefile
+                 pyanaconda/ui/gui/tools/Makefile
+                 pyanaconda/ui/gui/Makefile
+                 pyanaconda/ui/tui/hubs/Makefile
+                 pyanaconda/ui/tui/simpleline/Makefile
+                 pyanaconda/ui/tui/spokes/Makefile
+                 pyanaconda/ui/tui/tools/Makefile
+                 pyanaconda/ui/tui/Makefile
                  tests/Makefile
-                 tests/storage/Makefile
-                 tests/storage/devicelibs/Makefile
-                 textw/Makefile
-                 ui/Makefile
-                 utils/Makefile])
+                 tests/mock/Makefile
+                 tests/kickstart_test/Makefile
+                 tests/storage_test/Makefile
+                 tests/storage_test/devicelibs_test/Makefile
+                 tests/pylint/Makefile
+                 tests/regex/Makefile
+                 tests/pyanaconda_test/Makefile
+                 tests/logpicker_test/Makefile
+                 tests/logpicker_test/sending_test/Makefile
+                 tests/logpicker_test/archiving_test/Makefile
+                 tests/logpicker_test/logmining_test/Makefile
+                 pyanaconda/textw/Makefile
+                 data/post-scripts/Makefile
+                 utils/Makefile
+                 utils/log_picker/Makefile
+                 utils/log_picker/sending/Makefile])
 AC_OUTPUT

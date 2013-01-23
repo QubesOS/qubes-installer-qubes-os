@@ -5,5 +5,5 @@
 <h1>Moved Permanently</h1>
 <p>The document has moved <a href="https://fedoraproject.org/w/index.php?title=Anaconda_Boot_Options&amp;action=raw">here</a>.</p>
 <hr>
-<address>Apache/2.2.3 (Red Hat) Server at fedoraproject.org Port 80</address>
+<address>Apache/2.2.15 (Red Hat) Server at fedoraproject.org Port 80</address>
 </body></html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>AnacondaStandaloneWindow</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.77.1">
+<link rel="home" href="index.html" title="The AnacondaWidgets Library Reference Manual">
+<link rel="up" href="windows.html" title="Window Widgets">
+<link rel="prev" href="AnacondaSpokeWindow.html" title="AnacondaSpokeWindow">
+<link rel="next" href="disks.html" title="Disk-Related Widgets">
+<meta name="generator" content="GTK-Doc V1.18 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="2">
+<tr valign="middle">
+<td><a accesskey="p" href="AnacondaSpokeWindow.html"><img src="left.png" width="24" height="24" border="0" alt="Prev"></a></td>
+<td><a accesskey="u" href="windows.html"><img src="up.png" width="24" height="24" border="0" alt="Up"></a></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="24" height="24" border="0" alt="Home"></a></td>
+<th width="100%" align="center">The AnacondaWidgets Library Reference Manual</th>
+<td><a accesskey="n" href="disks.html"><img src="right.png" width="24" height="24" border="0" alt="Next"></a></td>
+</tr>
+<tr><td colspan="5" class="shortcuts">
+<a href="#AnacondaStandaloneWindow.synopsis" class="shortcut">Top</a>
+                   | 
+                  <a href="#AnacondaStandaloneWindow.description" class="shortcut">Description</a>
+                   | 
+                  <a href="#AnacondaStandaloneWindow.object-hierarchy" class="shortcut">Object Hierarchy</a>
+                   | 
+                  <a href="#AnacondaStandaloneWindow.implemented-interfaces" class="shortcut">Implemented Interfaces</a>
+                   | 
+                  <a href="#AnacondaStandaloneWindow.signals" class="shortcut">Signals</a>
+</td></tr>
+</table>
+<div class="refentry">
+<a name="AnacondaStandaloneWindow"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="AnacondaStandaloneWindow.top_of_page"></a>AnacondaStandaloneWindow</span></h2>
+<p>AnacondaStandaloneWindow — Window for displaying standalone spokes</p>
+</td>
+<td valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<a name="AnacondaStandaloneWindow.synopsis"></a><h2>Synopsis</h2>
+<pre class="synopsis">struct              <a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindow-struct" title="struct AnacondaStandaloneWindow">AnacondaStandaloneWindow</a>;
+struct              <a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindowClass" title="struct AnacondaStandaloneWindowClass">AnacondaStandaloneWindowClass</a>;
+<span class="returnvalue">gboolean</span>            <a class="link" href="AnacondaStandaloneWindow.html#anaconda-standalone-window-get-may-continue" title="anaconda_standalone_window_get_may_continue ()">anaconda_standalone_window_get_may_continue</a>
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>);
+<span class="returnvalue">GtkWidget</span> *         <a class="link" href="AnacondaStandaloneWindow.html#anaconda-standalone-window-new" title="anaconda_standalone_window_new ()">anaconda_standalone_window_new</a>      ();
+<span class="returnvalue">void</span>                <a class="link" href="AnacondaStandaloneWindow.html#anaconda-standalone-window-retranslate" title="anaconda_standalone_window_retranslate ()">anaconda_standalone_window_retranslate</a>
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *lang</code></em>);
+<span class="returnvalue">void</span>                <a class="link" href="AnacondaStandaloneWindow.html#anaconda-standalone-window-set-may-continue" title="anaconda_standalone_window_set_may_continue ()">anaconda_standalone_window_set_may_continue</a>
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> may_continue</code></em>);
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.object-hierarchy"></a><h2>Object Hierarchy</h2>
+<pre class="synopsis">
+  GObject
+   +----GInitiallyUnowned
+         +----GtkWidget
+               +----GtkContainer
+                     +----GtkBin
+                           +----GtkWindow
+                                 +----<a class="link" href="AnacondaBaseWindow.html" title="AnacondaBaseWindow">AnacondaBaseWindow</a>
+                                       +----AnacondaStandaloneWindow
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.implemented-interfaces"></a><h2>Implemented Interfaces</h2>
+<p>
+AnacondaStandaloneWindow implements
+ AtkImplementorIface and  GtkBuildable.</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.signals"></a><h2>Signals</h2>
+<pre class="synopsis">
+  "<a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindow-continue-clicked" title='The "continue-clicked" signal'>continue-clicked</a>"                               : <code class="literal">Action</code>
+  "<a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindow-quit-clicked" title='The "quit-clicked" signal'>quit-clicked</a>"                                   : <code class="literal">Action</code>
+</pre>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.description"></a><h2>Description</h2>
+<p>
+A <a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> is a top-level window that displays a standalone
+spoke.  A standalone spoke is like a normal spoke, but is not entered via a
+hub.  Instead, it is displayed by itself.  Examples include the welcome and
+network configuration screens at the beginning of installation.
+</p>
+<p>
+The window consist of three areas:
+</p>
+<p>
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>A navigation area in the top of the screen, inherited from <a class="link" href="AnacondaBaseWindow.html" title="AnacondaBaseWindow"><span class="type">AnacondaBaseWindow</span></a>.</p></li></ul></div>
+<p>
+</p>
+<p>
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>A button box at the bottom of the screen, with Quit and Continue buttons.
+  The Continue button may not be enabled until required information is
+  entered by the user.</p></li></ul></div>
+<p>
+</p>
+<p>
+</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>An action area in the middle of the screen, taking up a majority of the
+  space.  This is where widgets will be added and the user will do things.</p></li></ul></div>
+<p>
+</p>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.details"></a><h2>Details</h2>
+<div class="refsect2">
+<a name="AnacondaStandaloneWindow-struct"></a><h3>struct AnacondaStandaloneWindow</h3>
+<pre class="programlisting">struct AnacondaStandaloneWindow;</pre>
+<p>
+The AnacondaStandaloneWindow struct contains only private fields and should not
+be directly accessed.
+</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaStandaloneWindowClass"></a><h3>struct AnacondaStandaloneWindowClass</h3>
+<pre class="programlisting">struct AnacondaStandaloneWindowClass {
+    AnacondaBaseWindowClass parent_class;
+
+    void (* quit_clicked)     (AnacondaStandaloneWindow *window);
+    void (* continue_clicked) (AnacondaStandaloneWindow *window);
+};
+</pre>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><a class="link" href="AnacondaBaseWindow.html#AnacondaBaseWindowClass" title="struct AnacondaBaseWindowClass"><span class="type">AnacondaBaseWindowClass</span></a> <em class="structfield"><code><a name="AnacondaStandaloneWindowClass.parent-class"></a>parent_class</code></em>;</span></p></td>
+<td>The object class structure needs to be the first element in
+the widget class structure in order for the class mechanism
+to work correctly.  This allows an AnacondaStandaloneWindowClass
+pointer to be cast to an <a class="link" href="AnacondaBaseWindow.html" title="AnacondaBaseWindow"><span class="type">AnacondaBaseWindow</span></a> pointer.</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="structfield"><code><a name="AnacondaStandaloneWindowClass.quit-clicked"></a>quit_clicked</code></em> ()</span></p></td>
+<td>Function pointer called when the <a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindow-quit-clicked" title='The "quit-clicked" signal'><span class="type">"quit-clicked"</span></a>
+signal is emitted.</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="structfield"><code><a name="AnacondaStandaloneWindowClass.continue-clicked"></a>continue_clicked</code></em> ()</span></p></td>
+<td>Function pointer called when the <a class="link" href="AnacondaStandaloneWindow.html#AnacondaStandaloneWindow-continue-clicked" title='The "continue-clicked" signal'><span class="type">"continue-clicked"</span></a>
+signal is emitted.</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-standalone-window-get-may-continue"></a><h3>anaconda_standalone_window_get_may_continue ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>            anaconda_standalone_window_get_may_continue
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>);</pre>
+<p>
+Returns whether or not the continue button is sensitive (thus, whether the
+user may continue forward from this window).
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>win</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>Whether the continue button on <em class="parameter"><code>win</code></em> is sensitive.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-standalone-window-new"></a><h3>anaconda_standalone_window_new ()</h3>
+<pre class="programlisting"><span class="returnvalue">GtkWidget</span> *         anaconda_standalone_window_new      ();</pre>
+<p>
+Creates a new <a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a>, which is a window designed for
+displaying a standalone spoke, such as the welcome screen or network
+configuration.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><span class="emphasis"><em>Returns</em></span> :</span></p></td>
+<td>A new <a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a>.</td>
+</tr></tbody>
+</table></div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-standalone-window-retranslate"></a><h3>anaconda_standalone_window_retranslate ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                anaconda_standalone_window_retranslate
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>,
+                                                         <em class="parameter"><code>const <span class="type">char</span> *lang</code></em>);</pre>
+<p>
+Reload translations for this widget as needed.  Generally, this is not
+needed.  However when changing the language during installation, we need
+to be able to make sure the screen gets retranslated.  This function is
+kind of ugly but avoids having to destroy and reload the screen.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody><tr>
+<td><p><span class="term"><em class="parameter"><code>win</code></em> :</span></p></td>
+<td>a <span class="type">AnacondaStaldaloneWindow</span>
+</td>
+</tr></tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="anaconda-standalone-window-set-may-continue"></a><h3>anaconda_standalone_window_set_may_continue ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                anaconda_standalone_window_set_may_continue
+                                                        (<em class="parameter"><code><a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *win</code></em>,
+                                                         <em class="parameter"><code><span class="type">gboolean</span> may_continue</code></em>);</pre>
+<p>
+Specifies whether the user may continue forward from this window.  If so,
+the continue button will be made sensitive.  Windows default to continuable
+so you must set it as false if you want.  The reason the user may not be
+able to continue is if there is required information the user must enter
+when no reasonable default may be given.
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>win</code></em> :</span></p></td>
+<td>a <a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>may_continue</code></em> :</span></p></td>
+<td>
+<code class="literal">TRUE</code> if this window's continue button should be sensitive.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+<div class="refsect1">
+<a name="AnacondaStandaloneWindow.signal-details"></a><h2>Signal Details</h2>
+<div class="refsect2">
+<a name="AnacondaStandaloneWindow-continue-clicked"></a><h3>The <code class="literal">"continue-clicked"</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                user_function                      (<a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *window,
+                                                        <span class="type">gpointer</span>                  user_data)      : <code class="literal">Action</code></pre>
+<p>
+Emitted when the continue button has been activated (pressed and released).
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>window</code></em> :</span></p></td>
+<td>the window that received the signal</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>user_data</code></em> :</span></p></td>
+<td>user data set when the signal handler was connected.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="AnacondaStandaloneWindow-quit-clicked"></a><h3>The <code class="literal">"quit-clicked"</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>                user_function                      (<a class="link" href="AnacondaStandaloneWindow.html" title="AnacondaStandaloneWindow"><span class="type">AnacondaStandaloneWindow</span></a> *window,
+                                                        <span class="type">gpointer</span>                  user_data)      : <code class="literal">Action</code></pre>
+<p>
+Emitted when the quit button has been activated (pressed and released).
+</p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>window</code></em> :</span></p></td>
+<td>the window that received the signal</td>
+</tr>
+<tr>
+<td><p><span class="term"><em class="parameter"><code>user_data</code></em> :</span></p></td>
+<td>user data set when the signal handler was connected.</td>
+</tr>
+</tbody>
+</table></div>
+<p class="since">Since 1.0</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>
+          Generated by GTK-Doc V1.18</div>
+</body>
+</html>

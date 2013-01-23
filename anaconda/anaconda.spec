@@ -1,11 +1,9 @@
 %define livearches %{ix86} x86_64 ppc ppc64
-%define _libdir %{_prefix}/lib
 
 Summary: Graphical system installer
 Name:    anaconda
-Version: 13.42
-Release: 4%{?dist}
-Epoch:   1000
+Version: 18.37.11
+Release: 1%{?dist}
 License: GPLv2+
 Group:   Applications/System
 URL:     http://fedoraproject.org/wiki/Anaconda
@@ -24,16 +22,15 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define dmver 1.02.17-6
 %define gettextver 0.11
 %define genisoimagever 1.1.9-4
+%define gconfversion 2.28.1
 %define intltoolver 0.31.2-3
 %define libnlver 1.0
 %define libselinuxver 1.6
-%define pykickstartver 1.68
+%define pykickstartver 1.99.22
 %define rpmpythonver 4.2-0.61
-%define slangver 2.0.6-2
-%define yumver 2.9.2
+%define yumver 3.4.3-32
 %define partedver 1.8.1
 %define pypartedver 2.5-2
-%define syscfgdatever 1.9.48
 %define pythonpyblockver 0.45
 %define e2fsver 1.41.0
 %define nmver 1:0.7.1-3.git20090414
@@ -41,9 +38,16 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define createrepover 0.4.7
 %define yumutilsver 1.1.11-3
 %define iscsiver 6.2.0.870-3
-%define pythoncryptsetupver 0.0.6
-%define mehver 0.4
+%define pythoncryptsetupver 0.1.1
+%define mehver 0.16-1
 %define sckeyboardver 1.3.1
+%define libblkidver 2.17.1-1
+%define fcoeutilsver 1.0.12-3.20100323git
+%define firewalldver 0.2.9-1
+%define pythonurlgrabberver 3.9.1-5
+%define utillinuxver 2.15.1
+%define syslinuxver 3.73
+%define dracutver 024-16
 
 BuildRequires: audit-libs-devel
 BuildRequires: bzip2-devel
@@ -51,34 +55,40 @@ BuildRequires: device-mapper-devel >= %{dmver}
 BuildRequires: e2fsprogs-devel >= %{e2fsver}
 BuildRequires: elfutils-devel
 BuildRequires: gettext >= %{gettextver}
-BuildRequires: gtk2-devel
+BuildRequires: gtk3-devel
+BuildRequires: gtk-doc
+BuildRequires: gobject-introspection-devel
+BuildRequires: glade-devel
+BuildRequires: pygobject3
 BuildRequires: intltool >= %{intltoolver}
-BuildRequires: isomd5sum-devel
 BuildRequires: libarchive-devel
 BuildRequires: libX11-devel
 BuildRequires: libXt-devel
 BuildRequires: libXxf86misc-devel
-BuildRequires: libblkid-devel
+BuildRequires: libblkid-devel >= %{libblkidver}
 BuildRequires: libcurl-devel
+BuildRequires: libgnomekbd-devel
 BuildRequires: libnl-devel >= %{libnlver}
 BuildRequires: libselinux-devel >= %{libselinuxver}
 BuildRequires: libsepol-devel
+BuildRequires: libxklavier-devel
 BuildRequires: libxml2-python
-BuildRequires: newt-devel
 BuildRequires: pango-devel
 BuildRequires: pykickstart >= %{pykickstartver}
 BuildRequires: python-devel
-BuildRequires: python-urlgrabber >= 3.9.1-5
+BuildRequires: python-pyblock >= %{pythonpyblockver}
+BuildRequires: python-urlgrabber >= %{pythonurlgrabberver}
+BuildRequires: python-nose
 BuildRequires: rpm-devel
 BuildRequires: rpm-python >= %{rpmpythonver}
-BuildRequires: slang-devel >= %{slangver}
+BuildRequires: systemd
 BuildRequires: xmlto
 BuildRequires: yum >= %{yumver}
 BuildRequires: zlib-devel
 BuildRequires: NetworkManager-devel >= %{nmver}
 BuildRequires: NetworkManager-glib-devel >= %{nmver}
 BuildRequires: dbus-devel >= %{dbusver}
-BuildRequires: system-config-keyboard >= %{sckeyboardver}
+BuildRequires: dbus-python
 %ifarch %livearches
 BuildRequires: desktop-file-utils
 %endif
@@ -87,52 +97,58 @@ BuildRequires: iscsi-initiator-utils-devel >= %{iscsiver}
 BuildRequires: s390utils-devel
 %endif
 
+Requires: anaconda-widgets = %{version}-%{release}
+Requires: gnome-icon-theme-symbolic
 Requires: python-meh >= %{mehver}
 Requires: policycoreutils
 Requires: rpm-python >= %{rpmpythonver}
-Requires: comps-extras
 Requires: parted >= %{partedver}
 Requires: pyparted >= %{pypartedver}
 Requires: yum >= %{yumver}
 Requires: libxml2-python
-Requires: python-urlgrabber >= 3.9.1-5
+Requires: python-urlgrabber >= %{pythonurlgrabberver}
 Requires: system-logos
 Requires: pykickstart >= %{pykickstartver}
-Requires: system-config-date >= %{syscfgdatever}
 Requires: device-mapper >= %{dmver}
 Requires: device-mapper-libs >= %{dmver}
 Requires: dosfstools
 Requires: e2fsprogs >= %{e2fsver}
 Requires: gzip
 Requires: libarchive
+Requires: python-babel
 %ifarch %{ix86} x86_64 ia64
 Requires: dmidecode
 %endif
 Requires: python-pyblock >= %{pythonpyblockver}
 Requires: libuser-python
-Requires: newt-python
 Requires: authconfig
-Requires: system-config-firewall-base
+Requires: firewalld >= %{firewalldver}
 Requires: cryptsetup-luks
 Requires: python-cryptsetup >= %{pythoncryptsetupver}
 Requires: mdadm
 Requires: lvm2
-Requires: util-linux-ng >= 2.15.1
-Requires: system-config-keyboard >= %{sckeyboardver}
+Requires: util-linux >= %{utillinuxver}
 Requires: dbus-python
-Requires: cracklib-python
+Requires: python-pwquality
 Requires: python-bugzilla
 Requires: python-nss
-Requires: tigervnc-server
+Requires: tigervnc-server-minimal
+Requires: pytz
+Requires: libxklavier
+Requires: libgnomekbd
 %ifarch %livearches
 Requires: usermode
 Requires: zenity
 %endif
 Requires: createrepo >= %{createrepover}
 Requires: squashfs-tools
+%if ! 0%{?rhel}
+Requires: hfsplus-tools
+%endif
 Requires: genisoimage >= %{genisoimagever}
+Requires: GConf2 >= %{gconfversion}
 %ifarch %{ix86} x86_64
-Requires: syslinux >= 3.73
+Requires: syslinux >= %{syslinuxver}
 Requires: makebootfat
 Requires: device-mapper
 %endif
@@ -142,27 +158,71 @@ Requires: openssh
 Requires: isomd5sum
 Requires: yum-utils >= %{yumutilsver}
 Requires: NetworkManager >= %{nmver}
+Requires: nm-connection-editor
 Requires: dhclient
 Requires: anaconda-yum-plugins
 Requires: libselinux-python >= %{libselinuxver}
+Requires: fcoe-utils >= %{fcoeutilsver}
+Requires: kbd
+Requires: chrony
+Requires: rdate
+Requires: rsync
+Requires: hostname
 %ifarch %{sparc}
 Requires: elftoaout piggyback
+%endif
+%ifarch x86_64
+Requires: mactel-boot
 %endif
 Obsoletes: anaconda-images <= 10
 Provides: anaconda-images = %{version}-%{release}
 Obsoletes: anaconda-runtime < %{version}-%{release}
 Provides: anaconda-runtime = %{version}-%{release}
-Obsoletes: booty
+Obsoletes: booty <= 0.107-1
 
 %description
 The anaconda package contains the program which was used to install your
-system.  These files are of little use on an already installed system.
+system.
+
+%package widgets
+Summary: A set of custom GTK+ widgets for use with anaconda
+Group: System Environment/Libraries
+Requires: pygobject3
+Requires: python
+
+%description widgets
+This package contains a set of custom GTK+ widgets used by the anaconda installer.
+
+%package widgets-devel
+Summary: Development files for anaconda-widgets
+Group: Development/Libraries
+Requires: glade
+
+%description widgets-devel
+This package contains libraries and header files needed for writing the anaconda
+installer.  It also contains Python and Glade support files, as well as
+documentation for working with this library.
+
+%package dracut
+Summary: The anaconda dracut module
+BuildArch: noarch
+Requires: dracut >= %{dracutver}
+Requires: dracut-network
+Requires: xz
+Requires: pykickstart
+
+%description dracut
+The 'anaconda' dracut module handles installer-specific boot tasks and
+options. This includes driver disks, kickstarts, and finding the anaconda
+runtime on NFS/HTTP/FTP servers or local disks.
 
 %prep
 %setup -q
 
 %build
-%configure --disable-static
+%configure --disable-static \
+           --enable-introspection \
+           --enable-gtk-doc
 %{__make} %{?_smp_mflags}
 
 %install
@@ -197,17 +257,20 @@ update-desktop-database &> /dev/null || :
 %doc docs/command-line.txt
 %doc docs/install-methods.txt
 %doc docs/mediacheck.txt
-%doc docs/anaconda-release-notes.txt
-/lib/udev/rules.d/70-anaconda.rules
-%{_bindir}/mini-wm
+%{_unitdir}/*
+%{_prefix}/lib/systemd/system-generators/*
+%{_prefix}/lib/udev/rules.d/70-anaconda.rules
+%{_bindir}/instperf
 %{_sbindir}/anaconda
-%ifarch i386 i486 i586 i686 x86_64
-%{_sbindir}/gptsync
-%{_sbindir}/showpart
-%endif
+%{_sbindir}/handle-sshpw
+%{_sbindir}/logpicker
+%{_sbindir}/anaconda-cleanup-initramfs
 %{_datadir}/anaconda
-%{_prefix}/lib/anaconda
-%{_prefix}/lib/anaconda-runtime
+%{_prefix}/libexec/anaconda
+%{_libdir}/python*/site-packages/pyanaconda/*
+%{_libdir}/python*/site-packages/log_picker/*
+%{_bindir}/analog
+%{_bindir}/anaconda-cleanup
 %ifarch %livearches
 %{_bindir}/liveinst
 %{_sbindir}/liveinst
@@ -215,141 +278,3828 @@ update-desktop-database &> /dev/null || :
 %config(noreplace) %{_sysconfdir}/security/console.apps/*
 %{_sysconfdir}/X11/xinit/xinitrc.d/*
 %{_datadir}/applications/*.desktop
+%{_datadir}/icons/hicolor/*
 %endif
 
-%changelog
-* Wed May 12 2010 David Lehman <dlehman@redhat.com> - 13.42-1
-- bootloader timeout default should be None not 0 (#590661) (jkeating)
+%files widgets
+%defattr(-,root,root)
+%{_libdir}/libAnacondaWidgets.so.*
+%{_libdir}/girepository*/AnacondaWidgets*typelib
+%{_libdir}/python*/site-packages/gi/overrides/*
+%{_datadir}/anaconda/tzmapdata/*
 
-* Fri May 07 2010 David Lehman <dlehman@redhat.com> - 13.41-1
+%files widgets-devel
+%defattr(-,root,root)
+%{_libdir}/libAnacondaWidgets.so
+%{_includedir}/*
+%{_datadir}/glade/catalogs/AnacondaWidgets.xml
+%{_datadir}/gtk-doc
+
+%files dracut
+%defattr(-,root,root)
+%dir %{_prefix}/lib/dracut/modules.d/80%{name}
+%{_prefix}/lib/dracut/modules.d/80%{name}/*
+
+%changelog
+* Mon Jan 07 2013 Brian C. Lane <bcl@redhat.com> - 18.37.11-1
+- Fix Quit button in standalone network spoke (#892120) (rvykydal)
+- Force disk selection for interactive installs. (#888293) (cherry picked from
+  commit 91fea0af242760e0ad83c1f467993ca091098b63) (dlehman)
+- Fix completeness check for md fwraid arrays. (#892621) (dlehman)
+- Fix handling of failure to create a new container. (#892046) (dlehman)
+- Do not lightbox the Add Mountpoint dialog (#875291). (clumens)
+- Try fallback if none exactly matching language is found (#891487) (vpodzime)
+
+* Fri Jan 04 2013 Brian C. Lane <bcl@redhat.com> - 18.37.10-1
+- Only skip welcome screen for ks installs (#891755) (bcl)
+- protect getDirSize from vanishing files (#891759) (bcl)
+- start vnc without ip address (#832510) (bcl)
+
+* Thu Jan 03 2013 Brian C. Lane <bcl@redhat.com> - 18.37.9-1
+- Update physical device's sysfs path for btrfs (sub)volumes. (#891443)
+  (dlehman)
+- Raise DeviceError instead of ValueError from device ctor. (#888089) (dlehman)
+
+* Fri Dec 21 2012 Brian C. Lane <bcl@redhat.com> - 18.37.8-1
+- hook up help window close button (#889570) (cherry picked from commit
+  128aa94a4dabfde0e7d3b14ddcec6b88a9308b08) (bcl)
+
+* Fri Dec 21 2012 Brian C. Lane <bcl@redhat.com> - 18.37.7-1
+- Add more yum locking to yumpayload (#860022) (bcl)
+- add setKeyboardCheckButton to list of things to translate (#889352) (cherry
+  picked from commit ea461492d20af7f8e2e5539ccade0cce03cc48a4) (bcl)
+- Mark for translation and show translated some more GUI elements (#877658)
+  (vpodzime)
+- Translate storage errors (#877658) (vpodzime)
+- Don't allow changing the boot disk from inside the custom spoke. (#889585)
+  (dlehman)
+- Add help text and a help button to the custom storage spoke. (#889570)
+  (dlehman)
+- Allow /boot on btrfs subvol if using grub2. (#888603,868465) (dlehman)
+- Don't keep old device name when switching to btrfs in custom. (dlehman)
+- Fix container member set management for md arrays. (#889101) (dlehman)
+- Include incomplete devices when listing dependant devices. (#889330)
+  (dlehman)
+- remove the don't use upgrades checkbox from source (#889366) (bcl)
+- Remove Shrink button from reclaim dialog (#875944) (bcl)
+- Add keyboard dracut setup args (#875567) (vpodzime)
+- Add warning to keyboard spoke on live installations (#886463) (vpodzime)
+
+* Thu Dec 20 2012 Brian C. Lane <bcl@redhat.com> - 18.37.6-1
+- Use systemd to run checkisomd5 (#874486) (cherry picked from commit
+  e824b44ac7ef4d096a6606775da740448440e11e) (harald)
+- fixup direct nfs iso url handling (#879187) (bcl)
+- fixup nfs repo install code (#879187) (bcl)
+- Don't generate ifcfg files for non-existing devices in parse-kickstart
+  (#886647) (rvykydal)
+
+* Wed Dec 19 2012 Brian C. Lane <bcl@redhat.com> - 18.37.5-1
+- Network spoke: add sanity check for hostname setting (#856456) (rvykydal)
+- Network spoke: add hostname setting (#856456) (rvykydal)
+
+* Tue Dec 18 2012 Brian C. Lane <bcl@redhat.com> - 18.37.4-1
+- Always set passphrase for newly encrypted devices. (#888560) (dlehman)
+- Encode unicode strings returned by pytz.country_timezones() (#887236)
+  (vpodzime)
+- Revert "Remove idiomatic, hard to translate text (#865598)." (bcl)
+- Handle edit of preexisting encrypted lv. (#885378) (dlehman)
+- Don't allow resize of devices with no/unrecognized formatting. (#869841)
+  (dlehman)
+- Don't resize NTFS partitions to smaller than the filesystem on them
+  (#885912). (clumens)
+- Set line wrap on the info bar (#888112). (clumens)
+- Don't crash when vg edit triggers spurious change event. (#883699) (dlehman)
+- Add handling for incomplete lvm/md devices. (#876441) (dlehman)
+- Fallback to mdN if no name was found for incomplete md array. (#873224)
+  (dlehman)
+- Add product.py to POTFILES (#858628). (clumens)
+
+* Fri Dec 14 2012 Brian C. Lane <bcl@redhat.com> - 18.37.3-1
+- Fix a couple pylint errors (#867125). (cherry picked from commit
+  037bdac4f6f213d36d5e6cc61cd236ed8f0842a1) (clumens)
+- Fix an undefined variable error (#867129). (cherry picked from commit
+  6fd9b3b97afddc89606151b25bb69ac13ad77984) (clumens)
+- The fs type combo should be sensitive when reformat is checked (#887201).
+  (clumens)
+- Remove idiomatic, hard to translate text (#865598). (cherry picked from
+  commit 5fcf7584334df4fd2cd26c11b607a7901b408a17) (clumens)
+- recheck software when source changes (#875599) (bcl)
+
+* Wed Dec 12 2012 Brian C. Lane <bcl@redhat.com> - 18.37.2-1
+- Add a gradient background to spoke headers (mizmo, clumens). (clumens)
+- Only allow changing filesystem type if the reformat combo is checked
+  (#885906). (clumens)
+- Install default system for %%packages --default (#869978) (cherry picked from
+  commit 10cd57a15081250e69052bd68101a62fcf9ce095) (bcl)
+- Include the new lib directory in the package (#886319, #886470). (clumens)
+- It's possible for mountpoint to be None (#885279). (clumens)
+
+* Tue Dec 11 2012 Brian C. Lane <bcl@redhat.com> - 18.37.1-1
+- In interactive installs, default to bootloader in the MBR (#885284).
+  (clumens)
+- Make sure software selection is checked against filesystem space. (#853636)
+  (dlehman)
+- Update default install size and disk space estimate. (dlehman)
+- Add checkbox for setting language default layout (#866887) (vpodzime)
+- Fix getting country layout variants (vpodzime)
+- Wait for slower dhcp before running vnc server (#868777) (rvykydal)
+- Network spoke: fix NMClient signal callback arguments (#885488) (rvykydal)
+- Add logging for networking and improve logging of ifcfg files (rvykydal)
+
+* Fri Dec 07 2012 Brian C. Lane <bcl@redhat.com> - 18.37-1
+- Honor user request via UI to not install a bootloader. (#885240) (dlehman)
+- Handle partition removals regardless of deepcopy. (#884896) (dlehman)
+- Default to partitions for /boot* instead of just /boot/efi. (#884606)
+  (dlehman)
+- Fix a logic error in ActionDestroyFormat.obsoletes. (#885004) (dlehman)
+- Take device type into account when making the config button sensitive
+  (#885051). (clumens)
+- Hide VG-related widgets when displaying a non-LV mountpoint first (#885131).
+  (clumens)
+- Put the bad VG name into the error message (#884359). (clumens)
+- Add/remove the HDISO source from protectedDevSpecs (#882147). (clumens)
+- If path doesn't exist, don't traceback.  Return None. (clumens)
+- Do not allow deleting or editing a protected device in custom part (#884599).
+  (clumens)
+- Use updated connection settings object for default auto config files
+  (#883383) (rvykydal)
+
+* Wed Dec 05 2012 Brian C. Lane <bcl@redhat.com> - 18.36-1
+- Call udev_settle from inside udev_trigger. (dlehman)
+- Prevent enabling the encryption checkbutton erroneously. (dlehman)
+- Make sure Storage is initialized before refreshing the custom spoke.
+  (dlehman)
+- Fix initialization of Storage.roots to use a list. (#884270) (dlehman)
+- Don't allow reformat without setting a mountpoint. (#883076) (dlehman)
+- Fix check for toggled encryption checkbutton. (#882722) (dlehman)
+- Make sure FS minSize is never greater than its currentSize. (#876547)
+  (dlehman)
+- When considering whether anything can be shrunk, throw out protected devs.
+  (clumens)
+- In the UI, mark the HDISO source device as protected (#879610). (clumens)
+- update mdraid superBlock space calculation (#883483) (bcl)
+- Remove resetResolver function, we don't need it anymore (#868695) (rvykydal)
+- Network spoke: improve logging. (rvykydal)
+- Unify writeNetworkConf with other modules (rename, put in ks.execute)
+  (rvykydal)
+- Fix network command --onboot and --activate options. (rvykydal)
+- Fix two calls of self.window.set_info (#883632) (vpodzime)
+- Use BaseWindow.set_warning and set_error in GUIObject's methods (vpodzime)
+
+* Tue Dec 04 2012 Brian C. Lane <bcl@redhat.com> - 18.35-1
+- Fix a bug when switching back to an HDISO install source (#879612). (clumens)
+- Lower case the DONE button on media check. (clumens)
+- Change mirrorlist checkbox text (#883191). (clumens)
+- Change the bootloader button to indicate you can also not install one.
+  (clumens)
+- Stop writing /etc/sysconfig/keyboard (#871543) (mschmidt)
+- Stop writing /etc/sysconfig/i18n (#871543) (mschmidt)
+- Write /etc/hostname (#871543) (mschmidt)
+- Correct doing string substitution for encryption. (clumens)
+- Add install.py to POTFILES.in so a lot more strings can be translated.
+  (clumens)
+- Only instantiate main line action objects when they are needed. (clumens)
+- Add a category to POTFILES.in so "USER SETTINGS" gets translated. (clumens)
+- Make sure product info and spoke titles are translated throughout. (clumens)
+- Substitute on new_install_name when it's needed, not at the top of custom.py.
+  (clumens)
+- Compare the protocol combox box on position, not text. (clumens)
+- When we retranslate the welcome window, inform glibc. (clumens)
+- Add gettext checks to widgets/configure.ac. (clumens)
+- The initial welcome screen is the only one that needs to do retranslation.
+  (clumens)
+- Remove the generic retranslate method from the python portion of the UI.
+  (clumens)
+- Do not allow manipulating protected devices in the reclaim dialog (#882147).
+  (clumens)
+- ISOImage needs to look at /run/install/source for the mounted image
+  (#879142). (clumens)
+- Minor TODO list update. (clumens)
+- Get rid of the unneeded action1. (clumens)
+- Do not list some layouts twice (#882526) (vpodzime)
+- Check if the given NTP server is a valid hostname (#865869) (vpodzime)
+- Improve and document network.sanityCheckHostname (vpodzime)
+- don't write network settings on image install (bcl)
+
+* Sat Dec 01 2012 Brian C. Lane <bcl@redhat.com> - 18.34-1
+- remove extra space in custom.py (bcl)
+
+* Fri Nov 30 2012 Brian C. Lane <bcl@redhat.com> - 18.33-1
+- Escape single percent signs in RPM changelog entries. (dcantrell)
+- Fixes for PkgWrangler review. (dcantrell)
+- Don't let defaults override user-specified container settings. (#879702)
+  (dlehman)
+- Fix partition allocation when enabling container encryption. (#879702)
+  (dlehman)
+- Remove partitions from all appropriate DiskLabel instances. (#870586)
+  (dlehman)
+- Add a way for users to set the names of lvm and md devices. (dlehman)
+- Update the RAID-specific UI after changing the device's disk set. (dlehman)
+- Correctly handle the default vg not having been instantiated yet. (dlehman)
+- Drop requested container disks that don't have enough space. (#873293)
+  (dlehman)
+- Don't allow LVM disk set selection via configure button. (dlehman)
+- Try to add new device to an existing container if disks are full. (dlehman)
+- Fix code to lock encryption checkbutton for LV in existing VG (#877871)
+  (dlehman)
+- Add support for changing a new LV's VG. (dlehman)
+- Fix check for in-use LV name to include VG name. (#875477) (dlehman)
+- Remove the automatic show_all from those info_bar related functions.
+  (clumens)
+- Add set_info, set_error, set_warning functions to the BaseWindow object.
+  (clumens)
+- set_info functions may not be called from outside the main thread (#873600).
+  (clumens)
+- Test if path is valid before using it (NTPConfigDialog) (vpodzime)
+
+* Wed Nov 28 2012 Brian C. Lane <bcl@redhat.com> - 18.32-1
+- Bootloader checking should work in terms of self.stage1/2_ attrs (#880277).
+  (clumens)
+- Catch OverflowError in manual partitioning. (sbueno+anaconda)
+- Do not accept tabs in the keyboard layout test box (#897312). (clumens)
+- Wait for slower dhcp for payload setup and hostname setting (#873468)
+  (rvykydal)
+
+* Mon Nov 26 2012 Brian C. Lane <bcl@redhat.com> - 18.31-1
+- Rename icons for liveinst (conflict with redhat-logos) (#878037) (rvykydal)
+- Rework actions in the resize dialog to avoid shortcomings (#866209, #867770).
+  (clumens)
+- Check that everything's a GDK window before attempting to manipulate it.
+  (clumens)
+- On live installs, the progress hub should have a Quit button (#854904).
+  (clumens)
+- If no bootloader is to be installed, pop up a warning. (clumens)
+- Escape ampersands in spoke status text. (clumens)
+- Allow not setting any boot device via the UI (#867469). (clumens)
+- Allow specifying whether the URL you've given is a mirrorlist or not
+  (#868558). (clumens)
+- Prevent false positives when checking for encryption change. (dlehman)
+- Don't add incomplete VGs to the LVM reject filter. (#878225) (dlehman)
+- Show device names for devices in the Unknown page/subsection. (#855646)
+  (dlehman)
+- Add a page to the custom RHS notebook for uneditable devices. (#875942)
+  (dlehman)
+- Fix error in iutil.execCapture when fatal and non-zero exit (stefw)
+- Allow iutil.execWithCapture to work without a chroot (stefw)
+- Handle hd iso leavings by dracut (#876897) (jkeating)
+- show error when rsync fails (#868755) (bcl)
+
+* Mon Nov 19 2012 Brian C. Lane <bcl@redhat.com> - 18.30-1
+- only raise rsync error on error 12 (#868755) (bcl)
+- Dump default auto connection's ifcfg file instead of writing a new one
+  (#870922) (rvykydal)
+- Number timezones starting with 1 (#859342) (msivak)
+- only call bootloader.check() if bootloader is setup (#875278) (bcl)
+- Fix operator precedence when checking for the presence of transifex-client.
+  (clumens)
+- Make the custom and keyboard toolbar buttons larger (mizmo). (clumens)
+- More changes to leave the spoke via a glib idle call, not calling directly.
+  (clumens)
+- Hide the custom addon button. (clumens)
+- Enable verbose yum logging once more (jkeating)
+- rm transifex-client buildreq; check and install only if needed (sbueno)
+- Handle nfsiso leavings by dracut (#876223) (jkeating)
+- Prevent some raid-related tracebacks. (#874034) (dlehman)
+- Don't try to save changes to a locked luks device. (#876180) (dlehman)
+- Keyboard test layout padding fix (mizmo). (clumens)
+- Correct colors for selected items in mountpoint selector widget (mizmo).
+  (clumens)
+- Include hidden disks in the storage spoke's list of devices (#875475).
+  (clumens)
+- Make the DetailedErrorDialog taller by default (#874620). (clumens)
+- If there's only a Quit button, don't make it secondary. (clumens)
+- Handle package dependency errors on kickstart installs too (#865073).
+  (clumens)
+- Remove iso-codes dependency, libxklavier has it fixed now (vpodzime)
+- Rework custom partitioning alignment too (mizmo). (clumens)
+- Attempt to fix the shrunken storage UI (mizmo). (clumens)
+- Do not allow TreeView search in AddLayout dialog (#876131) (vpodzime)
+- DiskOverview widget selection color correction (mizmo). (clumens)
+- Use the main loop to control displaying the resize dialog. (clumens)
+- Use ksdata to set default runlevel (jkeating)
+- Execute xconfig data (#874868) (jkeating)
+- Write out xconfig data when executed (jkeating)
+- Code cleanups (jkeating)
+- Link to the correct default target (jkeating)
+- Add a mapping of old run level to new systemd target (jkeating)
+
+* Mon Nov 12 2012 Brian C. Lane <bcl@redhat.com> - 18.29-1
+- Quit after handling transaction errors. (clumens)
+- Add a function to display relevant transaction errors (#873106). (clumens)
+- Don't decorate error dialogs. (clumens)
+- Fix error handling when new device ends up with size 0. (dlehman)
+- Explicitly request all free space when no size given in custom. (#872833)
+  (dlehman)
+- Disable the language spoke off the first hub, for now (#874263). (clumens)
+- Wrap text on install options dialogs (#874265). (clumens)
+- Encode unicode strings from XklWrapper (#873762) (vpodzime)
+- New version (out of order) (bcl)
+- Network spoke: fix traceback (number of callback parameters) (#875393)
+  (rvykydal)
+- Adjust right margin for MountpointSelector (mizmo). (clumens)
+- Fix introspection warnings for widgets (stefw)
+
+* Fri Nov 09 2012 Brian C. Lane <bcl@redhat.com> - 18.28-1
+- Show NFS as the source if dracut left it for us (#875235) (jkeating)
+- Convert the accordion Button to a LinkButton (mizmo). (clumens)
+- Buttons shouldn't scream at people (#868536, mizmo). (clumens)
+- Don't attempt to handle exceptions when NFS mounts fail. (clumens)
+- If there's an error setting up the source, display it as the status.
+  (clumens)
+- Add logging around the messages that can be processed by the hub. (clumens)
+- You can't reformat a btrfs volume/subvolume. (dlehman)
+- Always account for device removals in their containers. (dlehman)
+- Fix container member management for md devices. (dlehman)
+- Use a more robust method for removing previous autopart. (#868589) (dlehman)
+- Post-custom sanity check determines storage spoke completeness. (#868925)
+  (dlehman)
+- Fix detection of inactive md arrays. (#873031) (dlehman)
+- Vastly simplify the process for applying changes from custom spoke. (dlehman)
+- Clean up container disk set and encryption change handling. (#874714)
+  (dlehman)
+- Honor kickstart bootloader --location=none. (#871143) (dlehman)
+- Use original raid level and disk set when reverting a device. (dlehman)
+- Set raid level based on defined volume for not-yet-btrfs mounts. (dlehman)
+- Network spoke: improve status info (shorten) (rvykydal)
+- Network spoke: update list of connected devices in hub status (rvykydal)
+- Network spoke: Add "Connecting..." state to status (#868704) (rvykydal)
+- Network spoke: Update status of networking in hub (#868704) (rvykydal)
+- check for small grub2 embed space (#737508) (bcl)
+- Set SpokeSelector's tooltip to spoke's status (vpodzime)
+- Don't let mount/umount block python threads (#873600). (clumens)
+- Fix makeupdates to correctly detect and include changes in isys. (clumens)
+- Update pot file with proper lower cased buttons (#868536, mizmo). (clumens)
+- Default to LVM on text installs too (#874586). (clumens)
+- Remove network enablement in anaconda from rescue mode (#873854) (rvykydal)
+- Add very basic U-Boot support for ARM platforms (dmarlin)
+- Fix test for changed disk set for partitions. (#873994) (dlehman)
+- Add support for preexisting whole-disk formatting. (#870476) (dlehman)
+- There is no Storage.destroyFormat method. (dlehman)
+- Move DEVICE_TYPE constants into storage and use them everywhere. (dlehman)
+- A device scheduled for reformat is not unused. (dlehman)
+- Catch the right exception when settin up raid options ui. (#873486) (dlehman)
+- Network spoke: Use connection state that triggered a callback (bug #871429)
+  (rvykydal)
+- Use sr_Latn_RS instead of sr_RS (vpodzime)
+
+* Wed Nov 07 2012 Brian C. Lane <bcl@redhat.com> - 18.27-1
+- Mark more UI strings with N_ (#874276). (clumens)
+- Pressing Enter on the passphrase dialog should continue (#788556). (clumens)
+- Pressing Enter should activate the rightmost button on the detailed dialog.
+  (clumens)
+- Pressing enter on a MountpointSelector should display it on the RHS
+  (#873352). (clumens)
+- Make language groups work again (#873865) (jkeating)
+- Update payload if slower dhcp succeeds in network pre-hub spoke (#873468)
+  (rvykydal)
+- Fix group access after parsing btrfs subvol list output. (#868468) (dlehman)
+- Account for autopart swap size when checking free space. (dlehman)
+- ignoredisk.onlyuse contains names, not StorageDevice instances. (#873463)
+  (dlehman)
+- Correctly handle toggle of encryption state for devices. (#873445) (dlehman)
+- Handle changes to encryption state of container members. (#873445) (dlehman)
+- Change custom spoke to apply encryption to PVs, not LVs. (dlehman)
+- Widen the sidebar on custom partitioning (mizmo). (clumens)
+- Fix spacing and padding on SpokeSelectors (mizmo). (clumens)
+- Set the font globally (mizmo). (clumens)
+- Handle if we get something other than a .treeinfo file (#872012). (clumens)
+- If repo metadata fetching fails, set an info error message (#873605).
+  (clumens)
+- Enable yum langpacks plugin to get conditional packages (#868869) (jkeating)
+- Base whether an add-on is selected on the selectedGroups, not ksdata
+  (#873092). (clumens)
+- Add UTC and GMT-X timezones (#863199) (vpodzime)
+- TimezoneMap should handle "" timezone (vpodzime)
+- raise error on rsync failure (#868755) (bcl)
+- exclude bind mounts from rsync (#871637) (bcl)
+- Fix up the InstallOptions3Dialog.refresh arguments (#873392). (clumens)
+- Mark strings at the top of spokes with N_; translate later with _ (#872791).
+  (clumens)
+- Do not decorate the dialog that appears when you click on storage info bar.
+  (clumens)
+- You have to give "raise" an exception if you're outside a handler (#872874).
+  (clumens)
+- Prompt for encryption passphrase in reclaim path. (#869391) (dlehman)
+- Prevent user from hitting save without entering a passphrase. (#869391)
+  (dlehman)
+- Font and padding updates for the network spoke (mizmo). (clumens)
+- Fix alignment on the Add and Configure Mount Point dialogs. (clumens)
+- Network spoke: activate wifi connection after setting secrets (#871132)
+  (rvykydal)
+- Fix nfsiso as stage2 (#871554) (jkeating)
+- Fix traceback when saving changes to an existing partition. (#872446)
+  (dlehman)
+- Some more stuff for the mangleMap (#866730) (vpodzime)
+- Handle locale's encoding and script in a better way (vpodzime)
+- Use both language and country to guess layout (#861061) (vpodzime)
+- Fix remaining issues with md fwraid. (#872739) (dlehman)
+- Do not return None from Size.__str__ (#869405) (vpodzime)
+- Add a platform weight for ARM images (dmarlin)
+- Remove a bunch of stuff from the TODO list. (clumens)
+- Don't decorate the main exception window. (clumens)
+- Move the custom partitioning's Apply Changes button. (clumens)
+- Indent partition type options under the expander further. (clumens)
+- Left align the Label label, and indent the custom options further. (clumens)
+- Lots of custom partitioning UI changes (mizmo). (clumens)
+- Update fonts on the welcome language spoke (rlerch). (clumens)
+- Lots of storage spoke font and spacing changes (mizmo). (clumens)
+- Set the background of the custom partitioning accordion back to white
+  (mizmo). (clumens)
+- Set the Local Standard Disks background back to white (mizmo). (clumens)
+- Reorder Device Type options in custom part to match the Partition Type combo.
+  (clumens)
+- Use the same terminology for partitions as is in use on the custom spoke.
+  (clumens)
+- livecd specific code has moved (bcl)
+- Add progress percentage info to liveinst (bcl)
+
+* Thu Nov 01 2012 Brian C. Lane <bcl@redhat.com> - 18.23-1
+- Update parsing of 'btrfs subvol list' to match its new output. (#868468)
+  (dlehman)
+- Add a way to select the default device type. (dlehman)
+- Enable specification of disk(s) for individual mountpoints. (#870569)
+  (dlehman)
+- Improve management of complex devices in custom spoke. (#865199) (dlehman)
+- Save btrfs subvols' requested size. (dlehman)
+- Reclaim extra set member growth evenly across members. (dlehman)
+- Give lvmpv a slightly more realistic minimum size. (dlehman)
+- Fix required space calculation for lvm. (dlehman)
+- Don't filter disks when scanning storage after autopart fails. (#866717)
+  (dlehman)
+- Fix detection of partitioned md devices. (#866519) (dlehman)
+- Correct handling of disks with hidden formats. (#866519) (dlehman)
+- Revert "Fall back to lvm autopart if the default fails." (dlehman)
+- Revert the default autopart type to lvm. (#870207) (dlehman)
+- Apparently necessary kpartx changes (#867593) (dlehman)
+- Mark a few more important strings for translation. (clumens)
+- If lang= was provided on the command line, set the installation language.
+  (clumens)
+- Make the decision to skip the welcome screen more complicated. (clumens)
+- Set a translation domain before loading a glade file. (clumens)
+- Don't decorate the NTP config dialog. (clumens)
+- Mark properties in existing glade files as translatable. (clumens)
+- Widget properties exposed via glade need to be marked as translatable.
+  (clumens)
+- Network spoke: don't try to call replace on None (traceback) (#869106)
+  (rvykydal)
+- Fix nfsiso repo selection (#871648) (jkeating)
+
+* Wed Oct 31 2012 Brian C. Lane <bcl@redhat.com> - 18.22-1
+- Revert "Update parsing of 'btrfs subvol list' to match its new output.
+  (#868468)" (dlehman)
+- Pass RAID level to btrfs volume constructor. (#866101) (dlehman)
+- Fix a traceback when removing non-existing partitions in custom. (#869839)
+  (dlehman)
+- Update parsing of 'btrfs subvol list' to match its new output. (#868468)
+  (dlehman)
+- Remove the word "review" from the label on the custom checkbutton. (#871109)
+  (dlehman)
+- Require that the root filesystem be created by anaconda. (#871104) (dlehman)
+- On error, reset the RHS to what it used to be (#869422). (clumens)
+- Don't prompt when in cmdline mode (#869685) (jkeating)
+- Force a root password to be set (#869675) (jkeating)
+- Network spoke: fix hostname handling in standalone spoke (#868535) (rvykydal)
+- Network spoke: fix config info update after switching device OFF and ON
+  (#871429) (rvykydal)
+- Network spoke: connected requires activated (not active) connection (#871129)
+  (rvykydal)
+- Blank out passphrases from /root/anaconda-ks.cfg (#868519). (clumens)
+- Setup package repo in the background (#870552) (jkeating)
+- check disklabels when calculating free space (#863892) (bcl)
+- updateBaseRepo does not need a storage argument. (clumens)
+- Fix up calling superclass setup methods in packaging (#870556). (clumens)
+- Fix a race condition with kickstarts (#868834) (jkeating)
+- run checkisomd5 from anaconda-diskroot (#848764) (bcl)
+- skip luks passphrase in exception dump (#868509) (bcl)
+- Replace ' ' with '_' when looking for ifcfg files (#869106) (rvykydal)
+- Remove storageComplete, which was only called from dispatch.py. (clumens)
+- Remove dispatch.py and its associated test case. (clumens)
+- Use a slightly different method to get supported languages (#858801, tagoh).
+  (clumens)
+- Fix problems when changing things in the software spoke (#868742, #869424).
+  (clumens)
+- Network spoke: fix callback arguments for device add/remove. (rvykydal)
+- display storage errors in text mode storage spoke (bcl)
+- only clear errors if re-running the check (#868707) (bcl)
+- set boot flag and name for EFI partition (#866106) (bcl)
+- clear pmbr_boot on EFI systems (#844551) (bcl)
+- Lots of UI layout tweaks (mizmo). (clumens)
+- /etc/sysconfig/keyboard doesn't support vconsole.xyz options. (notting)
+
+* Thu Oct 25 2012 Brian C. Lane <bcl@redhat.com> - 18.21-1
+- Add PowerNV as a recognized PPC platform (nacc)
+- anaconda should print unknown platform information (hamzy)
+- Toggle chosen property on focus change (MountpointSelector) (vpodzime)
+- Lock source spoke while depsolving (#867591) (jkeating)
+- In custom part, don't display mountpoints without associated disks (#865942).
+  (clumens)
+- Tie "Reclaim Space" button sensitivity to how much space the user freed
+  (#869375). (clumens)
+
+* Tue Oct 23 2012 Brian C. Lane <bcl@redhat.com> - 18.20-1
+- Add dialog for configuring layout switching options (vpodzime)
+- Initialize layout switching if needed (vpodzime)
+- Save layout switching configuration (vpodzime)
+- Add support for layout switching options to XklWrapper (vpodzime)
+- We need to set _root in two places for a MountpointSelector. (clumens)
+- Correctly destroy the deletion confirmation dialog. (clumens)
+- Don't set self.data.method.url until after checking for a protocol (#869102).
+  (clumens)
+- Fix an undetected bug when setting up an HTTPS method. (clumens)
+- YabootSILOBase objects don't have an encrypted_password parameter (#869016).
+  (clumens)
+- rprivate -> make-rprivate (#869246). (clumens)
+- If NFS is selected in the source spoke, the URL must contain a colon
+  (#869103). (clumens)
+- Modify behavior when leaving the reclaim storage dialog (#864128, #867770,
+  #868903). (clumens)
+- Set the status text in the SpokeSelector widget differently now. (clumens)
+- Use the correct font for each language on the welcome screen (#868836,
+  tagoh). (clumens)
+- Everywhere we make a MountpointSelector, give it a _root attr (#868702).
+  (clumens)
+- payloadInstallHandler should only optionally take a package argument
+  (#868542). (clumens)
+- Add a reformat checkbutton to indicate a desire to reformat the device.
+  (dlehman)
+
+* Fri Oct 19 2012 Brian C. Lane <bcl@redhat.com> - 18.19-1
+- Reset the comps to empty along with everything else in yum. (clumens)
+- Hook up the "Remove Packages" button on the dep solving error screen.
+  (clumens)
+- If nothing's changed in the software spoke, don't redo dep solving. (clumens)
+- skip vnc prompt with text mode and kickstart (bcl)
+- Use correct name for MD RAID device description text. (dlehman)
+- Fix selector management after a reformat action is scheduled. (dlehman)
+- Aqcuire yum lock before doing the work of _yumCacheDirHack. (#858993)
+  (dlehman)
+- Reset error list on success of doKickstartStorage. (dlehman)
+- Tighten up management of passphrases across Storage resets. (#865364)
+  (dlehman)
+- Do not count not-yet-created filesystems as free space. (#866895) (dlehman)
+- Remove any preexisting autopart layout before space check. (#866895)
+  (dlehman)
+- Apply disk selections to the devicetree before the space check. (#866895)
+  (dlehman)
+- Update free space totals before refresh after removing a device. (dlehman)
+- Log exceptions raised from PartitionDevice constructor. (dlehman)
+- Fix size specs for PartitionFactory. (dlehman)
+- Reinitialize disks after removing the last partition from custom spoke.
+  (dlehman)
+- Refactor shouldClear slightly. (dlehman)
+- Use correct means for getting device type in the custom spoke. (dlehman)
+- Repopulate the RHS after editing a device. (dlehman)
+- Don't bother resizing a container that has just been emptied. (dlehman)
+- Don't allow implicit fstype change via mountpoint. (#866953) (dlehman)
+- Set up devices before trying to decrypt them. (#865247, #867533) (dlehman)
+- Don't short-circuit devicetree populate based on clearpart setting. (dlehman)
+- Keep hostname when updating ksdata after GUI network configuration (#866516)
+  (rvykydal)
+- don't save system time on s390 (#867856) (dan)
+- Network spoke: make Configure button insensitive when running nmce (#865931)
+  (rvykydal)
+
+* Wed Oct 17 2012 Brian C. Lane <bcl@redhat.com> - 18.18-1
+- remove firewall.py from POTFILES.in (bcl)
+- Add missing pieces for kickstart's encryption cipher option. (dlehman)
+- update to use firewalld (#815540) (bcl)
+- Fix a typo in method name (#863765) (msivak)
+- Add missing import (#867296) (msivak)
+- There is no anaconda object available in writeSysconfigKernel (vpodzime)
+
+* Tue Oct 16 2012 Brian C. Lane <bcl@redhat.com> - 18.17-1
+- Add an error handler for fatal package installation errors (#865291).
+  (clumens)
+- Modify the status test for the software selection spoke. (clumens)
+- Various layout and font improvements to the keyboard spoke (mizmo, rlerch).
+  (clumens)
+- Just return the size string uppercased (#867074). (clumens)
+- Revert "Use a capital "B" in the size module (#859932)." (clumens)
+- Revert "Fix one more reference to bits (#859932)." (clumens)
+- Fix padding around the addons view in the software spoke. (clumens)
+- The Unknown page selectors/devices have no root. (dlehman)
+- Avoid using mount --move on shared paths (#853508) (jkeating)
+- Revert "Release Gdk lock in exception handling" (msivak)
+- Make all Gtk calls from inside of it's main loop (and thread) (msivak)
+- Remove Gdk thread initialization, introduce new helper functions and make
+  exception handler be called by Gtk only once (msivak)
+- Fix threading initialization (msivak)
+- Do not remove the layout if it was added back (#865830) (vpodzime)
+- Release Gdk lock in exception handling (vpodzime)
+- Configure new-kernel-pkg to keep tboot configuration on updates (#742885)
+  (pjones)
+- Honor the nompath option. (dlehman)
+- Validate lv names. (dlehman)
+- Add support for specifying encryption cipher mode via kickstart. (dlehman)
+- Acquire the yum lock before accessing YumBase.repos. (#858993) (dlehman)
+- Remove the entry on the resize dialog's combo boxes. (clumens)
+- disks_free -> disks_size (#863647). (clumens)
+- Fix one more reference to bits (#859932). (clumens)
+- Fix a traceback in media check (#865897). (clumens)
+- Add support for deleting an entire root via the existing ConfirmDeleteDialog.
+  (clumens)
+- Don't traceback when removing a mountpoint with no expanded selector
+  (#862746). (clumens)
+- Remove the code for removing an entire Root all at once. (clumens)
+- Yet more TODO list updates. (clumens)
+- Don't display "None" in the name of a root. (clumens)
+- Fix configuration of protected wireless connections (#855526) (rvykydal)
+- Fix graphical kickstart with %%packages data (jkeating)
+- Add password validation to text password spoke (jkeating)
+- Make use of the validatePassword routine from users.py (jkeating)
+- Add a password verification method to users.py (jkeating)
+- Always honor the 'nokill' flag (vpodzime)
+- Fall back to lvm autopart if the default fails. (#864708) (dlehman)
+- Special boot devices are handled the same whether they exist or not.
+  (dlehman)
+- Fix a bug allocating fixed-size partitions. (dlehman)
+- Clean up size sets immediately after allocation run. (#864771) (dlehman)
+- Make sure partition base sizes are adequate for their formatting. (dlehman)
+- Don't fail to account for all set members' growth. (dlehman)
+- Remove some extra calls to show_first_mountpoint. (dlehman)
+- Show the correct raid options for btrfs. (dlehman)
+- Support change of raid level in custom spoke. (dlehman)
+- Use devicetree as partition list source instead of parted. (#864718)
+  (dlehman)
+- Use Storage convenience methods to schedule reclaim actions. (dlehman)
+- Pass disk list when trying to recover from device type change failure.
+  (dlehman)
+- Fill in missing parts of the disabled raid features dict. (dlehman)
+- Clear errors when entering or leaving the custom spoke. (dlehman)
+- Hook up signal handler for raid feature checkbuttons. (dlehman)
+- Raise MDRaidError instead of ValueError from devicelibs.mdraid. (dlehman)
+- Minimum we have to do with HW clock (vpodzime)
+- Check X layouts specified in kickstart for validity (vpodzime)
+- Work with VConsole keymap and X layouts separately (vpodzime)
+- Add class wrapping systemd-localed functionality (vpodzime)
+- Don't write XkbVariants if none are specified (vpodzime)
+- Add comment to the begining of generated xorg.conf file (vpodzime)
+- Don't display "None" for NIC vendors and products NM can't identify (#859540)
+  (rvykydal)
+
+* Thu Oct 11 2012 Brian C. Lane <bcl@redhat.com> - 18.16-1
+- Don't try to load ifcfg files for wifi devices (#865355) (vpodzime)
+- Rewrite isWirelessDevice to Python and DBus calls (#862801) (vpodzime)
+- Use a capital "B" in the size module (#859932). (clumens)
+- The environment window needs a vertical scroll bar (#865066). (clumens)
+- liveinst should recognize inst.updates too (#865398). (clumens)
+- Improve validation of device edit requests. (dlehman)
+- Fix listing of subvolumes for existing btrfs volumes. (dlehman)
+- Remove overzealous correction of device type for /boot*. (#863574) (dlehman)
+- Pad filesystem minimum sizes to ensure other OS can still run. (dlehman)
+- Handle encrypted partitions in size set classes. (dlehman)
+- Don't set mountpoints of "(null)" in mountpoint selectors. (dlehman)
+- Prevent crash trying to populate raid options on a one-disk system. (dlehman)
+- Rework type combos and don't offer RAID on one-disk systems. (dlehman)
+- Bundle more of data/ in updates.img (jkeating)
+- Revive reipl (#860244) (jkeating)
+
+* Wed Oct 10 2012 Brian C. Lane <bcl@redhat.com> - 18.15-1
+- add noverifyssl to anaconda-dracut (#852229) (bcl)
+- Don't crash when running anaconda a second time (jkeating)
+- Handle ssh prompt in new tmux world (jkeating)
+- Add a service to run anaconda directly on the tty (jkeating)
+- Add a script to attach to anaconda's tmux (jkeating)
+- Add ARM-OMAP class to create a uboot partition to support the boot-loader.
+  (dmarlin)
+- Avoid a loop of storage spoke executions during kickstart (#865048).
+  (clumens)
+- Correct lookup of raid.XX "mountpoints" for kickstart installs (#864764).
+  (clumens)
+- Change language matching on the welcome screen back around. (clumens)
+- Another attempt at fixing the squished screen bug (#849211). (clumens)
+- Fix a stupid typo in the disk shopping cart (#864842). (clumens)
+- Reorder the buttons and labels on the bottom left of the storage spoke.
+  (clumens)
+- Modify the DetailedErrorDialog buttons. (clumens)
+- Sync up hidden/unhidden disks between the UI and storage module (#864180).
+  (clumens)
+- When handling a storage error, reload self.disks (#862972). (clumens)
+- Fix sshd bringup when also using a kickstart file (#863441) (jkeating)
+- Require root password spoke be visited (#859069) (jkeating)
+- add some thread logging (bcl)
+- Reword the description on the resize dialog (#863577). (clumens)
+- Present an error message if no disks are detected (#864093). (clumens)
+- When changing environments, don't explicitly exclude groups (#863886).
+  (clumens)
+- Fix marking the "Modify Software Selection" button as sensitive in one case.
+  (clumens)
+
+* Mon Oct 08 2012 Brian C. Lane <bcl@redhat.com> - 18.14-1
+- Add UI support for encrypted automatic partitioning. (dlehman)
+- Add support to the custom spoke for encrypted block devices. (dlehman)
+- Add a page for decrypting existing LUKS devices. (dlehman)
+- Add a dialog for collecting a passphrase for newly encrypted devices.
+  (dlehman)
+- Add a property that provides a list of all selectors in the accordion.
+  (dlehman)
+- Handle luks formats during populate if they have a passphrase set. (dlehman)
+- Add encryption support to the device factory classes. (dlehman)
+- s/dev/disk in the disk shopping cart. (clumens)
+- Set a default payload in InstallOptions1Dialog (#863582). (clumens)
+- Pass disks into the SelectedDisksDialog (#863588). (clumens)
+
+* Fri Oct 05 2012 Chris Lumens <clumens@redhat.com> - 18.13-1
+- Make sure packages anaconda requires are installed. (clumens)
+- Add method returning current activated X layout (vpodzime)
+- Fix a deadlock when trying to add a keyboard layout (#862612). (clumens)
+- ntfsresize uses SI (MB) while the rest of us use IEC (MiB). (#862109)
+  (dlehman)
+- Remove empty extended partitions after removing a logical partition.
+  (dlehman)
+- Handle all logical/extended partitions in unusedDevices. (dlehman)
+- Update autopart/custom setting before moving to reclaim dialog. (#863225)
+  (dlehman)
+- Raise an exception early in newDevice if no disks were specified. (#858139)
+  (dlehman)
+- Fix a regression in BTRFSVolumeDevice.listSubVolumes. (#862742) (dlehman)
+- Fix behavior of resolveDevice when devspec is a device name. (dlehman)
+- Prevent BTRFS volumes from ever having the name None. (dlehman)
+- Prevent negative free value for filesystems. (#861812) (dlehman)
+- Don't show extended partitions that contain logical partitions. (#862971)
+  (dlehman)
+- Delete ts data instead of trying to undo dep installs. (#851114) (dlehman)
+- Change the manglings for a couple locales (petersen). (clumens)
+- Hook up the "Modify Software Selection" button on install opts dialogs.
+  (clumens)
+- More TODO list updates. (clumens)
+- Add a label to the resize dialog for how much space is required. (clumens)
+- Add a column to the disk shopping cart for setting the boot device (#860430).
+  (clumens)
+- Rework the disk shopping cart link a little bit. (clumens)
+- Do not use constant value in SoftwareSpoke's completed property (vpodzime)
+- Pull in existing swaps and bootloader devices whenever there are mounts.
+  (dlehman)
+- Revert broken logic for newly formatted devices in unusedDevices. (dlehman)
+- Add an apply button to the device/mountpoint configuration options. (dlehman)
+- Don't base StorageSpoke.ready on storage execute thread presence. (#861574)
+  (dlehman)
+- Prevent systemd timeout waiting for encryption passphrase. (#861123)
+  (dlehman)
+- Fix traceback when switching device type to lvm. (#860990) (dlehman)
+- Fix error handling in the add mountpoint dialog. (#860992) (dlehman)
+- Allow xfs /boot. (dlehman)
+- Fix makeupdates to work for glade files in subdirs of spokes/ or hubs/.
+  (dlehman)
+- Fix parsing of NFS method strings (#860966) (jkeating)
+- Make the URL entry sensitive for NFS installs, too (#863014). (clumens)
+- Add in a locale mapping to avoid incorrect system settings (#858591).
+  (clumens)
+
+* Wed Oct 03 2012 Brian C. Lane <bcl@redhat.com> - 18.12-1
+- copy-logs changed names (bcl)
+- Reference correct UI button name (#862409) (jkeating)
+- Don't echo vnc password to the screen (#862593) (jkeating)
+- Make the log copy script the last one to run (jkeating)
+- Copy ks script logs into the install root as well (jkeating)
+- Create ks script logs outside of chroot (jkeating)
+- Don't look for ifcfgs of wireless devices (#860791) (rvykydal)
+- doAutoPartition should raise errors instead of handle them. (clumens)
+- In the install options dialogs, call out how much space is on selected disks.
+  (clumens)
+- In order to display the resize prompt dialog, we need to compare Sizes to
+  Sizes. (clumens)
+- Use a better starting value for required space than 0. (clumens)
+- Default to CLEARPART_TYPE_NONE (#855976). (clumens)
+- Remove some unused clearpart-related settings. (clumens)
+- Hook up the new resize dialog. (clumens)
+- Add a resize dialog. (clumens)
+- Require the hostname package (#862419) (jkeating)
+
+* Tue Oct 02 2012 Chris Lumens <clumens@redhat.com> - 18.11-1
+- Use gdk_threaded() when running AddLayout dialog (vpodzime)
+- Work the anaconda object into the VNC test (jkeating)
+- Use askvnc spoke to change vnc password (jkeating)
+- Fix logic error in vnc password length check (jkeating)
+- Allow vncpassword spoke text to be configurable (jkeating)
+- Don't ask for VNC if we can't do it (jkeating)
+- Skip VNC prompt if text is requested in kickstart (jkeating)
+- KEYTABLE is now vconsole.keymap (#859298) (bcl)
+- The partitionErrorHandler text needs a 's' in the format string (#861376).
+  (clumens)
+- Fix a problem with storage error handling (#861376). (clumens)
+- Fix bootloader setup on s390. (#857940) (dlehman)
+- Make Keboard and Welcome spokes runtime-system friendly (vpodzime)
+- Make DateTime spoke runtime-system friendly (vpodzime)
+- Add a guard for testing if we can modify runtime system (vpodzime)
+- Bring back prompt for VNC (jkeating)
+- Add standalone spoke to prompt for VNC (jkeating)
+- Fail on incomplete ksdata when in cmdline mode (jkeating)
+- Add a flag attribute to handle cmdline mode (jkeating)
+- fix libuser setup (#855481) (bcl)
+- Remove obsolete requirement on comps-extras. (notting)
+
+* Wed Sep 26 2012 Chris Lumens <clumens@redhat.com> - 18.10-1
+- isys.mount needs to be told when something should be mounted NFS (#860273).
+  (clumens)
+- Disks with new disklabels don't count as new devices in custom. (dlehman)
+- Fix thread synchronization issue going from storage to custom. (#860495)
+  (dlehman)
+- Treat disks with unrecognized or no formatting as empty. (#858862) (dlehman)
+- Improve management of mountpoint selectors in the custom spoke. (dlehman)
+- Improve handling of existing devices when refreshing the custom spoke.
+  (dlehman)
+- Apply custom changes not involving actions to the main devicetree. (dlehman)
+- Add a mountpoint entry to the device options area. (dlehman)
+- Move mountpoint validation out of the add mountpoint dialog. (dlehman)
+- Only run the storage sanity check if we've run autopart. (dlehman)
+- Add a method to reset a device to its original state. (dlehman)
+- Make a copy of the original format instead of just storing another ref.
+  (dlehman)
+- Reformatting effectively removes a device from an existing Root. (dlehman)
+- Fix test for whether to create biosboot during autopart. (#853628) (dlehman)
+- Close AddLayout dialog on double-click (vpodzime)
+- Remove useless handler of Cancel button (AddLayout dialog) (vpodzime)
+- Don't rely on having some month and year selected (#859185) (vpodzime)
+- Add debug option to bumpver (bcl)
+- Raise an error if bootDrive is invalid (jkeating)
+- Handle automated installs (jkeating)
+- Handle errors from text storage execute (jkeating)
+- Fix ready and completed properties for text storage (jkeating)
+- Use ksdata to determine text password completeness (jkeating)
+
+* Tue Sep 25 2012 Chris Lumens <clumens@redhat.com> - 18.9-1
+- And remove compssort.py from POTFILES.in, too. (clumens)
+- Select a default environment (#858180). (clumens)
+- Remove compssort.py. (clumens)
+- Don't attempt to catch and re-raise a SystemError from AnacondaThread.run.
+  (clumens)
+- Add a progress message for quitting the installer. (clumens)
+- GUI error handling dialogs need to be protected from threading deadlocks.
+  (clumens)
+- Initialize gdk threading as well. (clumens)
+- Handle --ignoremissing in _applyYumSelections (#859021). (clumens)
+- Fix the destination path for anaconda.xlog (#860041). (clumens)
+- Hide the ISO install source if you've nuked all possible drives (#858088).
+  (clumens)
+- Don't write out /etc/sysconfig/clock anymore (#859217). (clumens)
+- Index the exn mapping by string, not by object. (clumens)
+- Don't write HOSTNAME=HOSTNAME=myhostnamehere (#859141). (clumens)
+- Close temp file before moving it (#858681) (vpodzime)
+- Update widget-specific TODO list. (clumens)
+- Don't use grey for the status text of a SpokeSelector (#855638). (clumens)
+- Fix a typo in makeupdates. (clumens)
+- UEFI paths must include a leading backslash on some machines. (#856938)
+  (pjones)
+- Read cmdline files from /run/install (jkeating)
+- Copy command line files prior to pivot (jkeating)
+- Grab the proxy username from the correct text entry (#858536). (clumens)
+- Remove our use of scsi_wait_scan (#858393). (clumens)
+- Don't overwrite the opts attribute on NFS installs (#858700). (clumens)
+- Change the keyboard shortcut for the updates checkbox. (clumens)
+- Add the storage category to POTFILES.in. (clumens)
+- Don't explicitly start the progress spinner in python code. (clumens)
+- Move the progress bar back down to the bottom of the progress hub. (clumens)
+- Remove a bunch of stuff from the TODO list for a change. (clumens)
+- Move check of new partition size against format limits. (dlehman)
+- Improve growth check when deciding where to allocate new partitions.
+  (dlehman)
+- Keep btrfs selectors' sizes in sync as volume size changes. (dlehman)
+- Allow specification of a label for new swap space via custom ui. (dlehman)
+- Don't allow stage2 as stage1 unless specified via location. (dlehman)
+- Remove reference to PartitioningWarning, which was removed last week
+  (#875931). (clumens)
+- Add a way to test exception handling (vpodzime)
+- Fix dumpState to work with the new python-meh (#856235) (vpodzime)
+
+* Fri Sep 14 2012 Chris Lumens <clumens@redhat.com> - 18.8-1
+- Make sure the InstallOptionsNDialogs get the correct space labels. (clumens)
+- Get rid of the big pause going from the storage spoke back to the hub.
+  (clumens)
+- Don't fail when making updates if the symlink already exists. (clumens)
+- Make sure to set the default TZ in ksdata so the completed method works.
+  (clumens)
+- Allow creation of biosboot and prepboot partitions in the custom spoke.
+  (dlehman)
+- Hide removable disks containing install media from the custom spoke.
+  (dlehman)
+- Make the minimum size for custom spoke partitions 1MB. (dlehman)
+- The return value of execWithRedirect is an integer. (dlehman)
+- Only include following free space in partitions' max size. (dlehman)
+- Handle btrfs volumes with a dataLevel of None. (dlehman)
+- Handle newDevice partitions smaller than the default of 500MB. (#853125)
+  (dlehman)
+- Add underlines to the expander and encryption checkbox in custom
+  partitioning. (clumens)
+- Remember to mark an environment as selected in the store. (clumens)
+- Rename the addon/environment store columns to make sense. (clumens)
+- Use slightly less confusing labels for the various back buttons. (clumens)
+- Add a property to SpokeWindow for setting the single button's label.
+  (clumens)
+- Rename the SpokeWindow's back button to just button. (clumens)
+- Use the blocking read to avoid busy wait in TUI progress (msivak)
+- Make progress hub spokes possible and move the root password there (msivak)
+- Don't let user hit Add button if no new layouts are selected (vpodzime)
+- Gtk.ListStore.iter_previous now returns new iterator (#849060) (vpodzime)
+- Write storage configs after payload install for live installs. (#856836)
+  (dlehman)
+- Update the pot file for various important string changes. (clumens)
+- Attempt to fix word wrapping issues with the betanag dialog (#853913).
+  (clumens)
+- CONTINUE -> BEGIN INSTALLATION (#856614). (clumens)
+- Language selection should work the same as keyboard selection (#854570).
+  (clumens)
+- Fix ransom notes cycling. (clumens)
+- Improve the clarity of the custom checkbutton label. (dlehman)
+- Add error handling around significant ui-initiated storage operations.
+  (dlehman)
+- Improve error granularity slightly in automatic partitioning. (dlehman)
+- Fix detection of preexisting md arrays again. (dlehman)
+- Handle changes to sizes of predefined devices in custom spoke. (dlehman)
+- Fix traceback when switching device type to BTRFS. (dlehman)
+- Validate mountpoints in the add-a-mountpoint dialog. (dlehman)
+- Tell 'lvm' that yes, we really, really want to remove PV (vpodzime)
+- Use 250ms interval for installation progress updating (vpodzime)
+- network spoke: hide for live CD and image installs (#854586) (rvykydal)
+- Fixed luks_add_key() (jsafrane)
+- Display a radio button next to the environment choices. (clumens)
+- Update TODO list. (clumens)
+- Set the busy spinning cursor while the UI is loading. (clumens)
+- network spoke: add "No network devices available" status (rvykydal)
+- network spoke: clear device info if no network devices are found (#853903)
+  (rvykydal)
+- fix root password setup (#855481) (bcl)
+- Rewrite expand_langs to return more items (vpodzime)
+- Don't try to setup X layouts in text installation (#852447) (vpodzime)
+- Add UTF-8 enconding suffix to our language strings (#854688) (vpodzime)
+- Require rsync (vpodzime)
+- Don't rely on chrony.conf file being available (#854899) (vpodzime)
+- Require chrony and rdate, because Anaconda needs them (#854899) (vpodzime)
+- Use the real path to dracut-lib.sh (#851362) (jkeating)
+- fixup live install (#853988, #854962) (bcl)
+- Only check media if we really want it (#853404) (jkeating)
+- Fix thinko in anaconda arg handling portion of multilib patch. (dlehman)
+- Honor kickstart and command line switches to enable multilib. (dlehman)
+- Quitting the live installer shouldn't reboot the system (#854904). (clumens)
+- The kickstart language-related command is "lang", not "language". (clumens)
+- Fix btrfs/lvm/raid kickstart installs (#853649). (clumens)
+- Store "en" as the default, not "en_US". (clumens)
+- Mark ksdata.*.execute invocations as another step (vpodzime)
+- Reorder and comment options passed to rsync (vpodzime)
+- Fix bug in writing keyboard configuration files (vpodzime)
+- network spoke: require connection only for url and nfs methods (#853899)
+  (rvykydal)
+- Drop the addBase handling in anaconda - if you want a group, list a group.
+  (notting)
+- Don't depend on storage or instClass in EFIGRUB (pjones)
+- Use self.stage1_device where appropriate in EFIGRUB. (pjones)
+- Explicitly disable the rootpw lock (#853788) (jkeating)
+- require nm-connection-editor (#854586) (bcl)
+- Include packaging log in exception reports. (dlehman)
+- Add Kazakh as a valid translation. (clumens)
+- Deselect any existing environment when selecting a new one (#851510).
+  (clumens)
+- Use chvt command for tty switching (vpodzime)
+- Use the disk's serial number instead of index as an ID. (clumens)
+- Use the disk's ID for deleting from the shopping cart, not an index
+  (#853798). (clumens)
+- Use the F18_Partition class (#853593). (clumens)
+- Remove anaconda.instLanguage object and language module (vpodzime)
+- Remove lang-table and localeinfo.py (vpodzime)
+- parse-kickstart: handle 'network --ipv6=auto ...' (wwoods)
+- parse-kickstart: set IPV6INIT=yes when using ipv6 (#830434) (wwoods)
+- Make TUI password spoke behave the same as it's GUI counterpart (msivak)
+- Remove ROOT_PATH/etc/localtime before symlinking timezone (vpodzime)
+- Continue post-installation steps even if writing NTP configuration fails
+  (vpodzime)
+- update transifex.txt for newui (bcl)
+- Handle invalid spoke input (#853253) (jkeating)
+- Remove unnecessary (and broken) import (#853576) (jkeating)
+- Destroy the Add Mountpoint dialog when escape is pressed (#853058). (clumens)
+- Keep the current spoke on top of the hub. (clumens)
+- And then fix an assortment of non-packaging pylint errors, too. (clumens)
+- Fix problems in the packaging module that pylint detected. (clumens)
+- Update runpylint to find newui modules correctly. (clumens)
+- Prevent duplicate mountpoint creation. (dlehman)
+- If there's only one disk, select it by default. (dlehman)
+- Evaulate growth potential for all reqs, even when allocating a fixed req.
+  (dlehman)
+- Do not honor partitions' disk attr when reallocating them. (dlehman)
+- Set size is a safe max size for partitions. (dlehman)
+- Set the ANACONDA udev property in the post-switchroot udevdb. (dlehman)
+- Calculate size func kwargs at call time to pick up changes. (dlehman)
+- Add support md devices and btrfs raid features in the custom spoke. (dlehman)
+- Move the BTRFS options to last and remove unsupported options. (dlehman)
+- Remove "Technology" ComboBoxes from device options for now. (dlehman)
+- Tweak setContainerMembers to work with a defined md array. (dlehman)
+- Add support for named md devices. (dlehman)
+- Make sure a disk is partitioned before treating it as such. (#849707)
+  (dlehman)
+- Setup python path /after/ we've done updates (jkeating)
+- Fix a string substitution think-o (jkeating)
+- We now BuildRequires python-babel as well. (clumens)
+- Update TODO list. (clumens)
+- Only show groups in the UI if they have members that install by default
+  (default or manadtory packages). (notting)
+- Symlink /run/initramfs/inst.{updates,product} to /tmp (jkeating)
+- Use shutil.move for replacing old config with the new one (vpodzime)
+- Honor user's choice on NTP (ON/OFF) (vpodzime)
+- Don't crash if someone gives us bad timezone (vpodzime)
+- Use expand_langs to find matching language (LanguageSpoke) (vpodzime)
+- Move expandLangs to localization module (vpodzime)
+- Use Gtk.main_level() to check if main loop is already running (vpodzime)
+- Move setup from ImagePayload to LiveImagePayload. (clumens)
+- Avoid duplicates in the packages property. (clumens)
+- Set a progress message when liveinst starts installing software. (clumens)
+- Fix default definitions of some payload class methods. (clumens)
+- Add a spaceRequired property for LiveImagePayload. (clumens)
+- getDirSize should stay on a single filesystem, not look at submounts.
+  (clumens)
+- Don't look for existing installations on live devices. (clumens)
+- We don't need image_file in the live payload. (clumens)
+- Now that we're using rsync, the livecd and rootfs do not have to match.
+  (clumens)
+- Disable software selection and source spokes on live installs. (clumens)
+- Fix args to LiveImagePayload.setup (#852272). (clumens)
+- require anaconda-widgets (bcl)
+- Handle already mounted optical devices (#851274) (jkeating)
+- Return full device object of selected optical drive (jkeating)
+- Add a method to determine if device is mounted (jkeating)
+- anaconda-cleanup: fix DeviceTree args (bcl)
+- Unset install_device if repo setup fails (jkeating)
+- _peopleRepositoriesFilter -> _peopleRepositoriesFilterEntry (#852182).
+  (clumens)
+- on_*_changed callbacks take one argument, not two. (clumens)
+- Use the correct icon size constant. (clumens)
+- remove dead code (setMethodstr, expandFTPMethod) (wwoods)
+- parse-kickstart: update some TODO comments (wwoods)
+- parse-kickstart: simplify logging (wwoods)
+- enable fastestmirror yum plugin (#849797) (bcl)
+- networking: remove Network() object (rvykydal)
+- networking: use ksdata.network.hostname instead of actual installer hostname
+  (rvykydal)
+- networking: consolidate writing/copying of configuration files (rvykydal)
+- networking: 70-persistent-net.rules doesn't exist anymore. (rvykydal)
+- networking: disable ipv6 directly in installed system config file (rvykydal)
+- networking: mirror end-of-installation network config tweaks in ksdata.
+  (rvykydal)
+- networking: write configuration in doInstall (rvykydal)
+- Add mounts before swaps so the default selection is a mount. (dlehman)
+- Use MB if a new mountpoint size does not include a unit spec. (#850839)
+  (dlehman)
+- Correctly handle partitions with sizes smaller than 500MB. (#850839)
+  (dlehman)
+- Don't include removed devices in Storage.unusedDevices. (dlehman)
+- Handle SameSizeSet growth trimming when all members are too large. (dlehman)
+- Add several missing yum lock aqcuisitions. (#851212) (dlehman)
+- Offer completions for new mountpoints. (dlehman)
+- Add old_source checking for closest mirror and url methods too (#851336).
+  (clumens)
+- Revert "Only use mounted media that has repodata" (jkeating)
+- Only use mounted media that has repodata (jkeating)
+- _bootloaderClass -> bootloaderClass for some platforms (#848173). (clumens)
+- Make the storage info bar clickable to reveal error messages. (clumens)
+- Move the software-specific error message out of the DetailedErrorDialog
+  class. (clumens)
+- Add a gui password spoke (jkeating)
+- Put traceback reports on a diet. (clumens)
+
+* Wed Aug 22 2012 Chris Lumens <clumens@redhat.com> - 18.7-1
+- Do another _main_window -> main_window change. (clumens)
+- Mark the storage category title for translation. (clumens)
+- _actions should be set up in the __init__ method. (clumens)
+- Don't require hfs-tools on RHEL (#849987). (clumens)
+- dracut: remove workarounds for broken splitsep() (wwoods)
+- dracut: update Requires: in spec (wwoods)
+- Use ksdata.timezone and timezone module instead of anaconda.timezone
+  (vpodzime)
+- Remove the last usage of the system-config-date in Anaconda (vpodzime)
+- Add support for swap --hibernation on LVM (vpodzime)
+- Don't rely on selection staying selected when doing crazy things to it
+  (vpodzime)
+- Replace nonexisting icon with an existing one (DatetimeSpoke) (vpodzime)
+- integer out of range for L format code (hamzy)
+- Network spoke: use chr() instead of str() to convert dbus.Byte (#849395)
+  (rvykydal)
+- verify package checksums against metadata (bcl)
+- use F18_PartData for hibernation flag support. (bcl)
+- fix Gtk import in software.py (bcl)
+- dracut: fix rd.neednet use in parse-kickstart (#849672) (wwoods)
+- parse-anaconda-net: Add missing semicolon for dhclient.conf (bcl)
+- anaconda-modprobe: fix .ko removal (bcl)
+- Only devices that already exist may be ISO install sources (#849482).
+  (clumens)
+- Use python-meh's MainExceptionWindow's main_window property (vpodzime)
+- dracut: fix syntax error in parse-kickstart (wwoods)
+- Show fstype as "Unknown" for devices with unrecognised formatting. (dlehman)
+- BTRFS magic for custom spoke. (dlehman)
+- The device type of preexisting devices cannot be changed. (dlehman)
+- Revert old hack that disabled btrfs in the old ui. (dlehman)
+- Use correct device instance when updating selector w/ new device. (dlehman)
+- Fix a traceback when clicking on the summary in custom spoke. (dlehman)
+- Move device size calculation and setting into DeviceFactory. (dlehman)
+- Stop pretending btrfs subvols can have a size. (dlehman)
+- Fix a typo in StorageDevice._setSize. (dlehman)
+- dracut: add info about special variables to README (wwoods)
+- dracut: fix invalid use of 'eth0' (wwoods)
+- dracut: drop upgrade-specific hack (wwoods)
+- dracut: set "$netif" correctly in initqueue/online scripts (wwoods)
+- dracut: fix old-style static ip=xxx gw=yyy... (wwoods)
+- dracut: import anaconda-lib.sh in pre-udev hook (wwoods)
+- dracut: fix set_neednet so network comes up (#849672) (wwoods)
+- dracut: drop save_netinfo (wwoods)
+- move anaconda-modprobe to pre-udev hook, silence modprobe errors (wwoods)
+- parse-kickstart: fix crash with PXE + ks=file: (#844478) (wwoods)
+- parse-kickstart: clarify/refactor Network handling (wwoods)
+- Actually create default ifcfg files (#849012) (rvykydal)
+- Don't fail on write of nonexisting IfcfgFile(SimpleConfigFile) (#849012,
+  #849095) (rvykydal)
+- If dracut left the DVD mounted, don't try to remount it (#849152). (clumens)
+- Add support for most device editing functions. (dlehman)
+- Various fixes, cleanups, and added logging for the custom spoke. (dlehman)
+- Work around some signal handling issues in the custom spoke. (dlehman)
+- Make choosing an auto-selected page after refresh slightly less fallible.
+  (dlehman)
+- Raise an exception if a new device ends up with size 0. (dlehman)
+- Split out logic to determine container based on factory and/or device.
+  (dlehman)
+- Allow adding disks to a container's disk set. (dlehman)
+- Allow passing a device into newDevice for adjustment. (dlehman)
+- Add PartitionFactory class so partitions don't need a separate code path.
+  (dlehman)
+- Add a convenience method for scheduling resize actions. (dlehman)
+- Return early from doKickstartStorage if there are no disks selected.
+  (dlehman)
+- Remove isomd5sum-static from build requires (vpodzime)
+- Don't rely on having some network devices available (vpodzime)
+- Enlightbox mainExceptionWindow (vpodzime)
+- Put mainExceptionWindow in a WindowGroup (vpodzime)
+- Bump required yum version to get the environment code. (notting)
+- Add a flag so we don't get spurious 'change' events from the treeview while
+  we're setting up the UI. (notting)
+- Wire in the new environment logic through the UI. (notting)
+- Add a local method for exposing group visibility from the comps file.
+  (notting)
+- Add methods to yumpayload for handling environments. (notting)
+- Add some nicer wording to the column heads in the software selection UI.
+  (notting)
+- Rename 'description' to 'groupDescription'. (notting)
+- dracut: add README (wwoods)
+
+* Thu Aug 16 2012 Chris Lumens <clumens@redhat.com> - 18.6-1
+- Remove linuxrc.s390 (dcantrell)
+- Source in url-lib.sh if we don't have it (#847831) (jkeating)
+- parse-kickstart: add proc_cmdline (fix init_logger()) (wwoods)
+- Remove the data/bootdisk directory tree. (clumens)
+- Remove duplicate boot disk setting code (#848841). (clumens)
+- Force authconfig to be installed on the target system (#848803). (clumens)
+
+* Wed Aug 15 2012 Chris Lumens <clumens@redhat.com> - 18.5-1
+- Mark/unmark some strings for translation, as appropriate. (clumens)
+- Save the distro label into the right variable for retranslation. (clumens)
+- Add custom widget files to POTFILES.in. (clumens)
+- Fix attribution on common UI code. (clumens)
+- don't set armMachine in class definition (bcl)
+- libudev now has a version of .1 (hamzy)
+- Load anaconda-lib.sh if necessary (jkeating)
+- Use shell code to work around missing basename (jkeating)
+- Enable text mode once again! (jkeating)
+- Update text prompt to include c for continue (jkeating)
+- Don't continue if incomplete spokes exist (jkeating)
+- Return a bool for timezone completed property (jkeating)
+- Add a text progress hub to do the install (jkeating)
+- text based storage spoke. (jkeating)
+- Allow updating tmux.conf via makeupdates. (clumens)
+- Prevent yum messages from showing on tty (jkeating)
+- Remove unused imports from the installclasses. (clumens)
+- NoSuchGroup is provided by packaging now.  yuminstall is on the way out.
+  (clumens)
+- Set transaction color in case of multilib install. (clumens)
+- Add selinux-specific RPM macro setup. (clumens)
+- Add the user-agent to urlgrabber from the old yuminstall.py. (clumens)
+- Fix inheritance problems with the gui *Spoke classes. (clumens)
+- Only setup python-meh when doing graphical installs (jkeating)
+- Call the correct method to schedule the screen (jkeating)
+- Add a missing import of os (jkeating)
+- Don't display indirect spokes in the hub (jkeating)
+- Revert "Remove unncessary __init__ definition. (clumens)" (jkeating)
+- Honor displayMode from kickstart files (jkeating)
+- Merge master into newtui (jkeating)
+- Remove the base_tests file for now (jkeating)
+- Remove unused import of UIObject (jkeating)
+- Fix up detailederror for new common UI code (jkeating)
+- Translate the base text hub class (jkeating)
+- Translate the base tui class strings (jkeating)
+- Remove unncessary __init__ definition. (clumens) (jkeating)
+- Translate some strings in the base tui spokes classes (jkeating)
+- Always use collect directly from common (jkeating)
+- Add comment headers to the new files (jkeating)
+- Ad source files to POTFILES.in (msivak)
+- Merge remote-tracking branch 'origin/master' into newtui (msivak)
+- import localization stuff and use it to translate more strings (msivak)
+- finish renaming _mainloop (msivak)
+- Fix naming for data attribute and move the NormalSpoke.__init__ under the
+  proper class (msivak)
+- Improve documentation and add licensing headers (msivak)
+- Add translations to the simpleline framework (msivak)
+- Add translations to Password Spoke (msivak)
+- Add elementary timezone spoke (msivak)
+- Pass screen args argument to prompt and input methods + fix for run-text-
+  spoke (msivak)
+- Merge master into newtui (msivak)
+- Add automake files for TUI (msivak)
+- add couple of tests and fix write method of widget (newline added unwanted
+  space) (msivak)
+- add couple of tests and support for them (msivak)
+- add documentation and comments to TUI classes (msivak)
+- Add documentation to the simpleline library for TUI (msivak)
+- Add the new Summary hub and Password TUI spokes + tools to test TUI stuff
+  (msivak)
+- Fix bits and pieces to make TUI hub and spoke model work + example Hub and
+  Password spoke (msivak)
+- Create common abstract classes usable for all types of UI (msivak)
+- Create the base classes for TUI Hub and Spoke model (msivak)
+- Make collect and part of UserInterface setup more generic (msivak)
+- Text based UI framework core (msivak)
+
+* Mon Aug 13 2012 Chris Lumens <clumens@redhat.com> - 18.4-1
+- dracut: fix inst.ks.sendmac (#826657) (wwoods)
+- dracut: suppress ks errors from missing %%include (wwoods)
+- dracut: add comment to run_kickstart() (wwoods)
+- Remove unused writeKS methods. (clumens)
+- Only show unused devices that haven't been removed/deleted. (dlehman)
+- Don't unexpand already-expanded pages when trying to expand them again.
+  (dlehman)
+- Make parents of hidden devices appear to be leaves. (dlehman)
+- Remove the right device name from the lvm filter when unhiding device.
+  (dlehman)
+- Take configured filesystems into account when checking package space.
+  (dlehman)
+- Make sure the ksdata autopart type matches the storage one. (dlehman)
+- Base auto-generated name prefixes on productName, not device type. (dlehman)
+- Remove shrink code that was a workaround for the old ui flow. (dlehman)
+- Remove old ui progress args from devicelibs.btrfs. (dlehman)
+- Make sure we allocate partitions and grow lvm as needed in kickstart.
+  (dlehman)
+- Streamline autopart request setup slightly. (dlehman)
+- Make it possible to call setUpBootLoader safely at any time. (dlehman)
+- Move setup of new partition weight arg to Storage.newPartition. (dlehman)
+- Use a copy of the main Storage instance during custom partitioning. (dlehman)
+- Track requested sizes of btrfs subvols. (dlehman)
+- Add a method to retrieve a devicetree device by id number. (dlehman)
+- Fix DiskLabel so it can be deep-copied. (dlehman)
+- Add a method to produce a deep copy of a Storage instance. (dlehman)
+- Fix subtraction for Size. (dlehman)
+- Add support for creating device based on a top-down specification. (dlehman)
+- Add size-set managers to keep a set of growable requests in sync. (dlehman)
+- Add a function to estimate required disk space for an md array. (dlehman)
+- Add a method to estimate disk space needs for a new logical volume. (dlehman)
+- Add a convenience method for new btrfs subvols and drop subvol size args.
+  (dlehman)
+- Use the UEFI shim to load grub. (pjones)
+- Check that Gtk.main is not already running before starting another one
+  (vpodzime)
+- With tmux, we no longer need to start up a shell during VNC installs.
+  (clumens)
+- We no longer need getkeymaps, mapshdr, or readmap. (clumens)
+- Remove the last references to isysLoadKeymap. (clumens)
+- remove Security class (bcl)
+- replace lokkit for selinux settings (#815540) (bcl)
+- tests: Add tests for new SimpleConfigFile features (bcl)
+- tests: cleanup whitespace in simpleconfig_test.py (bcl)
+- simpleconfig: rewrite to better support commented config files (bcl)
+- If the anaconda process crashes, don't delete its window. (clumens)
+- On interactive installs, default the root account to locked. (clumens)
+- Make the keyboard layout test a big text area instead of a single line.
+  (clumens)
+- Remove our loadKeymap code from isys (vpodzime)
+- Replace system-config-keyboard with our methods using ksdata.keyboard
+  (vpodzime)
+- A little fix of newui -> master merge (iscsi offload devices) (rvykydal)
+- Require new version of python-meh (vpodzime)
+- Modify kernelPackages to select the right kernel for ARM systems. (dmarlin)
+- ARM: clean up the kernel selection to be consistent with the rest of the code
+  (dennis)
+- add command line option to set the arm platform. (dennis)
+- Add support to determine the ARM processor variety and select the correct
+  kernel to install. (dmarlin)
+- TODO list updates. (clumens)
+- Sent pot file updates to the master branch in transifex, not f17. (clumens)
+
+* Fri Aug 03 2012 Chris Lumens <clumens@redhat.com> - 18.3-1
+- New graphical user interface.
+- Removed loader.
+
+* Wed Apr 18 2012 Brian C. Lane <bcl@redhat.com> - 18.2-1
+- Fixes from F17 branch
+
+* Mon Apr 09 2012 Brian C. Lane <bcl@redhat.com> - 17.20-1
+- make dev_is_mounted more reliable (wwoods)
+- fix failure to run multiple udev-triggered jobs (#811008) (wwoods)
+
+* Fri Apr 06 2012 Brian C. Lane <bcl@redhat.com> - 17.19-1
+- copy installer image to RAM during upgrades (#810391) (wwoods)
+- fix repo={hd,cdrom}:DEV:PATH (#810136) (wwoods)
+- read flags using filename globs (bcl)
+- Fix repo={http,ftp,nfs} (#810005) (wwoods)
+- Fix "memcheck=0" (and other store_true boot args) (wwoods)
+- write new options to zipl.conf (dan)
+
+* Tue Apr 03 2012 Brian C. Lane <bcl@redhat.com> - 17.18-1
+- Revert "Wait for device activation / "online" hook if rd.neednet is set"
+  (bcl)
+- Add missing os import to platform.py (bcl)
+
+* Tue Apr 03 2012 Brian C. Lane <bcl@redhat.com> - 17.17-1
+- Don't allow /usr as a separate partition (#804913) (clumens)
+- use /sys/class/dmi instead of dmidecode (bcl)
+- restore the GPT blacklist code (bcl)
+- add virtio rsyslogd logging to anaconda (bcl)
+- dracut/parse-kickstart: handle network --device=link (or none) (wwoods)
+- dracut: fix kssendmac/inst.ks.sendmac (wwoods)
+- Set ONBOOT=yes for at least one wired netdev by default (#806466) (wwoods)
+- detect live backing device (#809342) (dlehman)
+- Wait for device activation / "online" hook if rd.neednet is set (wwoods)
+- Fix kickstart failure if ks is on the same disk as stage2 (wwoods)
+- fix 'mount: Too many levels of symbolic links' error message (wwoods)
+- support {stage2,repo}=.../path/to/file.img (#808499) (wwoods)
+- dracut when_diskdev_appears: only run cmd once per device (wwoods)
+- dracut: don't do kickstart twice, don't use root.info (wwoods)
+- Don't use the bootloader config path to find the splash image (#807510)
+  (pjones)
+
+* Wed Mar 28 2012 Brian C. Lane <bcl@redhat.com> - 17.16-1
+- makeupdates: install liveinst to /usr/sbin (bcl)
+- liveinst: adjust updates path (#807397) (bcl)
+- dracut: add missing spaces for module loading (#804522) (bcl)
+- Don't set MALLOC_PERTURB_ when calling grub2-install. (workaround #806784)
+  (pjones)
+
+* Tue Mar 27 2012 Brian C. Lane <bcl@redhat.com> - 17.15-1
+- make ks=file:... parse kickstart earlier (#806931) (wwoods)
+- Let "root=..." override "repo=..." (wwoods)
+- dracut cleanup: use consistent filenames for cmdline.d files (wwoods)
+- fix "strsep: command not found" error with repo:hd:.. (#806966) (wwoods)
+- load modules needed by Anaconda (#804522) (bcl)
+- Fix nfs/nfsiso (NM handover problems / empty net.ifaces) (wwoods)
+- Format PReP partition (hamzy)
+
+* Thu Mar 22 2012 Brian C. Lane <bcl@redhat.com> - 17.14-1
+- Revert "dracut: use /run/install/source for repodir" (bcl)
+- Disable creation of btrfs filesystems aside from kickstart. (#787341)
+  (dlehman)
+- fix text mode KeyError crash (#804483) (wwoods)
+- Default to text-mode if 'console=XXX' was provided (#804506) (wwoods)
+- dracut startup: "Loading $product $version $arch installer..." (wwoods)
+- fix nfsiso:...:/path/to/filename.iso (#804515) (wwoods)
+- fix typo in makeupdates (bcl)
+- makeupdates: add support for updating systemd services/targets (wwoods)
+- disable warnings about boot options needing 'inst.XXX' (wwoods)
+- Create default ifcfg-* for each interface (#804504, #804716) (wwoods)
+- save ifcfg for every interface we bring up (wwoods)
+- Let systemd handle terminal setup, fix possible race with NM (wwoods)
+- Migrate PPC from Yaboot to Grub2 for Anaconda (hamzy)
+- dracut: fix anaconda-netroot for inst.repo=nfsiso:.. (wwoods)
+- dracut: accept inst.updates or updates for live.updates (wwoods)
+- makeupdates: put files the right places (wwoods)
+- dracut: use /run/install/source for repodir (wwoods)
+- read args from 80kickstart.conf (bcl)
+
+* Fri Mar 16 2012 Brian C. Lane <bcl@redhat.com> - 17.13-1
+- anaconda.service Wants=NetworkManager.service (wwoods)
+- make sure we save the network setup for any network device we used (wwoods)
+- make sure parse-kickstart's ifcfg files get copied to the system (wwoods)
+- fedora-import-state.service is in initscripts now (wwoods)
+- Add flag to disable available-memory check (for debugging etc.) (wwoods)
+- fix logic for setting set rd.{luks,dm,md,lvm}=0 (wwoods)
+- fix run_kickstart for the non-repo case (wwoods)
+- run_kickstart: go back to targeted cmdline parsing (wwoods)
+- parse-kickstart: write ifcfg files for all net devs (wwoods)
+- add the traditional anaconda dhcpclass (wwoods)
+- cleanups and fixes for ksdevice/bootdev handling (wwoods)
+- drop unused when_netdev_online function (wwoods)
+- make run_kickstart re-parse the whole commandline (wwoods)
+- set rd.{luks,dm,md,lvm}=0 unless the user says otherwise (wwoods)
+- handle inst.* cmdline args correctly (bcl)
+- fixup for syntax error in inst.ks/--kickstart patch (wwoods)
+- set ANACONDA=1 udev property in the right place (wwoods)
+- fix inst.ks handling in anaconda (wwoods)
+- fixups: run ks early, don't repeat netroot (wwoods)
+- fixup: "online" hook renamed "initqueue/online" upstream (wwoods)
+- Quiet bash error message if (optional) treeinfo is missing (wwoods)
+- a couple small cleanups/fixes for fedora-import-state.service (wwoods)
+- anaconda-shell service tweaks (wwoods)
+- add fedora-import-state.service (fix NFS root: #799989) (wwoods)
+- anaconda-netroot.sh: make sure dracut writes out the ifcfg files (wwoods)
+- Use "online" hook to handle anaconda network root devices (wwoods)
+- Fetch network kickstarts from the "online" hook (wwoods)
+- set wait_for_dev /dev/root in parse-anaconda-repo.sh (wwoods)
+- fix find_runtime() and parse_kickstart() (wwoods)
+- kickstart parsing fixups: keep running if parse fails (wwoods)
+- handle more KickstartErrors (wwoods)
+- anaconda-lib: make sure we only run when_*_online jobs once (wwoods)
+- add missing newline to /tmp/ks.info (wwoods)
+- don't source dracut-lib.sh twice (it causes crashes) (wwoods)
+- kickstart: only wait for kickstart if we're actually fetching it (wwoods)
+- fetch-kickstart-*: actually do run_kickstart (wwoods)
+- python-deps: cleanups/comments (wwoods)
+- replace pythondeps.sh with python-deps (python script) (wwoods)
+- move parse-kickstart.py back to parse-kickstart (wwoods)
+- Makefile.am: use dist_dracut_SCRIPTS to make scripts executable (wwoods)
+- fix bad path for parse-kickstart.py (wwoods)
+- refactor network handling (support ibft and ksdevice) (wwoods)
+- update Makefile.am (wwoods)
+- add fetch-kickstart-disk and fetch-kickstart-net (wwoods)
+- make cd autoprobe catchall rule actually run for each device (wwoods)
+- fix inst.repo=cdrom (wwoods)
+- move deprecation warnings into parse-anaconda-options.sh (wwoods)
+- add wait_for_kickstart() (wwoods)
+- parse-kickstart updates (wwoods)
+- anaconda-lib: rename check_isodir, add anaconda_live_root_dir (wwoods)
+- anaconda-{nfs,disk}root updates (wwoods)
+- split genrules into repo-genrules.sh and kickstart-genrules.sh (wwoods)
+- minor parse cleanups for kickstart and repo (wwoods)
+- improve handling of anaconda repo root stuff (wwoods)
+- parse-kickstart: return filename, drop biospart junk (wwoods)
+- make sure edd is loaded, if available (wwoods)
+- Drop dmidecode binary, just cat /sys/class/dmi/id/product_serial (wwoods)
+- dracut/anaconda-genrules.sh: add catch-all rule for autoprobing CDs (wwoods)
+- add more kickstart code, shuffle genrules code around (wwoods)
+- move disk_to_dev_path to anaconda-lib (wwoods)
+- edit anaconda-urlroot status messages (wwoods)
+- fix typo in anaconda-urlroot (wwoods)
+- add anaconda-urlroot (handle inst.repo=[http|ftp]) (wwoods)
+- whoops, forgot anaconda-lib.sh (wwoods)
+- dracut: check for .buildstamp in /run/initramfs (wwoods)
+- anaconda-dracut: make sure we execute pythondeps.sh (wwoods)
+- dumb typo fix: "convertfs", not "covertfs" (wwoods)
+- dracut: move to /usr/lib (wwoods)
+- dracut: depend on "convertfs" module (wwoods)
+- Make anaconda-dracut subpackage noarch (wwoods)
+- Add anaconda dracut module [WIP!] (wwoods)
+- Completely remove loader/ (wwoods)
+- We've got you cornered now, loader: remove from automake/spec/po (wwoods)
+- move linuxrc.s390 out of harm's way (wwoods)
+- move vncpassword handling into anaconda; remove recoverVNCPassword (wwoods)
+- Remove misc. references to loader (wwoods)
+- remove ancient anaconda-release-notes.txt (wwoods)
+- remove scripts/upd-initrd and scripts/upd-bootiso (wwoods)
+- Move from loader.service to anaconda.service (wwoods)
+- Schedule (no-op) btrfs format create actions. (#799154) (dlehman)
+- intelligently choose the window size (#800609) (bcl)
+- fix text upgrade bootloader dialog (#742207) (bcl)
+
+* Tue Mar 06 2012 Brian C. Lane <bcl@redhat.com> - 17.12-1
+- only allow GPT boot flag on EFI System partition (#746895) (bcl)
+- Add dracut args for /usr to bootloader (#787893) (bcl)
+- Make sure all kickstart partition reqs get appropriate weight setting.
+  (dlehman)
+- Fix test for unsupported format type in kickstart. (dlehman)
+- Update the fs size limit for ext3/ext4 from 8TB to 16TB. (dlehman)
+- Don't allow /boot on logical partition except for grub. (dlehman)
+- empty versions shouldn't be upgradable or traceback (#791317) (bcl)
+- Don't crash when broken md devices are present. (#731177) (dlehman)
+- Add missing definition of BTRFSError. (#796013) (dlehman)
+
+* Tue Feb 21 2012 Brian C. Lane <bcl@redhat.com> - 17.11-1
+- import using the right path to iutil (bcl)
+
+* Mon Feb 20 2012 Brian C. Lane <bcl@redhat.com> - 17.10-1
+- use a dracut shutdown hook to eject media (#787461) (bcl)
+- add dracut shutdown eject hook function (#787461) (bcl)
+- The createSuggested methods have changed name (#791204, #795058). (clumens)
+- Generate repo= ks command only for repos added by user (#738577) (rvykydal)
+- Use libpwquality to check root password strength (#755883) (mgracik)
+- Generate connection UUID in inital ifcfg files created by anaconda (#705328)
+  (rvykydal)
+- Take in change of a binary name (brcm_iscsiuio -> iscsiuio) (#731761)
+  (rvykydal)
+- Set ONBOOT=yes for FCoE devices (#755147) (rvykydal)
+- Fix a typo (#794504). (clumens)
+- Add support for network --device=link in stage2 kickstart (#790332)
+  (rvykydal)
+- Set default lang and create default locale files early (wwoods)
+- Add 'traceback' boot option for python-meh and libreport testing (vpodzime)
+
+* Thu Feb 16 2012 Brian C. Lane <bcl@redhat.com> - 17.9-1
+- Don't set the pmbr bootable flag on Macs, whether booted via EFI or not (mjg)
+- Don't set GPT HFS+ partitions as bootable (mjg)
+- Mark HFS+ as fsckable (mjg)
+- fix setattr in set_cmdline_bool (pschindl)
+- Add _mounttype to HFSPlus (mjg)
+- Add support for UEFI Mac installs (mjg)
+- Add support for HFS+ partitions (mjg)
+
+* Mon Feb 13 2012 Brian C. Lane <bcl@redhat.com> - 17.8-1
+- Clear partitions' metadata when 'clearpart --initlabel' used. (#783841)
+  (cherry picked from commit 15307cc091212cc69b599b90c239492c9c9586ec)
+  (dlehman)
+- Fix support for detecting existing mirrored lvs. (#734128) (dlehman)
+- fix potential EFIGRUB infinite loop (bcl)
+- finish ROOT_PATH changes in bootloader (#789169) (bcl)
+- Be more verbose about upgrade failures (#735060) (bcl)
+- Skip setting PMBR boot flag on EFI (#754850) (mjg)
+- Updated transifex config for f17-branch (bcl)
+
+* Wed Feb 08 2012 Brian C. Lane <bcl@redhat.com> - 17.7-1
+- anaconda_optparse.py: a new OptionParser that also reads boot args (wwoods)
+- Add flags.set_cmdline_bool and flags.read_cmdline (wwoods)
+- flags.py: add new BootArgs() object for dealing with boot args (wwoods)
+- flags.py: rework/cleanup Flags object (wwoods)
+- fix serial console option parsing (#767745) (wwoods)
+- run convertfs on upgrade (#787893) (bcl)
+- check if stdout and stderr are the same in execWithRedirect and open the file
+  only once in such cases (mmatsuya)
+- Disable ipv6 on target system when using noipv6 option (#735791) (rvykydal)
+
+* Mon Feb 06 2012 Brian C. Lane <bcl@redhat.com> - 17.6-1
+- Set the boot flag on the GPT PMBR (#754850) (bcl)
+- Add missing _boot_description values for dasd and zfcp (#739620) (dcantrell)
+- Select the same device for ksdevice=link in loader and stage2 (#760250)
+  (rvykydal)
+
+* Wed Feb 01 2012 Brian C. Lane <bcl@redhat.com> - 17.5-1
+- Add a separate function to get an LV's VG name. (dlehman)
+- util-linux-ng is now util-linux (bcl)
+
+* Tue Jan 31 2012 Brian C. Lane <bcl@redhat.com> - 17.4-1
+- liveinst: canonicalize live-baseloop symlink (bcl)
+- Fixup getDeviceBy* methods (bcl)
+- Ignore dm devs when scanning for mpath members (#761278) (hamzy)
+- Don't set the system's hostname during disk image installs. (dlehman)
+- Fix error handling in the case of no live block device. (dlehman)
+- Force simple filter for disk image installs. (#784560) (dlehman)
+- Check for live install before doing live-specific umounts. (dlehman)
+- DM_VG_NAME tells an LV's VG, not the VG a PV belongs to. (#772878) (dlehman)
+
+* Mon Jan 23 2012 Brian C. Lane <bcl@redhat.com> - 17.3-1
+- Add missing log import to platform.py (bcl)
+- liveinst: Check for live-baseloop LIVE_BLOCK (bcl)
+- Add Storage.autoPartType to indicate lvm/btrfs/neither. (dlehman)
+- Add full support for btrfs via kickstart's btrfs command. (dlehman)
+- Show btrfs vols/subvols but don't allow editing them. (dlehman)
+- Add support for btrfs to the devicetree. (dlehman)
+- Remove an old hack with action registration. (dlehman)
+- Add support for btrfs automatic partitioning. (dlehman)
+- Add new field to PartSpec to indicate btrfs reqs. (dlehman)
+- Add btrfs convenience methods to Storage. (dlehman)
+- Handle device name generation and checking in a more generic way. (dlehman)
+- Add btrfs base class along with classes for volume, subvolume. (dlehman)
+- btrfs volumes/subvolumes are created by devicelibs.btrfs. (dlehman)
+- Scan for btrfs while looking a new devices. (dlehman)
+- Add backend module for operating on btrfs volumes. (dlehman)
+- Fix default hostname function to never return '(none)'. (dlehman)
+- Revert "Put bios boot partitions on all gpt disk on bios systems. (#738964)"
+  (dlehman)
+- Put NoSuchGroup and DispatchError back, but not in errors.py. (#760786)
+  (dlehman)
+- Clean up BootLoader.writeKS to account for no bootloader. (dlehman)
+- Fix sense of disklabel size check and add some logging. (dlehman)
+- Handle v0.90 md metadata in preexisting arrays. (dlehman)
+- style cleanups for ppc SMS bios patch (wwoods)
+- Update ppc SMS bios after installation (hamzy)
+- report more detail about yum failure (bcl)
+- Add a script mode that exits instead of looping (bcl)
+- Add 'sound-and-video' to Fedora install class for 'Software Development'
+  task. (#643786) (notting)
+- Unmount the image file (bcl)
+- Disable yum log file handling (bcl)
+- Setup storage config when kickstart is parsed (bcl)
+
+* Tue Nov 15 2011 Chris Lumens <clumens@redhat.com> - 17.2-1
+- ARCHIVE_DEFAULT_BYTES_PER_BLOCK no longer exists in libarchive-3.0.0
+  (clumens)
+- Don't use the rpmdb to figure out upgrade target arch (#748119). (clumens)
+- Remove obsolete error handling left over from the old storage code. (dlehman)
+- Update to the FC16_VolGroupData so reserving space works. (dlehman)
+- Remove unused import of gzip from task_gui.py (dlehman)
+- Cap new /boot/efi partitions at 200MB. (#748274) (dlehman)
+- Fix root device specification in zipl.conf. (#740576) (dlehman)
+- Add --boot-drive option to kickstart bootloader command. (dlehman)
+- Include disklabel type in grub2 device names. (dlehman)
+- use 800x600 as minimal mainWindow size (vpodzime) (mgracik)
+- Use an atexit handler for shutting down and ejecting media (#750809).
+  (clumens)
+- Fix a dumb error when canceling previous migration actions (#744034).
+  (clumens)
+- Document iscsi and multipath implementations. (akozumpl)
+- Don't load forcefully load pcspkr.  The kernel doesn't (#750830). (clumens)
+- Gray out "Configure Network" button in live installations (#749929)
+  (rvykydal)
+- Support prefix length in kickstart network --ipv6 option. (rvykydal)
+- Support prefix length in ipv6= cmdline option (#679108) (rvykydal)
+- Remove snarffont, which is no longer needed. (clumens)
+- Change what the third column of lang-table means. (clumens)
+- And stop attempting to load our own fonts, since we no longer ship them.
+  (clumens)
+- Remove our own screen fonts (#742613, #743429). (clumens)
+- Don't use GPT disklabels on Lenovo BIOS systems. (#749325) (dlehman)
+- Fix typo in call to opt.isdigit (#743787) (pjones)
+- Don't allow disks containing the live media as boot disk. (#748587) (dlehman)
+- Honor fsprofile argument even for existing devices. (#747417) (dlehman)
+- Regenerate tasklist when a repo is removed. (akozumpl)
+- Do a better job of remembering if 'review and modify partitioning' was
+  checked. (akozumpl)
+- Be more convincing in eradicating errant temp vg paths. (#722952) (dlehman)
+- Resize: Update format size if aligning partition shrinks it. (#689179)
+  (dlehman)
+- Copy all of live filesystem to target (#746844) (bcl)
+- Fix autopart shrink of existing system. (#746605) (dlehman)
+- cryptsetup returns positive nonzero when activating by different than the
+  first keyslot (msivak)
+- do more logging in findExistingRootDevices() (akozumpl)
+- Add 'nogpt' cmdline arg to disable creation of gpt disklabels. (dlehman)
+- Show cleardisks gui always to allow selecting a boot disk. (#744088)
+  (dlehman)
+- mpath: flush more eagerly in filter_gui. (akozumpl)
+- debugging: log boot arguments. (akozumpl)
+
+* Tue Oct 11 2011 Chris Lumens <clumens@redhat.com> - 17.1-1
+- Pull grub-efi and efibootmgr into the package list as needed. (#742042)
+  (pjones)
+- analog: properly log user.info where NetworkManager (also) communicates.
+  (akozumpl)
+- analog: bump the version to rsyslog 5 (akozumpl)
+- partitioning.py: reference to list of free regions is shadowed by a double.
+  (akozumpl)
+- Handle strange lang boot argument values. (akozumpl)
+- LANG_DEFAULT lives in lang.c. (akozumpl)
+- Include docs/transifex.txt in release dist. (dcantrell)
+- fcoe: modprobe the VLAN layer module. (akozumpl)
+- Remove some raid error checking pykickstart can do for us. (clumens)
+- Set default BOOTPROTO=dhcp for network service (minimal installs) (#741199)
+  (rvykydal)
+- remove argument ROOT_PATH from getDefaultKeyboard() calls (removed from
+  method with 3e8d08cac6aa89f001c5b32dba251a62a45ed7f4) (vpodzime)
+- Default to an active network device after reboot on Fedora (ONBOOT) (#498207)
+  (rvykydal)
+- Fix: Allow EFI slot_ids in hexdecimal (#742141). (fabian.deutsch)
+- Move the fedora logo to the left. (akozumpl)
+- fcoe: fix detecting FCoE NIC (mcb30)
+- Do not show loop devices in the filtering UI. (akozumpl)
+- dispatcher: do not request "group-selection" with "tasksel". (akozumpl)
+- upgrade: do not insist on running the "bootloader" step. (akozumpl)
+- Fix sigsegv in setKickstartNetwork() (strdup() from a NULL). (akozumpl)
+- dracut args: "rhgb quiet" should come last. (akozumpl)
+- Add nfsiso: handling to parseNfsHostPathOpts (bcl)
+- Only check relevant devices for dirty filesystems. (#741206) (dlehman)
+- Make sure storage is reset just before partitioning, always. (dlehman)
+- Move selection of default boot drive into bootloader. (dlehman)
+- Show error dialog instead of traceback on fstab type mismatch. (#649171)
+  (dlehman)
+- Try a test mount and keep fstab mismatches if it succeeds. (#649171)
+  (dlehman)
+- Check the return value of get_file_list (#741466) (bcl)
+- imount.c: include fcntl.h before ext2fs/ext2fs.h. (akozumpl)
+- Write the grub.conf after setting up the new EFI bootloader (#741994)) (bcl)
+- botoloader: write 'ip=eth0:dhcp,auto6' instead of 'ip=eth0:dhcp
+  ip=eth0:auto6' (akozumpl)
+- gitingore: ignore po/*.po.new files. (akozumpl)
+- Put bios boot partitions on all gpt disk on bios systems. (#738964) (dlehman)
+- Change default bootloader timeout from 20sec to 5sec. (#727831) (dlehman)
+- Bootloader stage1_drive is more than a suggestion. (#738964) (dlehman)
+- Mark the live device's parent devices protected. (#738964) (dlehman)
+- it is anaconda-shell (akozumpl)
+- Improve the clarity of the missing bios boot partition error. (#731549)
+  (dlehman)
+- Remove tmp.mount (systemd handles this for us now) (wwoods)
+- Move dependency info into the unit files (wwoods)
+- move anaconda-shell.service to the correct filename (wwoods)
+- make anaconda-shell.service a template, put it on tty2 & hvc1 (wwoods)
+- Return after writing log message, not before. (rvykydal)
+- Do not reactivate network device needlessly on s390 (#739846) (rvykydal)
+- Start NM in loader on s390 until we have systemd init here too (#733680)
+  (rvykydal)
+- Revert "Set debug_package to %%{nil} so we don't strip our binaries."
+  (akozumpl)
+- Fix createUser and createGroup to work with kickstart defaults (#739428)
+  (bcl)
+- Update test for createUser and createGroup (#739428) (bcl)
+- fcoe: handle Broadcom fcoe devices correctly. (akozumpl)
+- fcoe: the control path in sysfs is now /sys/module/libfcoe (akozumpl)
+- fcoe: load bnx2fc if relevant. (akozumpl)
+- Fix post-commit lookup of extended partitions. (#737532) (dlehman)
+- Don't reboot when closing the live installer via the window decoration.
+  (clumens)
+- Use the luks format's mapName when creating temp LUKSDevice. (#722952)
+  (dlehman)
+- Reset device attr after using temp dev. (#722952) (dlehman)
+- Make sure there are no tempvg paths even if formatting. (#737916) (dlehman)
+
+* Thu Sep 15 2011 Chris Lumens <clumens@redhat.com> - 17.0-1
+- Sort partitioning commmands in anaconda-ks.cfg. (#736527) (dlehman)
+- Install grub2 when upgrading on bios x86. (#735730) (dlehman)
+- Default to installing a new bootloader on upgrade. (dlehman)
+- Add a Reboot button to the congrats screen on live (#705189). (clumens)
+- Add support for reserving space in lvm vgs via kickstart. (dlehman)
+- iutil: make getArch() return ppc64 on ppc64 (#736721) (wwoods)
+- iutil: add 'bits' arg to isPPC (like isX86) (wwoods)
+- nfsiso: handle mismatching .iso architecture gracefully. (akozumpl)
+- systemd: anaconda.target wants rsyslog.service (akozumpl)
+- Improve checking if new biosboot partition is needed. (akozumpl)
+- mpath: create /etc/multipath/bindings if we are using friendly names.
+  (akozumpl)
+- isolate localeInfo and expandLangs() from langauges.py into a separate
+  module. (akozumpl)
+- Make sure we teardown root candidates in all cases. (#693095) (dlehman)
+- Update parted partition by sector, not name, after create. (#733449)
+  (dlehman)
+- Determine existing md arrays' metadata version. (#731266) (dlehman)
+- Don't check mountable before obtaining actual/existing fs size. (#733808)
+  (dlehman)
+- Fix traceback when installing over a system with broken rpm db. (akozumpl)
+- kickstart: use 'bootloader --timeout' even if it is zero. (akozumpl)
+- Fix some things using old bootloader/platform stuff. (dlehman)
+- Fix traceback when validating unallocated partition requests. (#733670)
+  (dlehman)
+- Require BIOS boot partition for GPT bootdisk on BIOS systems. (dlehman)
+- Prevent grub2 from trying to access floppy drives. (dlehman)
+- Limit grub stage2 md members' device type and metadata version. (dlehman)
+- Remove unnecessary ROOT_PATH constant passing. (akozumpl)
+- Moving anaconda.rootPath to constants.ROOT_PATH. (akozumpl)
+- Remove deprecated --rootPath and --test. (akozumpl)
+- Tidy warnings.showwarning into anaconda_log.py. (akozumpl)
+- cosmetic: remove trailing whitespace in timezone_test.py (akozumpl)
+- ut: cleanup after firewall_test.py (akozumpl)
+- ut: move tests/fw_test.py to tests/pyanaconda_test/firewall_test.py
+  (akozumpl)
+- Close out the yum history before running %%post scripts (#730857). (clumens)
+- Remove unused attribute 'bootable' from DeviceFormat classes. (dlehman)
+- Allow btrfs stage2 with grub2. (#732594) (dlehman)
+- Clean up return values of GRUB2._gpt_disk_has_bios_boot. (dlehman)
+- Force grub2 install to partition's boot block. (#727679) (dlehman)
+- Don't crash because we don't have support for linear md. (#646157) (dlehman)
+- Clean up obsolete extended partitions if partitioning fails. (#672010)
+  (dlehman)
+- Convert a None from libiscsi.discover() to an empty list. (akozumpl)
+- Honor kickstart 'autopart --nolvm' option (jlaska)
+- Allow answering the uninitialized disk question more than once. (akozumpl)
+
+* Thu Aug 18 2011 Chris Lumens <clumens@redhat.com> - 16.15-1
+- i18n: Do not include newlines in the reinit dialog's label. (akozumpl)
+- Move the trusted_boot setting into AnacondaYum.run (#731260). (clumens)
+- Put nolock instead of ,nolock to options if provided options are empty
+  (#727522) (msivak)
+- Deal with zFCP multipath devices in the filter UI (#618535) (dcantrell)
+- matchpathcon doesn't like strings like "//lib64", so remove a slash
+  (#730863). (clumens)
+- Fix check so we actually disallow use of preexisting root filesystems.
+  (dlehman)
+- Correctly handle reqs with max size no larger than base size. (#730009)
+  (dlehman)
+- Set the default grub2 entry to the OS we just installed. (dlehman)
+- Create 'console=..' configuration also for grub2. (akozumpl)
+- Copy /etc/multipath/wwids to the sysimage. (akozumpl)
+- add multiboot support for tboot (gang.wei)
+- Fix createUser (bcl)
+- raid ui: compute max number of spares based on raid members selected.
+  (akozumpl)
+- Remove definite articles in the bootloader translation strings. (akozumpl)
+- Avoid final hang if no reboot action is specified in kickstart. (akozumpl)
+- Check before setting partition label (#729599) (bcl)
+- Remove as many of the /selinux path hardcodings as possible (#729563).
+  (clumens)
+- Raise informative error for ks=bootif, missing BOOTIF case (#681803).
+  (rvykydal)
+- dispatcher: do not show install steps in upgrade. (akozumpl)
+- edd: fix traceback on Xen. (akozumpl)
+- ConditionKernelCommandLine is a setting for Unit, not Service. (clumens)
+- The script sections should operate on an AnacondaKSScript instance (#728468).
+  (clumens)
+- Restart NetworkManager to use anaconda's initial ifcfg config (#727951)
+  (rvykydal)
+- simplify anaconda.target/loader.service requirements (wwoods)
+- make anaconda-shell.service more like getty (wwoods)
+- ut: fix upgrade_test.py (akozumpl)
+- Fix more dispatcher problems. (akozumpl)
+- Check if the potential dep is in done, not the leaf. (#728891) (dlehman)
+- Don't crash when checking unpartitioned devices for disklabel. (#720070)
+  (dlehman)
+- Remove "-Alpha" or "-Beta" from yum's $releasever (#728868). (clumens)
+- Fix extra quote in grub.conf header string (bcl)
+- Set EFI mountpoint when using existing partition (#727933) (bcl)
+- Set the boot partition's name (bcl)
+- Set boot partition's boot flag, stage2 has priority, fallback to stage1 (bcl)
+- exec params need to all be strings (bcl)
+- Fix efi_product_path regex (#728007) (bcl)
+- Remove unneeded if block (bcl)
+- Add some useful logging for partitioning and boot device choices (bcl)
+- Add a space to DiskChunk repr string (bcl)
+- ssl: 'noverifyssl' kernel boot argument. (akozumpl)
+- Cleanup existing formats' device attr after lvm dialog edit. (#723303)
+  (dlehman)
+- Fix handling of skipped LUKS devices the second time through. (#727814)
+  (dlehman)
+- booty tests removed in cd66c6bf33cae14e74001349043e585e348e2e9a (#728477)
+  (vpodzime)
+- gui: translate custom_icon to stock icon name in detailedMessageWindow()
+  (akozumpl)
+- ut: product_test.py should not fail if executed by itself. (akozumpl)
+- Handle rpmdb open errors by throwing out the root candidate (#723167).
+  (clumens)
+- Don't raise Retry dialog in loader kickstart networking (#722276) (rvykydal)
+- Honor linksleep boot option (#713991) (rvykydal)
+- Don't write duplicate lines for encrypted block devices. (dlehman)
+- Setup default for non_linux_format_types (bcl)
+- don't build functions not used on s390(x) (dan)
+- variable 'i' ununsed on s390(x) (dan)
+- use macro name instead of value (vpodzime)
+- Annotate the list of what pylint warnings and errors we ignore. (clumens)
+- Locally disable some E1101 "errors" that pylint doesn't understand. (clumens)
+- Move out the parts of Device.__str__ that are StorageDevice specific.
+  (clumens)
+- Fix a udev import to be more explicit.  This shuts up pylint. (clumens)
+- Disable error reporting for properties with the .setter syntax. (clumens)
+- Disable E1103 (the "some types could not be inferred" message). (clumens)
+- Delete the Mocked pyanaconda.product to fix product tests. (clumens)
+- Fix import errors in the unit tests. (clumens)
+- Remove the booty unit tests. (clumens)
+- We also need to catch ValueError on mock.disk.TestFile.__del__. (clumens)
+- Only warn when swaps with no UUID are preexisting. (dlehman)
+- Fix scan of already-active mdbiosraidarrays before scan of container.
+  (dlehman)
+- Remove dogtail support.  No one uses it anyway. (clumens)
+- Show all disks in text mode cleardisks selector. (#714836) (dlehman)
+- Fix a traceback when user makes a partition whose size is out-of-bounds.
+  (dlehman)
+- Add a warning about the fstab implications of swap devices with no UUID.
+  (dlehman)
+- Fail gracefully when device name collisions occur in kickstart. (dlehman)
+- Don't traceback if disks go missing before/during partitioning. (dlehman)
+- dispatcher: allow requesting a step without insisting. (akozumpl)
+- edd: fix syntax in situation when two edd directories point to the same
+  device. (akozumpl)
+- ut: cleanup the taking-over-io mechanism. (akozumpl)
+- Fix broken unit tests (cmdline, network). (akozumpl)
+
+* Tue Jul 26 2011 Chris Lumens <clumens@redhat.com> - 16.14-1
+- Change IsBeta to IsFinal (mgracik)
+- edd: do not traceback with cciss devices. (akozumpl)
+- edd: do not traceback when can not find the respective pci device. (akozumpl)
+- Use unsigned long long type in doTotalMemory() (dcantrell)
+- Do not traceback on mpath errors caused by faulty hardware. (akozumpl)
+- Fix a bunch of stupid little errors pylint caught. (clumens)
+- There's no more booty module, so don't bother checking it. (clumens)
+- Ignore false positives in kickstart.py. (clumens)
+- Ignore reimport warnings from pylint. (clumens)
+- Handle any amount of whitespace between keyword and rhbz reference.
+  (dcantrell)
+- dispath -> dispatch in kickstart.py. (clumens)
+
+* Wed Jul 20 2011 Chris Lumens <clumens@redhat.com> - 16.13-1
+- progressWindow takes a bunch of new arguments for pulsing (#723345).
+  (clumens)
+- request_step -> request_steps in anaconda. (clumens)
+- Add a writeKS method for encrypted partitions. (clumens)
+- Don't associate LVs' formats with their parent VG. (dlehman)
+- Use os-prober to generate GRUB2 dual-boot menu entries. (dlehman)
+- Fix GRUB2 password handling and GRUB1 kickstart password handling. (dlehman)
+- changes needed to have per-connection ifcfg files for wifi connections
+  (vpodzime)
+- do not care about wifi connections in kickstart (already active from stage1)
+  (vpodzime)
+- do not take anaconda's netdevices into account while searching for APs
+  (vpodzime)
+- remove key-files writing in loader (no more needed, NM does it itself)
+  (vpodzime)
+- do not write default ifcfg files for wireless devices (vpodzime)
+- Remove the 11.x history from anaconda.spec. (clumens)
+
+* Mon Jul 11 2011 Chris Lumens <clumens@redhat.com> - 16.12-1
+- Remove hasFreeDiskSpace and related code. (dlehman)
+- Use protected for pvs of incomplete vgs and get rid of immutable. (dlehman)
+- Use mdadm's default metadata format instead of hardcoding 1.1. (dlehman)
+- Only show warning about no biosboot on gpt on gpt. (dlehman)
+- Plumb the cleanupOnly= option through to Storage.reset(). (clumens)
+- i18n: Maintain the translated repo name upon modifying. (akozumpl)
+- Log errors during dependency resolution. (clumens)
+- Fix a bug where language names aren't translated to native. (clumens)
+- Remove things from utils/ that lorax obsoletes. (clumens)
+- Remove things from scripts/ that lorax obsoletes. (clumens)
+- Handle systems with more than 2147483647 kB of memory (#704593). (dcantrell)
+- Remove support for the ext4migrate option (#712195). (dcantrell)
+- edd: refactor and enhance the edd module. (akozumpl)
+- unit tests: provide 'glob.glob' and 'os.listdir' in the DiskIO class.
+  (akozumpl)
+- Pulsing progress bar instead of the static popup during device discovery.
+  (akozumpl)
+- yum: handle PackageSackErrors separately in AnacondaYum._run. (akozumpl)
+- We need a later version of pykickstart with the wpakey parameter. (clumens)
+- Remove KillMode= from systemd control files. (clumens)
+- Add a property to Platform for accessing boot stage1 constraints. (dlehman)
+- Simplify lvm growing by using units of pesize instead of MB. (dlehman)
+- Move platform-specific boot-related data into Platform. (dlehman)
+- Make /home autoreq grow a bit faster in relation to root. (dlehman)
+- Update upd-bootiso for F16 (bcl)
+- Allow a .iso file to be specified instead of a directory (#707846) (bcl)
+- Fix typo from 573ef017. (akozumpl)
+- Keep dracut settings in sets instead of many long strings. (akozumpl)
+
+* Wed Jun 22 2011 Chris Lumens <clumens@redhat.com> - 16.11-1
+- be more defensive -- check values for nonsenses (vpodzime)
+- enable netmask setting for wireless connections (vpodzime)
+- enable dns settings of wireless connection (vpodzime)
+- enable gateway settings of wireless connection (vpodzime)
+- enable wpa in kickstart (vpodzime)
+- enable establishing wpa connection in "early networking" (vpodzime)
+- ut: remove trailing whitespace in language_test.py (akozumpl)
+- 'part' command checks if the disk is partitionable. (akozumpl)
+- Correct and simplify handling of "bootable" partition requests. (dlehman)
+- Don't check the fstype for /boot req weight. (dlehman)
+- Freeze the lvm button when custom partitioning is selected. (dlehman)
+- Use the same code for growing lvs that we use for growing partitions.
+  (dlehman)
+- Fix check for whether new lv size will fit in vg's free space. (dlehman)
+- Sun disklabel hacks. (#697100) (dlehman)
+- Maximize extended partition even when logical reqs' sizes are capped.
+  (dlehman)
+- Don't magically adjust fstype when mountpoint is set to "/boot". (dlehman)
+- Handle partition allocation failures due to alignment adjustments. (dlehman)
+- Include protected attribute in StorageDevice.__str__. (dlehman)
+- Log results of protected device spec resolution. (dlehman)
+- Implement an option that lets anaconda name mpath devices by the wwid.
+  (akozumpl)
+- In kickstart, specify multipaths by their wwids. (akozumpl)
+- multipath: allow mpath<X> specfifications in kickstart. (akozumpl)
+- multipath: do not set any mpath aliases explicitly. (akozumpl)
+- Use global proxy setting if no repo proxy is set (#712926) (bcl)
+- Remove duplicate code. (rvykydal)
+- Fix typo (DispatcherError->DispatchError). (dlehman)
+- Allow autopart without lvm. (dlehman)
+
+* Wed Jun 08 2011 Chris Lumens <clumens@redhat.com> - 16.10-1
+- Update to the latest pykickstart version. (clumens)
+- Fix a typo to make encrypted installs get farther. (clumens)
+- Fix the filter UI to sort capacity as numbers, not characters (#614504).
+  (clumens)
+- Fix up swap unmount logic (#708966) (bcl)
+- Use read-only locking for lvm commands in udev rules. (dlehman)
+- Check if LVs still fit when removing a PV from a VG. (#682276) (dlehman)
+- Don't get tripped by partial fstab option matches. (#699167) (dlehman)
+- RAID gui: fix how the "Number of spares" spin button is manipulated.
+  (akozumpl)
+- imount.c: first wait() for mount then close its stdin/stdout. (akozumpl)
+- Fix a couple of action obsoletes bugs. (dlehman)
+- Schedule an action when destroying the old format on an encrypted lv.
+  (dlehman)
+- Revert "Make sure new devices' formats have their device attr set." (dlehman)
+- Set formats' device attr when associating the format with a device. (dlehman)
+- cosmetic, iscsi: make the 'no credentials' string more general. (akozumpl)
+
+* Mon May 23 2011 Chris Lumens <clumens@redhat.com> - 16.9-1
+- Add kickstart support for biosboot. (dlehman)
+- Make sure new devices' formats have their device attr set. (dlehman)
+- Don't crash if is_valid_foo methods are called with None. (dlehman)
+- Unit tests cleanups (akozumpl)
+- Remove trailing whitespace in file tests/mock/mock.py. (akozumpl)
+- Remove erronious (vestigial?) call to Platform.isEfi (pjones)
+- Remove upgrade_swap_gui from POTFILES.in (akozumpl)
+- ut: if _isys is not available dispatch_test and indexed_dict_test are
+  failing. (akozumpl)
+- Cherry-pick from rhel5-branch, by Will Woods. (wwoods)
+- Pythonize some code from network.py for pleasure. (rvykydal)
+- Honor DEFROUTE=no when inferring system-wide GATEWAY (rvykydal)
+- Get rid of overrideDHCPHostname. (rvykydal)
+- HOSTNAME is not per-device/ifcfg setting. (rvykydal)
+- Do not set hostname in stage 1. (rvykydal)
+- Do not write out /etc/sysconfig/network in stage 1. (rvykydal)
+- ut: make pyanaconda_test/backed_test.py pass (akozumpl)
+- dispatch: break out step initialization into a separate method. (akozumpl)
+- dispatch: implement method of saving/restoring all steps scheduling.
+  (akozumpl)
+- upgrade: there are no "checkdeps" and "dependencies" steps. (akozumpl)
+- ut: make upgrade_test pass. (akozumpl)
+- cosmetic: dispatch.request_step is dispatch.request_steps. (akozumpl)
+- cosmetic: dispatch.skipStep is dispatch.skip_steps (akozumpl)
+- cosmetic: move the dir property in dispatch.py with other public methods.
+  (akozumpl)
+- dispatch: fix remaining places using the old dispatch interface. (akozumpl)
+- dispatch: remove "upgradeswapsuggestion" and "addswap" steps. (akozumpl)
+- dispatch: Fix rules for running the bootloader and instbootloader steps.
+  (akozumpl)
+- dispatch: Fix rules for running the partitioning step. (akozumpl)
+- dispatch: clean up step skipping manipulations in kickstart. (akozumpl)
+- dispatch: All skips are permanent now. (akozumpl)
+- Cleanup how an installer interface can declare steps it does not implement.
+  (akozumpl)
+- Throw away the dispatcher 'skipList' and give Step a state. (akozumpl)
+- dispatch: use IndexedDict objects instead of a list of tuples. (akozumpl)
+- IndexedDict class for storing the installer steps (akozumpl)
+- Add a shortcut for Configure Network (#705022) (mgracik)
+- vgreduce now activates some lvs, which I do not understand. (dlehman)
+- Audit storage log statements' log levels and clean up some things. (dlehman)
+- Convert Device, DeviceFormat __str__ to __repr__ and add __str__. (dlehman)
+
+* Tue May 17 2011 Chris Lumens <clumens@redhat.com> - 16.8-1
+- Relabel /var/lock as well (#701575). (clumens)
+- filled in hasFreeDiskSpace (#683632) (hamzy)
+- Add a python program to record memory usage during installation. (clumens)
+- Add a timestamp to every line in install.log/upgrade.log. (clumens)
+- storage: add SparseFileDevice (wwoods)
+- FileDevice._create: don't alloc memory equal to file size, close fd (wwoods)
+- Text mode upgrade should default to upgrade (#704588) (bcl)
+- Trim "/dev/" correctly in list-harddrives (#702430). (dcantrell)
+- Include missing parentheses in lvm/md device map names. (dlehman)
+- Make sure stage1 and stage2 devices are in device.map in case of md,lvm.
+  (dlehman)
+- Only do redundant mbr installation for mirrored stage2. (dlehman)
+- Allow growable md member requests but only for RAID0. (dlehman)
+- Let blkid/udev tell us which devices contain disklabels. (dlehman)
+- Move selection of new disklabel's type from DiskLabel to Platform. (dlehman)
+- Fix an omission from the integration of the new bootloader module. (dlehman)
+- Rework bootloader constraint checking routines. (dlehman)
+- Include a BIOS boot partition in X86 autopart on GPT. (dlehman)
+- Add format class for BIOS boot partition. (dlehman)
+- Update dracut kernel args (#702711) (bcl)
+- Add btrfs min size of 256 MB. (#702603) (dlehman)
+- Update the requirements for memory.. (dlehman)
+- fix resuce_test.py (akozumpl)
+- remove references to "zfcpconfig". (akozumpl)
+- Turn sshd setup, kicstart execution and the rescue mode into dispatch steps.
+  (akozumpl)
+
+* Tue May 03 2011 Chris Lumens <clumens@redhat.com> - 16.7-1
+- Make grub2 the default bootloader on x86. (dlehman)
+- Make sure bootloader stage1 device stays current through partitioning.
+  (dlehman)
+- Remove unused Platform.validBootLoaderPartSize method. (dlehman)
+- Check that there is a stage1 req before validating it otherwise. (dlehman)
+- set_preferred_stage2_type -> set_preferred_stage1_type (dlehman)
+- Allow unsetting of stage1_device. (dlehman)
+- Add a "boot drive" concept to the bootloader since stage1 types vary.
+  (dlehman)
+- Consistently refer to stage1 and stage2 device as such. (dlehman)
+- Fix handling of missing boot device in doPartitioning. (dlehman)
+- Finish removing bootloadersetup step. (dlehman)
+- Add grub2 class, fix packages for some classes. (dlehman)
+- Don't change bootloader names for various configurations. (dlehman)
+- Add encrypted attribute to StorageDevice. (dlehman)
+- iscsi: disable the 'Login' button with no nodes selected. (akozumpl)
+- nuke: InstallControlWindow.busyCursor*() (akozumpl)
+- iutil: remove excess imports. (akozumpl)
+- Get rid of interface's entryWindow() and EntryWindow. (akozumpl)
+- Allow DeviceFormat.cacheMajorminor to fail without an exception. (akozumpl)
+- Don't check /boot fs when no bootloader is installed (#698312) (bcl)
+- yuminstall.py: self.pulseWindow is not used anywhere. (akozumpl)
+
+* Thu Apr 21 2011 Chris Lumens <clumens@redhat.com> - 16.6-1
+- Do not recreate the ssh keys if they exist already. (akozumpl)
+- Display a banner when (re)starting Anaconda. (akozumpl)
+- Most viewers of tty1 do not care about xrandr stderr output. (akozumpl)
+- restart-anaconda: no need to redownload the updates. (akozumpl)
+- Write 'edd' instead of 'ethX' for fcoe= dracut parameter. (dcantrell)
+- When checking for allowing an upgrade, trim off any "-Alpha" or "-Beta".
+  (clumens)
+- Make text for failed upgrade dialog clearer (#697193) (bcl)
+- Fix a grammar error in the upgrade message (#697244). (clumens)
+- If there are no RAID arrays, do not write an mdadm.conf (#696907). (clumens)
+- loader: always call klogctl to disable kernel logging in the console.
+  (akozumpl)
+- Set mainWindow size request to current res reported by xrandr (#694760)
+  (dcantrell)
+- Fix SIGSEGV for netwowrk --device=<MAC> which is not found (#697432)
+  (rvykydal)
+- Use correct interface to obtain HwAddress property (#693614) (rvykydal)
+- Revert "Don't write HWADDR into ifcfg files (#690589)" (rvykydal)
+- analog: turn off another harmful feature of rsyslogd. (akozumpl)
+- analog: cleanup whitespace in the file. (akozumpl)
+- Fix building with --disable-selinux (mark (clumens)
+- Don't include system virtual filesystems in /etc/fstab (#693926). (clumens)
+- Set ANACONDA=1 in the udev environment early in anaconda. (clumens)
+- findFirstIsoImage needs to return a filename, so fix it. (clumens)
+- Fix unmounting in anaconda-cleanup to deal with /mnt/sysimage as well.
+  (clumens)
+- Remove the second upgrade check from yuminstall.py. (clumens)
+- Cache the value of Format.majorminor(). (akozumpl)
+- And call anaconda-cleanup from restart-anaconda. (clumens)
+- Unmount everything in /mnt/install from anaconda-cleanup. (clumens)
+- Move most anaconda mount points to be under /mnt/install. (clumens)
+- Fix the initialization of LUKS device, we have to add the first keyslot (also
+  add key_file arguments for compatibility) (msivak)
+- Add "quiet" to the x86-64 and i386 boot arguments. (clumens)
+- Update restart-anaconda to work with systemd. (clumens)
+- Remove init.[ch]. (clumens)
+- Move debugging features into loader.c. (clumens)
+- We no longer need to get the PID of init from loader. (clumens)
+- Move serial console handling code out into its own file. (clumens)
+- Make reboot/halt/shutdown decisions in anaconda instead of loader. (clumens)
+- Remove all the custom shutdown/reboot/halt code in loader and init. (clumens)
+- Move syslog starting into loader. (clumens)
+- loader doesn't support arguments except from /proc/cmdline. (clumens)
+- Don't build our own init anymore. (clumens)
+- Remove the duplicate backtrace setup code in init.c. (clumens)
+- Remove from init.c/loader.c things that systemd does for us. (clumens)
+- Add the unit files necessary to have systemd start loader. (clumens)
+
+* Mon Apr 11 2011 David Lehman <dlehman@redhat.com> - 16.5-1
+- Remove maximum limit on EFI partition (#684860) (bcl)
+- Changes for NetworkManager API 0.9 (rvykydal)
+- Fix network --device=bootif value processing in stage2. (vpodzime)
+- Ignore --device=ibft in stage 2 kickstart handling (#638131) (vpodzime)
+- Don't write HWADDR into ifcfg files (#690589) (rvykydal)
+- Fix network --device=<MAC> for static configurations (#693302) (rvykydal)
+- Fix bad indentation from 026dacc3. (akozumpl)
+- If we change language during Python, build the new locale files. (clumens)
+- If we're not given a language on the command line, set up English. (clumens)
+- No longer log that we're resetting the file context. (clumens)
+- Do filesystem-specific sync operation after writing configuration. (dlehman)
+- Add sync method to force data onto disk and/or journal. (dlehman)
+- Update ui screens to use new bootloader module. (dlehman)
+- Update remaining parts of anaconda to use new bootloader module. (dlehman)
+- Update storage module for new platform and bootloader modules. (dlehman)
+- Update platform.py for new bootloader module. (dlehman)
+- Update kickstart.py for new bootloader module. (dlehman)
+- Replace booty with a new bootloader module. (dlehman)
+- Add "disks" attr to StorageDevice to list disks a device depends on.
+  (dlehman)
+- Prevent debug and kdump kernels from becoming the default (#693702)
+  (dcantrell)
+- Use znet_cio_free to clear network devices from cio_ignore. (dcantrell)
+- Remove deprecated targets from top level Makefile.am (dcantrell)
+- Remove languages not available from Transifex. (dcantrell)
+- Add Transifex instructions for anaconda developers. (dcantrell)
+- Update Makefile.am to work with new translation system. (dcantrell)
+- BuildRequires transifex-client (dcantrell)
+- Ignore po/*.po files (dcantrell)
+- Remove translation files. (dcantrell)
+- Add transifex-client configuration file. (dcantrell)
+- Fix syntax error from commit 9e696b62. (akozumpl)
+- Rewrite nfs url parsing in loader (bcl)
+- Fix order of nfs mountOpts in promptForNfs (bcl)
+- timeout= in yaboot.conf is in tenths of seconds (#692409) (dcantrell)
+- Install dracut-fips package when fips=1 is specified (#692350) (dcantrell)
+- unicode-linedraw-chars.txt is no longer useful. (clumens)
+- mkctype is no longer useful. (clumens)
+- Fix a typo in swap upgrade strings (yurchor (clumens)
+
+* Thu Mar 31 2011 Chris Lumens <clumens@redhat.com> - 16.4-1
+- Fix a syntax error from the previous translation commit. (clumens)
+- crypttab should not be world-readable (#692254). (clumens)
+- Improve the translatability of strings with more than one format specifier.
+  (clumens)
+- Stop user if we have no /boot and / is an LV (dcantrell)
+- Prevent singlePV lv requests from being > the size of any pv (dcantrell)
+- Do not print out traceback when localedef is not present (msivak)
+- Update our storage/crypto interface to use new cryptsetup API (msivak)
+- Fix the logic surrounding use of the filterfunc for get_file_list (#691880).
+  (clumens)
+- mount needs to be told "nfs" or it assumes any argument is a device
+  (#678414). (clumens)
+- Fix rebooting after a kickstart error is detected. (akozumpl)
+
+* Mon Mar 28 2011 Chris Lumens <clumens@redhat.com> - 16.3-1
+- Use a more general EnvironmentError to catch timezone-file errors. (akozumpl)
+- Add shell command to upd-bootiso (bcl)
+- Set debug_package to %%{nil} so we don't strip our binaries. (pjones)
+- Return values, not strings (bcl)
+- Use proper store types for DataComboBoxes. (akozumpl)
+- Fixup rindex usage (#678086) (bcl)
+- Ensure new kernel is default in zipl.conf on upgrade installs (#683891)
+  (dcantrell)
+- shutdown: kill processes in the anaconda process group. (akozumpl)
+- After 17233a16, vncS is no longer a global. (akozumpl)
+- shutdown.c: pidof and killall5 are in /sbin on rawhide. (akozumpl)
+- Check size limits on pre-existing partitions (bcl)
+- gui.py: nuke createRepoWindow() (akozumpl)
+- gui.py: nuke titleBar*() (akozumpl)
+- Fix --mtu option to kickstart network command (#689081) (icomfort)
+- Implement a general version of InstallInterfaceBase.methodstrRepoWindow().
+  (akozumpl)
+- Update icons and add a new 256x256 version (#689014). (clumens)
+- Fix the filesystem migration dialog in text mode (#688314). (clumens)
+- Don't fatal_error if required mounts are already mounted (wwoods)
+- Don't fatal_error if remounting root read-write fails (wwoods)
+- Align lv sizes when adding to vg total space used. (dlehman)
+- Clean up display of free space in partitioning gui. (dlehman)
+- Fix a syntax error in my last upgrade-related commit. (clumens)
+- Remove some more xutils-related code. (clumens)
+- Prevent Platform from importing storage stuff until it's necessary. (clumens)
+- Restore stats from original mount on livecd (#683682) (bcl)
+- Properly filter out new mounts for livecd install (#683682) (bcl)
+- Mount livecd filesystems under /mnt (#683682) (bcl)
+- Fix order of opts and host when processing kickstart nfs lines. (clumens)
+- Rework the upgrade swap suggestion (#684603). (clumens)
+- Log running version number as soon as possible (bcl)
+- Collect LUKS passphrases to avoid making users enter them repeatedly.
+  (dlehman)
+- Don't include incomplete md arrays in the devicetree. (dlehman)
+- Detect live environment if no args passed to anaconda-cleanup. (dlehman)
+
+* Mon Mar 14 2011 Chris Lumens <clumens@redhat.com> - 16.2-1
+- iscsi: use the --target parameter from the iscsi kickstart command.
+  (akozumpl)
+- Make the "comps" translation domain dynamic. (akozumpl)
+- Add a missing include to fix the build. (clumens)
+- Remove the last of the xutils module. (clumens)
+- Fix a missing exception variable. (akozumpl)
+- Add cmdline options and f15 support to upd-bootiso (bcl)
+- Use yum's new callback mode when available (pmatilai)
+- Pressing enter on the keyboard screen should go to the next screen (#683448).
+  (clumens)
+- Do not allow use of preexisting root filesystem. (#629311) (dlehman)
+- Stop using --update=super-minor when starting md arrays. (dlehman)
+- Fix kickstart handling of md spares. (#683605) (dlehman)
+- Fix sensitivity of options in text network config UI (#681580) (jlaska)
+- Consolidate ip address checking into functions. (rvykydal)
+- Add support for ipv6 to gateway boot option (#677609) (rvykydal)
+- Fix parsing of ipv6 --gateway in kickstart (#677609) (rvykydal)
+- Remove 'Back' button on depsolving exception for ks installs (#673170)
+  (dcantrell)
+- Shorten the anaconda repo names (#679434). (clumens)
+- fix mnemonics in the 'Add Repository' dialog (akozumpl)
+- Create the virtio-ports on time. (akozumpl)
+- Do not pass --sshd to stage2. (akozumpl)
+- Handle boot loader upgrades on s390 (#682783) (dcantrell)
+- Don't assume BOOTIF present for ksdevice=bootif. (rvykydal)
+- syntax errors correcting (vpodzime)
+- Apply one more fix for "logvol --label=" (#673584) (clumens)
+- Fix test for resized LV to ensure we schedule the format resize action.
+  (dlehman)
+- Make sure a bootloader device is selected (#595951) (bcl)
+- Another fix for the loader translations. (akozumpl)
+- /var/log/dmesg doesn't exist in a live install. messages does, though.
+  (dlehman)
+- Don't try to unlink a config file that isn't there. (dlehman)
+- Handle md name-mangling based on hostname/homehost WRT exclusiveDisks.
+  (dlehman)
+- Adjust DeviceTree.isIgnored's handling of loop, ram, and live devices.
+  (dlehman)
+- Allow scanning of already-active md devices. (#680226) (dlehman)
+- Don't clobber exclusiveDisks unless there are disk images. (dlehman)
+- Do on-demand scanning of md container if needed. (#678877) (dlehman)
+- Fix md array spares test. (dlehman)
+- Fix udev_device_is_md. (dlehman)
+- Add /var/lib/yum to the list of directories we set context on (#681494).
+  (clumens)
+- Pass createUser and createGroup an arguments dict. (clumens)
+- Check all PV ancestor devices for growable partitions. (dlehman)
+- Enable network if sshd boot option is used (#643738) (rvykydal)
+- Fix setting of loaderData->method from repo= cmdline option. (rvykydal)
+- Gotta catch 'em all parted exceptions. (akozumpl)
+- Give an indication how many packages are left in cmdline mode (#681614).
+  (clumens)
+- Dynamic strings make gettext translations fail. (akozumpl)
+- devt.h is no longer useful, remove it. (clumens)
+- Remove 'Back' button on depsolving exception for ks installs (#673170)
+  (dcantrell)
+- Ensure remount requests go through isys.mount() (#678520) (dcantrell)
+- Check repo instead of method type when enabling network in loader (#673824)
+  (rvykydal)
+- Fix setting of some network values in loader kickstart (#679825). (rvykydal)
+- Loader should activate, stage 2 configure network devices. (rvykydal)
+- Do not activate first ks network device automatically in non-network
+  installs. (rvykydal)
+- Always activate first kickstart network device (rvykydal)
+- Make kickstart network command reconfigure active device in loader (rvykydal)
+- Use NM for ibft configuration (rvykydal)
+- Reset only ifcfg file of device we failed to activate (rvykydal)
+- Initialize iface structure properly (rvykydal)
+- Add kickstart network --nodefroute option (rvykydal)
+- Add support for ks network --bootproto=ibft (rvykydal)
+- Wait for activation of specific devices instead of NM (rvykydal)
+- Parse all kickstart network commands in loader too (rvykydal)
+- Activate all devices set by kickstart network --activate command (rvykydal)
+- Parse new kickstart options network --activate and --nodefroute. (rvykydal)
+- Fixup upgrade test for findExistingRoots change (#681267) (bcl)
+- Change upgrade to use findExistingRootDevices (#681267) (bcl)
+- Initialize locale before the kickstart/virtio check (#679702) (msivak)
+
+* Tue Mar 01 2011 Chris Lumens <clumens@redhat.com> - 16.1-1
+- Fix another unused return value error message. (clumens)
+
+* Tue Mar 01 2011 Chris Lumens <clumens@redhat.com> - 16.0-1
+- Pass correct class to super in SELinuxFS.mountable. (#677450) (dlehman)
+- Clarify that loader method entries are looking for a tree. (clumens)
+- Fix up remaining anaconda.id references (#680296) (bcl)
+- Wipe out pre-existing problems before running transaction (#678201, pmatilai). (clumens)
+- Attempt at fixing reboot behavior in kickstart (#676968). (clumens)
+- brcm_iscsiuio is not in Fedora yet, handle that you can't find it. (akozumpl)
+- Fix downloading .treeinfo files for --noverifyssl repos. (akozumpl)
+- Fix syntax error from 0bf0cf13. (akozumpl)
+- Pass --force when calling vgreduce --removemissing. (#679206) (dlehman)
+- Only apply global passphrase to devices with no passphrase. (#679223) (dlehman)
+- Perform terminations before unmounting filesystems on shutdown. (dlehman)
+- Get size + summary from yum package object instead of callback key (pmatilai)
+- Test for stringiness instead of explicit rpm.hdr class in install callback (pmatilai)
+- Remove unused doneFiles counting from transaction callback (pmatilai)
+- Handle nfsiso in promptForNfs as well (#678413). (clumens)
+- If the umount in getFileFromNfs fails, log it. (clumens)
+- Correct the return values of some backend base class methods. (#679107) (dlehman)
+- Change xhost auth when doing a liveinst (#663294) (bcl)
+- Override kernel cmdline updates (bcl)
+- Write --noverifyssl to repos and urls in kickstart where fit. (akozumpl)
+- Do all dm handling inside addUdevDMDevice. (#672030) (dlehman)
+- Remove storage/miscutils.py, it is not used. (akozumpl)
+- Be better at handling killed metacity. (akozumpl)
+- Remove Dispatcher.firstStep. (akozumpl)
+- remove InstallerControllerWindow.setup_theme() (akozumpl)
+- Make the dispatcher call the shots. (akozumpl)
+- icw._doExit is now icw.close() (akozumpl)
+- remove trailing whitespace from gui.py and installclass.py (akozumpl)
+- gui: remove ics.setScreenNext() and ics.getScreenNext(). (akozumpl)
+- Clean up vg name generator and default to "vg_image" in image installs. (dlehman)
+- Fix calculation of md array spare count. (dlehman)
+- createSuggestedVGName takes a hostname, not a Network instance. (dlehman)
+- Show correct device path in PV create progress window. (dlehman)
+- VNC does not support runtime SecurityTypes changes (#678150) (mgracik)
+- Support cciss devices in get_sysfs_path_by_name(). (akozumpl)
+- Don't clear partition 1 from mac disks even if it has no name. (#674105) (dlehman)
+- Handle quotes around labels and UUIDs in /etc/fstab. (#670496) (dlehman)
+- Clean up a bunch of exception handling code. (dlehman)
+- Don't show loaderSegvHandler or its glibc entry point in tracebacks. (pjones)
+- The default kickstart UI is graphical, specify other if you want it (#678095). (clumens)
+- Only check for the addons of enabled repos (#677773). (clumens)
+- Fix build - add Makefiles for new unittests to configure.ac (wwoods)
+- Fix a thinko when setting up the base repo for NFSISO (#676821). (clumens)
+- Take out the part about anaconda being of little use (#677522). (clumens)
+- Fix loading translations in loader (#677648). (clumens)
+- Don't always attempt to load updates on kickstart installs (#677131). (clumens)
+- s390x has firstboot now (dcantrell)
+- Don't fail on missing %%includes during loader kickstart processing (#676940). (clumens)
+- Prompt for media check on DVD installs (#676551). (clumens)
+- Tighten the focus of the dogtail and X try/except blocks. (dlehman)
+- Stop overriding ext[234] filesystem defaults. (dlehman)
+- Make Storage function in the absence of an Anaconda instance. (dlehman)
+- Fix DeviceTree to function in the absence of an InstallInterface. (dlehman)
+- Remove some udev hackery that was only needed for two-stage env. (dlehman)
+- Move large anaconda.__main__ tasks into functions. (dlehman)
+- Generate locale files on request (msivak)
+- Fix up tests for changes in split media handling (wwoods)
+- Update unit testing targets in Makefile.am (tmlcoch)
+- Add new tests from the unittests branch (tmlcoch)
+- Fix open method in mock/disk.py. (tmlcoch)
+- Improve of mock/disk.py. (tmlcoch)
+- Remove the old suite() crud from kickstart testing, python-nose work differenlty (msivak)
+- Tag tests as slow or acceptance tests and split full testing from devel unit testing (msivak)
+- Mock _isys and block modules in fw test. They are not needed. (msivak)
+- In text mode we have to treat strings and lists separately while printing them (#676942) (msivak)
+- Fix some whitespace errors in iscsi kickstart code. (pjones)
+
+* Thu Feb 10 2011 Chris Lumens <clumens@redhat.com> - 15.20-1
+- Check for valid mountpoint before unmounting image. (#671922) (dlehman)
+- Fix mis-management of luks dict when renaming encrypted lvs. (dlehman)
+- Don't raise NotImplementedError from  non-essential backend methods.
+  (dlehman)
+- Remove upgrade.findExistingRoots since it does nothing. (dlehman)
+- tui: add reinitializeWindow() to the text interface. (akozumpl)
+- typo: missing dot in the reinitialization dialog glade file. (akozumpl)
+- gui: remove an unneeded parameter from questionInitializeDisk() (akozumpl)
+- Remove quotes from udisks command in liveinst (#672022) (bcl)
+- Fix iutil import in bootloader config screen (#676032). (clumens)
+
+* Mon Feb 07 2011 Chris Lumens <clumens@redhat.com> - 15.19-1
+- Fix a typo. (clumens)
+- Don't write our own udev persistent net rules; use udev's generator.
+  (notting)
+- Add upd-bootiso script (bcl)
+- Fix typo in GPT warning (#675242) (bcl)
+- remove unused variables (mschmidt)
+- Fix support for "logvol --label=" (#673584). (clumens)
+- Fix the taint flag check. (clumens)
+- Set default resolution of anaconda.glade to 800x600 (dcantrell)
+- Make singlePV a more useful boolean, clean up _getSinglePV() (dcantrell)
+- Remove width and height parameters from gui.readImageFromFile() (dcantrell)
+- Sort singlePV=True requests so they come first. (dcantrell)
+- Move reipl step to be after instbootloader step. (dcantrell)
+- Remove 'Change device' button from bootloader screen on EFI systems (#582143)
+  (wwoods)
+- Add anaconda --version support (#673150). (clumens)
+- Remove forced 800x600 geometry switch for Xvnc (dcantrell)
+- writeMtab -> makeMtab (#673158). (clumens)
+- Let dm_node_from_name admit it's defeated. (akozumpl)
+- Disable partition resize support for DASD labels (#605912) (dcantrell)
+
+* Tue Jan 25 2011 Chris Lumens <clumens@redhat.com> - 15.18-1
+- GCC seriously needs to be less picky. (clumens)
+
+* Tue Jan 25 2011 Chris Lumens <clumens@redhat.com> - 15.17-1
+- Don't call preprocessKickstart from within anaconda as well. (clumens)
+- We don't need the command names anymore. (clumens)
+- Convert kickstart functions to use Python. (clumens)
+- Move all kickstart functions into kickstart.c. (clumens)
+- Get rid of the kickstart command codes, and alphabetize the command table.
+  (clumens)
+- Add the flags required to link against python. (clumens)
+- Remove ksReadCommands, convert to using pykickstart for parsing. (clumens)
+- Add functions to support interfacing loader with pykickstart. (clumens)
+- Fix syntax error from fdd06a4053e2965bdc1719425b6d99fe80ab1e18. (akozumpl)
+- Only remove /tmp/updates and /tmp/updates.img if they exist. (clumens)
+- YumBackend doesn't inherit from YumBase. AnacondaYum does. (#671577)
+  (dlehman)
+- After copying live rootfs to root device, grow it to fill the device.
+  (dlehman)
+- Make sure /boot is mapped to a single LVM PV on s390x (dcantrell)
+- Unmount filesystems before shutdown or reboot on s390x (#605577) (dcantrell)
+- And update to the latest version of the RAID command. (clumens)
+- Make the advanced storage dialogs stay in the foreground. (akozumpl)
+
+* Thu Jan 20 2011 Chris Lumens <clumens@redhat.com> - 15.16-1
+- Support passing updates= to liveinst via the boot command line. (clumens)
+- Make lighter-weight versions of dm map name/node resolution functions.
+  (dlehman)
+- Make /etc/mtab a symlink to /proc/self/mounts. (#670381) (dlehman)
+- Require the pykickstart version with "raid --label=" support. (clumens)
+- No longer run hal-lock on live installs (#670312). (clumens)
+- Add support for "raid --label=" (#670643). (clumens)
+- self.storage -> storage in kickstart execute methods. (clumens)
+- Don't prompt on broken lvm or uninitialized disks in cleanup mode. (dlehman)
+
+* Wed Jan 19 2011 Chris Lumens <clumens@redhat.com> - 15.15-1
+- Fix booty error on s390 when /boot is not on LVM. (dcantrell)
+- Don't offer minors of ignored md devices when creating new md devices.
+  (dlehman)
+- Make sure devices ignored by the devicetree are in _ignoredDisks. (dlehman)
+- Don't try to add spares to active md arrays. (#652874) (dlehman)
+- Fix the traceback from c6228535b26a63b0544f4a558a69076581b2a69f. (akozumpl)
+- Those missing mnemonicks will not stand. (akozumpl)
+- Provide a new mpath devicelib interface that does not reorder the devices.
+  (akozumpl)
+- Enable support for static ipv6= cmdline option. (rvykydal)
+- mpath: create /etc/multipath/bindings file. (akozumpl)
+- Fix DMLinearDevice._postSetup to not take or pass an 'orig' arg. (dlehman)
+- There's no more MainframeDiskDevice, so don't call its __str__. (clumens)
+- We have to pass a blank argument list to execWithCapture. (clumens)
+- We have to mount /boot/efi when we find an old one. (pjones)
+- Only allow one EFI System Partition to exist at a time. (pjones)
+- Conditionalize use of UEFI on boot.iso (pjones)
+- Check fstab entries against fmt.mountType not fmt.type (pjones)
+- Fix nfsiso install with options (#667839) (mgracik)
+- Split out common code from device setup/teardown/create/destroy for reuse.
+  (dlehman)
+- Remove createParents methods. They don't do anything. (dlehman)
+- Add status/progress ui abstraction to device classes. (dlehman)
+- Remove unused code related to device probe methods. (dlehman)
+- Suddenly, we need gnome-themes-standard. (akozumpl)
+- Bold the warning for GPT on non-EFI (#614585) (bcl)
+- Warn the user when using a GPT bootdisk on non-EFI systems (#614585) (bcl)
+- Support /boot on logical volume on s390x (#618376) (dcantrell)
+- Update example ssh command in linuxrc.s390 (dcantrell)
+- Start rsyslogd from linuxrc.s390 (#601337) (dcantrell)
+- Update spinbutton value in dialogs (#621490) (bcl)
+- Convert livecd.py to use the storage module where appropriate. (dlehman)
+- Don't try to teardown the live device or associated loop devices. (dlehman)
+- Add flag indicating whether a device can be activated/deactivated. (dlehman)
+- Include the livecd OS image devices in the device tree. (dlehman)
+- Include file-backed loop devices in the device tree. (dlehman)
+- Use sysfs instead of losetup to find loop devs' backing files. (dlehman)
+- Clean up and close yum/rpm files once we're done with them. (dlehman)
+- logging: log_method_return() for devicetree.getDeviceByName() (akozumpl)
+- logging: get rid of storage_log.py (akozumpl)
+- mpath: filter out the slave devices and their partitions. (akozumpl)
+- mpath: use both 'multipath -d' and 'multipath -ll' to get the topology.
+  (akozumpl)
+- mpath: remove a harmful udev_trigger() in filter_gui (akozumpl)
+- Support enabling repos listed but disabled in /etc/yum.repos.d (#663992).
+  (clumens)
+- Add /sbin to the $PATH for the shell on tty2. (clumens)
+- Make sure to set a self.anaconda reference on data objects too. (clumens)
+
+* Thu Jan 06 2011 Chris Lumens <clumens@redhat.com> - 15.14-1
+- Adjust main window size based on install type (#667566) (bcl)
+- Remove mknod-stub.  We have the full one around now. (clumens)
+- Use a different method to get the sysfs_path for device-mapper devices
+  (#665643). (clumens)
+- Allow existing /var/log (bcl)
+
+* Wed Dec 22 2010 Chris Lumens <clumens@redhat.com> - 15.13-1
+- Fix a syntax error in f16a565aa3a879a94862f4c3e5b2ede792ed05ef. (clumens)
+- Pass --noeject to anaconda (#477887) (bcl)
+
+* Wed Dec 22 2010 Chris Lumens <clumens@redhat.com> - 15.12-1
+- Use cio_ignore and *_cio_free commands in linuxrc.s390 (#633469) (dcantrell)
+- Add /sbin/cio_ignore to the KEEPFILE list on s390x (dcantrell)
+- Remove MainframeDiskDevice class, use description property. (dcantrell)
+- Focus the dialog after a message window is closed (mgracik)
+- Change the device reinitialization dialog (mgracik)
+- Rename anaconda-image-cleanup and use it for all cleanup in liveinst.
+  (dlehman)
+- Add handling for cleanup of luks devices with unexpected map names. (dlehman)
+- Add ability to clean up prior to live install. (dlehman)
+- Fix looking up storage device IDs when writing out anaconda-ks.cfg (#591713).
+  (clumens)
+- Don't write out a duplicate mtab to /mnt/sysimage (#568539). (clumens)
+- Raise an exception if X*Display functions fail (#663294). (clumens)
+- mpath: make sure /var/log exists exists early. (akozumpl)
+- mpath: log the /etc/multipath.conf contents (akozumpl)
+
+* Tue Dec 14 2010 Chris Lumens <clumens@redhat.com> - 15.11-1
+- Don't crash if losetup doesn't know anything about a device. (#662513)
+  (dlehman)
+- Set up disk images earlier so kickstart device filtering works on them.
+  (dlehman)
+- Don't try to parse network device info when doing disk image installs.
+  (dlehman)
+- Fix DeviceTree cleanup w/ inactive luks devs in cmdline mode. (dlehman)
+- Add losetup to the install image, re-remove it from isys (#662183). (clumens)
+- "anaconda" -> "self.anaconda" in kickstart execute methods. (clumens)
+- Override the BaseHandler.dispatcher method. (clumens)
+- Use chreipl to set the IPL device on s390x (#632325) (dcantrell)
+- Add /usr/sbin/chreipl to KEEPFILE. (dcantrell)
+- Create a MainframeDiskDevice class for common s390 attributes. (dcantrell)
+- Do not shut down zFCP storage in Storage.shutdown() (#612626) (dcantrell)
+- Clarify the ssh modes for installation on s390x (#621590). (dcantrell)
+- devicelibs/mpath.py: do not rely on other modules to import logging.
+  (akozumpl)
+- filter_gui: device discovery configuration is under anaconda.storage.config.
+  (akozumpl)
+
+* Wed Dec 08 2010 Chris Lumens <clumens@redhat.com> - 15.10-1
+- Fix the build. (clumens)
+
+* Wed Dec 08 2010 Chris Lumens <clumens@redhat.com> - 15.9-1
+- Set installer environment hostname for sw raid LABELs (#640743) (rvykydal)
+- Device destroy actions can only require other destroy actions. (#651589)
+  (dlehman)
+- Use wipefs from util-linux-ng instead of dd to wipe old sigs. (dlehman)
+- Add cleanup-only mode to DeviceTree.populate. (dlehman)
+- Add unit tests for storage.partitioning.getNextPartitionType. (dlehman)
+- Only try logging to tty3 if we have permission to do so. (dlehman)
+- Enable network when getting .treeinfo (#632526) (rvykydal)
+- Fix default of network --device option to match rhel5 (#647462). (rvykydal)
+- Do not backtrace if repo is specified through kickstart only (#659781).
+  (akozumpl)
+- Restore list-harddrives output to what users expect (#654436) (dcantrell)
+- Permit ext4 and ext2 for /boot on s390x (#638734) (dcantrell)
+- Check for ARPHRD_ETHER and ARPHRD_SLIP types in getDevices (#596826)
+  (dcantrell)
+- Preserve and otherwise ignore noauto fstab entries. (#660017) (dlehman)
+- Fix "logvol --percent=" (#651445, jruemker). (clumens)
+- Add chroot command to bash_history. (pjones)
+- support for partial offload in udev_*_iscsi() functions. (akozumpl)
+- iscsi: partial offload drivers. (akozumpl)
+- analog: put it under /usr/bin so it's on the path in an installed system.
+  (akozumpl)
+- Remove commented out broken code from LoopDevice.status. (dlehman)
+- Don't traceback when the action list is empty. (#657891) (dlehman)
+- Remove unused udev_device_is_{multipath,dmraid}_partition functions.
+  (dlehman)
+- Set dm-uuid for anaconda disk image devices from devicetree. (dlehman)
+- Remove some unnecessarily hard-coded "/dev/mapper" strings. (dlehman)
+- Put the backend logger's config file in /tmp. (dlehman)
+- Move handling of /proc/bus/usb and /selinux into storage. (dlehman)
+- swapoff -a is only needed for livecd, so only do it for livecd. (dlehman)
+- Unlink backend logger config file when stopping logger. (dlehman)
+- Make FileDevice.path more consistent. (dlehman)
+- Add support for detecting already-active lvm. (dlehman)
+- Fix addUdevDevice so we can actually handle already-in-tree devices.
+  (dlehman)
+- Make it possible to ignore md-fwraid member disks. (dlehman)
+- Revert rpmdb symlink hack. (dlehman)
+- Remove some unused code from storage.devicelibs.dm. (dlehman)
+- Add support for installing onto block device image files. (dlehman)
+- Generalize some of the device-mapper partition handling. (dlehman)
+- Add support for loop devices. (dlehman)
+- Add support for linear device-mapper devices. (dlehman)
+- Fix PartitionDevice.path to work with device-mapper disks. (dlehman)
+- There's no need to pass exclusiveDisks to doPartitioning separately.
+  (dlehman)
+- Move storage device scanning parameters into a separate class. (dlehman)
+- Don't ignore %%packages if --default is given (#621349, dcantrell). (clumens)
+- Don't traceback when displaying %%post error messages (#654074). (clumens)
+- Display a warning message on TAINT_HARDWARE_UNSUPPORTED (#623140). (clumens)
+- If getting .treeinfo fails, try treeinfo (#635065). (clumens)
+- instPath -> rootPath (clumens)
+- Add rdate, tty, which to install image (mgracik)
+- Don't add --enablefingerprint unless fprintd-pam is installed (#656434).
+  (clumens)
+
+* Tue Nov 30 2010 Chris Lumens <clumens@redhat.com> - 15.8-1
+- Ignore immutable disks in clearPartitions (#657115) (bcl)
+- Add biosdevname to installer environment (Matt_Domsch)
+- Add ntpdate to install.img (#614399) (mgracik)
+- It's /usr/bin/gdbserver. (akozumpl)
+- Handle dm-N devices pointed to by /dev/disk/ paths (#605312) (bcl)
+- Resolve /dev/disk/ devices during rescue (#605312) (bcl)
+- Do not auto-check all drives when creating a RAID partition (#641910).
+  (akozumpl)
+- (Un)select all button in Partition Editor. (akozumpl)
+- Show the total amount of space used by snapshots in the VG editor dialog.
+  (dlehman)
+- Add support for detecting lvm vorigin snapshot volumes. (#633038) (dlehman)
+- Don't display free space at end of extended unless > 1MB. (#626025) (dlehman)
+- Set SELinux context on /etc/localtime (#653867). (clumens)
+- Get a little more output from the unittest runner. (clumens)
+- Remove writeRpmPlatform, adjust callers. (#651132, #650490) (notting)
+- Import as "pyanaconda.anaconda_log", not "anaconda_log". (clumens)
+- A little too much got deleted from imount.c. (clumens)
+- Remove the popping portion of kickstart %%pre script notification. (clumens)
+- Add pyanaconda/.libs to the PYTHONPATH for pylint. (clumens)
+- Ignore several false positives and import errors while running pylint.
+  (clumens)
+- Remove the parts required to make "make tests" work. (clumens)
+- nosetests will only run tests if they are not executable and end in _test.py.
+  (clumens)
+- Set up the PYTHONPATH for running nosetests. (clumens)
+- tsort_dict -> tsort in the test case. (clumens)
+- Return mount's actual error codes instead of obfuscating them. (dlehman)
+- Remove log message saying we don't know how to sanity check storage.
+  (dlehman)
+- Move check for ext2 filesystem journal from FS to Ext2FS. (dlehman)
+- Remove mkdirChain() from isys, use g_mkdir_with_parents() (dcantrell)
+- Do not force -O2 in CFLAGS. (dcantrell)
+- Remove unused unpackCpioBall() function. (dcantrell)
+- Use unpack_archive_file() instead of unpackCpioBall() (dcantrell)
+- Use libarchive helper functions in explodeRPM() (dcantrell)
+- Add libarchive helper functions for loader in unpack.c (dcantrell)
+- Remove include lines for stubs.h from isys. (dcantrell)
+- Remove isys cpio extraction code. (dcantrell)
+
+* Tue Nov 09 2010 Chris Lumens <clumens@redhat.com> - 15.7-1
+- Unset bootloader password checkbox (#650865) (bcl)
+- Fix typo in my ctc commit (#648858) (bcl)
+- Fix ctc check logic (#648858) (bcl)
+- timezones: fix a scrolling problem with the scdate's GUI TreeView. (akozumpl)
+- timezones: remove unneeded imports (akozumpl)
+- Fix variable substitution in kickstart files (bcl)
+- Don't show the cleardisk dialog on upgrades (#649865). (clumens)
+- Use a stronger RNG for password salt (mitr)
+- Use SHA-512 for bootloader password encryption (mitr)
+- Support grub --encrypted when set from kickstart (mitr, #554874). (clumens)
+- use different approach to tweak gconf settings in the image (#642358).
+  (akozumpl)
+- Allow loader to re-prompt for networking when network activation fails
+  (jlaska)
+- Support devices larger than 1.5TB (#649095, rspanton AT zepler DOT net).
+  (clumens)
+- Fix test for CTC devices from yesterday. (clumens)
+- iscsi, logging: reuse the global ISCSID in has_iscsi(). (akozumpl)
+- iscsi: refactor the kickstart processing to use the new iscsi methods.
+  (akozumpl)
+- Do not rely on presence of DEVICE setting in ifcfg files. (rvykydal)
+- Do not sort settings in ifcfg file. (rvykydal)
+- Remove obsolete networking code. (rvykydal)
+- Support installation to CTC devices in loader (#648858, karsten). (clumens)
+- Add more modules to the list of things liveinst must load. (clumens)
+- Don't look for a CD number in readStampFileFromIso. (clumens)
+- mediaCheckCdrom now supports checking only one piece of media. (clumens)
+- Remove support for writing disc number info to .treeinfo and .discinfo.
+  (clumens)
+- Remove support for split media transactions from yuminstall.py. (clumens)
+- Remove unused currentMedia parameter. (clumens)
+- mediaHandler no longer needs to worry about mounting anything. (clumens)
+- Rework _switchCD and _switchMedia for a one-image world. (clumens)
+- umountImage shouldn't care about currentMedia. (clumens)
+- Remove presentRequiredMediaMessage and related code. (clumens)
+- Rename findIsoImages to findFirstIsoImage. (clumens)
+- verifyMedia no longer looks at the disc number. (clumens)
+
+* Fri Oct 29 2010 Chris Lumens <clumens@redhat.com> - 15.6-1
+- We now need to BuildRequire dbus-python. (clumens)
+
+* Fri Oct 29 2010 Chris Lumens <clumens@redhat.com> - 15.5-1
+- ui: mnemonics for autopartitioning type. (akozumpl)
+- hwclock lives in /sbin now. (akozumpl)
+- timezone_text.py: remove the commented out parts and never called methods.
+  (akozumpl)
+- gui: remove "swapped" attribute from anaconda.glade (akozumpl)
+- Errors downloading .treeinfo files should not be logged as errors. (clumens)
+- When we can't fetch group metadata, log why. (clumens)
+- Log which step we're on in doLoaderMain. (clumens)
+- On upgrades, inform the user what action is taking place (#493249). (clumens)
+- Fix import to not drag in a conflicting ConfigParser. (clumens)
+- If there are any troubles reading the treeinfo file, return no addons.
+  (clumens)
+- Only build EFI images on x86_64 (jlaska, #646869). (clumens)
+- restart-anaconda: full path to iscsiadm (akozumpl)
+- iscsi: ISCSID needs to be declared global in has_iscsi() (akozumpl)
+- Fix two problems with initrds for multipla kernels during a pungi compose.
+  (akozumpl)
+- Fix the locale value for Bengali (India) (mgracik)
+- specfile: anaconda requires GConf2 during runtime. (akozumpl)
+- timezones: use more of s-c-date (#520631). (akozumpl)
+- Don't hardcode the sshd location, either. (clumens)
+- Move StorageTestCase into its own file for use by other tests. (dlehman)
+- Actions' devices must be in the tree except for ActionCreateDevice. (dlehman)
+- Fix StorageDevice.resizable to check self.format.type, not self.format.
+  (dlehman)
+- Cleanup some preconditions in DeviceAction constructors. (dlehman)
+- Add device action test suite. (dlehman)
+- Fix test environment python path. (dlehman)
+- Reimplement action pruning and sorting using tsort and action deps. (dlehman)
+- Add requires and obsoletes methods to DeviceAction classes. (dlehman)
+- Add a topological sort implementation for use in sorting device actions.
+  (dlehman)
+- Only log storage to tty3 if we have permission to do so. (dlehman)
+- Remove PartitionDevice.path hack. (dlehman)
+- Use 'name' instead of 'device' for device name ctor arg in all Device
+  classes. (dlehman)
+- Qualify devicelibs.lvm instead of relying on namespace clutter. (dlehman)
+- Make the various DeviceAction.isFoo methods into properties. (dlehman)
+- Establish a unique id for each DeviceAction instance. (dlehman)
+- Add logpicker to keepfile list in upd-instroot. (tmlcoch)
+
+* Thu Oct 21 2010 Chris Lumens <clumens@redhat.com> - 15.4-1
+- Allow importing product.py in places where you won't have a .buildstamp.
+  (clumens)
+- Search for iscsid in the $PATH, not in a hardcoded list of places (#645523).
+  (clumens)
+- Use glib for getPartitionsList() (dcantrell)
+- Include the SELinux policy file, not just the directory. (clumens)
+- Remove the last references to install.img. (clumens)
+- Properly identify device-mapper partitions set up by kpartx. (#644616)
+  (dlehman)
+- Don't ever try to mount ntfs filesystems. (#637319) (dlehman)
+- We don't need to worry about 2.4 -> 2.6 updates anymore. (clumens)
+- scsiWindow is unused.  Kill it. (clumens)
+
+* Mon Oct 18 2010 Chris Lumens <clumens@redhat.com> - 15.3-1
+- Don't recommend /usr as a mount point anymore (#643640). (clumens)
+- Add some debugging prints. (clumens)
+- Don't prompt for kbd, lang, or network on CD/DVD installs. (clumens)
+- We no longer need to copy the install.img over and lochangefd to it.
+  (clumens)
+- Also rework image loading for CD/DVD installs. (clumens)
+- Remove a bunch of unused support functions. (clumens)
+- Use parseDeviceAndDir instead of reimplementing the same things two more
+  times. (clumens)
+- Rework how image loading works for HD installs. (clumens)
+- Remove the unused mountNfsImage and all code that was only called by it.
+  (clumens)
+- Rework how image loading works for NFS installs. (clumens)
+- Remove the unused iurlinfo, urlInstallData, and fix up URL kickstarts.
+  (clumens)
+- Initialize loaderData->method. (clumens)
+- Remove the unused mountUrlImage function. (clumens)
+- Rework how loading images works for URL installs. (clumens)
+- urlinstTransfer and support functions do not operate on iurlinfo anymore.
+  (clumens)
+- urlMainSetupPanel no longer takes an iurlinfo. (clumens)
+- Deprecate stage2=, keep method= as it's been for a long time now. (clumens)
+- migrate_runtime_directory no longer does anything useful. (clumens)
+- Remove the method selection block from the beginning of doLoaderMain.
+  (clumens)
+- Fix up copying of firmware. (clumens)
+- Correct paths of things started by loader/init that have moved. (clumens)
+- Step 3 of merging installer images:  No longer create install.img. (clumens)
+- makeinstimage is no longer used. (clumens)
+- instbin is no longer used. (clumens)
+- A couple minor changes to mk-images. (clumens)
+- Step 2 of merging installer images:  Move most everything out of makeinitrd.
+  (clumens)
+- Step 1 of merging installer images:  Don't copy files into a new root.
+  (clumens)
+- No longer do the bin -> usr/bin copy song and dance. (clumens)
+- Fix typo in examine_gui.py (bcl)
+- Clean up tabs in examine_gui.py (bcl)
+- Rework proxy handling so that .treeinfo also uses proxy (#634655) (bcl)
+- Translate task and repo names based on the product.img (#622064). (clumens)
+- Use baseurl instead of methodstr to get .treeinfo (#604246) (rvykydal)
+- Be more resilient to config files missing sections and options (#590591).
+  (clumens)
+- Add repos for all addons in all enabled repositories (#580697). (clumens)
+- Add a method that fetches and returns the .treeinfo file. (clumens)
+- All uses of perl must die. (clumens)
+
+* Thu Oct 14 2010 Chris Lumens <clumens@redhat.com> - 15.2-1
+- And remove welcome_{gui,text}.py from the translations too. (clumens)
+- A block quote in the middle of a python file does nothing. (clumens)
+- Fix traceback after Delete in nm-c-e (#642370) (rvykydal)
+- Fix ifcfg logging message. (rvykydal)
+- Fix porting of ifcfg logging. (rvykydal)
+- Rescan disks when moving back through upgrade check (#635778) (bcl)
+- anaconda: Disable X server regenerations (#609245) (ajax)
+- Attempt to bring the network up before saving a bug report (#635821).
+  (clumens)
+- No one likes the welcome step anymore, so remove it. (clumens)
+- iscsi, cosmetic: fix grammar in the iscsi dialogs. (akozumpl)
+- iscsi: call iscsi.stabilize() at the end of the iscsi configuration.
+  (akozumpl)
+- iscsi: consolidate logging in the UI (akozumpl)
+- iscsi: allow separate discovery/login credentials in TUI. (akozumpl)
+- iscsi: migrate the CRED_ constants and parse_ip() to partIntfHelpers.
+  (akozumpl)
+- iscsi gui: use abstract methods in the iSCSIWizard interface. (akozumpl)
+- iscsi gui: factor out the drive adding code. (akozumpl)
+- iscsi gui: make the iSCSI wizard never return gtk constants. (akozumpl)
+- isci: typo in a GUI checkbox (akozumpl)
+- Add logpicker support into Makefiles, anaconda.spec.in, configure.ac and upd-
+  instroot. (tmlcoch)
+- Add logpicker tool into utils (tmlcoch)
+- gui: hide text in the proxy password field (#611825). (akozumpl)
+- logging: be smarter logging UI module import errors. (akozumpl)
+- text.messageWindow(): make it more resilient to the input. (akozumpl)
+- Log that we are running %%pre scripts to the console (#640256). (clumens)
+- Preset default config for immediate Close in nm-c-e enablement (#636526)
+  (rvykydal)
+- Fix non-dhcp network enablement in stage 2 (#640951) (rvykydal)
+- Set focus after error message (#611430) (tmlcoch)
+- When upgrading a package instead of installing, say so (#636520, jlaska).
+  (clumens)
+- Do a better job of explaining how much memory is required to install
+  (#639056). (clumens)
+- Get rid of mountLoopback and umountLoopback. (clumens)
+- copyright notice in add_drive_text.py (akozumpl)
+- restart-anaconda: log out of all iscsi nodes (akozumpl)
+- remove EXN_ constants from constants.py (akozumpl)
+- Honor selected hostname on Live CD (#638634) (rvykydal)
+- Do not try to prompt for network for escrow in kickstart (#636533) (rvykydal)
+- Sync up list of languages with contents of po/ directory. (clumens)
+- Fix a storage logging import (#636621). (clumens)
+- Fix a couple pylint-found errors. (clumens)
+- Copy ifcfg.log into traceback and target system. (rvykydal)
+- Improve logging of ifcfg stuff. (rvykydal)
+- Refactor DNS resolver reset. (rvykydal)
+- Add placeholders to ambiguous python strings (#634385). (clumens)
+- Dynamically initialize MALLOC_PERTURB_ when loader starts. (pjones)
+- btrfs will be a supported filesystem in F15 (josef). (clumens)
+- Fix setting of $HOME (pjones)
+- Limit progress bar amount to 1.0 (bcl)
+
+* Fri Sep 24 2010 Chris Lumens <clumens@redhat.com> - 15.1-1
+- Properly rescan storage with Reset in partition GUI (#635778) (bcl)
+- Save the partition type selection when moving back (#635778) (bcl)
+- Properly rescan disks when moving back (#635778) (bcl)
+- Reset resolver after network device activation (#632489) (rvykydal)
+- Don't include the product name in the translation (#636415). (clumens)
+- Clarify loopback mount log message (#633444). (clumens)
+- pykickstart now raises KickstartError instead of IOError. (clumens)
+- Fix EFI bootloader install problems (#635873, #635887) (bcl)
+- Re-add cleardiskssel step when autopart is chosen. (#635332) (dlehman)
+- Pull boot splash image from correct location (#635330) (bcl)
+- Add files for polkit to initrd.img (#633315) (rvykydal)
+- Remove old kernels with new bootloader (#633234) (bcl)
+- Both the inittab and systemd sections can return. Move this part earlier.
+  (notting)
+- iscsi: discovery and node login wizard. (akozumpl)
+- Pass xdriver to anaconda in liveinst (#633827) (bcl)
+- Add test cases for the new Size class. (dcantrell)
+- Add exceptions specific to the new Size class. (dcantrell)
+- Create Size class for specifying device and fs sizes. (dcantrell)
+- Fix importing the netconfig UI in rescue mode (#632510). (clumens)
+- Add noeject support to cdrom eject handling (#477887) (bcl)
+- Cleanup tabs in flags.py (bcl)
+- Add noeject support to loader (#477887) (bcl)
+- Remove BETANAG, instead reading it from .buildstamp (#628688). (clumens)
+- Convert .buildstamp into a .ini-style file. (clumens)
+- Remove productPath. (clumens)
+- Remove any /tmp/yum.log that may be present on the installed system
+  (#630327). (clumens)
+- If the filesystem doesn't support resize, there's no resizesb (#627153).
+  (clumens)
+- Run anaconda in fullscreen mode. (clumens)
+- minor: gtk.CellRendererText has no property 'active'. (akozumpl)
+- restart-anaconda: kill iscsid too (akozumpl)
+- ui: fix the default choice in the 'advanced storage options' dialog.
+  (akozumpl)
+- iscsi: rename variable in addIscsiDrive. (akozumpl)
+- ui: a couple of storage mnemonics. (akozumpl)
+- updates: .glade files are in data/ui now. (akozumpl)
+- Re-fix systemd default link (#627401, mschmidt). (clumens)
+- Remove losetup and unlosetup from isys (bcl)
+- Remove losetup usage (bcl)
+- Various upd-instroot cleanups, most importantly for firstaidkit (#627758).
+  (clumens)
+- Shrink locale-archive down to just what we support. (clumens)
+- Remove the icon-theme.cache file from the initrd. (clumens)
+- Remove /etc/selinux/targeted/modules/active from the initrd (clumens)
+- Remove the DRI modules from the initrd. (clumens)
+- i18n: do not build translatable sentences from parts (#622545). (akozumpl)
+- memory: install.img is now >150 MB so count 192 MB extra for it. (akozumpl)
+- memory: check_memory() displays GUI dialog on livecd (#624534). (akozumpl)
+- readvars should split variables into at most 2 pieces (bcl)
+- Adding output to method selection process (bcl)
+
+* Fri Aug 27 2010 Chris Lumens <clumens@redhat.com> - 15.0-1
+- systemd symlinks now reside in /lib (#627401). (clumens)
+- filtering UI: don't be picky about udev wwid length. (akozumpl)
+- mpath: put quotes around the wwids, they can have spaces. (akozumpl)
+- Use blacklist_exceptions for mpath devices (#612399) (mfuruta)
+- typo: repeated line in lvm.py (akozumpl)
+- mpath: do not deactivate mpath device upon its teardown. (akozumpl)
+- mpath: teardown format from MultipathDevice.teardown() (#616273). (akozumpl)
+- And change the tigervnc requires in the spec file too. (clumens)
+- Kill joe. (pjones)
+- Require tigervnc-server-minimal to remove perl from livecd (#627280).
+  (clumens)
+- Use ID_SERIAL_RAW for multipath, if available (#626842). (clumens)
+- mpath: filter member partitions wiser in lvm. (dcantrell)
+- mpath: do not deactivate mpath partitions in teardown(). (akozumpl)
+- Fix comparison between /dev/disk/* paths and udev symlinks (#621515).
+  (clumens)
+- Remove telnetd.h from POTFILES.in so make works again. (clumens)
+- Reset labels on /var/cache/yum as well (#623434). (clumens)
+- NetworkManager uses a different config file now (#623937). (clumens)
+- Don't touch resolv.conf which is handled by NM (#622927) (rvykydal)
+- logging: turn the loglevels into proper enum. (akozumpl)
+- loader: parseCmdLineIp* takes just the value as an argument now. (akozumpl)
+- logging: refactor printLogHeader (akozumpl)
+- Remove the nousbstorage command line option (#624556). (clumens)
+- Remove telnet support. (dlehman)
+- Allow omission of --size for partitions, use default size. (dlehman)
+- Fix the provides we look for when installing DUD (#618862) (msivak)
+- Fix the paths for DD in postinstall phase Related: rhbz#619745 (msivak)
+- Remove the final use of $LOADERBIN from scripts. (clumens)
+- Only set noverifyssl on URL installs (#621469). (clumens)
+- Base install/upgrade default on whether any candidates were found (#590505).
+  (clumens)
+- fix 899f401611da021b3ec3882577ad860eae47f265 (akozumpl)
+- Do not use autoconfiguration for DHCPv6 (#623216) (rvykydal)
+- Add scripts/githooks/ with commit-msg script. (dcantrell)
+- I don't need to pass "nomodeset" to stage2 after all. (clumens)
+- After cancelled stage 2 network enablement remove temporary repo (#623639)
+  (rvykydal)
+- Fix traceback when using duplicate name for added/edited repo (#623080)
+  (rvykydal)
+- Fix traceback after Cancel in stage 2 network enablement dialog (#623017)
+  (rvykydal)
+- Make sure "nomodeset" and "xdriver=" get passed on to stage2 (#623129).
+  (clumens)
+- We checked for updated driver with wrong path prefix (#619745) (msivak)
+- Proper detection of successful module update (#618862) (msivak)
+- LVM and LUKS now align everything to 1MB boundaries. (#623458) (dlehman)
+- Clearing of formatting from unpartitioned disks belongs in clearPartitions.
+  (dlehman)
+- Do disklabel handling for whole disk formats unknown to anaconda (#619721)
+  (hdegoede)
+- Do not support "part --grow raid.XX" (#577432). (clumens)
+- Update systemd's default.target for the desired runlevel (#623102, mschmidt).
+  (clumens)
+- Skip cleardiskssel on custom partitioning (#620647). (clumens)
+- logging: typo in analog (akozumpl)
+- logging: fix logic in getSyslog(). (akozumpl)
+- Use full EFI path to map drives for grub (#598572) (bcl)
+- Don't complain about upgrading the same release (#620953) (bcl)
+- Don't crash on unnamed installs (#621685) (bcl)
+- mpath: add MultipathDevices first, before their partitions. (akozumpl)
+- ibft: always configure network devices if there's ibft available (#617860).
+  (akozumpl)
+- Log exclusiveDisks, ignoredDisks, and reasons for ignoring devices. (dlehman)
+- Include mpath/fwraid member devices in exclusiveDisks. (dlehman)
+- Use part instead of device in PartitionWindow.populate() (#575749)
+  (dcantrell)
+- Add support for ipv6 to text UI network enablement (#612476) (rvykydal)
+- Remember user's choice when going back in Configure TCP/IP (#609570)
+  (rvykydal)
+- Update generating of anaconda-ks.cfg for ipv6. (rvykydal)
+- Update ks network command for ipv6 in anaconda. (rvykydal)
+- Fix typo and set mpaths' sysfs path before querying udevdb. (#620712)
+  (dlehman)
+- The --loaderbin parameter to makeinitrd is unused.  Kill it. (clumens)
+- services is a set, not a list (#620900, akozumpl). (clumens)
+- Set AUTO_VLAN=yes in fcoe config files (#618875) (dcantrell)
+- The --initrdsize parameter to makeinitrd is unused.  Kill it. (clumens)
+- Honor bootdrive selection when autopartitioning (#620442) (hdegoede)
+- shutdown: Use lstat to test for /lib64 (hdegoede)
+- shutdown: don't unmount /sys and /proc (hdegoede)
+
+* Mon Aug 02 2010 Chris Lumens <clumens@redhat.com> - 14.14-1
+- Write out correct nfs url for repo= in /root/anaconda-ks.cfg (#584580)
+  (rvykydal)
+- mdadm -I no longer accepts --no-degraded (#620359) (hdegoede)
+- Update buildinstall because of new man package name (mgracik)
+- Clarify name of function that identifies biosraid member devices. (dlehman)
+- Use dm subsystem functions to identify dmraid,mpath partitions. (dlehman)
+- Move disk enumeration to a method of FilterWindow. (dlehman)
+- Check if an mpath should be ignored before adding it to the devicetree.
+  (dlehman)
+- Add handling for mpath and fwraid devices in exclusiveDisks. (dlehman)
+- Add functions to identify specific types of device-mapper devices. (dlehman)
+- Ignore active fwraids and mpaths when setting up the filter ui. (dlehman)
+- Include pyconfig*.h so that we can actually run python2.7 . (pjones)
+- Remove translation of error strings in uncpio.c (bcl)
+- Clean up tabs in uncpio.c (bcl)
+- Redirect uncpio errors to syslog (#618181) (bcl)
+- Make sure multipathd starts on systems using mpath storage (#615040)
+  (dcantrell)
+- Handle systems where all disks have a whole disk format (#617554) (dcantrell)
+- Include modprobe file for Mellanox 10GB driver (#611997) (dcantrell)
+- Remove some more kickstart duplication (#617512). (clumens)
+- Fix setup of LVs (bcl)
+- Include the kickstart file in the traceback (bcl)
+
+* Tue Jul 27 2010 Ales Kozumplik <akozumpl@redhat.com> - 14.13-1
+- Use readvars_parse_file in loader/init.c (dcantrell)
+- Use readvars_parse_*() in loader/loader.c (dcantrell)
+- Use readvars_parse_file() in loader/modules.c (dcantrell)
+- Add readvars.c for parsing command line args and shell vars. (dcantrell)
+- Check return value of chdir() (dcantrell)
+- Remove handling for the "vesa" boot argument. (dcantrell)
+- Remove USE_MINILIBC cruft from loader/init.c (dcantrell)
+- Whitespace cleanup in loader/Makefile.am (dcantrell)
+- logging: remote logging for traceback dumps. (akozumpl)
+- logging: also log X.log remotely (akozumpl)
+- logging: autodetect the virtio-serial port. (akozumpl)
+- does not properly recognize hpt45x_raid_member (#617438) (hdegoede)
+- Show allowable prepboot size range in exception (#603188) (dcantrell)
+- Remove storage init duplication (#6176512). (clumens)
+- Skip the Filter UI in Basic Storage mode (#598420) (hdegoede)
+- Make the shell in tty2 and ssh all go to /root like on a real system.
+  (pjones)
+
+* Thu Jul 22 2010 Ales Kozumplik <akozumpl@redhat.com> - 14.12-1
+- Only write changed DASD attributes to rd_DASD params (#606783) (dcantrell)
+- Propagate MACADDR from loaderData to iface (#595388) (dcantrell)
+- Deal with media only for media repo package failures (#573492) (rvykydal)
+- Support for ks: --ipv6 command, and ipv6 values for --gateway (#490794)
+  (rvykydal)
+- analog: support reading the installation logs from a unix socket. (akozumpl)
+- logging: support logging through virtio-serial (#576439). (akozumpl)
+- modules.c: only log from _doLoadModule() if logging has been initialized.
+  (akozumpl)
+- break the dependency of modules.c on loader.h (akozumpl)
+- Enforce limits on partition start/end sectors. (dlehman)
+- Fix up import to make rescue mode work again (#616090). (clumens)
+- Init g_type in is_wireless_device. (rvykydal)
+- Add resolver reset to some network enablement places (#614001) (rvykydal)
+- Fix config of ipv6 and ipv4 (auto + manual) in loader (#609576) (rvykydal)
+- text: remove the needless complexity in the screen switching loop. (akozumpl)
+- text.py: do not traceback when can't go back (#598493). (akozumpl)
+- remove doShutdownX11Actions(). (akozumpl)
+- Add uname to initrd.img (#614770) (dcantrell)
+- Some people like to specify MAC addresses in lower case. (clumens)
+- Remove support for interactive kickstart installs. (clumens)
+- Improve parsing and pass the devel flag to loader through the command line
+  (msivak)
+- When in devel mode, do not catch tracebacks, we want the core file (msivak)
+- Add better debugging capabilities to loader (msivak)
+- Add confirmation dialog when loading dlabel DDs (#570053) (msivak)
+
+* Wed Jul 14 2010 Chris Lumens <clumens@redhat.com> - 14.11-1
+- Add the gobject-introspection package (#613695) (mgracik)
+- Update pylint test for pylint 0.20.1 (bcl)
+- Use long ints for comparisons, not floats (#608172) (bcl)
+- Enforce the same logic on autopart shrink as on resize (#608172) (bcl)
+- Don't crash when putting mpath devices into the filter name cache (#597223).
+  (clumens)
+- Handle serial = None in the right place (#613623). (clumens)
+- There's still no instdata on master (#613075). (clumens)
+
+* Thu Jul 08 2010 Chris Lumens <clumens@redhat.com> - 14.10-1
+- Handle 16 digit hex strings for ID_SERIAL_SHORT (#611554) (dcantrell)
+- Focus default advanced storage type in add dialog (#603726) (dcantrell)
+- Add multipath member with addUdevDiskDevice instead of DiskDevice (#582254)
+  (dcantrell)
+- add mime.cache to the stage2 image (#609596). (akozumpl)
+- makeupdates: treat files under pyanaconda/ individually. (akozumpl)
+- ssl: propagate 'url --noverifyssl' into yum repo configuration (#599040).
+  (akozumpl)
+- ssl: support for 'url --noverifyssl' in loader. (akozumpl)
+- ssl: support --noverifyssl in the repo kickstart command. (akozumpl)
+- Fix a file descriptor leak in getDevices (#612153, mganisin). (clumens)
+- Pass size of structure not a size of pointer to calloc (#592227) (msivak)
+- Properly iterate over the netdevices list (#610769). (clumens)
+- Require the static package instead of the devel one (#610797). (clumens)
+- ui: C_reate mnemonics in Create Storage dialog. (akozumpl)
+- fix insensitivities of 0783c488 (akozumpl)
+- During an update don't erase old kernels (#594411) (bcl)
+- booty and isys have moved, so update runpylint.sh. (clumens)
+- Translate MAC addresses to devices in the second stage, too. (clumens)
+- Fix prototype of getIPAddresses (#605659) (rvykydal)
+- Account for ipv6 addresses too (#605659) (rvykydal)
+- Use progressbar instead of waitwindow for repo setup (#584996) (rvykydal)
+- Don't deactivate active device before running nm-c-e (#608773) (rvykydal)
+- Control all devs by NM by default + filtering (iSCSI, FCoE) (#606745)
+  (rvykydal)
+- anaconda's lvm vgreduce invocation is not filtering out disks (609479)
+  (hdegoede)
+- Clean up proxy handling in yuminstall.py (#604137) (bcl)
+- Write out missing space on 'part' lines in ks file (#605938) (dcantrell)
+- Make sure swap devices are included in dracut args (#607646) (dcantrell)
+- Catch DeviceNotFoundError in cleardisks (#607661) (dcantrell)
+- Do not proceed after partitioning errors in text mode (#599484) (bcl)
+- fixup exclude/excludepkgs usage (#607664) (bcl)
+- yum calls it "exclude" instead of "excludepkgs" (#607664). (clumens)
+- Add full proxy URL to writeKS (#602705) (bcl)
+- Fix repo --includepkgs=, and add more to anaconda-ks.cfg's repo line
+  (#602705). (clumens)
+- Add a slash to the path pointing to hdinstall dir (#592154) (msivak)
+- Don't resize lv's formatting unless also resizing the lv. (#575046) (dlehman)
+- Show sane non-removable drives too in the DD dialog (#594548) (msivak)
+
+* Mon Jun 28 2010 Chris Lumens <clumens@redhat.com> - 14.9-1
+- Update to use the latest pykickstart. (clumens)
+- Import anaconda_log correctly to avoid the double import problem. (clumens)
+- Move isys and booty into the pyanaconda/ directory, adjust paths to match.
+  (clumens)
+- network.dracutSetupstring: properly handle ipv6 (#605232) (hdegoede)
+- Support for converged traffic during install to FCoE LUN (#604763) (hdegoede)
+- Take into account the fact that some formats have no min/max size. (dlehman)
+- Put dhcp configuration files in /etc/dhcp (#468436) (dcantrell)
+- Autopart PVs require enough space for a default-sized partition. (dlehman)
+- Enforce format min/max size for fixed-size requests. (dlehman)
+- Fix min/max size definitions for PReP Boot format class. (dlehman)
+- Constrain lvmpv, mdmember, and swap partitions to a single disk. (#605756)
+  (dlehman)
+- Enforce maximum start sector for partitions. (#604059) (dlehman)
+- Handle nm-c-e using prefix instead of netmask (#607762) (hdegoede)
+- Handle "(#BUGNUM, author)" in git log summary lines. (dcantrell)
+- Allow running an alternate program from liveinst. (clumens)
+- fix network.py syntax error. (akozumpl)
+- modules: make iscsi and similar imports look less ridiculous (akozumpl)
+- modules: fix getlangnames. (akozumpl)
+- updates: link files in also on lower directory levels. (akozumpl)
+- modules: dont treat booty special. (akozumpl)
+- modules: dont treat isys special. (akozumpl)
+- modules: necessary changes to the import statements under pyanaconda/textw
+  (akozumpl)
+- modules: a change to an import statements in isys/ (akozumpl)
+- modules: necessary changes to the import statements under pyanaconda/iw
+  (akozumpl)
+- modules: changes to the import statements directly under pyanaconda/
+  (akozumpl)
+- modules: necessary changes to the installclasses import statements.
+  (akozumpl)
+- modules: necessary changes to the import statements under booty/ (akozumpl)
+- modules: necessary changes to the import statements under storage/ (akozumpl)
+- modules: pyanaconda.textw and pyanaconda.iw are now regular modules.
+  (akozumpl)
+- modules: remove the hacks in setupPythonPath(). (akozumpl)
+- Be specific when telling lvm to ignore devices. (dlehman)
+- analog: fix options.output traceback (akozumpl)
+- Handle questionInitializeDASD in cmdline mode (#605846) (dcantrell)
+- Set SELinux context on dasd.conf and zfcp.conf (#605597) (dcantrell)
+- Add --fsprofile= to the anaconda-ks.cfg (#605944). (clumens)
+- Add the proxy tests to the top-level test framework. (clumens)
+- Fix pyanaconda.kickstart import, and init logging before doing anything else.
+  (clumens)
+- Do not assume /dev/loop0 and /dev/loop1 are available. (clumens)
+- tearDown -> tearDownModules. (clumens)
+- Fix test suite Makefile.am files. (clumens)
+- Check before running post scripts on kickstart rescue (#605754, atodorov).
+  (clumens)
+- Make sure lvm ignores unknown devicemapper devices (hdegoede)
+- Put [] around ipv6 addr on the dracut cmdline (#605300) (hdegoede)
+- Revert "Select default and mandatory packages when enabling repos."
+  (#605289). (clumens)
+- Fix the build. (clumens)
+- Set repo.proxy only after fully assembled (#602712) (bcl)
+- Change proxy regex in loader to match python proxy regex (#602712) (bcl)
+- Add test cases for proxy regex (#602712) (bcl)
+- Replace POSIX regex classes with character ranges (#602712) (bcl)
+- Set wireless devices to NM_CONTROLLED by default (#594881) (rvykydal)
+- Add iSCSI radio button to button group (#603726) (dcantrell)
+- Fall back on regular device name (#604776) (dcantrell)
+- Honor --timeout=NUM from kickstart files on s390 (#603032) (dcantrell)
+- Use Decimal instead of float for label calculations (#604639) (bcl)
+- Check for proper Proxy URL in loader (#604126) (bcl)
+- fix: syntax error in network.py (akozumpl)
+- fix: zfcp.startup() survives without an interface (#604542). (akozumpl)
+- Fix a typo (#604628) (rvykydal)
+- Revert "Retain user's UTC checkbox setting (#591125)" (bcl)
+- Use method from isys for wireless devs checking (#473803) (rvykydal)
+- Do not ask for interface twice in stage 1 (#594802) (rvykydal)
+- Fix parsing of ifcfg OPTIONS parameter (#597205) (rvykydal)
+- Don't overwrite 70-persistent-net.rules (#597625) (rvykydal)
+- Wait only for activation of devices controlled by NM (#598432) (rvykydal)
+- Show zFCP errors in dialog boxes rather than tracebacks (#598087) (maier)
+- Show by-path names for DASD and zFCP, WWID for mpath (#580507) (maier)
+- Remember autopart UI choice when going back (#596146) (dcantrell)
+- Make parent directories for ks scriptlet log files (#597279) (dcantrell)
+- Adjust the paths used for updates (bcl)
+- Raise an error when an md dev is not in the tree after scanning all slaves
+  (hdegoede)
+- Raise an exception when an md dev is in the tree under the wrong name
+  (hdegoede)
+
+* Fri Jun 11 2010 Chris Lumens <clumens@redhat.com> - 14.8-1
+- Rebind hybrid lcs/ctc network devices to correct driver if necessary
+  (#596826) (maier)
+- Get netdev name without CONFIG_SYSFS_DEPRECATED_V2 in linuxrc.s390 (#596826)
+  (maier)
+- Replace rd_CCW with final dracut option rd_ZNET for network-rootfs on s390
+  (maier)
+- Do parse DOMAIN for DNS search suffixes in loader (#595388) (maier)
+- Allow loader to parse DNS and write DNS1, DNS2, ... itself (again). (#595388)
+  (maier)
+- GATEWAY in linuxrc.s390's ifcfg is really IPv4 only (#595388) (maier)
+- Handle OPTIONS in ifcfg files transparently in loader (#595388) (maier)
+- If only (clumens)
+- Catch and display KickstartErrors coming from execute() cleanly (#603059).
+  (clumens)
+- Forcibly remove packages from deselected groups (#495621). (clumens)
+- Default to aes-xts-plain64 for new luks devices. (#600295) (dlehman)
+- Put another '/' in the rhinstall-install.img path (#601838). (clumens)
+- Fix driver disc repo baseurl (#602343) (msivak)
+- or -> and (clumens)
+- fix: do not check root devices from hasWindows (#592860). (akozumpl)
+- fix: kickstart sshpw command dysfunctional (#602308). (akozumpl)
+- Include /sbin/blkid in the initrd.img (dcantrell)
+- Correct initrd.img load address on s390 (dcantrell)
+- Remove duplicate md handling code from 70-anaconda.rules (#599197)
+  (dcantrell)
+- Add md arrays to the devicetree with a md# name rather then md/# (hdegoede)
+- "Finding" -> "Examining" storage devices (#594804). (clumens)
+- In the filter UI, also ignore devices that do not report a size (#594803).
+  (clumens)
+- translations: scdate can translate timezones better then us. (akozumpl)
+- fix: the po path has to be bound for gtk.glade too. (akozumpl)
+- translations: don't say context=yes if you don't mean it. (akozumpl)
+- translations: loader header files strings missing in anaconda.pot. (akozumpl)
+- fix error saving screenshots during package install (#594826). (akozumpl)
+- Re-get partedPartition after re-adding failed-to-remove partition. (dlehman)
+- Select default and mandatory packages when enabling repos. (dlehman)
+- do not import block from isys. not needed. (#601291). (akozumpl)
+- removal: gui.InstallKeyWindow. (akozumpl)
+- Make minimum shrink size 1 not 0 (#602442) (bcl)
+- Initialize Decimal for partition slices (#602376) (bcl)
+- Make sure lvm2 gets installed when we are using lvm (#601644) (hdegoede)
+- Handle FCoE over vlan properly (#486244) (hdegoede)
+- Tell user when nothing can be upgraded (#592605) (bcl)
+- netork -> network (clumens)
+- Redownload and extract updates.img during anaconda restart. (akozumpl)
+- Restarting anaconda. (akozumpl)
+- New version. (clumens)
+
+* Fri Jun 04 2010 Chris Lumens <clumens@redhat.com> - 14.7-1
+- Assign the trimmed identifier so it gets used in the UI. (clumens)
+- Remember disk selections when going back to the text partition UI (#596113).
+  (clumens)
+- Fix typo in libblkid requires (#599821). (clumens)
+- Fix green strips showing up (#582744) (bcl)
+- Remember when IPv4 IPADDR has been read from ifcfg file in loader (#595388)
+  (maier)
+- Don't let loader write HWADDR to ifcfg file on s390. (#595388) (maier)
+- Tell which stacks to configure in /etc/sysconfig/network on s390 (#595388)
+  (maier)
+- Really ignore deprecated parm/conf file options in linuxrc.s390 (#595388)
+  (maier)
+- Correctly pass netdev name from linuxrc.s390 to loader (#595382) (maier)
+- Re-enable usable pdb with vnc on s390x (maier)
+- Fix most of what is necessary for install over IPv6 on s390 (#594090)
+  (dcantrell)
+- Remove long deprecated writing of alias for network in linuxrc.s390 (maier)
+- Fix backtrace when a vg starts with freespace (#597925) (hdegoede)
+- Only kill init for reboot/halt and then exit linuxrc.s390 (maier)
+- Fix a couple small errors found by checkbot. (clumens)
+- Retain user's UTC checkbox setting (#591125) (bcl)
+- Fix up pylint to work with the new source layout. (clumens)
+- Replace the Serial Number column with an Identifier column (#560666).
+  (clumens)
+- Adjust mdraid size estimates (#587442) (bcl)
+- Extra debugging output (#587442) (bcl)
+- Set NM_CONTROLLED=no iscsi for storage devices only on system (#598070)
+  (rvykydal)
+- Improve handling of auto and unknown types in fstab. (#577260) (dlehman)
+- Give blkid the final word on device format detection. (#593637) (dlehman)
+- Allow ignoredisk to be interactive without the rest of the UI (#596804)
+  (pjones)
+- memory: check for URL install in loader too (#596993). (akozumpl)
+- spec: python-pyblock has to be in BuildRequires too. (akozumpl)
+- Ignore errors upon restoring /lib and /usr after unmounting filesystems
+  (hdegoede)
+- Make sure we still have an elf interpreter after unmounting fs (#598222)
+  (hdegoede)
+- booty: remove hack city hack (hdegoede)
+- Remove booty/checkbootloader hacky raid set handling (hdegoede)
+- booty: make getDiskPart deal with devices instead of names (hdegoede)
+- booty: move grub specific mangling of partition number to the grub code
+  (hdegoede)
+- booty make getDiskPart use the devicetree (hdegoede)
+- booty: make grubbyPartitionName and grubbydiskName take a device (hdegoede)
+- booty: make matchingBootTargets and addMemberMbrs deal with devices instead
+  of names (hdegoede)
+- booty: make getPhysicalDevices take and return Devices rather then device
+  names (hdegoede)
+- booty: Make getPhysicalDevices only return physical devices (#593718)
+  (hdegoede)
+- booty: Don't create device.map entries for devices backing / (hdegoede)
+- Add simple firewall unit test (msivak)
+- Improve module cleanup in our TestCase class and fix issues in FS mock class.
+  (msivak)
+- Find tests using python-nose and create make unittest target (msivak)
+- Update .gitignore file to account for new directory structure. (dcantrell)
+- Update po/Rules-* files to account for new directory structure. (dcantrell)
+- Structure the repo layout so it matches final structure better and make isys
+  a real Python package. (msivak)
+- Add more sanity checks to the mountpoint (#592185) (bcl)
+- Make sure the product.img directory is mounted before copying (#587696).
+  (clumens)
+- Put a missing close brace back into isys.c. (clumens)
+- refactoring: put totalMemory() into isys. (akozumpl)
+
+* Wed May 26 2010 Chris Lumens <clumens@redhat.com> - 14.6-1
+- Set repository in kickstart harddrive command (#592239) (rvykydal)
+- nm-c-e integration: fix some leftovers from patch porting. (rvykydal)
+- Add missing logging import to installinterfacebase (hdegoede)
+- Give pre-existing mdraid arrays the proper name in the UI (#596227)
+  (hdegoede)
+- Add nm-c-e translations to stage 2 (#594982) (rvykydal)
+- set the resolution with resolution= from the cmdline (#594918). (akozumpl)
+- cleanup: gui.py never uses runres for anything, off it goes. (akozumpl)
+- Skip the bootloader placement window if we're on UEFI (#582143) (pjones)
+- Add some more stuff to .bash_history (pjones)
+- Support cio_ignore functionality for zFCP devices (#533492) (dcantrell)
+- Add missing newline for 'nfs' line in ks file (#591479) (dcantrell)
+- Correct problem with initrd.addrsize generation (#546422) (dcantrell)
+- Fix rescue mode startup with kickstart file and without (#515896) (msivak)
+- More checkbot fixes. (clumens)
+- fix: traceback in check_memory() (#595284). (akozumpl)
+- Drop init questions from cmdline.py (hdegoede)
+- Move init questions to InstallInterfaceBase (hdegoede)
+- Make re-init all inconsistent lvm mean re-init all instead of ignore all
+  (hdegoede)
+- Read cciss devices correctly from 'multipath -d' output (#559507) (dcantrell)
+- On NFS installs, look for product.img and updates.img under images/
+  (#594811). (clumens)
+- Remove yum cache for anaconda's temporary repos (#593649). (clumens)
+- Use correct NM dbus interfaces (#594716) (rvykydal)
+- Change the configuration of depmod and link modules to better place (#593941)
+  (msivak)
+- Make ssid and wepkey in boot params and stage 1 kickstart work (#473803)
+  (rvykydal)
+- logging: remove addLogger() (akozumpl)
+- iutil: execWithCallback() and execWithPulseProgress() return an object.
+  (akozumpl)
+- logging: simplify stdout logging in execWithCallback(). (akozumpl)
+- logging: use stderr parameter in execWithCallback(). (akozumpl)
+- logging: remove addSysLogHandler() (akozumpl)
+- analog: handle a config file we can't open. (akozumpl)
+- clearer error messages for missing iscsi initiator name (hdegoede)
+- fedora is part of iSCSI initiator name (#594659) (hdegoede)
+- Add default iSCSI initiator name in rescue mode (#594434) (hdegoede)
+- Do not allow editing of extended partitions (#593754) (hdegoede)
+- Check for sane mountpoint in raid dialog (#592185) (bcl)
+- Check for sane mountpoint in lvm dialog (#592185) (bcl)
+- Check for sane mountpoint in partition dialog (#592185) (bcl)
+- Cleaned up sanityCheckMountPoint (bcl)
+- Don't autostep past the end of the install screens (#593556) (bcl)
+- Add missing rpm macros file to get rid of the rpm warnings (msivak)
+- Add the rpmrc file to the initrd.img (#508242) (mgracik)
+- fix: syntax error in gui.py from 9e69c5f36f79410d9df1502fe69f02f4d06173ab.
+  (akozumpl)
+- Keep track of pvcount for non existing vgs (#593871) (hdegoede)
+- Improve module cleanup in our TestCase class and fix issues in FS mock class.
+  (msivak)
+- Don't drop encryption when re-editing new encrypted partitions. (#582888)
+  (dlehman)
+- Return disk to prior state following failed partition removal. (#580088)
+  (dlehman)
+- Display unpartitioned disks in main partitioning gui. (#588637) (dlehman)
+- Pick up mountpoint for existing formats on encrypted LVs. (#587002) (dlehman)
+- Automatic partitioning should yield no more than one PReP partition.
+  (dlehman)
+- Pass short type names for PartSpec ctor. (dlehman)
+- Setting up lvs should never fail (hdegoede)
+- We no longer need to handle lvs which are part of an incomplete vg (hdegoede)
+- Don't clear immutable devices (#593642) (hdegoede)
+- Store immutable info into the device for easier access (hdegoede)
+- Reset vg blacklist when initializing storage (hdegoede)
+- Handle vgs with duplicate names (#591469) (hdegoede)
+- Delay setting up lvs until other devices are scanned (hdegoede)
+- anaconda udev rules should not get lvm info based in volgroup name (hdegoede)
+- Move creation of lv devices into its own function (hdegoede)
+- livecd: window icon (#583333). (akozumpl)
+- FcoeDiskDevice.dracutSetupString(): use the right dracut syntax (#486244)
+  (hdegoede)
+- improve the memory checking so it reflects better the hungry architectures.
+  (akozumpl)
+- logging: fix SIGSEGV when trying to log after closeLog() is called.
+  (akozumpl)
+- Updates to scripts/makebumpver. (dcantrell)
+- Suppress failures to tear down /dev/loop devices (#591829) (bcl)
+- Fix the order of arguments in archive read callback and archive closing.
+  (msivak)
+- Use "kernel-modules = version" style for locating rpms providing driver
+  updates (msivak)
+- Move depmod configuration into new directory structure to get rid of depmod
+  warning (#508242) (msivak)
+- Fix descriptor leak and iteration progress in driverdisc code (#592225)
+  (msivak)
+- Add lsof command to initrd.img (mgracik)
+- Add hmac file for sshd (#592186) (mgracik)
+- Enable fips mode after fips mode installation (#592188) (mgracik)
+- Add nslookup to the install.img (#591064) (mgracik)
+- Add the chk files for libraries to the install.img (#590701) (mgracik)
+- Add the eject command to the install.img (#591070) (mgracik)
+- Add hmac file for libgcrypt to install.img (#590701) (mgracik)
+- Don't remove *.hmac files when creating install images (mgracik)
+- Added clear command to the install.img (#586499) (mgracik)
+- Added chvt to the install.img (#575844) (mgracik)
+- Only install non-branded anaconda icon on liveinst arches (dcantrell)
+- Fix of typo. (rvykydal)
+- Fix two minor errors found by checkbot. (clumens)
+- Fix bad patches reordering (#473803) (rvykydal)
+- scripts/analog: normalize paths before generating the config. (akozumpl)
+- gui: "_use anyway" mnemonic. (akozumpl)
+- logging: give loglevels for the shortened names. (akozumpl)
+- logging: remove references to the 'bootloaderadvanced' step. (akozumpl)
+- logging: remove references to some more steps. (akozumpl)
+- Move importing of tested modules into setUp methods (msivak)
+- Add Mock classes (msivak)
+- gui, autopart: don't let a too verbose translation ruin all teh fun
+  (#591955). (akozumpl)
+- Update po/POTFILES.in for nm-connection-editor integration. (dcantrell)
+- Fix typo in loader/nfsinstall.c (dcantrell)
+- Add the best package for this arch to the optional package selector
+  (#591653). (clumens)
+- Swap server and opts on the split() call (#591479) (dcantrell)
+- Handle devices that don't have a /dev/disk/by-path/ symlink (#563242)
+  (pjones)
+- Make sure we write out multipath.conf before discovery (#563242) (pjones)
+- Handle >2 way /sbin/multipath output better (#563242) (pjones)
+- Look for updates.img and product.img on NFS installs. (clumens)
+- And add a menu to the right hand side so you can see the new column.
+  (clumens)
+- Don't ask if we have ESSID specified by kickstart or stage 1 (#473803)
+  (rvykydal)
+- Make ks option network --wepkey work in stage 2 (#473803) (rvykydal)
+- Add support for wireless configuration using nm-c-e in stage 2 (#473803)
+  (rvykydal)
+- Write out ifcfg files only when necessary (#520146) (rvykydal)
+- Use separate method for copying network configuration to system (#520146).
+  (rvykydal)
+- Network: remove functions that are not used anymore (#520146) (rvykydal)
+- Wait for specific activated network devices (#520146). (rvykydal)
+- Set network devices configured in ks to be nm-controlled (#520146).
+  (rvykydal)
+- Remove no longer needed devices argument from Network.write() (#520146)
+  (rvykydal)
+- Actually generate contents of 70-persistent-net.rules (#520146) (rvykydal)
+- Disable [Configure Network] button if there are no net devs (#520146)
+  (rvykydal)
+- Add net device description into selection dialog (#520146) (rvykydal)
+- Check preselected install network device as nm-controlled (#520146)
+  (rvykydal)
+- Don't ask when configuring net if we have only one network device (#520146)
+  (rvykydal)
+- Do not mess value change with line formatting (#520146) (rvykydal)
+- Log change of ifcfg files by nm-c-e (#520146) (rvykydal)
+- Enable networking in stage 2 using nm-c-e (#520146) (rvykydal)
+- Write ifcfg files via NetworkDevice in Network.write() method (#520146)
+  (rvykydal)
+- Use ifcfg files via NetworkDevice in Network class (#520146) (rvykydal)
+- Use proper attribute instead of NetworkDevice 'DESC' hack (#520146)
+  (rvykydal)
+- Quote values when writing out to ifcfg files (#520146) (rvykydal)
+- Network.__str__() little cleanup (#520146) (rvykydal)
+- Use IfcfgFile class to back NetworkDevice objects (#520146) (rvykydal)
+- Move some consts to module globals for use in other places (#520146)
+  (rvykydal)
+- Add class for handling ifcfg files (#520146) (rvykydal)
+- logging: the ibft message once again. (akozumpl)
+- logging: no iBFT is not an error, fix spelling. (akozumpl)
+- logging: log loader messages with LOG_LOCAL1 syslog facility. (akozumpl)
+- logging: strip the extra newline in FCoE EDD log (akozumpl)
+- logging: remove references to "confirminstall" and "confirmupgrade" steps.
+  (akozumpl)
+- logging: remove all references to the "installtype" step. (akozumpl)
+- Determine if an mdmember is biosraid earlier (#586298) (hdegoede)
+- Set runlevel 5 based on the presence of both a display manager and X server.
+  (#588483) (notting)
+- Add "Serial Number" column to the right side of the cleardisks UI. (clumens)
+- Set permissions on initrd.addrsize to 0644 (#591455) (dcantrell)
+- fix compile error after 7aace0bf0e0557cd914aa93e80a709a9f21f07f8 (akozumpl)
+- autoconf: icons/ is missing makefiles (akozumpl)
+- new version of report wont start without /etc/report.conf (akozumpl)
+- Don't allow creating a new bootloader config in text mode (#580378).
+  (clumens)
+- Fix verification of DDs, we were looking for wrong path (#508242) (msivak)
+- Remove raid clone option and code (#587036) (hdegoede)
+- cleanup booty x86 flag.serial handling (#589773) (hdegoede)
+- isys/auditd was missing from .gitingore. (akozumpl)
+- bootloader timeout default should be None not 0 (jkeating)
+- Use iBFT if present and user didn't asked for anything else. (#590719)
+  (msivak)
+- storage: LUKSDevice takes req_grow after its slave (#589450). (akozumpl)
+- Correctly parse system-release (#590407) (lkundrak)
+- Offer to ignore unformatted DASDs rather than forcing exit (#580456)
+  (dcantrell)
+- Make Format and Resize checkboxes mutually exclusive (#589977) (dcantrell)
+- Fix usage of deviceNameToDiskByPath in devicetree.py (#589967) (dcantrell)
+- Advance line pointer & don't strdup(val) on error in readNetInfo (dcantrell)
+- Add non-branded default liveinst icons for anaconda (#588737) (dcantrell)
+- Add expanded=False to the base class's detailedMessageWindow as well.
+  (clumens)
+- Add all possible install class locations to the search path (#587696).
+  (clumens)
+- Use module reloading in driver disc operations (#590015) (msivak)
+- Use gtk consts instead of magic ints. (rvykydal)
+- Only initialize logging via a method, not with every import (#584054).
+  (akozumpl)
+- Remove the check for partitions (#508242) (msivak)
+- Close the dir descriptor after usage. (#589580) (msivak)
 - Remove partitions after unpartitioned non-partition devices. (#588597)
   (dlehman)
-- Work around device node creation issues when creating EFI images.
-  (#589680) (pjones)
+- Work around device node creation issues when creating EFI images. (#589680)
+  (pjones)
+- Clean up tabs in dispatch.py (bcl)
+- Just use /dev/dasdX if we can't get a by-path link (dcantrell)
+- Do not prepend /dev/disk/by-path in format DASD window (dcantrell)
+- Use udev_device_get_by_path() to get /dev/disk/by-path link (dcantrell)
+- Add udev_device_get_by_path() to return /dev/disk/by-path link (dcantrell)
+- Expand the details pane when showing unformatted DASDs (#580463) (dcantrell)
+- Log problem line if unquoting failed in readNetInfo() (dcantrell)
+- Update generic.ins for s390x (#546422) (dcantrell)
+- Rename geninitrdsz.c to addrsize.c (#546422) (dcantrell)
+- Generate initrd.addrsize file correctly for LPAR booting (#546422)
+  (dcantrell)
+- Only allow upgrading from one minor release of RHEL to another (#589052).
+  (clumens)
+- fcoe: use fipvlan instead of fcoemon to bring up fcoe (#486244) (hdegoede)
+- memory: increase the RAM limits, check for URL installs (#549653). (akozumpl)
+- memory: build auditd as a standalone binary and run it so (#549653).
+  (akozumpl)
+- gui: don't let metacity display the title right-click menu (#588642).
+  (akozumpl)
+
+* Wed May 05 2010 Chris Lumens <clumens@redhat.com> - 14.5-1
+- Link /sbin/reboot and /sbin/halt to /sbin/init on s390x (#571370) (dcantrell)
+- Don't clear bootloader radio selection on double click (#588771). (clumens)
 - Add support to livecd for arbitrarily complex dir structures. (#504986)
   (dlehman)
+- Grab everything in $LIBDIR/rsyslog/ (pjones)
 - Do not automatically backtrace when telnetd quits (#588964). (clumens)
-
-* Tue May 04 2010 David Lehman <dlehman@redhat.com> - 13.40-1
-- Teach upd-instroot about i686 (jkeating)
-- Enable network if it is needed when repo is added in UI (#577803).
-  (rvykydal)
-- Tell dracut it should activate the first swap device (#572771) (hdegoede)
-- Add boot= argument to kernel cmdline when in fips mode (hdegoede)
-- Don't make all devices on the boot device selector immutable (#583028).
+- Share terminology between the cleardisks text and panel headers (#587879).
   (clumens)
-- Do not use --quiet and --nostart when doing selinux configuration
-  (#568528) (msivak)
-- Check for not having found any disks after populating the tree (#588498)
+- Allow displaying groups that only contain conditional packages (#475239).
+  (clumens)
+- Fix hasWindows() to actually work as advertised (hdegoede)
+- Revert commit 27a4c7df871744454d1ca8979a576f9f45c67189 (hdegoede)
+- Make deviceNameToDiskByPath check udev info instead of sysfs (dcantrell)
+- Fix some minor problems in storage/dasd.py (#560702) (dcantrell)
+- Read in network settings correctly, as configured by linuxrc.s390 (dcantrell)
+- Clean up wording for oversized LVs (#587459) (dcantrell)
+- Teach upd-instroot about i686 (jkeating)
+- Make the rule for 70-anaconda.rules in updates.img be generic. (pjones)
+- Do not use --quiet and --nostart when doing selinux configuration (#568528)
+  (msivak)
+- Tell dracut it should activate the first swap device (#572771) (hdegoede)
+- Remove broken hasWindows function from bootloader.py and its callers
   (hdegoede)
+- booty: remove dead code chunk (hdegoede)
 - Don't add recovery partitions to the grub boot menu (#534066) (hdegoede)
+- Use g_str_has_suffix() to check end of string (dcantrell)
+- Find stage2 install.img on local hd installs (dcantrell)
+- gui: gray out OK button while adding raid set (#587161). (akozumpl)
+- Strip quoting from OPTIONS when composing rd_CCW line (#577193). (dcantrell)
 - Default the global grub timeout to 5 for serial (jkeating)
+- Print out device sizes in list-harddrives-stub as well (#587395). (clumens)
 - Make sure a given path exists before calling os.statvfs on it (#587662).
   (clumens)
-- Turn off BETANAG - we're getting close to the release (#587639). (clumens)
+- Wait for scsi adapters to be done with scanning their busses (#583143)
+  (hdegoede)
+- Set CURL_FAILONERROR to catch url download errors (#586925) (dcantrell)
+- Bring up network for local hd vnc kickstart installs (#522064) (dcantrell)
+- gui: no close buttons etc. in window decoration (#582645) (akozumpl)
 - Don't clear BIOS RAID member disks (#587066) (hdegoede)
 - Remove devices from libparted's cache when destroying them (#586622)
   (hdegoede)
-
-* Wed Apr 28 2010 David Lehman <dlehman@redhat.com> - 13.39-1
+- Offer to format unformatted DASD devices (#560702) (dcantrell)
 - X input configuration has moved to /usr/share (#585621). (clumens)
-- Keep the selected device count right when going back to filtering
-  (#572882). (clumens)
+- Disable button icons on stock GTK buttons (#579701). (akozumpl)
+- Remove button icons from the glade files (#579701). (akozumpl)
+- Don't traceback on CD-ROM driver in list-harddrives-stub (#586410). (clumens)
+- Fetch ks files over NFS when ksdevice is not given (#541873) (dcantrell)
+- put liveinst/console.apps/liveinst.h in .gitignore (akozumpl)
+- Remove the README files (#583408). (clumens)
+- Make it more clear what the purpose of the "Boot" column is (#584811).
+  (clumens)
+- nfs: off by one error leaves extra slash in a path. (akozumpl)
+- removal: umountStage2(). (akozumpl)
+- nfs: direct mounting of stage2. (akozumpl)
+- loader: strip trailing slash character from stage2= URL. (akozumpl)
+- imount: allow bind mounts. (akozumpl)
+- Make sure we use 1.0 mdraid metadata when the set is used for boot (#584596)
+  (hdegoede)
+- Add a preCommitFixup hook to StorageDevice classes (hdegoede)
+- Check for not having found any disks after populating the tree (#583906)
+  (hdegoede)
 - Prune resize and format create/migrate actions if destroying a device.
   (dlehman)
 - Schedule actions when removing existing extended partitions. (#568219)
   (dlehman)
 - Don't try to zero out extended partitions. (dlehman)
-
-* Wed Apr 21 2010 David Lehman <dlehman@redhat.com> - 13.38-1
-- Restore storage.clearPartType after reset when backing out of GUI.
-  (#559233) (dlehman)
+- lvm: check resizing against format's targetSize (#580171). (akozumpl)
+- Restore storage.clearPartType after reset when backing out of GUI. (#559233)
+  (dlehman)
 - Make Cancel button the default for 'Weak Password' dialog (#582660) (bcl)
 - Set Create Storage focus to first active radio button (#582676) (bcl)
+- BaseInstallClass no longer has a setInstallData method. (clumens)
 - livecd.py: set the selected keyboard (#583289). (akozumpl)
-- Fix uninitialized variable compile error (#577501) (msivak)
+- Make rhel.py an installclass that we can inherit from for variants. (notting)
+- Don't make all devices on the boot device selector immutable (#583028).
+  (clumens)
+- Don't allow running as non-root (#583213). (clumens)
+- Careful with that WINDOW_TYPE_HINT_DESKTOP, Eugene. (#582998) (akozumpl)
+- Introduce flags.preexisting_x11. (akozumpl)
+- Fix some HIG problems with the "Write Changes" dialog (#583405). (clumens)
+- Fix up some HIG problems with the betanag dialog (#583404). (clumens)
+- Fixup P_ usage in questionInitializeDASD (hdegoede)
+- Prevent low-level formatting of DASDs in rescue mode (#582638) (hdegoede)
+- Move the question about formatting DASD's to the interface class (hdegoede)
+- Let the user know if adding a zfcp drive fails (#582632) (hdegoede)
+- Fixup P_ usage in installinterfacebase (hdegoede)
+- Check for presence of filesystem module in FS.mountable (#580520) (dcantrell)
+- Check for fs utils when determining if an fs can be resized (#572431)
+  (dcantrell)
+- Select "Advanced Storage Devices" by default on s390 (#580433). (clumens)
+- Don't sigsegv on stage2= derived from invalid repo= parameter (#574746).
+  (rvykydal)
+- Removed the tooltips showing glade.gnome.org link (#566773) (mgracik)
+- Better filter for commits to ignore for the RPM changelog. (dcantrell)
 - In groupListExists, log what groups don't exist. (notting)
+- Do not append "rhgb quiet" to s390 boot loader config (#570743) (dcantrell)
+- No instdata on master anymore. (anaconda.id -> anaconda) (dlehman)
+- Try to get boot reqs onto the selected boot device. (#560387) (dlehman)
+- Ensure proper disklabel type on boot disk if CLEARPART_TYPE_ALL. (#570483,
+  #530225) (dlehman)
+- Add proper support for destruction of disklabels. (dlehman)
+- Three small fixes to action sorting. (dlehman)
+
+* Thu Apr 15 2010 Chris Lumens <clumens@redhat.com> - 14.4-1
+- There is no rhbz list for non rhel branch builds. (dcantrell)
+- pylint up, pychecker down. (clumens)
+- Add a script for running pylint on anaconda (hdegoede)
+- add_drive_text: Pass interface to iscsi.addTarget (hdegoede)
 - Add a questionInitializeDisk method to the rescue interface (#582304)
   (hdegoede)
+- Add advanced storage support to rescue mode (#571808) (hdegoede)
+- rescue.py: Put our mount / rw, ro, skip question in a loop (hdegoede)
+- Move addDriveDialog() and friends to their own class (hdegoede)
+- partition_text: Make addDriveDialog() not depend on anaconda.storage
+  (hdegoede)
 - Fix syntax error in kickstart.py (hdegoede)
-- Add a script for running pylint on anaconda (hdegoede)
 - Fix various syntax errors (hdegoede)
+- Read ~/.rhbzauth in scripts/makebumpver (dcantrell)
+- Simplify HWADDR removal check on s390x (#546005) (dcantrell)
+- Set minswap suggestion on s390x to 1 (#466289). (dcantrell)
+- Check for and offer to format unformatted DASD devices (#560702). (dcantrell)
+- Add /sbin/reboot and /sbin/halt to s390 initrd.img (#571370) (dcantrell)
+- Do not append "rhgb quiet" to s390 boot loader config (#570743) (dcantrell)
+- Increase ping timeout for gateway/dns server reachability check (#536815)
+  (dcantrell)
+- Wait on all pids, not just udevd's. (#540923) (pjones)
+- Use the new modularized anaconda path in run_test.py. (clumens)
+- Fix a mismatched kickstart command as caught by the new test case. (clumens)
+- Fix a typo. (clumens)
+- Fix "make check" to run the tests against your git checkout of anaconda.
+  (clumens)
+- Add a test case to verify that kickstart commands use the right handler.
+  (clumens)
+- filter_gui.py: fixup isProtected changes for biosraid and mpath (hdegoede)
 - Write an AUTO ... line to mdadm.conf (#537329) (hdegoede)
-- filter_gui.py: fixup isProtected changes for biosraid and mpath (#581820)
-  (hdegoede)
-- BIOS RAID sets get shown double when adding advanced storage (#574714)
-  (hdegoede)
-- init: switch back to tty1 after the installer finishes. (#577380)
-  (akozumpl)
-- Use None, not '', for empty repo proxy attributes (#572460) (rvykydal)
+- Inherit the ZFCP command from the correct pykickstart class (#581829).
+  (clumens)
+- Apply yet another translation patch (#573870). (clumens)
+- Add bug mapping support to scripts/makebumpver. (dcantrell)
+- Makefile.am syntax fixes for the 'bumpver' target. (dcantrell)
+- Fix traceback in booty when ppc /boot lives on mdraid (#555272) (hdegoede)
+- Call scripts/makebumpver from 'make bumpver' target. (dcantrell)
+- Add docs/commit-log.txt explaining git commit log policies. (dcantrell)
+- Move 'make bumpver' functionality to scripts/makebumpver (dcantrell)
+- Fix some previously difficult-to-translate strings (#573870). (clumens)
+- Default to /images/install.img if no dir is given in stage2=hd: (#528809)
+  (rvykydal)
+- Startup notification in live installer (#530908). (akozumpl)
+- init: switch back to tty1 after the installer finishes. (#577380) (akozumpl)
 - Don't segfault if proxyUser or proxyPassword are empty (#580226). (clumens)
+- yum requires the proxy settings to include a protocol (#576691). (clumens)
 - Allow using pre-existing gpt labels for /boot on non EFI x86 (#572488)
   (hdegoede)
-- Re-Check minimum size of partition after running fsck on it (#578955) (bcl)
-- Show protected devices in the filter UI, but make them immutable
-  (#568343). (clumens)
-- Turn protected devices into a property on the Anaconda object. (clumens)
-- Schedule removal actions for any format on a --onpart= device (#576976).
-  (clumens)
-- Update the partition scheme icons to better looking ones (#579697).
-  (clumens)
+- Log successful login to iscsi targets (hdegoede)
+- storage/udev.py handle iscsi ID_PATH IPV6 address containing : (#579761)
+  (hdegoede)
+- Catch errors when downloading the escrow cert (#579992). (clumens)
+- fix: mnemonics don't work in the welcome screen until user clicks. (akozumpl)
+- refactoring gui.py: setup_window() and setLanguage() are way too similar.
+  (akozumpl)
+- gui.py: removed unused parameter in setup_window() (akozumpl)
+
+* Tue Apr 06 2010 Chris Lumens <clumens@redhat.com> - 14.3-1
 - Sort partition create actions before other unpartitioned devices.
   (#574379) (dlehman)
+- Update the partition scheme icons to better looking ones (#579697).
+  (clumens)
+- Move some kickstart-specific storage init into storageInitialization.
+  (clumens)
+- Call the right superclass's __init__ method. (clumens)
+- Adjust paths that reference things that have moved. (clumens)
+- Move compiled things out of /usr/lib/anaconda-runtime. (clumens)
+- Move boot files, language data, keymaps, etc. to /usr/share/anaconda/.
+  (clumens)
+- Move class Anaconda to __init__.py. (clumens)
+- Install classes are now under the anaconda module directory. (clumens)
+- lang-table and lang-names have moved to /usr/share/anaconda. (clumens)
+- upd-instroot no longer needs to explicitly pull in the python parts.
+  (clumens)
+- Adjust command stubs to use new anaconda module location. (clumens)
+- Put /usr/lib*/python?.?/site-packages/pyanaconda at the front of
+  PYTHONPATH. (clumens)
+- Adjust the Makefiles to install anaconda to /usr/lib{,64}/python?.?.
+  (clumens)
+- ui: keep the bootloader device dialog always centered (#463489). (akozumpl)
+- Reword the filter UI tooltip to be a little more clear (#576144). (clumens)
+- Automatically select devices added via the "Add Advanced" button
+  (#579051). (clumens)
+- Re-Check minimum size of partition after running fsck on it (#578955) (bcl)
+- Take the request's format into account when deciding to resize (#578471).
+  (clumens)
+- Schedule removal actions for any format on a --onpart= device (#576976).
+  (clumens)
+- Fix early networking log message to correctly assign blame. (pjones)
 - Restore xdriver=<driver> functionality (#577312) (msivak)
 - loader: con Newt into thinking LANG is always en_US.UTF-8 (#576541).
   (akozumpl)
+- network.dracutSetupString(): handle hosts outside the subnet (#577193)
+  (hdegoede)
 - Copy install.img to install target on http installs. (pjones)
 - Make sure the install.img exists before attempting to copy (#578391).
   (clumens)
-- fix: Tackle race condition issues during X startup (#577708). (akozumpl)
+- Write rd_CCW when root fs is on a network device on s390x (#577193)
+  (dcantrell)
+- Keep /usr/bin/seq for the initrd.img (#558881). (dcantrell)
+- fix: Tackle race condition issues during X startup. (akozumpl)
+- Make checksum error message user-friendlier (#578151) (rvykydal)
+- Enable network if it is needed when repo is added in UI (#577803).
+  (rvykydal)
+- Do not try to commit diskLabels on non partitionable devices (#576145)
+  (hdegoede)
 - Copy install.img and remount no matter how many discs (#577196) (pjones)
+- Fix typo in linuxrc.s390. ctm should be ctcm. (dcantrell)
+- Remove dasdSetup() from loader. (dcantrell)
+- Add new return code check for isomd5sum's mediaCheckFile (#578160).
+  (rvykydal)
+- Use symbolic constants of libcheckisomd5 (#555107) (rvykydal)
+- Adapt for libcheckisomd5 callback abi change (#555107) (rvykydal)
+- Include /sbin/*_cio_free commands in s390x initrd.img (#558881).
+  (dcantrell)
+- Use /sbin/dasd_cio_free to free blacklisted DASDs (#558881) (dcantrell)
+- Don't add duplicates to the transaction set (#575878, jantill). (clumens)
+- fcoe: sysfs_edd.sh has been renamed to fcoe_edd.sh (hdegoede)
+- Fix off-by-one error in string initialization (#577413) (msivak)
+- Fix uninitialized variable compile error (#577501) (msivak)
+- Do not write OPTIONS=layer2=1 on all architectures (#577005). (dcantrell)
+- Show protected devices in the filter UI, but make them immutable
+  (#568343). (clumens)
+- Turn protected devices into a property on the Anaconda object. (clumens)
 
-* Thu Mar 25 2010 David Lehman <dlehman@redhat.com> - 13.37-1
+* Thu Mar 25 2010 David Lehman <dlehman@redhat.com> - 14.2-1
 - Unlock the CD tray door in isys.ejectcdrom() (#569377) (pjones)
-- Texts under storage/formats missing from the .pot file (#576082).
-  (akozumpl)
+- Try to pull in generic libraries as well as optimized ones (#572178)
+  (pjones)
 - Translate the Back button in glade (#576082) (akozumpl)
+- Make the kernel 'sshd' parameter work as expected (#572493) (akozumpl)
 - Add originalFormat handling to editLVMLogicalVolume. (#576529) (dlehman)
 - Fix a cut&paste error that caused a traceback (#574743) (dlehman)
-- yum requires the proxy settings to include a protocol (#576691). (clumens)
+- Remove isys/str.c, replace calls with glib.h or string.h calls. (dcantrell)
 - Only look for extended partitions on partitioned devices (#576628)
   (hdegoede)
 - Fix referring to disks by-label, by-uuid, etc (#575855). (clumens)
+- fcoe startEDD() add missing return statement (hdegoede)
+- Add support for recognizing BIOS EDD configured FCoE drives (#513018)
+  (hdegoede)
+- Update format of cdrom devices when looking for repos on media (#566269)
+  (rvykydal)
 - Fix syntax for passing a mapping to a translatable string (#576085).
   (clumens)
+- Update filter for translation log entries. (dlehman)
+
+* Mon Mar 22 2010 David Lehman <dlehman@redhat.com> - 14.1-1
+- Don't pass size=1 for autopart PVs. Use PartitionDevice's default size.
+  (dlehman)
+- Update po/POTFILES.in to list all files with strings. (dcantrell)
+- platform.py: _diskLabelType is a string itself (hdegoede)
+- Make python start with correct default unicode encoding (#539904).
+  (akozumpl)
+- Add boot= argument to kernel cmdline when in fips mode (#573178) (hdegoede)
 - Catch NotImplementedError when scanning for disklabels (#566722) (hdegoede)
+- BIOS RAID sets get shown double when adding advanced storage (#574714)
+  (hdegoede)
 - Filter UI do not start / stop BIOS RAID sets to get there size (#574587)
   (hdegoede)
 - Make filter UI honor nodmraid cmdline option (#574684) (hdegoede)
 - Properly align the first partition we create (#574220) (hdegoede)
-- Update filter for translation log entries. (dlehman)
-
-* Mon Mar 22 2010 David Lehman <dlehman@redhat.com> - 13.36-1
-- Don't pass size=1 for autopart PVs. Use PartitionDevice's default size.
-  (dlehman)
-- Make python start with correct default unicode encoding (#539904).
+- Move disabling of cylinder alignment to disklabel format (hdegoede)
+- put the analog script into the RPM (akozumpl)
+- Fix focus, repaint, and stack issues for nm-c-e (#520146) (rvykydal)
+- Connect nm-connection-editor to network config button (#520146). (rvykydal)
+- Add "Configure Network" button to network UI screen (#520146). (rvykydal)
+- Add nm-connection-editor to stage2 (#520146). (rvykydal)
+- l10n: Updates to Spanish (Castilian) (es) translation (gguerrer)
+- Don't try to set selinux context for read-only mountpoints. (dlehman)
+- Derive stage2= from repo=nfsiso: correctly (#565885) (rvykydal)
+- Include USB ATA bridge modules in initrd (#531532) (rvykydal)
+- Remove hacks that don't apply in present repo setup flow. (rvykydal)
+- Reset comps/groups info after editing repo in UI (#555585) (rvykydal)
+- Set cache base directory for repos added/edited in UI. (rvykydal)
+- Use None, not '', for empty repo proxy attributes (#572460) (rvykydal)
+- livecd: show graphical error dialog when memory check fails (#572263)
   (akozumpl)
-- Fixes bug #569373 - Change udev_trigger block calls to use change action
-  (bcl)
-- Fix: execWithRedirect() unexpectedkeyword argument 'searchPath' (#572853)
-  (hdegoede)
-- Do not crash on .autorelabel when using read only rescue mount (#568367)
-  (msivak)
-- Do not crash when getDevices returns NULL (#567939) (msivak)
-
-* Mon Mar 15 2010 David Lehman <dlehman@redhat.com> - 13.35-1
+- l10n: Updates to Sinhala (si) translation (snavin)
+- use isSparc not isSPARC (dennis)
+- set the bootloader to silo for sparc installs (dennis)
+- sparc64 is a lib64 arch (dennis)
+- Make sure that SPARC bootdisk Makefile is made (dennis)
+- make sure we include sparc boot configs (dennis)
+- add function to get the sparc system type (dennis)
+- Sparc bootloader config not written to /etc (dennis)
+- Fix generation of boot.iso on SPARC (dennis)
+- l10n: Updates to Polish (pl) translation (raven)
+- Keep the selected device count right when going back to filtering
+  (#572882). (clumens)
 - Fully qualify _ped.IOException. (dlehman)
 
-* Mon Mar 15 2010 David Lehman <dlehman@redhat.com> - 13.34-1
+* Mon Mar 15 2010 David Lehman <dlehman@redhat.com> - 14.0-1
+- Do not crash on .autorelabel when using read only rescue mount (#568367)
+  (msivak)
 - parted.PartedDisk can throw IOExceptions too (#573539) (hdegoede)
-- Fix recognition of partitions on mdraid arrays (#569462) (hdegoede)
+- l10n: fix/updates to hungarian translation (snicore)
+- l10n: updated translations (snicore)
 - Use the disk name from kickstart in the shouldClear error message.
   (clumens)
 - Fix displaying error messages on cleanup/remove callback problems
   (#572893). (clumens)
 - Before running shouldClear, make sure a real disk was specified (#572523).
   (clumens)
-- exception.py: switch to tty1 before exit (#569071) (akozumpl)
+- Fix: execWithRedirect() unexpectedkeyword argument 'searchPath' (#572853)
+  (hdegoede)
+- Tell ld.so and friends not to use hardware optimized libs (#572178)
+  (pjones)
+- By default, libcurl does not appear to follow redirects (#572528).
+  (clumens)
+- FcoeDiskDevice.dracutSetupString: handle DCB on / off option (hdegoede)
+- Redo the 'sshd' flag. (ajax)
+- Catch "Exception" when window manager is starting. (akozumpl)
 - Preserve encryption setting when re-editing new encrypted LVs. (#568547)
   (dlehman)
 - Never pass "<Not applicable>" as mountpoint to format constructors.
@@ -358,17 +4108,49 @@ update-desktop-database &> /dev/null || :
 - Set up devices using their original formats for certain action types.
   (#565848) (dlehman)
 - Keep a handle to devices' original format instance. (#565848) (dlehman)
-- Tell ld.so and friends not to use hardware optimized libs (#572178)
-  (pjones)
-- By default, libcurl does not appear to follow redirects (#572528).
-  (clumens)
+- Pick up system's clock settings on upgrade. (#570299) (akozumpl)
+- Do not crash when getDevices returns NULL (#567939) (msivak)
+- Use new API in libblkid to look for driverdiscs on removable devices
+  (#508242) (msivak)
+- Use new package structure of firstaidkit (#510346) (msivak)
+- Add "crashkernel=auto" to grub.conf for RHEL installs (#561729) (hdegoede)
+- Drop iscsi initrd generation hack (hdegoede)
+- Fix recognition of partitions on mdraid arrays (#569462) (hdegoede)
+- dcbd is being replaced with lldpad (#563790) (hdegoede)
+- Use the same cache directory as yum now uses (#568996). (clumens)
+- exception.py: switch to tty1 before exit (#569071) (akozumpl)
+- Reset conditionals of transaction info too. (#505189) (rvykydal)
 - Use '--keyword=P_:1,2' for plural gettext string extraction (#567417).
   (dcantrell)
+- make sure the new logging also works when isys is imported as a python
+  module. (akozumpl)
+- use the new logging approach in imount.c (akozumpl)
+- allow logging into program.log and syslog through log.c (akozumpl)
+- log.c: factor out common parts from logMessageV() (akozumpl)
+- static variable rename in log.c (akozumpl)
+- move log.c from loader into isys. (akozumpl)
+- Analog, a generator of rsyslog config files to monitor remote installs.
+  (akozumpl)
+- Remove isys/minifind.c and isys/minifind.h (dcantrell)
+- Keep default metacity schema generated for gconf. (#520146) (rvykydal)
+- metacity, fix a displaying problem with WaitWindow and ProgressWindow
+  (#520146) (akozumpl)
+- Nuke addFrame()'s showtitle parameter (#520146). (akozumpl)
+- Remove gui code we no longer need when mini-wm is gone (#520146) (akozumpl)
+- Remove mini-wm.c. (#520146) (akozumpl)
+- Introduces metacity window manager (#520146) (akozumpl)
 - fix: do not initialize the install interface whenever is is accessed
   (#565872) (akozumpl)
 - Select/Deselect All should only apply to the current tab (#516143,
   #568875). (clumens)
 - Don't try to write firewall and auth information twice (#568528). (clumens)
+- Fixes bug #569373 - Change udev_trigger block calls to use change action
+  (bcl)
+- Include the report module and related support files (#562656). (clumens)
+- report handles exn saving now, and doesn't require a Filer (#562656).
+  (clumens)
+- Adapt to using report's UI API (#562656). (clumens)
+- Do some editing of package and filter UI strings (#569039). (clumens)
 
 * Thu Mar 04 2010 Chris Lumens <clumens@redhat.com> - 13.33-1
 - On live installs, the syslog is /var/log/dmesg. (#568814). (clumens)
@@ -2164,2907 +5946,3 @@ update-desktop-database &> /dev/null || :
 - Trim "mapper/" off device names in the bootloader UI (#501057). (clumens)
 - Make the weak password dialog comply with the HIG (#487435). (clumens)
 - Add a newline to a cmdline mode string (#497575). (clumens)
-
-* Tue Jun 02 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.59-1
-- Do not show disabled repos such as rawhide during the install (#503798).
-  (jkeating)
-
-* Sun May 31 2009 David Lehman <dlehman@redhat.com> - 11.5.0.58-1
-- Pass --force to lvresize so it doesn't ask for confirmation. (dlehman)
-- Fix a typo in action sorting for resize actions (fs vs. device). (#501000)
-  (dlehman)
-- Sending translation for French (mrtom)
-
-* Thu May 28 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.57-1
-- Create and use unique ids for Device instances. (#500808) (dlehman)
-- Adjust remaining PartitionDevices' names after removing a partition.
-  (dlehman)
-
-* Tue May 26 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.56-1
-- Ensure matching rootfs type to live type with autopart (#501876) (katzj)
-
-* Tue May 26 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.55-1
-- Fix blank network device descriptions in the loader. (#501757) (notting)
-- Make sure the right _isMigratable gets used for Ext3FS (#501585). (clumens)
-
-* Tue May 19 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.54-1
-- We are not guaranteed to have a partedDisk in the udev code (#501556,
-  #501428). (clumens)
-- The location of the options wiki page has changed. (clumens)
-- Disable BETANAG. (clumens)
-- Install a en_US.UTF-8 locale in the first stage image. (notting)
-- Reset font when changing language. (notting)
-- Set locale to en_US.UTF-8 when initializing the console. (notting)
-
-* Mon May 18 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.53-1
-- LVMVolumeGroupDevice stores pesize in MB, kickstart expects it in KB.
-  (dlehman)
-- Don't schedule a format resize if reformat scheduled. (#500991) (dlehman)
-- Deactivate md arrays regardless of state if the device is present.
-  (#496441) (dlehman)
-- Lame hack to make sure --size= is never 0 (#500905). (clumens)
-- Don't filter out partitions that haven't been allocated (#500932).
-  (clumens)
-- Write out PE size as an integer, since that's what anaconda wants
-  (#501049). (clumens)
-- Set clearPartType to None on preupgrade too (#499321). (clumens)
-- Fix indentation of line to remove cancelled actions from the list.
-  (#500932) (dlehman)
-- Consider active-idle state of md device as accepatable status of device
-  (#497407) (rvykydal)
-- Fix detection of cciss disks (#499408) (dchapman)
-- Get existing fs size for xfs. (dcantrell)
-- Get existing fs size for ntfs. (dcantrell)
-- Get existing fs size for jfs. (dcantrell)
-- Get existing fs size for ext2, ext3, and ext4. (dcantrell)
-- Compute existing filesystem size using fs info utility. (dcantrell)
-- Do not allow users to migrate ext4 to ext4. (dcantrell)
-- Correct handling of formats on encrypted preexisting LVs. (#499828)
-  (dlehman)
-- Ignore unrecognized device-mapper devices we find. (#499967) (dlehman)
-- loader: Mount /tmp as tmpfs not ramfs so we can swap it out (ajax)
-- format.mountpoint -> lvd.mountpoint (#500913). (clumens)
-- Treat the loop labels as devices without a label.(#493219) (jgranado)
-- Add the partition table partition after initializing (#498602). (clumens)
-
-* Wed May 13 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.52-1
-- Add a Mac OS boot line to yaboot.conf (#499964). (clumens)
-- Catch IOError when enabling repos (#500439). (clumens)
-- Use a newer version of the kickstart Partition command. (clumens)
-- Fix a traceback when installing over previous installs on PPC (#499963).
-  (clumens)
-- Fix a typo when probing exception disks. (clumens)
-- Add support for --noformat too. (clumens)
-- Add support for --onpart, --ondrive, and --useexisting. (clumens)
-- Make the storage.writeKS method useful and called from instdata (#493703).
-  (clumens)
-- Add writeKS methods to the device objects. (clumens)
-- Add writeKS methods to all the format objects. (clumens)
-- upd-instroot: Add gdbserver (ajax)
-- Remove text-mode syslinux help (katzj)
-- If clearPartType is None, don't attempt to clear a device (#499321).
-  (clumens)
-- Only set clearpart data if the command was provided in the kickstart file.
-  (clumens)
-- Override previously defined mountpoints in kickstart (#499746). (clumens)
-- Yet another font package name has changed (#499322). (clumens)
-- Set new mountpoint correctly for existing encrypted LVs. (#496363)
-  (dlehman)
-- Once a partition is part of another device it cannot be modified.
-  (#496760) (dlehman)
-- Maintain request sort order by using req_disks instead of parents.
-  (dlehman)
-- Do not set a parent on the /mnt/sysimage/dev bind mount object (#499724).
-  (clumens)
-- Skip .pyc files in subdirectories when running make updates. (clumens)
-- Remove 'lowres' option. (ajax)
-- Run tune2fs on newly formatted ext[34] filesystems. (#495476) (dlehman)
-
-* Thu May 07 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.51-1
-- Don't clear the first partition on any disk with a Mac disk label
-  (#492154). (clumens)
-- Add detailedMessageWindow to the cmdline class (#499700). (clumens)
-- Don't traceback when a freespace partition is present (#499662). (clumens)
-- Do nomodeset when doing xdriver=vesa (ajax)
-- Fix calculation of smallest PV's size in the lvm dialog. (#493753)
-  (dlehman)
-- Fix KeyError when partition numbers change during allocation. (#497911)
-  (dlehman)
-- Update EFI CD booting code in mk-images (pjones)
-
-* Wed May 06 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.50-1
-- Use storage objects throughout the partition editing UI code (#491806,
-  #496002). (clumens)
-- Verify filesystems after the live resize (katzj)
-- Verify with fsck after resizing filesystems (katzj)
-- IBM improvements to linuxrc.s390 (#475350) (dcantrell)
-- Write out correct hostname during LiveCD installs (#492515) (dcantrell)
-- Enter in hostname entry field advances to next screen (#494135) (dcantrell)
-- Check if we'll clear a partition after setting its format attr. (#499251)
-  (dlehman)
-- Don't pass the default clearPartType value to the device tree. (dlehman)
-- Fix some logic errors in storage.partitioning.shouldClear. (dlehman)
-- Forward port various iscsi fixes from 5.4 iscsi work (hdegoede)
-- Avoid writing out NAME= in ifcfg files (#497485) (dcantrell)
-- Retry network configuration in loader (#492009) (dcantrell)
-- Make sure /boot ends up on the same disk as Apple Bootstrap (#497390).
-  (clumens)
-- Handle that the default bootloader entry can sometimes be None (#496618).
-  (clumens)
-- The PS3 bootloader allows booting from ext4 filesystems (#498539).
-  (clumens)
-- Support LVM PE sizes > 128MB (#497733) (cristian.ciupitu)
-- Set ANACONDAVERSION on most livecd installs. (clumens)
-- getDependentDevices is in devicetree, not storage (#499144). (clumens)
-
-* Mon May 04 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.49-1
-- Collect network interfaces from NetworkManager (#493995) (dcantrell)
-- Handle fstab entries whose filesystem we don't recognize.(#498120)
-  (dlehman)
-- Add an error signifying an unrecognized entry in /etc/fstab. (dlehman)
-- Don't drop discovered format with unknown devices when parsing fstab.
-  (dlehman)
-- Fix display of paths for device-mapper device in bootloader widget.
-  (dlehman)
-- Don't call udevDeviceFormat if we're just going to clear the device
-  (#497323). (clumens)
-- Pass clearPartType to the devicetree as well. (clumens)
-- Break the complex should-clear logic out of clearPartitions. (clumens)
-- Handle clearpart in the early kickstart pass too. (clumens)
-- Correct setting the SELinux context on mountpoints (#494995). (clumens)
-- make resetFileContext return the context set (wwoods)
-- Allow editing of the hdiso source partition so it can be mounted
-  (#498591). (clumens)
-- Add a ignoreProtected= parameter to deviceImmutable that does the obvious.
-  (clumens)
-- Be more aggressive unmounting before install starts (#498260) (katzj)
-- Add %%{?dist} to the release number in the spec file. (dcantrell)
-- Configure network in kickstartNetworkUp() iff NM is not connected
-  (#490518) (dcantrell)
-- Don't segfault with "ks someotherparam" (#498307). (clumens)
-- Fix the arch upgrade check in yuminstall.py, too (#498280). (clumens)
-- Move _resetRpmDb into iutil so we can access it everywhere. (clumens)
-- Don't mount bind mounts last, that makes /dev break. (pjones)
-- Pass anaconda to storage.FSSet.turnOnSwap. (dlehman)
-- Ignore spurious formatting on partitioned devices. (dlehman)
-- Revert "DeviceError only returns a message, not (message, device) tuple
-  (#496343)." (dlehman)
-- Fix action sorting for partitions on the same disk. (#498064) (dlehman)
-- Fix traceback in second editing of existing raid dev (#497234). (rvykydal)
-- Allow existing LVs with filesystems to be resized (#490913) (dcantrell)
-- Rate limit pulse() calls to ProgressWindow. (pjones)
-- Don't populate flags.cmdline with "True" values when no = is used. (pjones)
-- Add "nomodeset" to the list of command line arguments copied to grub.conf
-  (pjones)
-- Use device.format.mountType insead of device.format.type for fstab.
-  (pjones)
-- Initialize x86 class variables before efiBootloaderInfo.__init__() (pjones)
-- Fix a segfault on nfs+kickstart (pjones)
-- Fix an error when raising FormatCreateException. (clumens)
-- Add more windows to the rescue interface class (#498014). (clumens)
-- Remove requirement for EFI machines to be x86, since IA64 is too
-  (#497934). (clumens)
-- Fix the kernel package selection on ppc64 machines (#497264). (clumens)
-- Include fsck.ext4 and mkfs.ext4 in the images (#497996). (clumens)
-- Properly restore SIGCHLD if X startup fails (wwoods)
-- Fix kickstart PV references handling for lvm on raid (#497352). (rvykydal)
-
-* Fri Apr 24 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.48-1
-- Fix handling of swap files. (#496529) (dlehman)
-- Pass anaconda to turnOnSwap so we can use swap files. (dlehman)
-- Fix incorrect attribute name use for retrofit flag. (dlehman)
-- Use slightly better checks when testing for 0 size (#493656, #497186,
-  #497389). (clumens)
-- If the LV has no child, don't attempt to grab its format (#497239).
-  (clumens)
-- Apply the global passphrase when doing kickstart autopart (#497533).
-  (clumens)
-- Add support for encryption passphrase retrofits. (dlehman)
-- Bring luks_add_key and luks_remove_key back into devicelibs.crypto.
-  (dlehman)
-- Don't let lvremove failures from incomplete vgs crash the install.
-  (#497401) (dlehman)
-- Allow setting a mountpoint w/o formatting an encrypted partition.
-  (#495417) (dlehman)
-- Remove encryption from preexisting device if "Encrypt" is deactivated.
-  (dlehman)
-- Fix indentation of preexisting partition handling block. (dlehman)
-- The device passed to the luks passphrase dialogs is a string. (#492123)
-  (dlehman)
-- Protect against tracebacks from the partition isFoo properties. (dlehman)
-- Fix handling of bind mounts. (#496406) (dlehman)
-- Add more filesystem checks. (clumens)
-- Support vfat filesystems in the partitioning UI (#496351). (clumens)
-- Remove devices in leaves first order (#496630) (hdegoede)
-- Don't remove an inconsistent lvm partition from the devicetree (#496638)
-  (hdegoede)
-- Move isEfi to be a property on Platform instead of on X86 (#497394).
-  (clumens)
-- Support --encrypted --useexisting on kickstart installs (#497147).
-  (clumens)
-- When making a RAID device, require that some members be selected
-  (#491932). (clumens)
-- When catching an OSError, handle it as an object instead of a tuple
-  (#497374). (clumens)
-- Enforce the fstype that holds /boot on kickstart installs (#497238).
-  (clumens)
-- Fix ps3 platform support (#497203) (katzj)
-- Clean up rpmdb locks at the end of the install (#496961) (katzj)
-- Don't allow /boot to be on an encrypted device (#496866). (clumens)
-- Use the correct unmount method (#496764). (clumens)
-
-* Tue Apr 21 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.47-1
-- Fix adding of fifth partition in UI (#496930). (rvykydal)
-- Define the fd variable before it can ever be referenced (#496930).
-  (clumens)
-- Fix preservation of format attrs for preexisting luks partitions. (dlehman)
-- Set md member devices' uuids after creating an array. (dlehman)
-- Don't try to get size for nodev and bind filesystems. (dlehman)
-- Include the device path in DeviceError exceptions. (dlehman)
-- Mdadm's incremental mode ignores the auto option, so don't use it.
-  (dlehman)
-- Use incremental mode for all md member addition during probing. (dlehman)
-- Try to name existing md arrays based on their preferred minor. (dlehman)
-- Reimplement mdexamine using a more easily parseable output format.
-  (dlehman)
-- Fix position of "--run" option to mdadm assemble. (dlehman)
-- Handle passphrase prompts without a traceback in cmdline mode. (#492123)
-  (dlehman)
-- Fix another device vs. string problem in EFI bootloader config (#496669).
-  (clumens)
-- Add the device's name to mdadm.conf (#496390). (clumens)
-- Show normal cursor during passphrase entry (#496534) (msivak)
-- Fix traceback in cmdline mode after exception handling cleanup (#496644)
-  (katzj)
-- DeviceError only returns a message, not (message, device) tuple (#496343).
-  (clumens)
-
-* Fri Apr 17 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.46-1
-- Clean up argument list after changing from rhpl to iutil for
-  execWithRedirect (jkeating)
-- Fix NameError traceback setting up bootloader in EFI installs (wwoods)
-- No longer force ISOs to be on ext2, ext3, or vfat partitions. (clumens)
-- Sending translation for German (ckpinguin)
-- Split text mode exn saving into multiple screren (#469380). (clumens)
-- Copy /tmp/program.log to /mnt/sysimage/var/log/. (clumens)
-- Fix member preselection in raid UI. (rvykydal)
-- Fix editing of raid device (persistence of level choice) (#496159)
-  (rvykydal)
-- Fix ks --useexisting and --noformat options of logvol and volgroup
-  (rvykydal)
-- Make sure inconsistencies dont screw us up. (jgranado)
-- Re-implement the inconsistency functionality. (jgranado)
-- Allow the use of "-" in the lvm names. (495329) (jgranado)
-- Make sure we "insist" on mdadm commands. (491729) (jgranado)
-- [PATCH] Possible fix for some encryption related bugs during the Custom
-  Layout editation (#495848) (msivak)
-
-* Thu Apr 16 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.45-1
-- Touch /.autorelabel when running under rescue mode (#491747). (clumens)
-- Add support for fingerprint-based logins (#481273). (clumens)
-- Add a "File Bug" button to the catch-all partitioning exception handler.
-  (clumens)
-- Remove the early catch-all exception handler (#495933). (clumens)
-- Implement the save to USB using devicetree devices. (jgranado)
-- Use size instead of currentSize when comparing lv sizes (hdegoede)
-- Make sure all pv's of an lv's vg are setup before resizing an lv (hdegoede)
-- Do not try to teardown a non existing format (hdegoede)
-- Center the bootloader configuration dialog (#495802). (clumens)
-- Destroy (potential) stale metadata when creating a new partition (hdegoede)
-- use partition req_base_size instead of size in partitionCompare()
-  (hdegoede)
-- Fix changing size of newly created partitions (hdegoede)
-- Don't traceback on invalid filesystem detection (#495156) (dcantrell)
-- Check to see if formatcb is None. (jgranado)
-- Use the PV name when logging error messages. (jgranado)
-- Don't set up the device to obtain minSize anymore. (dlehman)
-- Improve estimate of md arrays' size. (dlehman)
-- Determine minimum size for filesystems once, from constructor. (dlehman)
-- Fix estimate of LUKS header size for newly encrypted devices. (#493575)
-  (dlehman)
-- Fix two syntax problems with generated mdadm.conf entries. (#495552)
-  (dlehman)
-- Default to AES-XTS cipher mode with 512 bit key for new LUKS devices.
-  (dlehman)
-- When going back from a failed shrink, reset the device action set.
-  (clumens)
-- If we can't communicate while logging in to bugzilla, error (#492470).
-  (clumens)
-- Make save to usb work. (jgranado)
-- We don't always have a formatcb either (#495665). (clumens)
-- The entry is named lvsizeentry now. (jgranado)
-
-* Mon Apr 13 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.44-1
-- Default to SHA512 password encoding algorithm. (dcantrell)
-- Handle format combo box not existing (#495288) (dcantrell)
-
-* Mon Apr 13 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.43-1
-- Run programs with LC_ALL=C in case we're parsing output (#492549).
-  (clumens)
-- A volume group device has a "peSize" attribute (not "pesize"). (dlehman)
-- Remove uncommitted new lv from dict on cancel. (dlehman)
-- Use the correct value when setting new extent size. (#493753) (dlehman)
-- Fix image generation so all ELF binaries have their deps included
-  (#495231). (clumens)
-- Clean up the code in editLogicalVolume function. (jgranado)
-- Setup the disks before partitioning as the nodes are needed. (jgranado)
-- Rescan the devices when we are saving a traceback. (jgranado)
-- Close file descriptors when an error occurs. (jgranado)
-- Aesthetic changes to "editLogicalVolume" function. (jgranado)
-- When deallocating a partition also set its disk attribute to None
-  (hdegoede)
-- Check self.partedPartition not being None before using it (#495077)
-  (hdegoede)
-- growPartitions: Change op_func (back to) add when an iteration succeeds
-  (hdegoede)
-- partedPartition can be None while growing partitions (#495076) (hdegoede)
-
-* Thu Apr 09 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.42-1
-- Fix display of format type for devices. (dlehman)
-- Fix handling of priority option from swap fstab entries. (#494992)
-  (dlehman)
-- Some fs types cannot be passed to programs (#495061, #493075). (clumens)
-- When a new module is loaded, update the kernel_filesystems list. (clumens)
-- Add more Indic fonts (#494261, pnemade).
-- Remove the message saying you can make your own layout (#495015). (clumens)
-- Put e100 (and other) firmware in its own directory if needed (#494778).
-  (clumens)
-- Run /bin/umount instead of calling umount(2) in _isys.umount (#493333)
-  (dcantrell)
-- Add doPwUmount() and mountCommandWrapper() to isys (#493333) (dcantrell)
-- Preserve symlinks and only collect deps on ELF executables. (dcantrell)
-- Use $(ARCHIVE_TAG) throughout the updates target. (dcantrell)
-- partedUtils doesn't exist anymore (katzj)
-- Revert "Show the header in certain non-lowres cases" (#493153) (katzj)
-- Pre-existing partitions names may change (#494833) (hdegoede)
-- Use getDeviceNodeName() instead of basename of device node. (hdegoede)
-- Fix ks raid --useexisting and --noformat (rvykydal)
-- Fix processing of --level and --device options of ks raid commands.
-  (rvykydal)
-- Don't start pdb immediately in debug mode (katzj)
-- Fix EDD BIOS disk order detection in general and make it work with dmraid
-  (hdegoede)
-- Update extended partition geometry when we change it (hdegoede)
-
-* Tue Apr 07 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.41-1
-- Make sure we have a clean lvm ignore list when we initialize. (jgranado)
-- We need to search by name without the "mapper" prefix. (jgranado)
-- Create a min_max constraint to avoid alignments issues. (jgranado)
-- Don't exit the installer from filesystem errors. (dlehman)
-- Try not to raise exceptions from minSize calculators. (dlehman)
-- Don't traceback when PVs are encrypted or are not partitions. (dlehman)
-- Adjust device dependencies when backing out device encryption. (#493257)
-  (dlehman)
-- Include filesystem type in mount log message. (dlehman)
-- Load filesystem modules on demand (#490795, #494108). (clumens)
-- Use existing partitions when --onpart is used for PVs or raid members
-  (#493065) (rvykydal)
-- Raise message, not exception when size set in LV dialog is too big.
-  (rvykydal)
-- Raise an error when remofing an extended part with logical parts.
-  (jgranado)
-- Esthetic changes to storage/partitioning.py. (jgranado)
-- dmraid.py is no longer being used by anything, so remove it. (clumens)
-- Remove partedUtils.py. (clumens)
-- This is the only place isEfiSystemPartition is used, so pull it in.
-  (clumens)
-- getReleaseString now lives in the storage module. (clumens)
-- Stop lying about our support for dmraid and multipath in kickstart.
-  (clumens)
-- Remove some old, unused code that also uses biosGeometry. (clumens)
-- For very small disks, don't try to display a stripe in the graph
-  (#480484). (clumens)
-- Fix reading the console= parameter from the cmdline (#490731). (clumens)
-- For dmraid partititons device node name != name (hdegoede)
-- When a partition request gets unallocated, set the name back to req#
-  (hdegoede)
-- Do not use getPartitionByPath() in allocatePartitions() (hdegoede)
-- Remove no longer used iscsi_get_node_record function (hdegoede)
-- Try to handle devices which live in a subdir of /dev properly (hdegoede)
-- Split DeviceTree.addUdevDevice into several smaller methods. (dlehman)
-- Don't traceback from failure finding minimum fs size. (#494070) (dlehman)
-- udev_settle after format teardown to avoid EBUSY on device teardown.
-  (#492670) (dlehman)
-- Add a parted.Device attribute to all existing StorageDevices. (dlehman)
-- If no partitioning commands are given, apply the UI selections (#490880).
-  (clumens)
-- Update font package names for ml_IN, si_LK, etc. (#493792, #493794).
-  (clumens)
-- Fix a typo in the city name for Nepali (#493803). (clumens)
-- Fix writing out the partition= line on PPC (#492732). (clumens)
-- Do not check size when adding LV to growing VG (bug #492264) (rvykydal)
-
-* Thu Apr 02 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.40-1
-- Don't let device names affect action order in general case. (dlehman)
-- Round up when aligning to pesize for space used. (#493656) (dlehman)
-- Improve handling for various nodev filesystems in fstab. (#493685,
-  #493202) (dlehman)
-- Present the correct max lv size in the dialog. (dlehman)
-- Use the head of the current branch, not master, for scratch archives.
-  (dlehman)
-- Make a top level StorageError that all others are based on. (dlehman)
-- Remove unused PRePDevice class. (dlehman)
-- Make the disk model an attribute of DiskDevice. (dlehman)
-- Handle format actions in cancelAction() (dcantrell)
-- Fix format check box for pre-existing partitions (#491675) (dcantrell)
-- Remove temporary directory used in _getExistingSize() (dcantrell)
-- Activate storage before looking up the hdiso source drive (#491781).
-  (clumens)
-- Remove isys.getDeviceByToken since it is no longer used. (clumens)
-- Don't allow the rootfs on live installs to not match (#493206, #492727)
-  (katzj)
-- Create setup and teardown functs for dmraid devs. (jgranado)
-- put xfs back where it belongs (sandeen)
-- Fix up the other caller of unmountCD to pass in a device (#493537).
-  (clumens)
-
-* Wed Apr 01 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.39-1
-- Prevent sensitive information in kickstart files from ending up in
-  tracebacks. (clumens)
-- It's 2009, let's ignore floppy drives now (#493338, #493377). (clumens)
-- Remove DmRaidArrayDevice level attribute (#493293) (hdegoede)
-- get_containing_device takes two arguments (#493266). (clumens)
-- Fix the check for if there's enough space available on / and /usr
-  (#492614). (clumens)
-- Fix testing if a PPC partition is bootable (#492726). (clumens)
-- Look for a PReP "partition" by examining the format, not the flags
-  (#492426). (clumens)
-- Fix a few more pylint warnings and errors in storage/* (hdegoede)
-- Fix some pylint warnings in iw/*.py (hdegoede)
-- Don't start our audit daemon with the livecd installer (katzj)
-- If there's a problem finding removable disks, disable save-to-disk.
-  (clumens)
-- Move %%pre processing to much earlier in the install process. (clumens)
-- If there are no installs to rescue via kickstart, display an error.
-  (clumens)
-- Add an early kickstart processing pass. (clumens)
-- Fixes of errors shown by pylint that didn't get into the beta build.
-  (mgracik)
-- Adjust the dmraid ignoring logic. (jgranado)
-- Reference the format by type, not name.(#492596) (jgranado)
-- Sending translation for Chinese (Simplified) (leahliu)
-- Increase udev_settle timeout in udev_get_block_devices. (#492049) (dlehman)
-- Fix check for fully defined md array when raidlevel is 0. (#491796)
-  (dlehman)
-- Fix a typo ('isEFI' should be 'isEfi'). (dlehman)
-- Make sure the pvs are set up before doing lvremove or vgremove. (dlehman)
-- Don't write out md member devices to a config file for assemble. (dlehman)
-- Fix the supported property of filesystems and prepboot format. (dlehman)
-- Return early from doAutoPartition if partition allocation fails. (dlehman)
-- Reset storage instance if autopart fails. (#492158) (dlehman)
-- Assign weights to partition requests when doing manual or kickstart
-  installs. (clumens)
-- Refresh windows immediately to make sure they appear. (clumens)
-- Fix problem with format and migrate combo box activation. (dcantrell)
-- Fix typo in upgrade.py (dcantrell)
-- Move _scheduleLVs and growLVM calls to be inside try/except (dcantrell)
-- Correct bounds checking problems in 'Shrink current system' (dcantrell)
-- Require libselinux-python (#489107) (dcantrell)
-- Do not prompt for NIC selection in cmdline mode (#492586) (dcantrell)
-- Do not write /etc/hosts since setup owns that now (#491808) (dcantrell)
-- Remove unused self._resize variable. (dcantrell)
-- Having 2 raidsets in the same group of devs is possible. (jgranado)
-- getDevice returns a string.  Use that to look up the device object
-  (#492465). (clumens)
-- Take into account i386->i586 when warning on upgrade arch mismatch.
-  (clumens)
-- Remove unused getVG{Free,Used}Space methods. (clumens)
-- We can no longer display Russian correctly in text mode (#491394).
-  (clumens)
-- Clean up the reinitialize LVM warning message (#491888). (clumens)
-- Update translation files (#484784). (clumens)
-- Include the storage directory when building the .po files. (clumens)
-- Merge commit 'origin/anaconda-storage-branch' (clumens)
-- Keep VG size property non-negative (rvykydal)
-- Grow LVs for kickstart requests too (rvykydal)
-- Handle not finding the upgrade root gracefully. (jgranado)
-- Use self.name to report that we could not eject cd. (jgranado)
-- Fix ppoll() timeout=infinity usage in auditd (#484721). (pjones)
-- Use correct parse method for the upgrade command (#471232) (wwoods)
-- Rename /etc/modprobe.d/anaconda to /etc/modprobe.d/anaconda.conf (clumens)
-- Handle FTP servers that both want and don't want PASS after USER
-  (#490350). (clumens)
-- Only select the Core group in text mode (#488754). (clumens)
-- Add created user to default group created for the user. (rvykydal)
-
-* Wed Mar 25 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.38-1
-- Fix pylint errors in iw/*.py (hdegoede)
-- Rework CryptTab.parse (dlehman).
-- Code fixes of errors shown by pylint (mgracik).
-- Don't underflow on the busy cursor stack. (clumens)
-- "vg" is not valide inside this if. (jgranado)
-- Device is sometimes None. (jgranado)
-- Fix typo. (#492042) (dlehman)
-
-* Tue Mar 24 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.37-1
-- Start with a basic /etc/hosts file (#491634) (dcantrell)
-- Do not flag every existing partition for resize (#491803) (dcantrell)
-- Remove unused noformatCB() function. (dcantrell)
-- Remove unnecessary istruefalse() function. (dcantrell)
-- Build new _isys.so for updates.img if needed. (dcantrell)
-- Get the UUID of each md array we create. (#491796) (dlehman)
-- Call udev_settle after committing changes to a disk (#491529) (hdegoede)
-- Be a little bit smarter about allocating space to grow parts. (#491761)
-  (dlehman)
-- Check that partition is on the disk before trying to remove it. (#491997)
-  (dlehman)
-- Work around a bug in mdadm incremental assembly. (dlehman)
-- Use the same units (MB) for extent size that we do for everything else.
-  (dlehman)
-- Put line breaks in between crypttab entries. (#491938) (dlehman)
-- Register the NoDevFS class. (clumens)
-- fslabels -> labels. (clumens)
-- NFSDevice does not take exists= as a parameter. (clumens)
-- Override _setDevice and _getDevice in NFS. (clumens)
-- Move resolveDevice into the DeviceTree class. (clumens)
-- Move most of the parseFSTab logic into its own function. (clumens)
-- We don't even use partedUtils in this module. (clumens)
-- PReP formats can never be active. (#491865) (dlehman)
-- Move protectedPartition setup into storageInitialize (#491781). (clumens)
-- Use the mount and unmount methods on OpticalDevice.format now. (clumens)
-- Add a format for ISO9660 filesystems. (clumens)
-- getDeviceByName does not expect the CD device to start with "/dev/"
-  (#491768). (clumens)
-- Write the same arch to .discinfo as iutil.getArch() gives us (#490977).
-  (clumens)
-- Don't remove partitions twice. (jgranado)
-
-* Mon Mar 23 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.36-1
-- Add EFI, Apple Bootstrap, and PPC PReP Boot formats. (dlehman)
-- Remove all implicit calls to self.format.destroy from Device classes.
-  (dlehman)
-- Pop the busy cursor when we're done with the wait window (#491736).
-  (clumens)
-- If the new size and old size are the same, treat as a no-op (#491496).
-  (clumens)
-- Let mountFilesystems handling bind mounting /dev (#490772). (clumens)
-- Not all FileDevices have parents, so don't assume. (clumens)
-- Bind mount formats are mountable. (clumens)
-- If a filesystem is already mounted, don't raise an error. (clumens)
-- Fix a typo calling the superclass's constructor. (clumens)
-- Add a fake device for bind mounting /dev. (clumens)
-- If there was an exception leading to the urlgrabber error, log it.
-  (clumens)
-- Fix the import of checkbootloader (#491574). (clumens)
-- Add a missing import (#491605). (clumens)
-
-* Fri Mar 20 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.35-1
-- Fix traceback in FSSet.crypttab. (#491160) (dlehman)
-- Fix traceback on upgrade. (#491446) (dlehman)
-- Do not include .h and .sh files in updates.img (dcantrell)
-- Make PartitionDevice resize work. (dcantrell)
-- Reset mouse pointer if we find an unreadable disk. (dcantrell)
-- Use label attr instead of non-existent fslabel attr. (#491120) (dlehman)
-- Need to notify the kernel of changes before udev settle (katzj)
-- Revert "mount and umount commands are in /sbin now, remove from /usr/sbin"
-  (dcantrell)
-- Make some fixes to the rescue mode system selection UI (#489973, #489977).
-  (clumens)
-- Fix text mode autopartitioning (#491282). (clumens)
-- Do not use _rnetdev as fstab option for network based / (hdegoede)
-- Make root= line in grub.conf and path spec in fstab consistent (hdegoede)
-- Fix a reference to the partitions list (#491335). (clumens)
-- Do not traceback at the very beginning of rescue mode (msivak)
-- Fix traceback when editing encrypted mdraid device in UI. (rvykydal)
-
-* Thu Mar 19 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.34-1
-- Catch FSError when detecting storage, prevent user from continuing.
-  (dcantrell)
-- If we have no error string, place None in the tuple. (dcantrell)
-- Move OUTPUT_TERMINAL definition to isys.h (dcantrell)
-- mount and umount commands are in /sbin now, remove from /usr/sbin
-  (dcantrell)
-- Avoid SIGSEGV in doPwMount() when NULL is last parameter (#491192)
-  (dcantrell)
-- Attempt disk commits 5 times before raising an exception. (dcantrell)
-- Add boot partition size limit properties and size validation method.
-  (dlehman)
-- Make sure boot flag gets set. (#491170) (dlehman)
-- Make bootable a property of PartitionDevice. (dlehman)
-- After setting up our random UUID, inform the storage layer (katzj)
-- Handle system crappyness. (jgranado)
-- Fix up checking for live image backing (katzj)
-- Let's not remove our mountpoints (katzj)
-- Fix writing the default= line in grub.conf (#490756). (clumens)
-- Revert "Fix pruning of destroy actions for preexisting devices." (dlehman)
-- Add more blacklisting (katzj)
-- Blacklist the live image backing device (katzj)
-- Move blockdev blacklisting to be a function (katzj)
-- Inhibit devkit-disks during a live install (katzj)
-- try to unmount everything from /media on live installs (katzj)
-- Fix live installs to not traceback (katzj)
-- Fix New partition in UI (rvykydal)
-
-* Thu Mar 19 2009 David Lehman <dlehman@redhat.com> - 11.5.0.33-1
-- Rework the lvm dialog. (#490301,#490966,#490681,#489870) (dlehman)
-- Improve chances of uniqueness from Storage.createSuggestedLVName. (dlehman)
-- Fix pruning of destroy actions for preexisting devices. (dlehman)
-- Devices should not be resizable unless they exist. (dlehman)
-- Try to activate an existing md array after adding each member. (dlehman)
-- Indicate filesystem is mountable if we have a mount command. (dcantrell)
-- Mount existing filesystems read-only when getting size. (dcantrell)
-- Fix some errors in the updates target. (dcantrell)
-- Place all mount.* commands in /sbin (dcantrell)
-- Fix error message reading and writing in doPwMount() (dcantrell)
-- Use booleans in isys.mount() and isys.umount() (dcantrell)
-- Add a FIXME comment for setting uuid in VG / LV create (hdegoede)
-- Do not traceback when writing anaconda.ks with iscsi with auth info.
-  (hdegoede)
-- Do not write LV uuid to grub.conf, but the filesystem uuid (hdegoede)
-- If a mountpoint depends on a network disk at _netdev to its fstab options
-  (hdegoede)
-- Do not hang when creating raid array with member having filesystem
-  detected (#490891) (rvykydal)
-- Destroy and create luks child of raid array too when editing in UI.
-  (rvykydal)
-- Editing non-existent raid device by destroying and creating actions
-  (rvykydal)
-- actionDestroyFormat call takes device, not format (rvykydal)
-- Fix getChildren call in partition UI (rvykydal)
-- Fix removing of devices with the same name from	tree when adding
-  create action. (rvykydal)
-- Do not duplicate requested minor number in edit raid UI list. (rvykydal)
-- Offer available partitions when editing non-preexisting raid request.
-  (rvykydal)
-- Don't try to fit the whole StorageDevice.__str__ output into the UI
-  (#490406). (clumens)
-- Make PartitionDevice handle both normal and dmraid partitions (hdegoede)
-- Stop overriding __init__ in DMRaidPartitionDevice (hdegoede)
-- Set format UUID after creating a format (hdegoede)
-- Fix result of updateSysfsPath to be consistent with initial sysfsPath
-  values (hdegoede)
-- Use getDevicesByInstance() for storage.partitions (hdegoede)
-- We no longer use iscsiadm anywhere (hdegoede)
-
-* Tue Mar 17 2009 Jesse Keating <jkeating@redhat.com> - 11.5.0.32-1
-- Typo fix. (clumens)
-- Make platform.checkBootRequest work better and not use diskset anymore. (clumens)
-- Fix a traceback when looking for PS3 boot partitions (#490738). (clumens)
-- FormatArgs -> FormatOptions (#490737). (clumens)
-- Fix ppoll() timeout=infinity usage in auditd (#484721). (pjones)
-- Simplify kernel package selection. (clumens)
-- Look at CPU flags instead of /proc/iomem to determine PAE-ness (#484941). (clumens)
-- Tell NM not to touch interfaces when / is on a network disk (hdegoede)
-- Get iscsi going with the new storage code (hdegoede)
-- Use minihal instead of isys.hardDriveDict in list-harddrives (#488122). (clumens)
-- storage.disks never includes disks without media present. (clumens)
-- Changed the getDevicebyLabel() to getDeviceByLabel() in devicetree.py (mgracik)
-
-* Mon Mar 16 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.31-1
-- Don't use disk.maximizePartition anymore. (dlehman)
-- Only schedule implicit format destruction if there is formatting to
-  destroy. (dlehman)
-- Reset encryptionPassphrase when we reset the rest of storage. (dlehman)
-- Do not create a LUKSDevice if we do not have a way to map the device.
-  (dlehman)
-- Fix handling of new extended partitions during partition allocation.
-  (dlehman)
-- Fix bug in dependency list for partitions. (dlehman)
-- Fix inconsistency in variable use in search for free space. (dlehman)
-- Check for disk name being in disk.name not in clearPartDisks (dcantrell)
-- Create a Makefile target to generate updates.img automatically. (dcantrell)
-- When creating free space, handle cases other than clearpart --drives=
-  (clumens)
-- Ignore loop and ram devices (hdegoede)
-- devicetree: fix slave addition of incomplete dm / md devices (hdegoede)
-- Catch LVMErrors too when tearing down devices (hdegoede)
-- Install udev rules in /lib/udev/rules.d instead of in runtime dir
-  (hdegoede)
-- Ignore disk devices with missing media (#488800). (clumens)
-- Use correct parse method for the upgrade command (#471232) (wwoods)
-- Fix creation of fs options for preexisting encrypted devices. (dlehman)
-- Fix lots of buggy behavior in the partition dialog. (dlehman)
-- Handle FTP servers that both want and don't want PASS after USER
-  (#490350). (clumens)
-- Fixed the names of the variables for lvm.py functions. (mgracik)
-- editPartitionRequest -> editPartition in iw/partition_gui.py (#490384).
-  (clumens)
-- clampPVSize -> clampSize in lvm.py (#490295). (clumens)
-- Fix the obvious and stupid typo (#490296). (clumens)
-- isys.umount removes mount directory by default (rvykydal)
-- Fix tempfile.mkdtemp call. (rvykydal)
-- Initialize attribute _mountpoint before using it (rvykydal)
-- devicetree.py has _ignoredDisks instead of ignoredDisks. (jgranado)
-- Create separate resize actions for formats and devices. (dcantrell)
-- Use os.statvfs() to get existing filesystem size. (dcantrell)
-- Add resizeArgs for Ext2FS and fix it for BtrFS. (dcantrell)
-- Report when we cannot find any free space partitions. (dcantrell)
-- Improve resizeDialog text. (dcantrell)
-- Raise FSResizeError if filesystem cannot be resized. (dcantrell)
-- Handle resizing when setting targetSize for PartitionDevice (dcantrell)
-- Let users set the size property of StorageDevices. (dcantrell)
-- Add support for kickstart's '--initlabel' option to clearpart. (dlehman)
-- Fix display of LV format type for encrypted LVs. (dlehman)
-- Make paths somewhat flexible so we'll work in normal environments.
-  (dlehman)
-
-* Fri Mar 13 2009 David Lehman <dlehman@redhat.com> - 11.5.0.30-1
-- Fix supportable attribute for cmdline-enabled fstypes. (dlehman)
-- Access private attribute for luks dict. (dlehman)
-- Schedule format create for newly encrypted preexisting partition. (dlehman)
-- Don't traceback if vg.teardown fails in recursive teardown. (dlehman)
-- Schedule format create action for newly encrypted preexisting LV. (dlehman)
-- Make sure we return something other than None for new requests. (dlehman)
-- Add __str__ methods to Device objects. (clumens)
-- Add mediaPresent and eject to the OpticalDevice class. (clumens)
-- Use the right import path for checkbootloader (#490049). (clumens)
-- Rename /etc/modprobe.d/anaconda to /etc/modprobe.d/anaconda.conf (clumens)
-- Don't clear partitions containing the install media. (dlehman)
-- Wait til everyone knows the format/fs is no longer active. (dlehman)
-- Save a copy of the device stack so we can destroy the format. (#489975)
-  (dlehman)
-- Add a deep copy method to Device since we can't just use copy.deepcopy.
-  (dlehman)
-- Fix infinite loops in partition screen populate. (#490051) (dlehman)
-- Default to a name based on the uuid for existing luks mappings. (dlehman)
-- Use the correct keyword for luks map names ('name', not 'mapName').
-  (dlehman)
-- Fix getting of number of total devices of sw raid. (rvykydal)
-- Only select the Core group in text mode (#488754). (clumens)
-- Added test case for devicelib mdraid.py. (mgracik)
-- Add created user to default group created for the user. (rvykydal)
-- Fix editing of existing logical volume. (rvykydal)
-- Add a list that lvm should ignore. (jgranado)
-
-* Thu Mar 12 2009 David Lehman <dlehman@redhat.com> - 11.5.0.29-1
-- Don't create a PartitionDevice for devices that do not exist (#489122).
-  (clumens)
-- A getter doesn't usually take a parameter (#489965). (clumens)
-- Do not write "Running..." to stdout, as that could be tty1. (clumens)
-- Call storage.exceptionDisks, not diskset.exceptionDisks. (#489615)
-  (dlehman)
-- Fix typo. (jgranado)
-- Fix typo. (dlehman)
-- Add udev rules for handling for mdraid arrays. (dlehman)
-- Honor the zerombr kickstart directive. (dlehman)
-- currentSize is expected to be a float, so convert it to one (#489882).
-  (clumens)
-- It's clearPartDisks, not clearPartDrives. (clumens)
-- Get rid of the mappings and ksID as well. (clumens)
-- Make sure the device has a diskType before attempting to check what it is.
-  (clumens)
-- Update the volgroup command to work with the new storage code. (clumens)
-- Update the raid command to work with the new storage code. (clumens)
-- Update the part command to work with the new storage code. (clumens)
-- Update the logvol command to work with the new storage code. (clumens)
-- addPartRequest is no longer needed. (clumens)
-- Don't set default partitioning in every kickstart case. (clumens)
-- Clear partitions before scheduling requests. (clumens)
-- Always go through doAutoPart. (clumens)
-- Format modules import fix (mgracik)
-- Fixed the format modules import (mgracik)
-- Allow overriding the anaconda udev rules from an updates.img (hdegoede)
-- If a pv somehow does not contain a vg_name, do not try to get other vg
-  info (hdegoede)
-
-* Wed Mar 11 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.28-1
-- Fix a few bugs in the lvm dialog. (#489022) (dlehman)
-- Modify livecd.py to work with new storage backend. (dlehman)
-- Be explicit about resetting Disks' partedDisk attribute. (#489678)
-  (dlehman)
-- Deactivate devices after we've finished scanning them. (dlehman)
-- Handle the case of removing an unallocated partition from the tree.
-  (dlehman)
-- Try again to set up LVs when we've just added a new PV to the VG. (dlehman)
-- Set partition flags in format create/destroy execute methods. (dlehman)
-- Make sure we use the newly committed parted.Partition after create.
-  (dlehman)
-- Make device teardown methods more resilient. (dlehman)
-- Initialize storage in rescue mode so we can find roots (#488984). (clumens)
-- We also need to pack up the extra args tuple, too. (clumens)
-- doLoggingSetup keeps growing new arguments, so put them into a dict
-  (#489709). (clumens)
-- Fix anaconda udev rules to not require pre-existing device nodes (hdegoede)
-- Hook up 'Shrink current system' dialog to new storage code. (dcantrell)
-- Fix _getCheckArgs() in class FS. (dcantrell)
-
-* Tue Mar 10 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.27-1
-- Fix action pruning to handle more complex scenarios. (dlehman)
-- Schedule destruction of any existing formatting along with the device.
-  (dlehman)
-- Add a size attribute to mdraid arrays. (dlehman)
-- Speed up partitioning screen redraws by trimming workload where possible.
-  (dlehman)
-- Create partitions with exactly the geometry we calculate. (dlehman)
-- Fix name collision between formats.mdraid and devicelibs.mdraid. (dlehman)
-- Destruction of the member device formatting will be handled elsewhere.
-  (dlehman)
-- Fix a typo (jkeating)
-- Fix pruning between two destroy actions on the same device (rvykydal)
-- Use the pyblock functions when possible. (jgranado)
-- We are searching a list, not a dict now (rvykydal)
-
-* Mon Mar 09 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.26-1
-- Move the recursive teardown of all devices out of processActions. (dlehman)
-- Clean up handling of /proc, /sys, /dev/pts, /dev/shm entries. (dlehman)
-- Fix several minor bugs preventing upgrade/rescue mount. (#488946) (dlehman)
-- Only populate the device tree on demand. (dlehman)
-- Prune actions by device based on path, not object-id. (dlehman)
-- Rewrite action sort so it works correctly. (dlehman)
-- Do a separate disk.commit for each partition add/remove. (dlehman)
-- Fix bug keeping track of best free region/type/disk info. (dlehman)
-- Return early if doAutoPart is False, but clearpart first if kickstart.
-  (dlehman)
-- Recognize PS3 as a valid machine type (#489263). (clumens)
-- Move the mdRaidBootArches logic into the platform module. (clumens)
-- stdout and stderr may also need to be created. (clumens)
-- Fix booty for dmraid (hdegoede)
-- It's self.origrequest, not self.origreqest (#489036). (clumens)
-- Added crypto.py unittest; Updated devicelibs tests baseclass.py and lvm.py
-  (mgracik)
-- Start storage before parsing the kickstart file. (clumens)
-- Make sure autopart without any clearpart command will fail. (clumens)
-- Update storage flag on ks autopart (rvykydal)
-- Use correct storage attribute for ks clearpart (rvykydal)
-- Catch the new _ped.DiskLabelException for unrecognized disklabels.
-  (dlehman)
-- Catch all failures from making parted objects in exceptionDisks. (dlehman)
-- various dmraid fixes. (jgranado)
-- Implement the format disk question as a callback. (jgranado)
-- Add dmraid functionality to new storage code. (jgranado)
-- Do not pass None values into nonmandatory arguments, you are screwing the
-  default values.. (msivak)
-
-* Thu Mar 05 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.25-1
-- Schedule device destroy actions for partitions last. (dlehman)
-- Pass storage.disks, not storage, to createAllowed.... (#488860) (dlehman)
-- Nodev filesystems always exist. And the device is arbitrary. (dlehman)
-- Include proc, &c filesystems in fstab and FSSet.{mount/umount}Filesystems.
-  (dlehman)
-- Remove FSSet.writeFSTab. That job is handled elsewhere. (dlehman)
-- Add properties to FSSet to provide the nodev entries. (dlehman)
-- Fix incomplete format in Storage.deviceImmutable. (dlehman)
-- Make sure we use the same disk the free space is on. (#488807) (dlehman)
-- Prevent clobbering of name 'mdraid' by qualifying it. (dlehman)
-- Handle unformatted disks and cdroms in Storage.exceptionDisks. (dlehman)
-- Add resizeArgs property for resizable filesystems. (dcantrell)
-- Fill out class NTFS a bit more. (dcantrell)
-- Add fsckProg property to class FS. (dcantrell)
-- Ext2FS.migratable(self) -> Ext2FS.migratable (dcantrell)
-- Fix StorageDevice.minSize() and PartitionDevice.maxSize() (dcantrell)
-- Center resize window on the screen. (dcantrell)
-- Do not raise DeviceError if not bootable device is found. (dcantrell)
-- Do an even more thorough job of ignoring disks libparted doesn't like.
-  (clumens)
-- Fix a couple problems on the "Change device" bootloader dialog. (clumens)
-- Fix a typo when writing out the mdadm config file. (clumens)
-- Remove all uses of isys.cdromList, which no longer exists. (clumens)
-- Check to see if we're on S390 on the congrats screen (#488747). (clumens)
-- Handle non-fatal errors more gracefully in addUdevDevice. (dlehman)
-- partRequests no longer exists, so don't try to import it (#488743).
-  (clumens)
-- When building the exceptionDisks list, skip devices libparted doesn't
-  like. (clumens)
-- Iterate over devicetree.devices.values, not devicetree. (dlehman)
-- Add a get() method to Flags, since it pretends to be a dictionary.
-  (clumens)
-- Stop with the fsset usage. (dlehman)
-- Format message string after translation not before (msivak)
-- We need newer python-cryptsetup because of the default values for cipher
-  and keysize for luskFormat (msivak)
-- If a drive is not initialized, offer reinitialization or ignoring the
-  drive to the user (msivak)
-- More syntax errors / traceback fixes (hdegoede)
-- Fix syntax errors (rvykydal)
-- Implement Storage.sanityCheck, mostly from old partitions code. (dlehman)
-
-* Thu Mar  5 2009 Dave Lehman <dlehman@redhat.com> - 11.5.0.24-3
-- Fix booty's desire to import fsset.
-- Fix attempt to set read-only attr "removable" in DiskDevice.__init__
-
-* Thu Mar 05 2009 Peter Jones <pjones@redhat.com> - 11.5.0.24-2
-- Add EFI boot.iso generation.
-
-* Wed Mar  4 2009 Dave Lehman <dlehman@redhat.com> - 11.5.0.24-1
-- Storage test day.
-
-* Fri Feb 20 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.23-1
-- Remove old content from utils/ (dcantrell)
-- Ensure request.drive is always a list (#485622) (dcantrell)
-- Pick up pyblock if it exists in block/ on an updates.img. (dcantrell)
-- Don't check for a swapfs on things that aren't partitions (#485977).
-  (clumens)
-- Perform ext3->ext4 filesystem migration if ext4migrate is given (#484330).
-  (clumens)
-- Translate i?86 into i386 as a base arch. (jkeating)
-- Teach upd-instroot about i586 arch, for sake of glibc.i586/openssl.i586
-  (jkeating)
-- Fix the obvious typo. (clumens)
-- filer.login raises an exception with it can't login, not returns None
-  (#486454). (clumens)
-- Take into account that a parted.Partition's _fileSystem can be None
-  (#485644). (clumens)
-
-* Thu Feb 19 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.22-1
-- Updated Romanian translation (alexxed)
-- Remove the qla2xxx line from mk-images again (wwoods).
-- Fix broken shell syntax from 3bdcd64d2 (jkeating)
-- The VLGothic-fonts package has changed name and location (#486080).
-  (clumens)
-
-* Tue Feb 17 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.21-1
-- Building for i586 only now in Fedora. (dcantrell)
-
-* Tue Feb 17 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.20-1
-- Fix indentation on upd-instroot (kanarip)
-- Fix the indentation in mk-images (kanarip)
-- Remove unused iface_netmask2prefix() function. (dcantrell)
-- A parted.Disk has no attribute named "dev".  It's named "device"
-  (#486007). (clumens)
-- Use brandpkgname for the efi art too (katzj)
-- Let's use the product string for a brandpackage name. (kanarip)
-- Fix indentation in mk-images.efi (kanarip)
-- Fix indentation in buildinstall script (kanarip)
-- It's part.active, not part.is_active(). (clumens)
-- File the basic traceback as the first comment instead of a generic
-  message. (clumens)
-- Encode our upgrade policy in productMatches/versionMatches and enforce it.
-  (clumens)
-- If we'd show package selection on kickstart installs, also show tasksel.
-  (clumens)
-
-* Fri Feb 13 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.19-1
-- Fix build errors in the new net.c code. (clumens)
-
-* Fri Feb 13 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.18-1
-- Require pyparted >= 2.0.0 (dcantrell)
-- Update to use the new pyparted. (dcantrell, clumens)
-- Replace non UTF-8 char for hiding password chars with UTF-8 (#485218)
-  (hdegoede)
-- Use a better test for when we're in text mode (#484881). (clumens)
-- Add iBFT support to loader (msivak)
-- Hardlink the initrd.img since we're linking the vmlinuz as well. (jkeating)
-- Check if ld-linux.so.2 is a link already, before removing it (dcantrell)
-
-* Wed Feb 11 2009 Hans de Goede <hdegoede@redhat.com> - 11.5.0.17-1
-- Revert broken German translation fixes so that we will build again
-- Sync up module list (#484984) (katzj)
-
-* Wed Feb 11 2009 Hans de Goede <hdegoede@redhat.com> - 11.5.0.16-1
-- Rewrite iscsi support using libiscsi (hdegoede)
-
-* Mon Feb 09 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.15-1
-- Fix gptsync/lib.c for gcc strict aliasing rules. (dcantrell)
-- Fix gcc warning for gptsync memset() usage. (dcantrell)
-
-* Mon Feb 09 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.14-1
-- Rewrite mdio_read() in linkdetect.c for strict aliasing rules. (dcantrell)
-
-* Mon Feb 09 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.13-1
-- Check that required kickstart commands are present early on (#483048).
-  (clumens)
-- Simplify the text mode interface. (clumens)
-- Fix truncated translation string for livecd installs (#484430). (clumens)
-- Calcutta -> Kolkata (#484638). (clumens)
-- Fix runpychecker.sh to find zonetab module (hdegoede)
-- Strip invalid characters from automatically made VG/LV names (#483571).
-  (clumens)
-- Fix systemtime setting during installation (#6175, #461526). (rvykydal)
-- Workaround MMC block devs showing up not as disks from hal (#481431)
-  (katzj)
-- Add some new false positives to pychecker false positives filtering
-  (hdegoede)
-- Make kickstart timezone value check consistent with system-config-date
-  (#483094) (rvykydal)
-- Make ext4 default in UI filesystem selection (bug #481112) (rvykydal)
-- Redirect iscsiadm's stderr away from the console. (clumens)
-- Pay attention to the stderr parameter to execWithCapture. (clumens)
-- For python2.6, our showwarnings function must take a line= parameter.
-  (clumens)
-- If ext4dev is seen in the /etc/fstab, treat it as ext4 instead (#474484).
-  (clumens)
-- Make sure to call _getConfig from our YumSorter subclass. (clumens)
-- Set proper text mode font for Greeks (#470589) (msivak)
-- Lots of translation updates.
-
-* Thu Jan 29 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.12-1
-- If ks=nfs:... is given, don't try to find the file via boot options
-  (#480210). (clumens)
-- Fix cdrom install on machines with no network devices (wwoods)
-- updated fuzzy strings (jsingh)
-- Use modinfo to find out what firmware we need in initrd (wwoods)
-- Use the preconf object for yum configuration now (jantill). (clumens)
-- Updated Dutch translation adn only 1 -fuzzy- string left (zuma)
-- Add a boot target for the xdriver=vesa parameter and document it. (clumens)
-- repo.proxy is now a property, so check before setting it (#481342).
-  (clumens)
-
-* Wed Jan 21 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.11-1
-- Fix a logic problem with network file write outs. (480769) (jkeating)
-- Only run selectBestKernel, selectBootloader, etc. for new installs.
-  (wwoods)
-
-* Mon Jan 19 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.10-1
-- btrfs install support (sandeen)
-- Default / to be ext4 (katzj)
-- Allow live installs to use ext4 as root and make the error message clearer
-  (katzj)
-- Add support for Maithili and Nepali (#473209). (clumens)
-
-* Fri Jan 16 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.9-1
-- Cracklib moved locations, account for this in our keepfiles. (jkeating)
-- Look in the right path for kernel module lists. (jkeating)
-- Fix more problems in expandModuleSet, based on a patch from markmc
-  (#480307). (clumens)
-- Allow ext4 without magic argument (keep a flag for migrate) (katzj)
-- Fix pulling in network modules (katzj)
-- Support mounting NTFS filesystems (#430084) (katzj)
-- dejavu fonts changed package names, pick up new names. (jkeating)
-- TightVNC is now the default VNC server in Fedora (#480308). (clumens)
-- Only skip (over)writing netconfig if we have an actual instPath (jkeating)
-- The sets module is deprecated, so no longer use it. (clumens)
-
-* Wed Jan 14 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.8-1
-- Fix D-Bus usage in get_connection in loader (jkeating)
-
-* Wed Jan 14 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.7-1
-- How to get raw pages from the wiki has changed again. (clumens)
-- Make sure the 'anaconda' file gets the right detected type (alsadi,
-  #479574).
-- Include the missing import. (clumens)
-
-* Thu Jan 08 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.6-1
-- Collect DSO deps for NetworkManager plugins. (dcantrell)
-
-* Thu Jan 08 2009 Chris Lumens <clumens@redhat.com> - 11.5.0.5-1
-- NetworkManager system settings plugins were renamed, change mk-images.
-  (dcantrell)
-- Add a message to install.log when package installation is done (#476953).
-  (clumens)
-- Add support for specifying which partition to upgrade (atodorov, #471232).
-  (clumens)
-- pykickstart has a new version of the upgrade command. (clumens)
-- Log all calls to mount to /tmp/program.log as well. (clumens)
-- Log everything from execWithRedirect or execWithCapture (#467690).
-  (clumens)
-- Update partedUtils.py:findExistingRootPartitions to return UUID
-  (atodorov). (clumens)
-- Don't skip the method screen when going back and forth (#477991). (clumens)
-- Die on errors from upd-instroot/mk-images rather than continuing on (katzj)
-- The FTP USER command does not need to be followed by a PASS (#477536).
-  (clumens)
-
-* Mon Jan 05 2009 David Cantrell <dcantrell@redhat.com> - 11.5.0.4-1
-- Workaround compile error due to (# 478663) (hdegoede)
-- Various packaging fixed from review (#225246) (hdegoede)
-- Show the header in certain non-lowres cases (#478765, alsadi AT
-  ojuba.org). (clumens)
-- Remove doMultiMount. (clumens)
-- Use mount -t auto instead of passing a list of valid fstypes (#477328).
-  (clumens)
-- Fix case sensitivity when searching for headers (kanarip)
-- Fix a traceback in checking for network install (ricky AT
-  fedoraproject.org). (clumens)
-
-* Tue Dec 23 2008 David Cantrell <dcantrell@redhat.com> - 11.5.0.3-1
-- Initialize domainname to None (#477831) (dcantrell)
-- Do not import unused modules. (dcantrell)
-- Call '/sbin/udevadm settle' instead of /sbin/udevsettle (dcantrell)
-
-* Tue Dec 23 2008 David Cantrell <dcantrell@redhat.com> - 11.5.0.2-1
-- Require latest pykickstart for repo command (clumens)
-- Remove libdhcp* from scripts/upd-instroot (dcantrell)
-- methodstr -> self.methodstr (dcantrell)
-- Rewrite iface_ip2str() to use libnm-glib (dcantrell)
-- Fix a few syntax error caugh by pychecker (hdegoede)
-- Remove isys.e2fslabel() and isys.getraidsb() (dcantrell)
-
-* Thu Dec 18 2008 David Cantrell <dcantrell@redhat.com> - 11.5.0.1-1
-- Remove plural forms from po/tg.mo (katzj)
-
-* Thu Dec 18 2008 David Cantrell <dcantrell@redhat.com> - 11.5.0.0-1
-- Reduce direct D-Bus calls in isys/iface.c. (dcantrell)
-- Allow 'ks' to function as it once did (#471812) (dcantrell)
-- Fix telnet install support (#471082) (dcantrell)
-- Call 'udevadm settle' instead of 'udevsettle'. (dcantrell)
-- When using anaconda with kickstart file with UI mode - do not show the VNC
-  question (#476548) (msivak)
-- Check error from asprintf() correctly for dhcpclass handling. (dcantrell)
-- Use libnm_glib in net.c:get_connection() (dcantrell)
-- Add libnm_glib CFLAGS and LIBS to loader's Makefile. (dcantrell)
-- BR NetworkManager-glib-devel. (dcantrell)
-- Only write the short hostname to the localhost line (#474086) (dcantrell)
-- Updated Tajik Translation - Victor Ibragimov (victor.ibragimov)
-- Copy /etc/dhclient-DEV.conf file to target system (#476364) (dcantrell)
-- Use macros for D-Bus paths (dcantrell)
-- Let X tell us when it's launched rather than just sleeping. (ajax)
-- When there's no baseurl, set a default of [] instead of [''] (#476208).
-  (clumens)
-- cracklib now raises exceptions on bad passwords (rzhou, #476312). (clumens)
-- Make sure ssh doesn't get duplicated in the open port list (#474937).
-  (clumens)
-- mdraid1: default to putting grub on partition instead of mbr (#217176)
-  (hdegoede)
-- Don't install the games group as part of office/productivity (#472324).
-  (clumens)
-- Don't dump encryption passphrases. (dlehman)
-- Write anacdump.txt upon receipt of SIGUSR2 (from clumens). (dlehman)
-- Use stacks instead of tracebacks in traceback handlers. (dlehman)
-- Unmount swap devices when migrating filesystems, then reactivate
-  (#473260). (clumens)
-- Handle both /dev/sr0 and sr0, since that's what cdromList gives (#475083).
-  (clumens)
-- In iface_ip2str(), make sure to advance to next item before continue.
-  (dcantrell)
-- We already have _GNU_SOURCE defined in Makefile.inc (dcantrell)
-- Remove XXX comment in net.c about GATEWAY (dcantrell)
-- Use strverscmp() from glibc in place of rpmvercmp() (dcantrell)
-- Remove readLine() function from loader/loadermisc.c (dcantrell)
-- Do not write SEARCH line to ifcfg-DEVICE file (#474858) (dcantrell)
-- Preserve existing network configuration files during install (#461550)
-  (dcantrell)
-- Send unique vendor class identifier unless user specifies one. (dcantrell)
-- Avoid tracebacks when filling in static network config fields (#474275)
-  (dcantrell)
-- Prevent network install when no network devices are found (#470144)
-  (dcantrell)
-- Remove markup from text before printing it in cmdline mode (#470253).
-  (clumens)
-- Move strip_markup() into iutil. (clumens)
-- Fix up plural forms header so that python doesn't blow up for us (katzj)
-- Change text to reflect Jesse's comments (katzj)
-- Add support for the Tajik language (#455963). (clumens)
-- Add a button to the UI to ignore all missing packages. (clumens)
-- First small eu.po transtation, just to be sure that the system is set up
-  OK. (mikel.paskual)
-- mini-wm: Turn on automatic window redirection. (ajax)
-- Better naming for LVM volume groups and logical volumes (#461682)
-  (dcantrell)
-- Partition requests can be None when populating the tree. (#474284)
-  (dlehman)
-- Say we are unable to configure the network interface (#467960) (dcantrell)
-- Match textw/network_text.py strings to iw/network_gui.py (#470145)
-  (dcantrell)
-- In addSnap(), check snapshots for data key before continuing (#433824)
-  (dcantrell)
-- Load FCP modules early for CD/DVD install (#184648) (dcantrell)
-- Update mk-s390-cdboot.c to work with large kernel images (#184648)
-  (dcantrell)
-- Make sure fstype exists before we try to test it (#473498). (clumens)
-- Updated a small correction in kn locale (svenkate)
-- Use modules.* files for finding modules of a type rather than modinfo
-  (katzj)
-- Make complete text mention updates (#244431) (katzj)
-- Make text for autopartitioning types clearer (#441350) (katzj)
-- Allow installing grub on the MBR if /boot is on mdraid (#217176) (hdegoede)
-- Fix some spelling errors in German translation (fabian)
-- Make the required media dialog less wordy (#469557). (clumens)
-- returnNewestByName now raises an error instead of returning [] (#472462).
-  (clumens)
-- Fix death on login of an OLPC on a live image (katzj)
-- Fix ld-*.so globbing for glibc-2.9 . (pjones)
-- Do not bring up network for non-remote kickstart locations (#471658)
-  (dcantrell)
-- Resolve dm-X devices returned by pvdisplay. (#448129) (dlehman)
-- More shell script syntax fixing (katzj)
-- Only bring up the network dialog on package failures if required
-  (#471502). (clumens)
-
-* Wed Nov 12 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.58-1
-- Add comps groups for new repos that are added (#470653) (katzj)
-- Support upgrades of systems whose rootfs is on an LV. (#471288) (dlehman)
-- Use hasPassphrase() instead of directly accessing passphrase member.
-  (dlehman)
-- Don't dump private class members (those with leading "__") (dlehman)
-- Explicitly close the CD drive after the user hits "continue" (#375011)
-  (pjones)
-- Fix shell syntax error (#471090) (ivazqueznet)
-- Save the /etc/fstab before overwriting it on upgrades (#452768, #470392).
-  (clumens)
-
-* Tue Nov 11 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.57-1
-- Fix more UnicodeDecodeErrors, hopefully for good this time (#470733).
-  (clumens)
-- iscsi do missing value check only once (hdegoede)
-- Don't try to label XFS filesystems on livecd installs (#470951). (clumens)
-- Include cracklib .mo files and look up strings in the right domain.
-  (clumens)
-- Bugzilla has changed its return values for a couple queries. (clumens)
-- Set the default keyboard based on the language (#470446). (clumens)
-- Prevent traceback for vnc installs on KVM guests (#470559) (dcantrell)
-- Bring up networking early enough for syslog= param (#470513) (dcantrell)
-- Sleep a bit before calling udevsettle in iscsiTarget.login (#470073,
-  #466661) (hdegoede)
-- kickstart, iscsi do not call iscsi.startup after startIBFT has been called
-  (hdegoede)
-- Do not stop and restart iscsid when rescanning disks/partitions (#470223)
-  (hdegoede)
-- iscsi.startup should not login to targets as we are already logged in
-  (#470230) (hdegoede)
-- Remove obsolete normally never reached code from _stopIscsiDaemon
-  (#470229) (hdegoede)
-- The function getEncryptedDevice gets called correctly expect when we are
-  in (jgranado)
-- More translations
-
-* Thu Nov 06 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.56-1
-- Don't have the key icon take up so much space on the LUKS dialog
-  (#470338). (clumens)
-- Avoid getting linux-base in the kernel list (katzj)
-- Deselect groups when we reset things also (#469854) (katzj)
-- make iscsi login code wait for udev to create the devices (#466661,
-  #470073) (hdegoede)
-- Set the correct path when using the directory chooser. (clumens)
-- We always need a wait window, not just when the repo has a name. (clumens)
-- Set initial state of IP configuration fields in text mode (#469933)
-  (dcantrell)
-- Prevent traceback when there are no network devices (#469339) (dcantrell)
-- Indentation fix. (pjones)
-- Let users edit net settings on network failure in stage 1 (#465887)
-  (dcantrell)
-- Move startNewt later to avoid printing extra messages on the screen
-  (#469687). (clumens)
-
-* Mon Nov 03 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.55-1
-- Revert "Make sure dialog deletions take effect sooner (#455676)." (clumens)
-- Don't set up the launcher for the installer on XO (katzj)
-- Whitespace cleanups for timezone.py (dcantrell)
-- Do not store mount options in loaderData->instRepo (#467760) (dcantrell)
-- Make sure we look up the IP address for the correct device (#469439)
-  (dcantrell)
-- Remove unused bool() function. (dcantrell)
-- Check for required space for / on live installs (#468867) (katzj)
-- Add a basic method for checking the minimal size needed for a backend
-  (katzj)
-- Fix typo that somehow snuck in (katzj)
-- If there's no language selected, don't traceback (#469578). (clumens)
-- Improve filtering of non-available groups (#469438) (katzj)
-- filer.py: set defaultProduct in __init__ (hdegoede)
-- Fix indentation error in filer.py (again) (hdegoede)
-- Rebuild keymaps to get rid of trq.map (#469433). (clumens)
-- Provide sample punch card reader script for s390x (#462953) (dcantrell)
-- Fix a typo that shouldn't have even gotten though. (clumens)
-- Check that the platform and product are also correct (#469367). (clumens)
-- Remove cio_ignore functionality for s390x (dcantrell)
-- Remove bootdisk/s390 (dcantrell)
-- If method=nfs: is given, check if it's really an NFSISO install (#468885).
-  (clumens)
-- Get the right list elements for the iscsi text interface (#466902).
-  (clumens)
-- Don't traceback when displaying error messages (#469372). (clumens)
-- Make sure we differentiate locked luks devs from deleted ones. (dlehman)
-- Fix a typo that breaks kickstart with encryption. (#469318) (dlehman)
-
-* Thu Oct 30 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.54-1
-- Call startNewt earlier than network bring up (#469171). (clumens)
-- Write out the path to the repo, not anaconda-ks.cfg (#467753). (clumens)
-- Allow specifying devices by path if they're files (#468504) (katzj)
-- Fix the last pychecker warnings in master (hdegoede)
-- Add --strict option to runpychecker.sh (hdegoede)
-
-* Wed Oct 29 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.53-1
-- Don't sleep(5) after xrandr (ajax)
-- Force DPI to 96 even harder (#458738) (ajax)
-- Don't try to switch VT to the one that X is on (ajax)
-- Only copy /etc/resolv.conf if instPath != '/' (dcantrell)
-- 'is not' -> '!=' (dcantrell)
-- Write --dhcpclass instead of --class to the anaconda ks file. (jgranado)
-- Fix 2 issues in pyparted found by pychecker (hdegoede)
-- Add a bit of documentation to the top of runpychecker.sh (hdegoede)
-- Add runpychecker.sh script and pychecker-false-positives file (hdegoede)
-- Fix saving tracebacks via scp while in text mode. (clumens)
-- Search for the hash in the whiteboard, not as the entire whiteboard.
-  (clumens)
-- Fix various syntax errors caught by PyChecker (hdegoede)
-- Wouldn't it be nice to have some real documentation in filer.py? (clumens)
-- Make sure the productVersion given by .treeinfo exists in bugzilla
-  (#468657). (clumens)
-
-* Mon Oct 27 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.52-1
-- Let DNS lookups work from %%post scripts (#468132) (dcantrell)
-- Do not use /.tmp for temporary files (#468720) (dcantrell)
-- Don't treat encrypted PVs as available if we don't have the key. (#465240)
-  (dlehman)
-- Do all new device passphrase prompting from partitioningComplete. (dlehman)
-- Fix the obviously stupid typo. (clumens)
-- There's a new version of the firewall command for F10 (#467753). (clumens)
-- Another fix for printing package summaries in text mode (#468283).
-  (clumens)
-- Fix traceback in network.bringUp() (#468651) (dcantrell)
-- lvresize requires a --force arg now (#468478) (katzj)
-- Include return code on resize failure error message (#468479) (katzj)
-
-* Fri Oct 24 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.51-1
-- Catch UnicodeDecodeError so traceback messages display anyway. (dcantrell)
-- Do not write NM_CONTROLLED=yes to ifcfg files (#468028) (dcantrell)
-- Log D-Bus messages at ERROR or INFO level. (dcantrell)
-- Write dhcpclass to the dhclient conf file for the device (#468436)
-  (dcantrell)
-- Tell NetworkManager not to touch network interfaces when / is a netfs
-  (hans)
-- Catch more X failures and fallback to text (#467158). (clumens)
-- Fix a typo when using network --gateway (#468364). (clumens)
-- Fix icon (#468273) (katzj)
-- Remove extra debug info. (pjones)
-- Fix the damn spinner in the progress bar. (pjones)
-- Fix whitespace. (pjones)
-- Fix "looking for installation images" when there's no disc at all. (pjones)
-- Make sure dialog deletions take effect sooner (#455676). (clumens)
-- Make cdrom drive door status messages be INFO not DEBUG. (pjones)
-- Don't switch to tty6 on vnc installs. (clumens)
-- Update font list (#462295). (clumens)
-- Don't display the entire lengthy device description (#467825). (clumens)
-- Fix ext4 detection on existing partitions (#467047) (rvykydal)
-- Make sure we handle the /tmp/method file for FTP correctly (#467753).
-  (clumens)
-- Do not write NM_CONTROLLED=yes to ifcfg files (#468028) (dcantrell)
-- Revert "dhclient-script not needed for NetworkManager" (clumens)
-- Skip Installation Repo when writing out repo kickstart lines. (clumens)
-- Correct media check docs (#468061). (clumens)
-- Many translation updates
-
-* Fri Oct 17 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.50-1
-- Update several font package names that we were missing. (clumens)
-- Only bring up the netconfig dialog if the repo requires networking.
-  (clumens)
-- cmdline.py: Fix a small typo in a message (rh 467338) (hansg)
-- Enable CCW devices used for installation (#253075) (dcantrell)
-- I don't know what trq.map.trq-map is, but let's not include it. (clumens)
-- If networking is needed for yum repos, bring it up before fetching
-  repodata. (clumens)
-- Force DPI to 96 when launching X. (#458738) (ajax)
-- Lots of translation updates.
-
-* Tue Oct 14 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.49-1
-- Make kickstart installs work again (#374271, #392021, #448096, #466340,
-  #466304) (dcantrell)
-- Let users go Back when loading updates. (dcantrell)
-- Write ifcfg files to /etc/sysconfig/network-scripts instead of /.tmp
-  (dcantrell)
-- Handle unknown hosts in getDefaultHostname (#466775) (dcantrell)
-- Try to look up the hostname by the IP address NM reports (#466775)
-  (dcantrell)
-- NM no longer provides the hostname as a property (#466775). (clumens)
-- ext4dev -> ext4 (esandeen). (clumens)
-- Move persistent network udev rule to under /etc (#464844). (clumens)
-- Update keymaps to include latest Romanian settings (#466117). (clumens)
-- Take ip= parameter values by not resetting ipinfo_set. (dcantrell)
-
-* Fri Oct 10 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.48-1
-- Remove unnecessary STEP_IP code. (dcantrell)
-- Fix how configureTCPIP() returns. (dcantrell)
-- Write new sysconfig data to a tmpdir first, then move in place. (dcantrell)
-- Write NM_CONTROLLED=yes rather than NM_CONTROLLED= (dcantrell)
-- Get rid of some iface flags that were not doing anything anymore.
-  (dcantrell)
-- Generate new config files in /.tmp in writeEnabledNetInfo() (dcantrell)
-- Remove unused variables from configureTCPIP() (dcantrell)
-- Do not call get_connection() twice for DHCP. (dcantrell)
-- Ask for language and keyboard in rescue mode (#466525). (clumens)
-- Fix bringing up the network in rescue mode (#466523). (clumens)
-- If we don't have a translation for a lang name, just use the English
-  (#466515) (katzj)
-- Disable some more IPv6 checks. (clumens)
-- Fix a typo (second part of #466374) (katzj)
-
-* Thu Oct 09 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.47-1
-- Tag problems in pkgcvs.  Wish we still had force-tag
-
-* Thu Oct 09 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.46-1
-- Pull in static network settings from the boot: line (#465270) (dcantrell)
-- Do not segfault when going back to select a new interface (#465887)
-  (dcantrell)
-- Do not test for DNS settings in mountNfsImage() (dcantrell)
-- Populate struct iface correctly in setupIfaceStruct() (dcantrell)
-
-* Thu Oct 09 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.45-1
-- Fix sorting of repos so we always return an integer value (#466174).
-  (clumens)
-- Change the upgrade progress bar to pulse (#466053). (clumens)
-- Mark iscsi disks not used for / as autostart (rh461840) (hans)
-- Always display the wait window when fetching repo information. (clumens)
-- Lazily unmount everything before killing NetworkManager (#463959).
-  (clumens)
-- lang-names really does need to depend on subdirs (katzj)
-- Reset targetLang on language change (#465981) (katzj)
-- Honor static net parameters with NM (#465270) (dcantrell)
-
-* Mon Oct 06 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.44-1
-- Do not rely on loaderData->noDns to tell if we have DNS configured.
-  (dcantrell)
-- Skip askmethod dialog if user passes repo= and stage2= (dcantrell)
-- Reset resolver in get_connection() (dcantrell)
-- Fix problems dealing with PXE boot and the ksdevice= parameter. (dcantrell)
-- Disable more IPv6 code in loader for now. (dcantrell)
-- Write BOOTPROTO=static for manual IPv4 config. (dcantrell)
-- Disable IPv6 widgets for F-10. (dcantrell)
-- Add iwlagn driver firmware (#465508). (clumens)
-- Move starting HAL to after we've probed for hardware. (clumens)
-- Don't try to load a couple modules that no longer exist. (clumens)
-- The Chinese font package has changed names (#465290). (clumens)
-- Fix a traceback when there's no ksdevice given (#465638). (clumens)
-- Fix traceback in post install configuration (hans)
-
-* Fri Oct 03 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.43-1
-- Disable IPv6 interface widgets in loader for now. (dcantrell)
-- Start NetworkManager earlier (#462083) (hans)
-- Work around gtk2 bug (#465541) (hans)
-- Move our yum.conf out of /etc (#465160) (katzj)
-- Correctly display the IP address a vnc viewer should connect to (#465353).
-  (clumens)
-- lohit-fonts-malayam has been replaced by smc-fonts-meera (#456449).
-  (clumens)
-- Fix a typo in cleaning up repos. (clumens)
-- Fix the mount error reading for real this time (pjones, #465250). (clumens)
-- Support ksdevice=link when booting from boot.iso. (dcantrell)
-- Automatically select NIC based on ksdevice= boot parameter. (dcantrell)
-
-* Wed Oct 01 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.42-1
-- Revert "Finally controlled the plural issue at #508  in Japanese"
-  (dcantrell)
-
-* Wed Oct 01 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.41-1
-- Fix text inconsistency (#465165). (clumens)
-- If there's an error running Xvnc, also print it to the console. (clumens)
-- Set the installation repo when using the askmethod UI (#463472). (clumens)
-- Fix a segfault when the wrong HDISO repo parameter is given. (clumens)
-- Remove the 'Installation Repo' cache directory after install (#464853).
-  (clumens)
-- If there aren't any usable NICs, don't write out a config (#465127).
-  (clumens)
-- It helps to specify what the method string should be split on (#464855).
-  (clumens)
-- Gateway and nameserver are optional for static network configuration.
-  (dcantrell)
-- Store nameserver in NetworkDevice object. (dcantrell)
-- Fix a traceback calling enableNetwork (#464849). (clumens)
-- Enable groups when creating new repos since yum doesn't do that now.
-  (clumens)
-- Update FQDN patch to fix a couple tracebacks (#464191). (clumens)
-- Fix static network configuration from boot.iso installs. (dcantrell)
-- Use all caps naming for the netdev keys. (dcantrell)
-- Left justify text in ui/netconfig.glade interface. (dcantrell)
-- Use the right attribute for repo URLs. (clumens)
-- Use fullscreen for small screens (#444943) (katzj)
-- Another try at fixing up reading errors from mount. (clumens)
-- Don't traceback if no baseurl has been set yet. (clumens)
-- Allow users to enter a hostname or FQDN during installation (#464191)
-  (dcantrell)
-- Whitespace cleanups. (dcantrell)
-- Fix mk-s390-cdboot on s390x (#184648) (dcantrell)
-- Run all text through unicode() before putting it into the TextBuffer.
-  (clumens)
-- Add reverse chap iscsi bits for kickstart (hans)
-- Properly center the passphrase entry dialog. (clumens)
-- Fix test for an empty hostname. (clumens)
-- Support installs to SD via MMC (#461884) (katzj)
-- Set ANACONDA_PRODUCTNAME, etc from /etc/system-release (#464120) (alsadi)
-- Reduce code duplication by moving methods into backend (katzj)
-- Select packages after repos are set up (#457583) (katzj)
-- Add a basic reset method (katzj)
-- Cleanups and simplifications to repo setup (clumens) (katzj)
-- Revert "Revert "lang-names should really only depend on lang-table""
-  (katzj)
-- Fix lang-name generation + fix traceback with LANG=C (katzj)
-- Allow going back to the method selection screen on error (#463473).
-  (clumens)
-- Make the boot loader device dialog less ugly (#463489). (clumens)
-- Look in images/ for install.img on HDISO (#463474). (clumens)
-- Sort Installation Repo to the top of the repo list. (clumens)
-- Fuzzy string to fix translation build (katzj)
-
-* Wed Sep 24 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.40-1
-- Fix network interface bring up in text mode (#463861, #462592) (dcantrell)
-- Bring back isys.resetResolv() and fix NetworkManager polling in
-  network.py. (dcantrell)
-- Poll 'State' property from NetworkManager in network.bringUp() (dcantrell)
-- Log error in rescue mode is network.bringUp() fails. (dcantrell)
-- Set the first network device in the list to active. (dcantrell)
-- Get rid of firstnetdevice in Network (dcantrell)
-- Do not write /lib/udev.d rules if instPath is '' (dcantrell)
-- Fix problems with bringDeviceUp() calls (#463512) (dcantrell)
-
-* Mon Sep 22 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.39-1
-- Fix a traceback when getting the interface settings (#462592). (clumens)
-- self.anaconda -> anaconda (clumens)
-
-* Sat Sep 20 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.38-1
-- Restore old lang-names generation method (dcantrell)
-- Remount /mnt/sysimage/dev after migrating filesystems. (clumens)
-- Use the instroot parameter like we should be doing. (clumens)
-
-* Fri Sep 19 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.37-1
-- Set the filename on the traceback when we upload it (wwoods).
-- Don't worry about errors looking up protected partitions on upgrades.
-  (clumens)
-- Fix test for allowing the installation source to be on the root fs
-  (#462769). (clumens)
-- lang-names should really only depend on lang-table (katzj)
-- Don't make the .desktop file unless we actually need to (katzj)
-- Fix lang-name generation (katzj)
-- Look for xrandr in the search path. (clumens)
-- Make the textw network screen match the iw interface by only prompting for
-  hostname (#462592) (dcantrell)
-- Pick up hostname if we have it, otherwise use localhost.localdomain
-  (#461933) (dcantrell)
-- dhclient-script not needed for NetworkManager (dcantrell)
-- Add getDefaultHostname() to network.py (dcantrel)
-- Write out NETMASK and BROADCAST correctly in loader. (dcantrel)
-- Fix problems with manual network configuration in loader. (dcantrel)
-- anaconda-yum-plugins is now in its own source repo. (clumens)
-- Remove most of the network configuration from text mode as well (#462691).
-  (clumens)
-- Add an extra newline to the empty partition table message. (clumens)
-- Fixup DiskSet._askForLabelPermission() (markmc)
-
-* Mon Sep 15 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.36-1
-- Remove invalid i18n stuff to let anaconda build. (dcantrell)
-- Remove doConfigNetDevice() prototype. (dcantrell)
-
-* Mon Sep 15 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.35-1
-- Call network.bringDeviceUp() instead of old isys functions. (dcantrell)
-- Pass device name to network.setDNS() and network.setGateway(). (dcantrell)
-- NetworkManager fixes in network.py (dcantrell)
-- Remove code from isys not needed for NetworkManager. (dcantrell)
-- Avoid writing out NM_CONTROLLED more than once. (dcantrell)
-- Write out final ifcfg-DEVICE files correctly. (dcantrell)
-- Use POSIX and LSB hostname length limit. (dcantrell)
-- Consistent whitespace usage in network.py (dcantrell)
-- Do not try to start hald or dbus-daemon from anaconda. (dcantrell)
-- On HDISO installs, mark LABEL= and UUID= partitions as protected. (clumens)
-- Do encrypted device passphrase retrofits while activating partitioning.
-  (dlehman)
-- Use one passphrase for all new LUKS devices and offer retrofit to old
-  ones. (dlehman)
-- There's only one passphrase member (encryptionPassphrase) in Partitions.
-  (dlehman)
-- Only add LUKSDevice instances to PV requests as needed. (dlehman)
-- New device passphrase is now always global w/ option to retrofit. (dlehman)
-- Don't prompt for a passphrase when creating encrypted devices. (dlehman)
-- Define a method to add a passphrase to an existing LUKS device. (dlehman)
-- Fix a traceback when starting a shell in rescue mode (#462148). (clumens)
-- md, lock_nolock, and dm_emc kernel modules no longer exist. (clumens)
-- Fix iscsi disk detection with newer kernels (rh 461839, 461841) (hans)
-- Fix the crash reported in bug 454135 (hans)
-- Make iBFT reading explicit from a higher level (hans)
-- Add ibft flag to ease in testing. (hans)
-- Support iSCSI CHAP and Reverse CHAP authentication (rhbz#402431,
-  rhbz#432819) (hans)
-- Don't set iscsi devices to autostart (rhbz#437891) (hans)
-- Add full CHAP support to iSCSI. (rhbz#432819) (hans)
-- Do not try to initialize iSCSI, when no portal (#435173) (hans)
-- Fix wrong function names for iscsi login/start (rhbz#295154) (hans)
-- Set an attribute when iscsid is started (#431904). (hans)
-- Better fixes for iscsi probing (patch from jlaska) (hans)
-- Make sure ISCSIADM and such are defined (rhbz#431924) (hans)
-- Fix iscsi so that mkinitrd can actually talk to the running daemon (hans)
-- Make iscsi/ibft work (hans)
-- Add mk-images changes forgotten in previous commit (hans)
-- Add support for iSCSI iBFT table (#307761) (hans)
-
-* Thu Sep 11 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.34-1
-- Always start NM so we can talk to it in the boot.iso case (#461071).
-  (clumens)
-- Use the device path to identify LUKS devs in /etc/fstab. (#460700)
-  (dlehman)
-- Use the LUKS UUID instead of device nodes in all references. (#460700)
-  (dlehman)
-- LUKSDevice.getScheme() no longer cares if the dev has a passphrase.
-  (#461203) (dlehman)
-- Correct translation to fix the build. (clumens)
-- Add the method string back into anaconda-ks.cfg. (clumens)
-- Let's try pulling libsqlite into the initrd one more time. (clumens)
-- Don't traceback at the end of live installs (katzj)
-- Correct the message telling you to use a VNC password. (clumens)
-- Remove unused TIMEZONES= crud. (clumens)
-- print doesn't yet support the file= syntax in our version of python.
-  (clumens)
-- Catch errors from using the wrong bugzilla field and display them.
-  (clumens)
-- Fix line wrapping on part type screen (jlaska, #461759).
-- rep_platform has been renamed to platform. (clumens)
-
-* Tue Sep 09 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.33-1
-- Include NetworkManager and dbus libraries on 64-bit arches (#461632).
-  (clumens)
-- We need libsqlite3.so in upd-instroot before it can be in the initrd.
-  (clumens)
-- Fix partitions growing (backport of rhbz #442628) (rvykydal)
-- Kickstart timezone validity check fixed (#461526) (rvykydal)
-- Add more kernel crypto modules (#443545). (clumens)
-- Make the progress bar move when downloading the install.img (#461182).
-  (clumens)
-- Add overrideDHCPhostname as an attribute. (clumens)
-- Fix saving to remote hosts (#461500). (clumens)
-- short_desc is now summary. (clumens)
-- Use print() as a function. (pjones)
-
-* Sat Sep 06 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.32-1
-- Use struct audit_reply instead of struct auditd_reply_list (dcantrell)
-
-* Sat Sep 06 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.31-1
-- Use --service=NAME in firewall.py when calling lokkit (dcantrell)
-- Make NM work for the DHCP case, at least (dcbw) (#461071). (clumens)
-- Sleep a little after dbus to give it time before HAL connects. (clumens)
-- Add libsqlite to the initrd, which is needed by NSS libs. (clumens)
-- Add more dlopen()ed libraries to the initrd. (clumens)
-- Fix various problems with the exn saving UI (#461129). (clumens)
-- Fail gracefully if we can't talk to NetworkManager over DBus. (dcantrell)
-- Reword text for easy of translating plurals (#460728). (clumens)
-- Make sure /bin/sh is linked to /bin/bash (dcantrell)
-- Do not include /usr/lib/gconv in install.img (dcantrell)
-- Add /etc/NetworkManager/dispatcher.d to the install.img. (clumens)
-- Remove last vestiges of rhpxl and pirut. (clumens)
-- Only one list of packages in upd-instroot, thanks. (clumens)
-- Add xrandr back into the install.img (#458738). (clumens)
-- Add a couple more directories to search paths. (clumens)
-- Do repo setup and sack setup as separate steps. (clumens)
-- Fix a typo that was causing repos in the kickstart file to be skipped
-  (#451020). (clumens)
-
-* Fri Aug 29 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.30-1
-- Fix a traceback with unencrypted autopart. (dlehman)
-- doLoggingSetup has grown some new arguments (#460654). (clumens)
-- Updated German translation (fabian)
-- Remove references to isConfigured in network.py (dcantrell)
-- Define the NM_STATE_* constants in isys.py (dcantrell)
-- Rewrite NetworkWindow to only prompt for hostname. (dcantrell)
-- Pad the icon more in network.glade (dcantrell)
-- Removed iface_dns_lookup() (dcantrell)
-- Don't pass NULL to dbus_message_unref() (dcantrell)
-- New network configuration screen for GTK+ UI. (dcantrell)
-- Pass family to iface_ip2str() call (dcantrell)
-- Rewrite iface_ip2str() to talk to NetworkManager over D-Bus (dcantrell)
-- New translation (besnik)
-- Pull in the gtkrc file so we can find the theme. (clumens)
-- Use signed git tags (katzj)
-- Skip networkDeviceCheck in dispatch.py (dcantrell)
-- Do not call has_key() on NetworkDevice, use isys.NM_* (dcantrell)
-- Separate lines per BR. (dcantrell)
-- Remove invalid line iw/autopart_type.py (dcantrell)
-- Fix syntax error in yuminstall.py, fix pychecker warnings. (dcantrell)
-- Updated Hungarian translation (sulyokpeti)
-- Add missing () to function definitions. (dcantrell)
-- Fix err handling in doMultiMount() (dcantrell)
-- Revert "Pass --follow to git-log" (dcantrell)
-- Remove references to /tmp/netinfo (dcantrell)
-- Gather network settings from NetworkManager and ifcfg files. (dcantrell)
-- Update the pot file and refresh the pos (katzj)
-- For all HTTP/FTP repos, keep the cached repodata (#173441). (clumens)
-- Fix a traceback when trying to set the status whiteboard on a bug.
-  (clumens)
-- When the wrong filesystem type is used, raise a more explicit error.
-  (clumens)
-- Don't copy the install.img over in single media cases (#216167). (clumens)
-- Remove isys.getopt() (dcantrell)
-- Remove code not used in net.c (dcantrell)
-- Write to /etc/sysconfig/network-scripts/ifcfg-INTERFACE (dcantrell)
-- mystrstr() -> strstr() (dcantrell)
-- Expand getDeviceProperties to return all devices. (dcantrell)
-- Pass --follow to git-log (dcantrell)
-- Support accessing preexisting LUKS devs using LRW or XTS ciphers.
-  (#455063) (dlehman)
-- Use yum's handling of optional/default/mandatory package selection
-  (#448172). (clumens)
-- List iSCSI multipath devices in the installer UI. (dcantrell)
-- Fix text wrap width on the partition type combo, for real this time
-  (#221791) (dlehman)
-- For /dev/hvc0 terminals, set TERM to vt320 (#219556). (dcantrell)
-- The Timer class is no longer used. (clumens)
-- Handle preexisting swraid w/ encrypted member disks/partitions. (dlehman)
-- Don't try to close a dm-crypt mapping that is not open. (dlehman)
-- Remove unused silo code that wouldn't even build if it were used. (clumens)
-- Remove some really old, really unused code. (clumens)
-- Add another mount function that takes a list of fstypes to try. (clumens)
-- Download progress indicator for FTP and HTTP in stage 1. (dcantrell)
-- Make sure we wait for NetworkManager. (dcantrell)
-- Renamed loader2 subdirectory to loader (hooray for git) (dcantrell)
-- Do not include wireless.h or call is_wireless_device() (dcantrell)
-- Add getDeviceProperties() and rewrite getMacAddress() (dcantrell)
-- Do not include wireless.h (dcantrell)
-- Rewrite isys.isWireless() to use D-Bus and NetworkManager (dcantrell)
-- Rewrite isys.getIPAddress() to use D-Bus and NetworkManager. (dcantrell)
-- Include ../isys/ethtool.h instead of ../isys/net.h. (dcantrell)
-- Rename isys/net.h to isys/ethtool.h, removed unnecessary typedefs.
-  (dcantrell)
-- Removed waitForLink() function in loader. (dcantrell)
-- Remove initLoopback() function in loader (dcantrell)
-- Use D-Bus properties to get current NM state. (dcantrell)
-- Use dbus in hasActiveNetDev() and _anyUsing() (dcantrell)
-- Use NetworkManager instead of libdhcp. (#458183) (dcantrell)
-- When mount fails, pass the error message up to the UI layer. (clumens)
-- Bring askmethod back to prompt for the location of install.img. (clumens)
-
-* Fri Aug 22 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.29-1
-- Enable yum plugins. (clumens)
-- In the preupgrade case, repo=hd: means an exploded tree on the hard drive.
-  (clumens)
-- Remove preupgrade-specific hacks. (clumens)
-- Add conf files for our yum plugins so they can be enabled. (clumens)
-- Create a subpackage containing the yum plugins. (clumens)
-- Add the new blacklist and whiteout yum plugins. (clumens)
-- Allow retrying if the ISO images aren't found (for the USB case). (clumens)
-- Include "--encrypted" in anaconda-ks.cfg partitioning as needed. (#459430)
-  (dlehman)
-- Support establishing a global passphrase when creating encrypted devices.
-  (dlehman)
-- Display the lock icon for encrypted RAID members. (#459123) (dlehman)
-- More descriptive drive message when warning on format. (dcantrell)
-- Need to import rhpl for things like switching to pdb. (clumens)
-- Fix traceback in passphrase handling code for encrypted RAID requests.
-  (#459121) (dlehman)
-- Copy the install.img to /tmp on HD installs. (clumens)
-- Fix a typo (dcantrell).
-- Expert mode was disabled in 2004.  Remove it now. (clumens)
-- Remove an extra "Local disk" option (#459128). (clumens)
-- Clear up error reporting on upgrades when devices are listed by UUID.
-  (clumens)
-- If the UI was used to specify a repo, construct a repo param (#458899).
-  (clumens)
-- Fix a traceback calling createMapping. (clumens)
-- First crack at upgrade of systems with encrypted block devices. (#437604)
-  (dlehman)
-- In kickstart, prompt for new LUKS dev passphrase if not specified.
-  (#446930) (dlehman)
-- Remove passphrase check hack from LUKSDevice.getScheme. (dlehman)
-- Allow specification of a device string for display in passphrase dialog.
-  (dlehman)
-- Add encrypted device passphrase dialog for text mode. (dlehman)
-- Fix PartitionDevice.getDevice to take asBoot into account. (dlehman)
-- Make passphrase dialogs appear in the center of the screen. (#458114)
-  (dlehman)
-- Consider clearpart and ignoredisk when scanning for encrypted partitions.
-  (dlehman)
-- Correctly handle typos in the stage2 location when inferred from repo=.
-  (clumens)
-- Fix the loader UI when prompting for stage2.img on HDISO. (clumens)
-- Rename stage2.img to install.img (dcantrell)
-- Bring up the network before saving a bug via scp. (clumens)
-- Make it more explicit we want the stage2.img URL, not the repo URL.
-  (clumens)
-- Add the match type so we don't find all bugs. (clumens)
-- Make upd-updates create the updates.img you specify if it doesn't already
-  exist. (pjones)
-- Don't base mpath/dmraid/raid startup/stopping based on if lvm is activated
-  yet, (pjones)
-- Add diskset.devicesOpen boolean, so we can tell if devices should be
-  started (pjones)
-- Add dirCleanup back in so we don't leave install metadata behind. (clumens)
-- Move betanag to after keyboard and language are setup. (clumens)
-- Add module dependencies of qeth.ko (#431922). (clumens)
-- Copy the changes from RHEL5 for the linuxrc.s390 over. (clumens)
-- Disable SCSI devices so we can safely remove a LUN (bhinson, #249341).
-  (dcantrell)
-
-* Tue Aug 12 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.28-1
-- More fixes to include udev rules in the initrd (#458570). (clumens)
-- Catch the first non-generic-logo package that provides system-logos.
-  (clumens)
-- Remove extra ')' in install-buildrequires (dcantrell)
-
-* Mon Aug 11 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.27-1
-- Handle 'rescue' and %%post in rescue mode (atodorov)
-- Delay the duplicate label error until the label is actually used
-  (#458505). (clumens)
-- Enable wireless modules again for now as a test (#443545). (clumens)
-- udev rules have changed location (#458570). (clumens)
-- Add install-buildrequires target. (dcantrell)
-
-* Fri Aug 08 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.26-1
-- Remove a bunch of cachedir setting code that is no longer needed. (clumens)
-- Fix segfaults on interactive NFS installs (#458416). (clumens)
-- Fix LVM error handling so the exceptions actually get into the namespace.
-  (pjones)
-- yuminstall: don't look for kernel-xen anymore (markmc)
-- console: kill the /proc/xen hack (markmc)
-- yuminstall: don't ever stop people installing the virt group (markmc)
-- lang: kill xen keymap hack (markmc)
-- bootloader: remove old kernel-xen-{guest, hypervisor} handling (markmc)
-- Preserve baseurl/mirrorlist and mirrorlist checkbox settings across loads.
-  (clumens)
-- It's BETANAG, not betanag. (clumens)
-- Various string fixes (clumens).
-- Wrap spec file changelog lines. (dcantrell)
-- mk-images: replace kernel-xen with pv_ops kernel (markmc)
-- Use a temporary location for yum cache data (#457632). (clumens)
-- Remove extra newtPopWindow() call that was causing a crash (#260621).
-  (dcantrell)
-- Add /sbin/sfdisk (#224297). (dcantrell)
-- Do not call _isys.vtActivate() on s390 or s390x platforms (#217563).
-  (dcantrell)
-- Change the maximum recommended swap size to "2000 + (current
-  ram)".(#447372) (jgranado)
-- Make it >= not > for the memory size comparison (#207573) (pjones)
-- Allow float comparison between nic names in isys.py. (#246135) (joel)
-- Fix formatting on disk sizes >1TB (pjones)
-- Don't traceback when trying to remove /mnt/sysimage (#227650). (dcantrell)
-- If we're booting off the boot.iso, don't prompt for lang or kbd (#457595).
-  (clumens)
-- Don't mention images/diskboot.img anymore (#441092). (clumens)
-- Remove iSeries image generation (#456878) (dcantrell)
-- Display capslock status correctly (#442258) (dcantrell)
-
-* Mon Aug 04 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.25-1
-- Eject the CD/DVD if we booted off a boot.iso as well (#442088). (clumens)
-- Fix a GTK warning that only appears with s-c-ks running from a
-  shell (#431844). (clumens)
-- Break a few functions out of yuminstall.py into their own file. (clumens)
-- We're not actually activating new filesystems quite yet. (clumens)
-- Fix a typo in the initial partitioning screen. (clumens)
-- Use system-logos instead of hardcoding fedora-logos (#457378). (clumens)
-- anaconda can no longer be None when we create a DiskSet instance. (clumens)
-- Remove LabelFactory since we now rely on UUIDs for everything. (clumens)
-- Filter out repos that aren't enabled when running in betanag mode. (clumens)
-- Close the transaction between CDs (#457126). (clumens)
-- Split media fixes. (clumens)
-- Handling (ask user) of invalid timezone value in kickstart added
-  (#404323) (rvykydal)
-
-* Thu Jul 31 2008 Jeremy Katz <katzj@redhat.com> - 11.4.1.24-1
-- Don't try to use self.tree as the mode to open .discinfo. (clumens)
-- Remove all the RPM lock files before creating a new
-  transaction (#456949). (clumens)
-- Support VDSK devices on s390x (#264061) (dcantrell)
-
-* Wed Jul 30 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.23-1
-- Fix mke2fs argument passing (#457285). (clumens)
-- Disable logging in the firmware loader, since it clobbers other
-  log messages. (pjones)
-
-* Wed Jul 30 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.22-1
-- udevsettle takes forever, so display a waitWindow. (clumens)
-- Leave anaconda-runtime around for mk-images run. (dcantrell)
-
-* Tue Jul 29 2008 Jeremy Katz <katzj@redhat.com> - 11.4.1.21-1
-- Remove an instance of NEEDGR still existing to fix graphical
-  isolinux (#457144) (katzj)
-- use newer mke2fs arguments for different filesystems (sandeen)
-- Use attributes to tell us whether filesystems are
-  bootable (#457037). (clumens)
-- Make sure we drag in gzip, used by the image creation stuff. (jkeating)
-
-* Fri Jul 25 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.20-1
-- Clean up some mistakes in the minstg2 removal. (dcantrell)
-- Fix passing the language to anaconda (katzj)
-
-* Thu Jul 24 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.19-1
-- Fix another NFS kickstart segfault (#456461). (clumens)
-- Remove support for generating a minstg2.img image. (dcantrell)
-- If the xconfig command is given, do something with it (#455938). (clumens)
-- METHOD_CDROM is now supported on s390 (jgranado). (clumens)
-- Fix test for if we could access stage2.img on the CD (wwoods).
-- Look for updates.img and product.img on the boot.iso. (clumens)
-- Suspend the curses interface before calling scripts and resume afterwards
-  (#435314) (msivak)
-
-* Wed Jul 23 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.18-1
-- MD_NEW_SIZE_BLOCKS no longer exists in newer kernel headers. (clumens)
-
-* Wed Jul 23 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.17-1
-- Add support for filing bugs straight into bugzilla. (clumens)
-- Running git-tag -f from a makefile rule is a bad idea (katzj)
-- A text message in rescue.py is not gettext-ized (atodorov)
-- Code cleanup - handling of --serial (atodorov)
-- Offer physical NIC identification in stage 1 (#261101) (dcantrell)
-- Specify a default cio_ignore parameter for s390x (#253075) (dcantrell)
-- Fix getting the stage2 image when doing kickstart installs. (clumens)
-- Convert package names to unicode before displaying the error message
-  (#446826). (clumens)
-- When there is text mode specified in the kickstart file, disable the vnc
-  question (#455612) (msivak)
-- We no longer add the fstype to the hd: method in loader. (clumens)
-- Check DHCP by default on the text network configurator screen. (clumens)
-- Support booting from FCP-attached CD/DVD drive on s390 (#184648) (dcantrell)
-
-* Thu Jul 17 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.16-1
-- Support xdriver= again (katzj)
-- Fix loadkeys on serial console (niels.devos)
-- don't change from cmdline to textmode on lowmem systems (niels.devos)
-- Update the VNC over text mode patch, so it correctly passes the password
-  to VNC server (#455612) (msivak)
-- Set interface MTU if user specified mtu= param (#435874) (dcantrell)
-- Bring up the network before attempting to mount the NFSISO source. (clumens)
-- Catch mount errors when adding NFS repos (#455645). (clumens)
-- Fix a traceback when trying to save exceptiona via scp. (clumens)
-- Give a progress bar when cleaning up after upgrades (#208725). (clumens)
-- Look for repo config files in /etc/anaconda.repos.d. (clumens)
-- baseurl should be a list, mirrorlist should not. (clumens)
-- It's called crypto_blkcipher.ko these days. (clumens)
-
-* Tue Jul 15 2008 David Cantrell <dcantrell@redhat.com> - 11.4.1.15-1
-- Add a text-mode network config dialog so default installs can work. (clumens)
-- Use the right format for the NFS methodstr, but harder this time. (clumens)
-- Ask the user if he wants to use VNC instead of text mode (#453551) (msivak)
-- Fix a segfault when displaying the wrong CD message. (clumens)
-- Use the right format for the NFS methodstr. (clumens)
-- Use correct path for FAK plugins in upd-instroot (jgranado)
-
-* Fri Jul 11 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.14-1
-- Remove an extra tab that was causing problems with the Iloko
-  translation. (clumens)
-- Use the right stage2.img path for kickstart URL installs (#452140). (clumens)
-- Convert package errors to unicode before displaying them (#441200). (clumens)
-- Display a status message while waiting for the CD to become ready. (clumens)
-- Fix window title to be the same as all others. (clumens)
-- In cmdline mode, give some feedback when transferring loader files. (clumens)
-- If network config info isn't provided for cmdline, abort. (clumens)
-- If we're not given a method in cmdline mode, we have to quit. (clumens)
-- In cmdline mode, set language to the default if none is provided. (clumens)
-- Don't stop on the method screen if stage2= is provided. (clumens)
-- Add support for NFS to the repo editor (#443733). (clumens)
-- Fix whitespace silliness. (pjones)
-- Fix closing the drive door so that if the kernel happens to start giving us
-  the right error code, we'll handle it correctly... (pjones)
-- Fix the mysterious Error: OK message. (clumens)
-- The return value from mediaCheckCdrom is totally useless. (clumens)
-- Add better error handling when initializing yum (#453695). (clumens)
-- Add functions for creating repos as well. (clumens)
-- Don't handle all possible exceptions as if they were repo errors. (clumens)
-- Reorganize to make it easier to reset the "base" repository. (clumens)
-- Remove the pkgSack when a repo is disabled. (clumens)
-- Use the new method of calling the NetworkConfigurator. (clumens)
-- Add an updated repo editor. (clumens)
-- Don't suggest text mode to the poor, poor user. (pjones)
-
-* Wed Jul 09 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.13-1
-- Filter out source and debuginfo repos from the UI. (clumens)
-- Add the MD5 sum to the boot.iso to avoid errors in loader
-  (#453698). (clumens)
-- Don't strip too much off the NFS directory path. (clumens)
-- Log stage2 url better. (pjones)
-- Fix minor whitespace nits. (pjones)
-- Use %%m rather than strerror() where appropriate. (pjones)
-- Make setupCdrom() actually return the path to the stage2 image it
-  found. (pjones)
-- Don't unconditionally pass --lang for live installs (#454101) (katzj)
-- Set up rhgb for plymouth on live.  And conditionalize rhgb + runlevel 5 (katzj)
-- Set up rhgb if plymouth is installed as well as rhgb (katzj)
-- Get the math right on how many usec per second... (pjones)
-- Import missing module "network". (pjones)
-- Wait up to 45 seconds for "No medium found" to stop happening (pjones)
-
-* Thu Jul 03 2008 Peter Jones <pjones@redhat.com> - 11.4.1.12-1
-- Add dmraid-libs to PACKAGES so new dmraid won't break installs.
-
-* Thu Jul 03 2008 Peter Jones <pjones@redhat.com> - 11.4.1.11-1
-- Fix double free in setupCdrom
-- Fix missing psudo->pseudo spelling fix (katzj, #453843)
-- Include missing X libraries in stage2.img
-
-* Tue Jul 01 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.10-1
-- Remove old livecd flag (katzj)
-- Explicitly setup livecd install by passing --liveinst to anaconda (katzj)
-- Check return value of asprintf() consistently (dcantrell)
-- Per strtol(3) man page, set errno=0 before call. (dcantrell)
-- Rescue mode no longer needs access to a methodstr (#453044). (clumens)
-- Use strtol() instead of atoi() (dcantrell)
-- Spell pseudo correctly. (pjones)
-
-* Wed Jun 25 2008 Chris Lumens <clumens@redhat.com> 11.4.1.9-1
-- Query for anaconda rather than anaconda-runtime in buildinstall (jkeating).
-
-* Mon Jun 23 2008 Jeremy Katz <katzj@redhat.com> - 11.4.1.8-1
-- Remove from being installed too (katzj)
-- Remove anaconda-runtime as a separate subpackage (katzj)
-- Remove the stuff we're not calling. (pjones)
-- Remove this since we don't use it anymore (katzj)
-- Don't continue on using the base installclass if we can't find one (katzj)
-- Get rid of wlite and unicode-lite; these were necessary to support (pjones)
-- Remove pkgorder and splittree; these should be in pungi (katzj)
-- Add the .treeinfo file into the exception report. (clumens)
-- Fix a typo (#452140). (clumens)
-
-* Fri Jun 20 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.7-1
-- Remove ancient block of code to upgrade Netscape Communicator. (clumens)
-- Move enableNetwork into the interface.  Bring network up for scp. (clumens)
-- If we can't mount for some reason, don't traceback (#452159). (clumens)
-- Fix the upgrade button traceback (#374891). (clumens)
-
-* Wed Jun 18 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.6-1
-- Enable media check again, and let it check the boot.iso. (clumens)
-- Substitute the version from buildstamp for $releasever if needed. (clumens)
-- Remove the askmethod cmdline option. (clumens)
-- Lots of work to make loader only look for stage2.img, and stage2 do
-  all the install method configuration. (clumens)
-- Add the --stage2= and --repo= options, deprecate --method=. (clumens)
-- Fix pkgorder to include deps of kernel early. (pjones)
-- Deal with udev losing udevcontrol/udevtrigger (katzj)
-- Boot in graphical mode if /usr/bin/kdm exists. (clumens)
-- bootProto isn't a global variable (#451689). (clumens)
-
-* Fri Jun 13 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.5-1
-- Add a mirrorlist option. (jkeating)
-- Don't display garbage when prompting for the updates device. (clumens)
-- Don't write out yum repo config files in kickstart.py. (clumens)
-- It doesn't make sense to insert a disk into a partition, so don't
-  ask. (clumens)
-- Unmount /mnt/sysimage/dev manually since it doesn't get an entry. (clumens)
-- Link ld-linux.so.2 to ld-*.*.*.so (dcantrell)
-- Quote the repo name in anaconda-ks.cfg in case it includes spaces. (clumens)
-- Move all the exception classes into a single file. (clumens)
-- And import iutil a the end as well. (clumens)
-- Don't display obsoleted packages in the UI. (clumens)
-
-* Thu Jun 05 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.4-1
-- Fix text mode button translations (#450176). (clumens)
-- Remove a rogue call to textdomain. (clumens)
-- Make "upd-updates /tmp/updates.img" update everything newer in the
-  current (pjones)
-- _xmltrans is undefined.  Try xmltrans instead. (clumens)
-- Fix reference to cost vs. priority (#450168). (clumens)
-- Don't do the "exec shell on tty1" thing in vnc if we've got virtual
-  terminals. (pjones)
-- Import N_ (#450163). (clumens)
-- raise "NotImplementedError", not "NotImplemented" (pjones)
-- Need to import iutil before we use it. (clumens)
-- Don't reference PartitioningError.value . (pjones)
-
-* Wed Jun 04 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.3-1
-- Can't reference iutil.whatever from inside iutil.py. (clumens)
-- When using the boot.iso and URL installs, download the .treeinfo
-  file. (clumens)
-- Fix a couple typos in the getArch commit. (clumens)
-- Be consistent with data type. (dcantrell)
-- Replace rhpl.getArch() calls with iutil calls. (dcantrell)
-- Expand iutil.isX86() and added iutil.getArch() (dcantrell)
-- Add isAlpha() test function to iutil. (dcantrell)
-- Create architecture test functions in iutil (dcantrell)
-- Removed mystrstr() function in loader2/init.c (dcantrell)
-- Don't support Arabic in text mode installs since we don't even do
-  RTL. (clumens)
-- Removed old strace debugging in loader2/init (dcantrell)
-- Keep only one copy of this code for group sorting/display around (katzj)
-- Stop using rhpl.translate and use gettext directly (katzj)
-- Add a descriptive comment to the top of /etc/fstab (#448966). (clumens)
-- Use "message" instead of "value" on errors, and stringify on the front
-  side. (pjones)
-- Translate package descriptions (#449455). (clumens)
-- Translate password error messages (#439981). (clumens)
-- Fix traceback starting vnc (#449295) (katzj)
-- Add Hewbrew to lang-table (oron)
-- Fix errors in python string formatting (#449130). (clumens)
-
-* Thu May 29 2008 Chris Lumens <clumens@redhat.com> - 11.4.1.2-1
-- Allow ext4 migration again for testing at least (katzj)
-- Remount filesystems after migration (#440055) (katzj)
-- Add blkid to the keepfiles list so jkeating will whine less (pjones)
-- Don't allow vfat /boot (katzj)
-- Use the base yum doConfigSetup method. (clumens)
-- Include the yum repo files from fedora-release in stage2. (clumens)
-- No longer maintain our own list of extra repos. (clumens)
-- Sort the repos in the UI. (clumens)
-- Add cost, includepkgs, and excludepkgs to the ks repo
-  objects (#448501). (clumens)
-- Stop pretending to support Greek text mode (#208841) (katzj)
-- Make it clear you need to reboot to use the installed
-  system (#238297) (katzj)
-- Activate LVM for when we do meta-resizing (#441706) (katzj)
-- List Norweigian as Bokmål (#437355) (katzj)
-- Simplify the install classes. (clumens)
-- Don't show the EFI filesystem unless we're on an EFI platform (katzj)
-- Add nfsv4 so that we don't nuke them on upgrades (#448145) (katzj)
-- When there are errors reading the live CD, offer a retry. (clumens)
-- Can't recover from buildTransaction errors on a per-repo
-  basis (#447796). (clumens)
-- Set default partition size to 200 MB in the custom partitioning
-  UI. (clumens)
-- Limit the size of things in exception dumps to 1k. (clumens)
-- Catch IOErrors one place they seem to happen most. (clumens)
-- Add a unique user agent for anaconda's grabbing in stage2 (katzj)
-- Remove text mode help support as well. (clumens)
-- Check for all the non-mkfs utilities required for each filesystem
-  type. (clumens)
-- More partitioning error handling fixes (#446453). (clumens)
-- Require cracklib-python for the rootpassword screen. (notting)
-- Use pykickstart's deprecated versions of the xconfig and monitor
-  classes. (clumens)
-- Fix tyop in upgrade migrate screen (#446363) (katzj)
-
-* Tue May 13 2008 Jeremy Katz <katzj@redhat.com> - 11.4.1.1-1
-- Just call the XStartupCB() function directly and randr to the
-  desired resolution (katzj)
-- Stop writing out an xorg.conf (katzj)
-- Make the "dump to removable device" option work in anaconda. (jgranado)
-
-* Mon May 12 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.79-1
-- Stop neutering DRI (notting)
-- make scripts/buildinstall take multiple repos (wwoods)
-- Don't worry about telling people that interactive text mode is in
-  wrong lang (katzj)
-- Allow cpio updates.img in the tree for URL installs. (dlehman)
-- Declare unpackCpioBall for use from within urlinstall.c. (dlehman)
-- Don't unlink an image we retrieved but could not mount as it
-  could be .cgz. (dlehman)
-- Don't run lspci with an explicit path (katzj)
-- Include lspci on all images (#445974) (katzj)
-- Add support for attaching gdbserver to the loader early on. (clumens)
-- Add virtio max partition count (markmc)
-- Sort virtio devices first (markmc)
-- Merge branch 'master' of ssh://git.fedorahosted.org/git/anaconda (andrewm)
-- 2008-05-08  Andrew Martynov <andrewm)
-- Look in the right place when ISO images are in a
-  subdirectory (#443580). (clumens)
-- And run in the root (#374921) (katzj)
-- Don't crash when given URLs of the form ftp://user)
-- Use 'yum clean all' when cleaning up after an upgrade, not
-  preupgrade (#374921) (katzj)
-- Kickstart flag is backwards (katzj)
-- If we're given a language, don't warn about console fonts (#444258) (katzj)
-- And actually include the bash binary too (#443700) (katzj)
-- Search path rather than hard-coding path to mdadm (#444843) (katzj)
-- Fix incorrect command name in error message. (clumens)
-- Specify which protocol is used for remote saving (#440214). (clumens)
-- Use bash for minstg2 shell (#443700) (katzj)
-- Revert PS1 and PATH changes as they don't work with busybox as used
-  in minstg2 (katzj)
-
-* Mon Apr 28 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.78-1
-- Write per-interface DNS info to ifcfg files (#443244) (dcantrell)
-- Clean up sanityCheckHostname() in network.py (dcantrell)
-- Activate autorepeat for GUI installs. (jgranado)
-
-* Fri Apr 25 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.77-1
-- Preserve 'set the hostname' setting when going Next/Back (#443414) (dcantrell)
-- Avoid traceback on network configuration screen (#444184) (dcantrell)
-- Add missing backslashes for the .profile here document. (dcantrell)
-- Label the efi boot filesystem on ia64 as well. (pjones)
-- Don't use size to determine if a partition is an EFI system
-  partition; instead, (pjones)
-- Handle the DVD having a disknumber of ALL. (443291) (jkeating)
-- Make the LUKS passphrase prompt fit on an 80x25 screen. (#442100) (dlehman)
-- Don't dd the image from /dev/zero _and_ use
-  "mkdosfs -C <image> <blockcount>" (pjones)
-- label the filesystem in efidisk.img so that HAL and such won't try to
-  mount it. (pjones)
-- fix testiso Makefile target - boot.iso, not netinst.iso (wwoods)
-
-* Thu Apr 24 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.76-1
-- Use the execWithCapture wrapper to be consistent. (jgranado)
-- Call the mdadm with full path. (jgranado)
-- Use the correct ls(1) alias. (dcantrell)
-- Set PS1 and ls(1) alias for tty2 shell. (dcantrell)
-- Lookinig for the capabilities file in xen is valid in more cases. (jgranado)
-- Avoid putting virtualization option when in Xen or VMware.
-  (#443373) (jgranado)
-- If the stage2 image is on a CD, don't bother copying it (#441336). (clumens)
-- Once we've found the stage2 media on CD, always use it (#443736). (clumens)
-- Change mount point for CD to /mnt/stage2 when looking for stage2
-  (#443755). (clumens)
-- Switch to using 'yum clean all' to clean up after preupgrade
-  (#374921) (katzj)
-- Handle .utf8 vs .UTF-8 (#443408) (katzj)
-- Avoid dividing by zero (#439160) (katzj)
-- Changes related to BZ #230949 (dcantrell)
-- $XORGDRIVERS no longer exists (markmc)
-- Bump version. (katzj)
-- Write IPv6 values to /etc/sysconfig/... correctly (#433290) (dcantrell)
-- Use the right base class for autopart handler. (clumens)
-
-* Fri Apr 18 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.75-1
-- Listing the directories before expiring yum caches helps (katzj)
-
-* Fri Apr 18 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.74-1
-- Don't look for .discinfo on the rescue CD (#442098). (clumens)
-- Use /var/cache/yum as the cachedir since /tmp might be
-  too small (#443083). (clumens)
-- Revert "Don't look for a .discinfo file in rescue
-  mode (jvonau, #442098)." (clumens)
-- Revert "Fix figuring out that the CD has stage2 on it and should
-  be mounted." (clumens)
-- We've always expected devices to be strings, not unicode (#443040) (katzj)
-- Resizing lvs on top of RAID fails, make the error not a traceback (katzj)
-- Don't put an extra slash on the error message (jgranado)
-- Kernel changed howw the uevent API works for firmware
-  loading *AGAIN*. (pjones)
-- Expose the log file descriptors so fwloader can avoid closing
-  them (pjones)
-- Minor UI tweaks to passphrase dialogs (katzj)
-- Nuke preupgrade cache once we're done (#442832) (katzj)
-- Support bringing up the network if needed with preupgrade (#442610) (katzj)
-- Use a real GtkDialog instead of some crazy hacked up dialog (katzj)
-- Fix handling of pre-existing raids for the upgrade/rescue
-  case (#441770) (katzj)
-- Add missing / (Doug Chapman, #442751) (katzj)
-
-* Wed Apr 16 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.73-1
-- Fix figuring out that the CD has stage2 on it and should be mounted. (clumens)
-- Don't copy the stage2 image on NFS installs (#438377). (clumens)
-
-* Tue Apr 15 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.72-1
-- Don't use megabytes for the livecd size for copying. (notting)
-- find moved (katzj)
-- Fix up silly syntax error that crept in to this commit (katzj)
-- Back to using the raw version of the docs (#442540) (katzj)
-- Expire yum caches on upgrade (#374921) (katzj)
-- Include KERNEL== in udev rules (#440568) (dwmw2)
-- Don't look for a .discinfo file in rescue
-  mode (jvonau, #442098). (clumens)
-- Slower machines may take more than five seconds for hal
-  to start (#442113) (katzj)
-- Pass the full device path (notting)
-- Only include the parts of grub that will work without
-  crazy tricks (#429785) (katzj)
-
-* Thu Apr 10 2008 Peter Jones <pjones@redhat.com> - 11.4.0.71-1
-- Fix destdir handling in upd-kernel (markmc)
-- Get rid of module ball remnants in mk-images (markmc)
-- Make upd-kernel handle version numbers the way we do them now (markmc)
-- Fix ia64 kernel path problems (katzj, #441846)
-- Don't tag more than one partRequest with mountpoint=/boot/efi (pjones)
-- Don't treat tiny disks as EFI System Partitions during autopart (pjones)
-
-* Thu Apr 10 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.70-1
-- ide-cd_mod, not ide-cd_rom (thanks to jwb) (katzj)
-
-* Wed Apr 09 2008 Peter Jones <pjones@redhat.com> - 11.4.0.69-1
-- Ignore some warnings copying into /etc and /var (clumens)
-- Try to mount the NFS source in the loader to verify it is correct (clumens)
-- Be as clean as possible when looking for files/directories (jgranado, #431392)
-- More ia64 kernel finding fixage (katzj, #441708)
-- Fix read permissions on efidisk.img (pjones)
-- Use the mount flags passed to isys.mount() (pjones)
-
-* Wed Apr 09 2008 Peter Jones <pjones@redhat.com> - 11.4.0.68-2
-- Fix device-mapper dep.
-
-* Tue Apr 08 2008 Peter Jones <pjones@redhat.com> - 11.4.0.68-1
-- Handle EFI partitions somewhat better (pjones)
-- Fix typo in mk-images.efi's parted usage (pjones)
-
-* Tue Apr 08 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.67-1
-- Set the initial state of the auto-encrypt checkbutton (#441018) (katzj)
-- Don't treat RAID devices as "disks" to avoid lots of odd
-  behavior (#438358) (katzj)
-- Log a message if we disable selinux on upgrade (katzj)
-- Build efiboot.img on x86_64 and i386 . (pjones)
-- When splitting srpms, only link srpms, nothing else. (jkeating)
-- Don't cause the text to flicker between installed packages. (clumens)
-- Don't cause the screen to jump up and down between
-  packages (#441160). (clumens)
-- Fix zooming and centering in the timezone screen (#439832). (clumens)
-- Handle ia64 kernel path (katzj)
-- And add nas to the list (#439255) (katzj)
-- Set parent so that the dialog centers (#441361) (katzj)
-- Don't show the label column (#441352) (katzj)
-- Do string substitution after we've translated (#441053) (katzj)
-- Set domain on glade file so translations show up (#441053) (katzj)
-- fix compression of modules (notting)
-- More build fixing due to translation breakage. (katzj)
-- Add code to create efiboot.img on i386 and x86_64 (pjones)
-- Remove gnome-panel too, it's no longer multilib. (jkeating)
-- Fix raising new NoSuchGroup exception. (clumens)
-- remove debugging print (notting)
-- Support encrypted RAID member devices. (#429600) (dlehman)
-- No longer require Amiga partitions on Pegasos (dwmw2)
-- Don't copy the stage2 image every time or on the way back. (clumens)
-- Make lukscb.get_data("encrypt") always return a valid value. (pjones)
-- Set the scrollbar color so it doesn't surprise me the same way in
-  the future. (pjones)
-- Translation updates.
-
-* Sun Apr 06 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.66-1
-- Another day, another broken translation commit to fix. (katzj)
-- Work around GL crashes in anaconda X by disabling them. (jkeating)
-- Clean up "finishing upgrade" wait window (katzj)
-- Stop refreshing like mad in text-mode on WaitWindow.refresh() (katzj)
-- Avoid progress bars going off the end and making newt unhappy (katzj)
-- Brute force hack to avoid the number of packages
-  overflowing (#436588) (katzj)
-- Revert "Change the default level in /etc/sysconfig/init now
-  (#440058)." (notting)
-- Add gnome-applets to the upgrade blacklist, fix kmymoney2 typo. (jkeating)
-- Don't enable encryption by default (katzj)
-- Print our mount commands to /dev/tty5 for easier debugging. (clumens)
-- Change the default level in /etc/sysconfig/init now (#440058). (clumens)
-- Make the Back button work when asking for tcp/ip information in
-  loader.c. (#233655) (jgranado)
-- Have <F12> work in the network configuration stage (#250982) (jgranado)
-- Use a better test to see if a package group doesn't exist (#439922). (clumens)
-- avoid behavior in (#208970) (jgranado)
-- Correctly label the xen images in the .treeinfo file (jgranado)
-- Translation updates
-
-* Wed Apr 02 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.65-1
-- Only do verbose hal logging if loglevel=debug (katzj)
-- Avoid AttributeError in HardDriveDict (#432362) (pjones)
-- Don't use %%n with gettext to avoid segfaults (#439861) (katzj)
-- Require live installs to be to an ext2 or ext3 filesystem (#397871) (katzj)
-- Don't allow migrations to ext4 for now (katzj)
-- Change ext4 parameter to ext4, not iamanext4developer (katzj)
-- Bootable requests can not be on logical volumes (#439270). (clumens)
-- Don't allow /boot to be migrated to ext4 (#439944) (katzj)
-- Fix for ia64 (#439876) (katzj)
-- Update pkgorder group listings to match current Fedora defaults. (jkeating)
-- Lame attempt to try to avoid race condition with udev creating device
-  nodes (katzj)
-- Don't traceback if stdout is an fd either (katzj)
-- iutil doesn't need isys anymore (katzj)
-- Free memory only after we're done using it (#439642). (clumens)
-- Fix a segfault freeing memory on boot.iso+hdiso installs. (clumens)
-
-* Mon Mar 31 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.64-1
-- Fix my tyop (katzj)
-- Fuzzy broken string again (katzj)
-
-* Sun Mar 30 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.63-1
-- Fix broken translations.  Again. (katzj)
-
-* Sun Mar 30 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.62-1
-- Translation updates
-- Allow GPT disk labels on ppc/ppc64. (dcantrell)
-- Tear down the right loopback device before going to stage2. (clumens)
-- Don't pass None as stdout or stderr. (clumens)
-- Make sure there's a stdout to write to. (clumens)
-- Handle fstype munging in isys.readFSType instead of in various
-  other places. (dlehman)
-- Fix a typo in new encrypted LV code. (dlehman)
-- Partitioning UI for handling of preexisting encrypted devices. (dlehman)
-- Support discovery of preexisting rootfs on LV. (dlehman)
-- Improve handling of logical volume device names when encrypted. (dlehman)
-- Add support for discovery of preexisting LUKS encrypted devices. (dlehman)
-- Add support for retrieving LUKS UUIDs. (dlehman)
-- Refresh po files (katzj)
-- Mark for translation based on feedback from translators (katzj)
-- Just relabel all of /etc/sysconfig (#439315) (katzj)
-- When dhcp is selected ensure that bootproto is set to
-  dhcp (RPL-2301) (elliot)
-- Fix for test mode repo bits (katzj)
-- Try to make the size flow a little more for weird resolution
-  screens (#439297) (katzj)
-- Add kmymoney to upgrade remove list (#439255) (katzj)
-
-* Thu Mar 27 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.61-1
-- Fix broken translation. (clumens)
-
-* Thu Mar 27 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.60-1
-- Have a fallback empty description for devices (#432362) (katzj)
-- os.path.join does not work the way we think it should. (clumens)
-- Remove the stage2 in all cases now that we're copying it basically
-  all the time (katzj)
-- Add support for saving the exception to a local directory for live
-  installs (katzj)
-- Catch errors on resize and present a dialog to the user (katzj)
-- Save resize output to a file (/tmp/resize.out) so that it's more
-  useful (katzj)
-- Make sure we give the command that's run on stdout so that it's
-  logged (katzj)
-- more mouse-related removals (notting)
-- Fix up autopart resizing for the multiple partitions to resize case (katzj)
-- Fix up the case where both method= and stage2= are given (katzj)
-- Remove mouse screens that haven't been used in 4 years (katzj)
-
-* Wed Mar 26 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.59-1
-- Only remove duplicate slashes from the front of the prefix. (clumens)
-- Ensure that we take into account new repos (katzj)
-- Handle kernel variants a little better at install time too (katzj)
-- Make a little bit more future proof for kernel version changing (katzj)
-- Add confirmation of closing the installer window (#437772) (katzj)
-- Fix SIGSEGV on all mounts without options (katzj)
-- Add support for encrypted logical volumes in kickstart. (clumens)
-- Add support for encrypted LVs. (dlehman)
-- Put in some handling for redundant method calls and devices containing '/'.
-  (dlehman)
-
-* Tue Mar 25 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.58-1
-- Fuzzy broken string (katzj)
-
-* Tue Mar 25 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.57-1
-- Use anaconda-upgrade dir in the preupgrade case (katzj)
-- Have 'preupgrade' key doing an upgrade (katzj)
-- Fix what we expect to be the message from ntfsprogs (katzj)
-- Fix up compile error for new newt (katzj)
-- Don't traceback if we have little freespace partitions (#438696) (katzj)
-- Translation updates (ko, ru)
-
-* Mon Mar 24 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.56-1
-- Translation updates (hi, fr, kn, de, ml, es, mr, ko, te)
-- Fix up more unicode shenanigans (#437993) (katzj)
-- Move /tmp/stage2.img to /mnt/sysimage to free up some
-  memory (#438377). (clumens)
-- Be a little smarter about downloading repo metadata (#437972). (clumens)
-- Make sure that devices are set up before using them. (#437858) (dlehman)
-- Don't prepend /dev/ on bind mounts either. (clumens)
-- Use the repo name instead of id in the group file error
-  message (#437972). (clumens)
-- Handle /dev being on hard drive devices in the second stage (katzj)
-- Fix the build (katzj)
-- The units for /sys/block/foo/size aren't bytes.  Fixes finding some
-  disks (katzj)
-- Remove the check for .discinfo on URL installs. (clumens)
-- Always unmount /mnt/source on hdiso installs before starting
-  stage2. (clumens)
-- Always unmount /mnt/source on nfsiso installs before starting
-  stage2. (clumens)
-- Make sure the first disc image is mounted before setting up repos. (clumens)
-- Fix $UPDATES for real (katzj)
-- Avoid piling up slashes in the UI when retrying (#437516). (clumens)
-- Require comps-extras now that we don't require pirut bringing it in (notting)
-- Put "ide-cd_mod" in the list of modules to pull in. (pjones)
-
-* Tue Mar 18 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.55-1
-- Fix format of method=hd: parameter (#438075). (clumens)
-- Work on support for NFSISO installs when using boot.iso. (clumens)
-- If a file doesn't exist, don't continue trying to loopback mount
-  it. (clumens)
-- Make loopback mount error messages more useful. (clumens)
-- Focus root password entry box (#436885). (dcantrell)
-- Fix a traceback writing out the method string for hdiso installs. (clumens)
-- Fix use of sizeof on a malloc()'d char ** (pjones)
-- Fix up ppc boot check (#438005) (katzj)
-- Support reading the UUID from the disk like we do with labels. (clumens)
-- If the protected partition is not yet mounted, mount it now. (clumens)
-- Don't add /dev/ to LABEL= or UUID= devices either. (clumens)
-- Use arch instead of the name again in package nevra. (clumens)
-- Fix traceback with preexisting LUKS partitions in setFromDisk.
-  (part of #437858) (dlehman)
-
-* Mon Mar 17 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.54-1
-- Translation updates (de, fi, it, gu, ta, pa)
-- Fix a typo. (clumens)
-- Fix the build. (clumens)
-- Make sure we return the same kind of exception in all cases. (clumens)
-- Filter so we don't show LVM and RAID components when adding
-  boot entry (#437501) (katzj)
-- Only print the filename we're fetching, as newt doesn't like
-  long names. (clumens)
-- Fix off by one error reading .buildstamp (pjones)
-- Use the right path when trying to fetch .discinfo. (clumens)
-- Don't prepend /dev/ onto nfs devices.  Also log mount
-  errors to tty5. (pjones)
-
-* Sun Mar 16 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.53-1
-- Update translations (pl, de)
-- Use i586 kernel (#437641) (katzj)
-- Give indication of success or failure for mediacheck (#437577) (katzj)
-- Ensure the UUID for the rootfs is random and not the same for every
-  live image (katzj)
-- Make migration from ext3 -> ext4 saner on upgrade (#437567) (katzj)
-- Force filesystem mount options on /boot/efi . (pjones)
-- On HDISO installs, look for the stage2.img file in the right
-  directory. (clumens)
-- Accept devices with or without a leading /dev/. (clumens)
-- .buildstamp no longer contains productPath, so change
-  the default (#437509). (clumens)
-- Remove references to an uninitialized variable. (clumens)
-- Use shortname=winnt instead of shortname=win95 when
-  mounting /boot/efi (pjones)
-- Do not strip leading or trailing whiltespace from
-  passphrases. (#437499) (dlehman)
-- Set methodstr for nfsiso installs (#437541). (clumens)
-- Create and check /boot/efi correctly, and use preexisting
-  one if available. (pjones)
-- Handle /boot/efi and /boot both as bootrequests (pjones)
-- Emit "efi" as /boot/efi's filesystem type (pjones)
-- Add EFI handling to the bootloader setup choices. (pjones)
-- Add efi to the ignoreable filesystem list. (pjones)
-- Add EFIFileSystem, and getMountName() to hide that it's really vfat. (pjones)
-- Add isEfiSystemPartition(), and use it where appropriate (pjones)
-- Call getAutoPartitionBoot with our partition list as an arg. (pjones)
-- Don't show the epoch in package selection either (#437502). (clumens)
-- Fix some errors on reporting which files are being downloaded. (clumens)
-- Revert "Handle /boot and /boot/efi separately, plus fixes" (pjones)
-- Handle /boot and /boot/efi separately, plus fixes (pjones)
-- Get rid of unused >1024 cylindar check, fix text of boot
-  check exceptions. (pjones)
-- Make bootRequestCheck() check /each/ boot partition like it's
-  supposed to, (pjones)
-- Fix shell quoting on numbers > 9, and fix an error message. (pjones)
-- Don't show the epoch in the progress bar (#437502). (clumens)
-- Include efibootmgr in the instroot (pjones)
-
-* Thu Mar 13 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.52-1
-- Don't unmount NFS source so NFSISO will work. (clumens)
-- Fix the format of the method=hd: parameter. (clumens)
-- Fix creating new users in kickstart. (clumens)
-- "gtk-edit" isn't valid in text mode. (clumens)
-- Ignore LUKS headers on partitions containing RAID signatures.
-  (#437051) (dlehman)
-- The xconfig command with no X running doesn't make sense. (clumens)
-
-* Wed Mar 12 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.51-1
-- yum.remove removes installed packages, not to be installed
-  packages (#436226) (katzj)
-- Make the /tmp/updates vs RHupdates code at least a little readable. (pjones)
-- Allow vfat update images. (pjones)
-- Fix syntax error (pjones)
-- Add a progress bar for when we're downloading headers (#186789). (clumens)
-- mount will set up the loopback device if we let it. (clumens)
-- Fix mounting problems with NFSISO images. (clumens)
-- Simplify the logic for the upgrade arch check (katzj)
-- Add a fallback method for determining the architecture of installed
-  system during an upgrade (#430115) (msivak)
-- Avoid a traceback (#436826) (katzj)
-- Make sure host lookups work for manual net config (#435574). (dcantrell)
-
-* Tue Mar 11 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.50-1
-- Focus root password entry box (#436885). (dcantrell)
-- Make sure default is SHA-512 for libuser.conf. (dcantrell)
-- Fix detection of ISO images on a hard drive partition. (clumens)
-- Devices names aren't prefixed with /dev/. (clumens)
-- Filter out /dev/ram* devices from the list of hdiso partitions. (clumens)
-- But make sure that we've activated the keymap now that X
-  follows its defaults (katzj)
-- Don't set a keyboard in the X config, we should just do this
-  at runtime (katzj)
-- Writing out the nfs method line is a lot simpler now. (clumens)
-- Use /mnt/sysimage/tmp/cache for the yum cache, instead of the
-  ramdisk. (clumens)
-- Translation updates (nl, gu, ml, mr, pa)
-
-* Mon Mar 10 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.49-1
-- Use the full path to the .discinfo file (#436855). (clumens)
-- List netinst.iso/boot.iso in .treeinfo (#436089) (katzj)
-- Convinced to change the name back to boot.iso (katzj)
-- Only pass the file path to {ftp,http}GetFileDesc. (clumens)
-- Pass the correct NFS method parameter to stage2 (#436360). (clumens)
-- Fix logging messages to not display the hostname twice. (clumens)
-- Fix traceback with text mode adding iscsi (#436480) (katzj)
-
-* Thu Mar 06 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.48-1
-- Don't use the bits from $UPDATES unless $UPDATES exists (katzj)
-- Fix horkage with busybox stuff.  There's now start-stop-daemon (katzj)
-- Require new enough version of yum-utils (katzj)
-- Pass the --archlist option to yumdownloader (jkeating)
-- Update pt_BR translation
-
-* Wed Mar 05 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.47-1
-- Fix the build again (katzj)
-
-* Wed Mar 05 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.46-1
-- Don't require some things which we fall back gracefully when not there (katzj)
-- Check for filesystem utilities to see if a filesystem is supported (katzj)
-- Write out keyboard settings before installing packages. (related
-  to #429358) (dlehman)
-- Update pl translation
-- Make sure http:// or ftp:// is specified (#436089) (katzj)
-- Fix segfault when port is specified (#435219) (katzj)
-- Use ntfsresize -m to get minimum size (#431124) (katzj)
-- Use the right path to the .discinfo file when validating a tree. (clumens)
-
-* Tue Mar 04 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.45-1
-- Fix the build.
-
-* Tue Mar 04 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.44-1
-- Add --archlist to repoquery call. (jkeating)
-- Translation updates (pl, nl, ja)
-- Handle efibootmgr and grub.efi in upd-instroot. (pjones)
-- Merge in branch to implement stage2= parameter. (clumens)
-- Revert the memtest86 bits for EFI, since this gets run on
-  multiple arches. (pjones)
-- Use iutil.isEfi() instead of testing for ia64-ness. (pjones)
-- Only do gptsync if we're not using EFI. (pjones)
-- Don't do gptsync if we're using EFI. (pjones)
-- Use gpt on all efi platforms. (pjones)
-- Rework isEfi() to be slightly more conservative. (pjones)
-- Test for using efi rather than arch==ia64 (pjones)
-- Don't copy memtest86 in on EFI since it won't work. (pjones)
-- Add comment regarding usage of elilo (pjones)
-- Free some variables so we can http GET twice if needed. (clumens)
-- Change the method config prompts. (clumens)
-- Support stage2= for CD installs in loader. (clumens)
-- Support stage2= for HD installs. (clumens)
-- Support stage2= for NFS installs. (clumens)
-- Support stage2= for URL installs. (clumens)
-- Update the method string handling for NFS and URL installs. (clumens)
-- mountStage2 now needs to take an extra argument for updates. (clumens)
-- If stage2= is given, it overrides the check for a CD stage2 image. (clumens)
-- Support the stage2= parameter, and add a flag for it. (clumens)
-
-* Mon Mar 03 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.43-1
-- Only use UUID= for devices we would have labeled.  Related to #435228 (katzj)
-- If we don't find a kernel package, then give a better error (katzj)
-- Translation updates (cs, de)
-
-* Sun Mar 02 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.42-1
-- Fix a traceback when we have an error.  Related to #433658 (katzj)
-- Add virtio_pci in hopes of getting virtio working (katzj)
-- Pull in the bits of pirut that we use so that we don't depend on pirut (katzj)
-- Default to RAID1 instead of RAID0 (#435579) (katzj)
-- Refresh po (katzj)
-- Fix traceback leaving task selection screen (#435556) (katzj)
-- More ext4 vs ext4dev nonsense.  (#435517) (katzj)
-- Fix reverse name lookup. (pjones)
-
-* Thu Feb 28 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.41-1
-- Don't write out /etc/rpm/platform anymore. (katzj)
-- anaconda-runtime now needs yum-utils (katzj)
-- Add 'testiso' target (katzj)
-- Remove rescue cd creation scripts (katzj)
-- Take --updates with location of additional updates beyond the package
-  set used (katzj)
-- Change the ISOs we build (katzj)
-- Take advantage of yum repos being available (katzj)
-- Allow recovery from some missing repodata conditions. (clumens)
-- Rework the repo editor screen to be more modular. (clumens)
-- Move doPostImages to be run after the second stage build (katzj)
-- Ensure that group info for txmbrs is accurate after we reset (katzj)
-- Fix backwards logic for yum verbosity (katzj)
-- No more arc (#435175) (katzj)
-- Remove an unused method. (clumens)
-
-* Tue Feb 26 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.40-1
-- Use non-deprecated HAL properties. (notting)
-- More crud to deal with the fact that rawhide trees are composed weird (katzj)
-- Gtk does not have the error type, use custom with proper
-  icons. (#224636) (msivak)
-
-* Mon Feb 25 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.39-1
-- Fix up symlinks that could be broken with our movement here (#434882) (wwoods)
-- pvops xen uses hvc as its console (#434763) (katzj)
-- Follow symlinks when looking for the anaconda-runtime package. (jkeating)
-
-* Sun Feb 24 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.38-1
-- Write out UUID in the fstab (#364441) (katzj)
-- Add support for getting UUID using libblkid (katzj)
-- Fix calculation of sizes of LVs when resizing (#433024) (katzj)
-- Add back some bits for text mode (katzj)
-- Remove advanced bootloader bits (katzj)
-- Add support for actually changing where the boot loader gets
-  installed as well (katzj)
-- Less text. (katzj)
-- Reorder things a little, clean up spacing (katzj)
-- Use a tooltip instead of a long bit of text that most people
-  don't read (katzj)
-- Remove advanced checkbox (katzj)
-- Switch the grub installation radio to be a checkbutton.  Cleanups for
-  grub only (katzj)
-- Lets redirect to /dev/null to ensure that what we get in DIR is the
-  result of pwd. (jgranado)
-- Catch the error emmited by lvm tools during logical volume
-  creation process (#224636). (msivak)
-- Don't try to lock /etc/mtab, fix error detection when mount fails. (clumens)
-- Don't append (null) to the NFS mount options. (clumens)
-- There's no need to wait if the last download retry failed. (clumens)
-- the '-o' is appended to the mount command in imount.c (jgranado)
-- Use full path to device for mount in findExistingRootPartitions. (dlehman)
-- Map preexisting encrypted devs before mounting everything
-  in mountRootPartition. (dlehman)
-- Fix traceback on test mount in findExistingRootPartitions. (dlehman)
-- Use SHA-512 by default for password encryption. (dcantrell)
-- Clean up root password user interfaces. (dcantrell)
-
-* Tue Feb 19 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.37-1
-- Default to the right timezone when language is changed (#432158). (clumens)
-- Fix another text mode network config traceback (#433475). (clumens)
-- More scripts cleanups. (jgranado)
-- Remove more references to ARC (#433229). (clumens)
-- Mount flags should be an optional argument (#433279, #433280). (clumens)
-- We don't need productpath anymore, so stop taking it as an option (katzj)
-- Set yum output level based on whether or not we've passed --debug or
-  not (katzj)
-- Clean up invocation of mk-images from buildinstall (katzj)
-- Clean up invocation of upd-instroot from buildinstall (katzj)
-- Remove some legacy stuff that's no longer relevant from
-  .discinfo/.treeinfo (katzj)
-- Don't depend on product path for finding the anaconda-runtime
-  package (katzj)
-- Make buildinstall a little clearer (katzj)
-- Use $LIBDIR instead of lib globbing to avoid problems with chroots (katzj)
-- Add some error handling around populateTs. (clumens)
-
-* Thu Feb 14 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.36-1
-- Fix up firmware inclusion.  This didn't actually ever work. (katzj)
-- Fix up the groff related stuff for man pages to be done in the correct
-  place (katzj)
-- remove yumcache (katzj)
-- Don't do fixmtimes anymore (katzj)
-- Don't compress translations (katzj)
-- Don't manually duplicate things from package %%post scripts (katzj)
-- Remove some unused options (--discs and --buildinstdir) (katzj)
-- Keep /etc/nsswitch.conf and /etc/shells (katzj)
-- Stop forcing passive mode for FTP by patching urllib (katzj)
-- We don't use timezones.gz anymore anywhere (katzj)
-- We shouldn't need to remove files that are only in -devel packages (katzj)
-- Remove some obsolete files from the list to clean up noise in the
-  output (katzj)
-- We want nss bits on all arches these days (katzj)
-- Just use default /etc/nsswitch.conf and /etc/shells (katzj)
-- alpha should have translations probably (katzj)
-- Remove some things that aren't used anymore (katzj)
-- Don't run pkgorder as a part of buildinstall anymore (katzj)
-- Remove duplicate file from the file lists (katzj)
-- Don't use the static versions of these anymore as they're likely to go
-  away (katzj)
-- Remove weird s390 hack that shouldn't be needed any more (katzj)
-- Make makebootfat less noisy (katzj)
-- Get rid of dangling fobpath stuff; now that we're not mounting to
-  create (katzj)
-- Ignore .bak files created by glade (katzj)
-- Get rid of duplication for yaboot stuff to make scripts less noisy (katzj)
-- Correct internationalization of exception handler text (msw)
-- More fixing of mount paths (#432720) (katzj)
-- securitylevel -> firewall in the spec file. (clumens)
-- Include util-linux-ng, which contains mount (#432720). (clumens)
-- When mounting stage2 on loopback, add -o loop to mount opts. (clumens)
-
-* Tue Feb 12 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.35-1
-- Fix the build (katzj)
-
-* Tue Feb 12 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.34-1
-- Handle modules with more than one description (#432414) (katzj)
-- Finish HDISO installs, at least for DVDs (#431132). (clumens)
-- Move migration to before mounting filesystems (katzj)
-- Fix silly thinko in Eric's patch (katzj)
-- Allow ext3->ext4 upgrades (sandeen)
-- Do the man pages in rescue mode the right way. (jgranado)
-- Merge branch 'master' of ssh://git.fedorahosted.org/git/anaconda (notting)
-- Use /etc/adjtime as the configuration file for UTC/not-UTC. (notting)
-- Remove all our own mount code. (clumens)
-- Use the mount program instead of our own code. (clumens)
-- Add the real mount programs to stage1. (clumens)
-- Use the correct variables to get the ipv6 info. (#432035) (jgranado)
-- Update error messages to match function names. (dcantrell)
-- Rename nl.c to iface.c and functions to iface_* (dcantrell)
-- In rescue mode, show interface configuration (#429953) (dcantrell)
-- Add qla2xxx firmware (#377921) (katzj)
-- Rename base repo (#430806). (clumens)
-- Remove dep on anaconda from pkgorder (katzj)
-- Remove no longer used dumphdrlist script (katzj)
-
-* Thu Feb 07 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.33-1
-- Fix error message on continuing after changing cds with mediacheck (katzj)
-- Fix the progress bar during mediacheck (#431138) (katzj)
-- Ensure we disable SELinux if the live image isn't using it (#417601) (katzj)
-- Correct nl_ip2str() cache iteration. (dcantrell)
-- Check the fstype of the live image (katzj)
-- Check for device existence rather than starting with /dev (katzj)
-- The FL_TEXT flag has no reason to be here. (#207657) (jgranado)
-- Don't traceback when getLabels is called with DiskSet.anaconda set
-  to None. (dlehman)
-- Pass arguments correctly to anaconda (katzj)
-- Cancel on escape being pressed with autopart resizing (katzj)
-
-* Wed Feb 06 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.32-1
-- Make passwordEntry appear on the exn saving screen. (clumens)
-- Don't allow disabling default repositories. (clumens)
-- Make loopback device purposes line up with what stage2 expects. (clumens)
-- Fix methodstr handling for hdiso installs (#431132). (clumens)
-- Remove our own DNS functions, since glibc's are available now. (clumens)
-
-* Tue Feb 05 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.31-1
-- Copy over repodata from media after the install is done (#381721) (katzj)
-- Add resizing support in autopartitioning (katzj)
-- Fix test mode with python-fedora installed (katzj)
-- Add support for encrypted devices in rescue mode (dlehman).
-- Allow creation of LUKSDevice with no passphrase. (dlehman)
-- Fix hdiso installs in loader and in methodstr (#431132). (clumens)
-- Avoid infinite loop in nl_ip2str(). (dcantrell)
-- Force users to set a hostname (#408921) (dcantrell)
-- Forward-port RHEL-5 fixes for s390x issues. (dcantrell)
-- fsset.py tweaks for ext4dev & xfs (sandeen)
-- When editing the raid partitions show raid memebers. (#352721) (jgranado)
-- mdadm to create the mdadm.conf (#395881) (jgranado)
-
-* Wed Jan 30 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.30-1
-- Initialize int in doConfigNetDevice() to fix compiler warnings. (dcantrell)
-
-* Wed Jan 30 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.29-1
-- Handle putting updates ahead of anaconda in the updates= case too. (clumens)
-- Make sure the device name starts with /dev (#430811). (clumens)
-- Revert "Initial support for network --bootproto=ask (#401531)." (clumens)
-- (#186439)  handle lv names with "-" when doing kickstart. (jgranado)
-- Remove the last references to makeDevInode (#430784). (clumens)
-- Don't traceback trying to raise an exception when making
-  users (#430772). (clumens)
-
-* Mon Jan 28 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.28-1
-- Go back to the method screen if back is hit on nfs config (#430477). (clumens)
-- Fix dmidecode dependency (#430394, Josh Boyer <jwboyer)
-
-* Fri Jan 25 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.27-1
-- Fix generation of stage1 images. (notting)
-- Fix a typo in mk-images. (clumens)
-- Allow removing packages by glob now that yum supports it. (clumens)
-
-* Thu Jan 24 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.26-1
-- Fix a traceback on the driver selection screen (#428810). (clumens)
-- Map 'nousb', 'nofirewire', etc. to be proper module blacklists. (notting)
-- Clean off leading and trailing whitespace from descriptions. (notting)
-- Write out /etc/rpm/platform on livecd installs. (clumens)
-
-* Wed Jan 23 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.25-1
-- Include new firstboot module. (clumens)
-- Conditionalize ntfsprogs as not all arches include it. (clumens)
-- Remove kudzu-probe-stub. (clumens)
-- Remove rogue references to kudzu. (clumens)
-- Add dogtail support (#172891, #239024). (clumens)
-- Fix some error reporting tracebacks. (clumens)
-
-* Tue Jan 22 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.24-1
-- Avoid possible SIGSEGV from empty loaderData values. (dcantrell)
-- Do not require glib2-devel for building. (dcantrell)
-- Use libnl to get interface MAC and IP addresses (dcantrell)
-- Don't refer to the libuser.conf when creating users (#428891). (clumens)
-- pcspkr works (or isn't even present), per testing on #fedora-devel (notting)
-- Inline spufs loading for ppc. (notting)
-- Load iscsi_tcp, so that iSCSI actually works (notting)
-- inline ipv6 module loading (notting)
-- If we execWith a program, require the package containing it. (clumens)
-- Add a repository editor. (clumens)
-- Add the default repo to the UI so it can be edited later. (clumens)
-- Fix non-latin-1 locale display in the loader. (notting)
-- Make sure anaconda has precedence in the search path (#331091). (clumens)
-- When starting RAID arrays, the device node may not already exist. (notting)
-- Fix a typo that's breaking kickstart network installs. (clumens)
-- Don't allow backing up to partitioning (#429618). (clumens)
-- Update font paths. (clumens)
-
-* Mon Jan 21 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.23-1
-- Try to fix a problem creating users via kickstart (#428891, clumens)
-- Fix a loader segfault doing kickstart nfs installs (clumens)
-- Move more interactive steps ahead of partitioning (clumens)
-- If we can't possibly add advanced devices, don't offer it (#429210, clumens)
-- Don't flush after rescanning so recently attached disks are
-  available (clumens)
-- If bootproto is dhcp, unset any static settings (#218489, dcantrell)
-- Add some groups to pkgorder to make the CDs come out right (pjones)
-- Fix traceback when using non-encrypted RAID (notting)
-- Complete the patch for dhcptimeout (#198147, #254032, msivak)
-
-* Wed Jan 16 2008 David L. Cantrell Jr. <dcantrell@redhat.com> - 11.4.0.22-1
-- Require the latest libdhcp (dcantrell)
-- Don't set currentMedia when we're on a network install (#428927, clumens)
-- Don't offer two reboot options (clumens)
-- Remove fsopts that are already defaults (#429039, clumens)
-- Remove isofs module to get rid of a FATAL message (clumens)
-- Add the crc32c kernel module for iscsi (#405911, clumens)
-- Add MAC address to the network device selection screen (#428229, clumens)
-- Initial support for network --bootproto=ask (#401531, clumens)
-- Remove an extra newline (clumens)
-- Add firstaidkit to the rescue image (jgranado)
-- Fix the progress bar to hit 100%% on the last package (#428790, clumens)
-- Add some output so the startup delay doesn't seem quite so long (clumens)
-- Initial kickstart support for encrypted partitions (clumens)
-
-* Mon Jan 14 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.21-1
-- Inherit from the right versions of pykickstart classes (clumens)
-- Update for nss files moving to /lib (clumens)
-- Remove unneeded arguments from detectHardware function (notting)
-- Symlink all udev support binaries to udevadm (notting)
-- /sbin/restorecon on /etc/modprobe.d (notting)
-- Add the kickstart syntax version to the kickstart file (clumens)
-- Require latest libdhcp to fix x86_64 SIGABRT problems
-
-* Sun Jan 13 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.20-1
-- Install new udev paths so HAL can talk to it (notting)
-- Also get DSO deps for setuid binaries (like X). (clumens)
-- Fix a bunch of pychecker errors. (clumens)
-
-* Fri Jan 11 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.19-1
-- Make sure the arch is listedat the top of all loader screens. (clumens)
-- Add the version number really early in the log file too. (clumens)
-- Require latest libdhcp (dcantrell)
-- Add nicdelay parameter to loader, so we can wait before sending DHCP
-  requests. (msivak)
-- Add dhcpdelay to loader so we can modify the default dhcp timeout
-  (#198147, #254032). (msivak)
-- Fix the selected device when disabling entries in Add advanced drive
-  dialog. (#248447) (msivak)
-- Include mkfs.gfs2 (#356661). (clumens)
-- Use the new default Japanese font (#428070). (clumens)
-- More urlinstall loader fixes. (clumens)
-
-* Wed Jan 09 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.18-1
-- Fix encrypted autopart traceback. (dlehman)
-- Allow for better recovery if the CD/DVD is bad. (clumens)
-- If downloading the updates image fails, prompt for a new location. (clumens)
-- X now relies on libpciaccess, so add it to our list. (clumens)
-- Erase temporary packages after installing them on all methods. (clumens)
-
-* Mon Jan 07 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.17-1
-- Make text mode root password dialog default match GUI. (clumens)
-- Fix a segfault in making the URL dialog box. (clumens)
-
-* Sun Jan 06 2008 Chris Lumens <clumens@redhat.com> - 11.4.0.16-1
-- Fix checking the timestamps on split media installs. (clumens)
-- Fix reference to isodir to avoid a post-install traceback. (clumens)
-- Use a better test when populating the URL panel in loader. (clumens)
-- Don't use error messages from dosfslabel as the label (#427457). (clumens)
-- No longer require kudzu (#427680). (clumens)
-
-* Thu Jan 03 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.15-1
-- Require latest libdhcp (#378641) (dcantrell)
-
-* Thu Jan 03 2008 David Cantrell <dcantrell@redhat.com> - 11.4.0.14-1
-- Precreate /etc/modprobe.d in installroot (jkeating)
-- 'import sets' in image.py (jkeating)
-- Fix traceback when displaying required media (clumens)
-
-* Tue Jan 01 2008 Jeremy Katz <katzj@redhat.com> - 11.4.0.13-1
-- Make it obvious which partitions are being formatted and encrypted (katzj)
-- Set initial sensitivity of encrypt button correctly (katzj)
-- Fix traceback on invalid passphrase (#426887) (katzj)
-- Use mkstemp() instead of tempnam() (katzj)
-- Don't resize filesystems which are being formatted (#426466) (katzj)
-- Add cracklib-dicts (#426444) (katzj)
-- Fix build (notting)
