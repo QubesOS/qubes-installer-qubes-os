@@ -1,7 +1,7 @@
 Name: qubes-logos
 Summary: Icons and pictures
 Version: 1
-Release: 3
+Release: 3.2
 Group: System Environment/Base
 Source0: qubes-logos-%{version}.tar.bz2
 License: GPLv2 and LGPL
@@ -77,6 +77,7 @@ cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymout
 %defattr(-, root, root)
 %doc COPYING COPYING-kde-logo
 %{_datadir}/firstboot/themes/*
+%{_datadir}/anaconda/boot/*
 %{_datadir}/anaconda/pixmaps/*
 %{_datadir}/plymouth/plymouthd.defaults.qubes
 %{_datadir}/plymouth/themes/charge/*

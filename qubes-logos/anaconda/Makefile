@@ -16,9 +16,11 @@ install:
 
 	mkdir -p $(DESTDIR)/$(ANACONDADATADIR)
 	mkdir -p $(DESTDIR)/$(ANACONDADATADIR)/pixmaps
+	mkdir -p $(DESTDIR)/$(ANACONDADATADIR)/boot
 	install -m 644 *.png $(DESTDIR)/$(ANACONDADATADIR)/pixmaps
 	install -m 644 splash.png $(DESTDIR)/$(ANACONDADATADIR)/pixmaps/progress_first.png
 	install -m 644 splash.png $(DESTDIR)/$(ANACONDADATADIR)/pixmaps/progress_first-lowres.png
+	install -m 644 syslinux-splash.png $(DESTDIR)/$(ANACONDADATADIR)/boot/syslinux-splash.png
 
 	mkdir -p $(DESTDIR)/$(ANACONDARUNTIMEDIR)
 	install -m 644 syslinux-vesa-splash.jpg $(DESTDIR)/$(ANACONDARUNTIMEDIR)
