@@ -2,34 +2,80 @@
 <!DOCTYPE comps PUBLIC "-//Red Hat, Inc.//DTD Comps info//EN" "comps.dtd">
 <comps>
   <group>
+    <id>core</id>
+    <name>Core</name>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">audit</packagereq>
+      <packagereq type="mandatory">basesystem</packagereq>
+      <packagereq type="mandatory">bash</packagereq>
+      <packagereq type="mandatory">biosdevname</packagereq>
+      <packagereq type="mandatory">coreutils</packagereq>
+      <packagereq type="mandatory">cronie</packagereq>
+      <packagereq type="mandatory">curl</packagereq>
+      <packagereq type="mandatory">dhclient</packagereq>
+      <packagereq type="mandatory">e2fsprogs</packagereq>
+      <packagereq type="mandatory">filesystem</packagereq>
+      <packagereq type="mandatory">glibc</packagereq>
+      <packagereq type="mandatory">hostname</packagereq>
+      <packagereq type="mandatory">initscripts</packagereq>
+      <packagereq type="mandatory">iproute</packagereq>
+      <packagereq type="mandatory">iprutils</packagereq>
+      <packagereq type="mandatory">iputils</packagereq>
+      <packagereq type="mandatory">kbd</packagereq>
+      <packagereq type="mandatory">less</packagereq>
+      <packagereq type="mandatory">man-db</packagereq>
+      <packagereq type="mandatory">ncurses</packagereq>
+      <packagereq type="mandatory">parted</packagereq>
+      <packagereq type="mandatory">passwd</packagereq>
+      <packagereq type="mandatory">plymouth</packagereq>
+      <packagereq type="mandatory">procps-ng</packagereq>
+      <packagereq type="mandatory">rootfiles</packagereq>
+      <packagereq type="mandatory">rpm</packagereq>
+      <packagereq type="mandatory">rsyslog</packagereq>
+      <packagereq type="mandatory">selinux-policy-targeted</packagereq>
+      <packagereq type="mandatory">setup</packagereq>
+      <packagereq type="mandatory">shadow-utils</packagereq>
+      <packagereq type="mandatory">sudo</packagereq>
+      <packagereq type="mandatory">systemd</packagereq>
+      <packagereq type="mandatory">util-linux</packagereq>
+      <packagereq type="mandatory">vim-minimal</packagereq>
+      <packagereq type="mandatory">yum</packagereq>
+      <packagereq type="default">NetworkManager</packagereq>
+      <packagereq type="default">sendmail</packagereq>
+    </packagelist>
+  </group>
+  <group>
     <id>base</id>
     <name>Base</name>
     <default>true</default>
+    <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">at</packagereq>
       <packagereq type="mandatory">authconfig</packagereq>
       <packagereq type="mandatory">bzip2</packagereq>
       <packagereq type="mandatory">cronie</packagereq>
-      <packagereq type="mandatory">cryptsetup-luks</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
       <packagereq type="mandatory">device-mapper-multipath</packagereq>
       <packagereq type="mandatory">diffutils</packagereq>
       <packagereq type="mandatory">dmraid</packagereq>
       <packagereq type="mandatory">dump</packagereq>
       <packagereq type="mandatory">ed</packagereq>
-      <packagereq type="mandatory">eject</packagereq>
+      <packagereq type="mandatory">util-linux</packagereq>
       <packagereq type="mandatory">gnupg2</packagereq>
       <packagereq type="mandatory">irqbalance</packagereq>
       <packagereq type="mandatory">linux-firmware</packagereq>
       <packagereq type="mandatory">logrotate</packagereq>
       <packagereq type="mandatory">lsof</packagereq>
-      <packagereq type="mandatory">man</packagereq>
+      <packagereq type="mandatory">man-db</packagereq>
       <packagereq type="mandatory">man-pages</packagereq>
       <packagereq type="mandatory">mcelog</packagereq>
       <packagereq type="mandatory">mdadm</packagereq>
       <packagereq type="mandatory">microcode_ctl</packagereq>
       <packagereq type="mandatory">mlocate</packagereq>
       <packagereq type="mandatory">nano</packagereq>
+      <packagereq type="mandatory">ntp</packagereq>
       <packagereq type="mandatory">ntsysv</packagereq>
       <packagereq type="mandatory">numactl</packagereq>
       <packagereq type="mandatory">parted</packagereq>
@@ -41,11 +87,12 @@
       <packagereq type="mandatory">prelink</packagereq>
       <packagereq type="mandatory">qubes-release-notes</packagereq>
       <packagereq type="mandatory">quota</packagereq>
-      <packagereq type="mandatory">readahead</packagereq>
+      <packagereq type="mandatory">systemd</packagereq>
       <packagereq type="mandatory">rsyslog</packagereq>
       <packagereq type="mandatory">smartmontools</packagereq>
       <packagereq type="mandatory">sudo</packagereq>
       <packagereq type="mandatory">symlinks</packagereq>
+      <packagereq type="mandatory">tar</packagereq>
       <packagereq type="mandatory">time</packagereq>
       <packagereq type="mandatory">tmpwatch</packagereq>
       <packagereq type="mandatory">tree</packagereq>
@@ -59,9 +106,53 @@
     </packagelist>
   </group>
   <group>
+    <id>anaconda-tools</id>
+    <name>Anaconda tools</name>
+    <name xml:lang="de">Anaconda-Werkzeuge</name>
+    <name xml:lang="hu">Anaconda eszközök</name>
+    <name xml:lang="ja">Anaconda ツール</name>
+    <name xml:lang="nb">Anaconda-verktøy</name>
+    <name xml:lang="nl">Anaconda gereedschappen</name>
+    <name xml:lang="pl">Narzędzia dla instalatora Anaconda</name>
+    <name xml:lang="uk">Засоби Anaconda</name>
+    <name xml:lang="zh_TW">Anaconda 工具</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>authconfig</packagereq>
+      <packagereq>btrfs-progs</packagereq>
+      <packagereq>chkconfig</packagereq>
+      <packagereq>cryptsetup</packagereq>
+      <packagereq>device-mapper-multipath</packagereq>
+      <packagereq>dmraid</packagereq>
+      <packagereq>dosfstools</packagereq>
+      <packagereq>dracut-network</packagereq>
+      <packagereq>e2fsprogs</packagereq>
+      <packagereq>efibootmgr</packagereq>
+      <packagereq>firewalld</packagereq>
+      <packagereq>gfs2-utils</packagereq>
+      <packagereq>grub2</packagereq>
+      <packagereq>grub2-efi</packagereq>
+      <packagereq>hfsplus-tools</packagereq>
+      <packagereq>iscsi-initiator-utils</packagereq>
+      <packagereq>lvm2</packagereq>
+      <packagereq>mactel-boot</packagereq>
+      <packagereq>mdadm</packagereq>
+      <packagereq>ntfsprogs</packagereq>
+      <packagereq>reiserfs-utils</packagereq>
+      <packagereq>shim</packagereq>
+      <packagereq>system-config-firewall-base</packagereq>
+      <packagereq>tboot</packagereq>
+      <packagereq>uboot-tools</packagereq>
+      <packagereq>xfsprogs</packagereq>
+    </packagelist>
+  </group>
+  <group>
     <id>base-x</id>
     <name>X Window System</name>
     <default>true</default>
+    <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
       <packagereq type="mandatory">firstboot</packagereq>
@@ -77,7 +168,7 @@
   </group>
   <group>
     <id>kde-desktop-qubes</id>
-    <name>KDE Software Compilation</name>
+    <name>KDE Desktop Environment</name>
     <default>true</default>
     <packagelist>
       <packagereq type="mandatory">kcm_touchpad</packagereq>
@@ -90,11 +181,87 @@
     </packagelist>
   </group>
   <group>
+    <id>xfce-desktop-qubes</id>
+    <name>Xfce (EXPERIMENTAL)</name>
+    <description>A lightweight desktop environment that works well on low end machines.</description>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>abrt-desktop</packagereq>
+      <packagereq>desktop-backgrounds-compat</packagereq>
+      <packagereq>xfce4-panel</packagereq>
+      <packagereq>xfce4-session</packagereq>
+      <packagereq>xfce4-settings</packagereq>
+      <packagereq>xfconf</packagereq>
+      <packagereq>xfdesktop</packagereq>
+      <packagereq>xfwm4</packagereq>
+      <packagereq>ConsoleKit</packagereq>
+      <packagereq>firstboot</packagereq>
+      <!-- FIXME? <packagereq>fedora-icon-theme</packagereq>-->
+      <packagereq>lightdm-gtk</packagereq>
+      <packagereq>gtk-xfce-engine</packagereq>
+      <packagereq>gvfs</packagereq>
+      <packagereq>openssh-askpass</packagereq>
+      <packagereq>Terminal</packagereq>
+      <packagereq>xfce4-about</packagereq>
+      <packagereq>xfce4-appfinder</packagereq>
+      <packagereq>xfce4-power-manager</packagereq>
+      <packagereq>xfce4-session-engines</packagereq>
+      <packagereq>xfwm4-theme-nodoka</packagereq>
+      <packagereq>xscreensaver-base</packagereq>
+      <packagereq>yumex</packagereq>
+      <packagereq>ConsoleKit-x11</packagereq>
+      <packagereq>blueman</packagereq>
+      <packagereq>xdg-user-dirs-gtk</packagereq>
+      <packagereq>adwaita-cursor-theme</packagereq>
+      <packagereq>adwaita-gtk2-theme</packagereq>
+      <packagereq>adwaita-gtk3-theme</packagereq>
+      <packagereq>greybird-gtk2-theme</packagereq>
+      <packagereq>greybird-gtk3-theme</packagereq>
+      <packagereq>greybird-xfce4-notifyd-theme</packagereq>
+      <packagereq>greybird-xfwm4-theme</packagereq>
+      <packagereq>albatross-gtk2-theme</packagereq>
+      <packagereq>albatross-gtk3-theme</packagereq>
+      <packagereq>albatross-xfwm4-theme</packagereq>
+      <packagereq>bluebird-gtk2-theme</packagereq>
+      <packagereq>bluebird-gtk3-theme</packagereq>
+      <packagereq>bluebird-xfwm4-theme</packagereq>
+      <packagereq>xfce4-datetime-plugin</packagereq>
+      <packagereq>xfce4-places-plugin</packagereq>
+      <packagereq>xfce4-quicklauncher-plugin</packagereq>
+      <packagereq>xfce4-screenshooter-plugin</packagereq>
+      <packagereq>xfwm4-themes</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>xfce-extra-plugins</id>
+    <name>Extra plugins for the Xfce panel</name>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>xfce4-battery-plugin</packagereq>
+      <packagereq>xfce4-cpugraph-plugin</packagereq>
+      <packagereq>xfce4-diskperf-plugin</packagereq>
+      <packagereq>xfce4-eyes-plugin</packagereq>
+      <packagereq>xfce4-fsguard-plugin</packagereq>
+      <packagereq>xfce4-genmon-plugin</packagereq>
+      <packagereq>xfce4-mount-plugin</packagereq>
+      <packagereq>xfce4-sensors-plugin</packagereq>
+      <packagereq>xfce4-systemload-plugin</packagereq>
+      <packagereq>xfce4-taskmanager</packagereq>
+      <packagereq>xfce4-time-out-plugin</packagereq>
+      <packagereq>xfce4-timer-plugin</packagereq>
+      <packagereq>xfce4-verve-plugin</packagereq>
+      <packagereq>xfce4-xkb-plugin</packagereq>
+    </packagelist>
+  </group>
+  <group>
     <id>qubes</id>
     <name>Qubes Environment</name>
     <default>true</default>
+    <uservisible>false</uservisible>
     <packagelist>
-      <packagereq type="mandatory">kernel-qubes-dom0</packagereq>
+      <packagereq type="mandatory">kernel</packagereq>
       <packagereq type="mandatory">qubes-core-dom0</packagereq>
       <packagereq type="mandatory">qubes-gui-dom0</packagereq>
       <packagereq type="mandatory">qubes-logos</packagereq>
@@ -105,4 +272,21 @@
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
     </packagelist>
   </group>
+
+  <environment>
+   <id>qubes</id>
+   <display_order>1</display_order>
+   <name>Qubes Install</name>
+   <description>Qubes standard installation.</description>
+    <grouplist>
+     <groupid>base</groupid>
+     <groupid>base-x</groupid>
+     <groupid>qubes</groupid>
+     <groupid>kde-desktop-qubes</groupid>
+    </grouplist>
+    <optionlist>
+     <groupid>xfce-desktop-qubes</groupid>
+     <groupid>xfce-extra-plugins</groupid>
+    </optionlist>
+  </environment>
 </comps>

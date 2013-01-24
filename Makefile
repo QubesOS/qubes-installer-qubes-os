@@ -37,9 +37,9 @@ QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
 REVISOR_VERSION := $(call spec_version,revisor/revisor.spec)
 
-REVISOR_OPTS := --install-dvd
+PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
-    REVISOR_OPTS += --product-version="$(QUBES_RELEASE)"
+    PUNGI_OPTS += --isfinal --ver="$(QUBES_RELEASE)"
 endif
 
 help:
@@ -116,11 +116,9 @@ update-repo-unstable:
 	ln -f $(RPMS) ../yum/current-release/unstable/dom0/rpm/
 
 iso:
-	cp rpm_verify /usr/local/bin/
-	ln -sf `pwd` /tmp/qubes-installer
-	revisor --cli --config=conf/qubes-install.conf --model=qubes-x86_64 $(REVISOR_OPTS) -d99
-	isohybrid build/ISO/qubes-x86_64/iso/*.iso
-	rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
+	# TODO? cp rpm_verify /usr/local/bin/
+	pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg
+	# TODO rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
 
 clean-repos:
 	@echo "--> Removing old rpms from the installer repos..."
