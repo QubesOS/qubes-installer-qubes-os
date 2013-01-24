@@ -83,7 +83,7 @@ if [ "$vms_service" == "yes" ]; then
         umount /mnt/template-root
     done
     echo "-> Starting network..."
-    /etc/init.d/qubes_netvm start
+    service qubes_netvm start
     echo "-> Creating DispVM savefile (can take long time)..."
     su -c "/usr/bin/qvm-create-default-dvm --default-template --default-script" - $user
 fi
