@@ -35,6 +35,7 @@ ANACONDA_VERSION := $(call spec_version,anaconda/anaconda.spec)
 FIRSTBOOT_VERSION := $(call spec_version,firstboot/firstboot.spec)
 QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
+LORAXQBS_VERSION := $(call spec_version,lorax-templates-qubes/lorax-templates-qubes.spec)
 
 PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
@@ -55,10 +56,10 @@ help:
 	    echo; \
 	    exit 0;
 
-.PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release \
-	update-repo update-repo-testing clean
+.PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax \
+	update-repo update-repo-testing clean iso
 
-rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release
+rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
 rpms-dom0: rpms
@@ -67,6 +68,9 @@ rpms-vm:
 
 rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2: anaconda anaconda/anaconda.spec
 	$(call package,anaconda,$(ANACONDA_VERSION))
+
+rpm/SOURCES/lorax-templates-qubes-$(LORAXQBS_VERSION).tar.bz2: lorax-templates-qubes lorax-templates-qubes/lorax-templates-qubes.spec
+	$(call package,lorax-templates-qubes,$(LORAXQBS_VERSION))
 
 rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2: firstboot firstboot/firstboot.spec
 	$(call package,firstboot,$(FIRSTBOOT_VERSION))
@@ -80,6 +84,9 @@ rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release qubes-rel
 rpms_anaconda: rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb anaconda/anaconda.spec
 
+rpms_lorax: rpm/SOURCES/lorax-templates-qubes-$(LORAXQBS_VERSION).tar.bz2
+	rpmbuild $(RPMBUILD_DEFINES) -bb lorax-templates-qubes/lorax-templates-qubes.spec
+
 rpms_firstboot: rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb firstboot/firstboot.spec
 
@@ -92,6 +99,7 @@ rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
+	rpm/noarch/lorax-templates-qubes-$(LORAXQBS_VERSION)-*.rpm \
 	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
