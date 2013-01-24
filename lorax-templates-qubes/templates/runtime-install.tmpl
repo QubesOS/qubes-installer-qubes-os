@@ -1,6 +1,8 @@
 ## lorax template file: populate the ramdisk (runtime image)
 <%page args="basearch, product"/>
 
+installpkg python
+
 ## anaconda package
 installpkg anaconda anaconda-widgets
 ## anaconda deps that aren't in the RPM
@@ -19,6 +21,7 @@ installpkg kernel
     installpkg *-firmware
     installpkg b43-openfwwf
 %endif
+installpkg xen-hypervisor
 
 ## arch-specific packages (bootloaders etc.)
 %if basearch in ("arm", "armhfp"):
@@ -48,7 +51,7 @@ installpkg plymouth
 installpkg dracut-network anaconda-dracut
 
 ## fedup-dracut handles upgrades
-installpkg fedup-dracut fedup-dracut-plymouth *-fedup-dracut
+##installpkg fedup-dracut fedup-dracut-plymouth *-fedup-dracut
 
 ## rpcbind or portmap needed by dracut nfs module
 installpkg rpcbind
@@ -93,7 +96,7 @@ installpkg mt-st hdparm smartmontools
 installpkg libmlx4
 
 ## translations & language packs
-installpkg yum-langpacks specspo
+##installpkg yum-langpacks specspo
 
 ## fonts & themes
 installpkg bitmap-fangsongti-fonts
