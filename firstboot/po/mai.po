@@ -1,97 +1,36 @@
-# translation of firstboot.master.mai.po to Maithili
-# translation of 1.firstboot.master.po to
+# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Sangeeta Kumari <sangeeta09@gmail.com>, 2008, 2009.
-# Rajesh Ranjan <rranjan@redhat.com>, 2008.
+# Rajesh Ranjan <rranjan@redhat.com>, 2008, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master.mai\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-04-07 22:19+0530\n"
-"Last-Translator: Sangeeta Kumari <sangeeta09@gmail.com>\n"
-"Language-Team: Maithili <maithili.sf.net>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-28 07:49+0000\n"
+"Last-Translator: rajeshr <rranjan@redhat.com>\n"
+"Language-Team: Maithili (http://www.transifex.net/projects/p/fedora/team/"
+"mai/)\n"
+"Language: mai\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"\n"
-"\n"
-"\n"
-"\n"
-"\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "फर्स्टबूट चलाबैक लेल अहाँकेँ रूट होएबा चाही."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "कोनो फर्स्टबूट फ्रंटएंडक आरंभ नहि कए सकल."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "कोनो फर्स्टबूट माड्यूल नहि भेटल."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "कोनो फर्स्टबूट अंतरफलककेँ बनाए नहि सकल."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "%s मोडयूलमे एकटा त्रुटि आएल अछि."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"%s मॉड्यूलक संग समस्या होबाक कारण,\n"
-"फर्स्टबूट ई मॉडयूलकेँ लोड नहि करताह आओर \n"
-"शेष मॉडयूलकेँ चलाबैक लेल प्रयास करताह."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "फर्स्टबूटमे एकटा त्रुटि आएल अछि."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "किएक समस्या अछि, फर्स्टबूट निकलि जाएत."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"डिबग आउटपुटक एकटा कॉपी %s मे सुरक्षित कएल गेल अछि.\n"
-"ओ फाइलकेँ बग रिपोर्टक सँग संलग्न कएनाइ नहि भूलू.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"कृप्या 'firstboot' क हवाले Red Hat बग ट्रैकिंग सिस्टमकेँ \n"
-"http://www.redhat.com/bugzilla पर एकटा बग दर्ज करू. \n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "पाछाँ जाएबाक कोशिश कए रहल अछि, इतिहास मुदा खाली अछि."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "समाप्त (_F)"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr "अहाँक किछु चयन क' प्रभावी हए क' लेल सिस्टमकेँ जरूर रिबूट कएनाइ चाही."
 
@@ -103,48 +42,58 @@ msgstr "पाछाँ (_B)"
 msgid "_Forward"
 msgstr "आगाँ (_F)"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "माड्यूल %s एकर UI केँ सेटअप नहि कएनए अछि, हटाए रहल अछि."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "माड्यूल %s एकर UI केँ सेटअप नहि कएनए अछि; हटाए रहल अछि."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "moveToPage केँ जरूर माड्यूल शीर्षक अथवा पृष्ठ संख्या देल जाएनाइ चाही."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "स्क्रीनशाट निर्देशिकाकेँ बनाबैमे असमर्थ; छोड़ि रहल अछि."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "शीर्षक %s क सँग कोनो माड्यूल मोजुद नहि अछि."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "पुरान माड्यूल %s केँ छोड़ि रहल अछि जे अद्यतन नहि कएल गेल अछि."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "माड्यूल %s moduleClass नामक वर्ग नहि समाहित करैत अछि; छोड़ि रहल अछि."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "माड्यूल %s जरूरी गुण %s नहि समाहित करैत अछि; छोड़ि रहल अछि."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "पिक्समैप %s को %s मॉड्यूलक लेल लोड करबामे असमर्थ."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "माड्यूल %s एकर UI केँ सेटअप नहि कएनए अछि; हटाए रहल अछि."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "बेसी कमजोर"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "कमजोर"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "ठीक ठाक मजबूत"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "मजबूत"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "बेसी मजबूत"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -196,23 +145,25 @@ msgid ""
 msgstr ""
 "आटोरन प्रोग्राम CD पर नहि पाओल जाए सकैत अछि. जारी रखबाक लेल \"बेस\" क्लिक करू."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "प्रयोक्ता बनाबू"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "अहाँकेँ ई सिस्टमक लेल प्रयोक्ता खाता जरूर सेट करबा चाही."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
 msgstr "अहाँक ई प्रयोक्ताक लेल गुड़किल्ली दाखिल आ संपुष्ट जरूर करू."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "गुड़किल्ली मेल नहि करैत अछि. कृप्या गुड़किल्ली फिनु दिअ'."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
@@ -220,7 +171,7 @@ msgid ""
 msgstr ""
 "'%s' प्रयोक्तानाम एकटा संरक्षित सिस्टम खाता अछि. कृप्या आन प्रयोक्तानाम निर्दिष्ट करू."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -234,22 +185,23 @@ msgstr ""
 "समय लए सकैत अछि अनुमति फेर सेट करबाक लेल आओर कोनो SELinux स्तर. की अहाँ ई घर "
 "निर्देशिका केँ फेर प्रयोग कएनाइ चाहब?  जँ नहि, कृप्या भिन्न प्रयोक्ता नाम चुनू."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr "%s क लेल घर निर्देशिका पर विशेषताक ठीक कएनाइ.  ई किछु मिनट लए सकैत अछि."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"%s क लेल घर निर्देशिकामे किछु फाइलमे विशेषता स्थिर करैत समय समस्याक सामना हुआ.  कृप्या %s "
-"केँ कोनो फाइल त्रुटि देने अछि कए संदर्भ लिअ."
+"%(user)s क लेल घर निर्देशिकामे किछु फाइलमे विशेषता स्थिर करैत समय समस्याक सामना भेल.  "
+"कृपया %(path)s कए संदर्भ लिअ जकरा लेल फाइल त्रुटिक कारण बनल."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
@@ -258,23 +210,27 @@ msgstr ""
 "अहाँ सिस्टमक नियमित (अप्रशासनिक) प्रयोग क' लेल एकटा व्यक्तिगत 'प्रयोक्तानाम' बनाबू. "
 "एकटा सिस्टम 'प्रयोक्तानाम' बनाबै क' लेल, नीच्चाँ माँगल गेल जानकारी दिअ'."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "प्रयोक्तानाम (_U):"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "पूर्ण नाम (_e):"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "प्रयोक्तानाम (_U):"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "गुड़किल्ली (_P):"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "गुड़किल्ली सुनिश्चित करू (_m):"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "प्रशासनिक समूह मे जोड़ू"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -282,19 +238,31 @@ msgstr ""
 "जँ अहाँ संजाल सत्यापनक प्रयोग कएनाइ चाहैत छी, जहिना जे करबरोस अथवा NIS, कृप्या सँजाल "
 "लागिनक प्रयोग करू बटन पर क्लिक करू."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "सँजाल लागिनक प्रयोग करू (_L)..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"जँ अहाँकेँ बेसी नियंत्रणक जरूरत अछि जखन अहाँ प्रयोक्ता बनाए रहल छी (गृह निर्देशिका केँ "
+"निर्दिष्ट कए, आओर/अथवा UID), कृपया उन्नत बटन क्लिक करू."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "उन्नत (_A)..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "कृप्या प्रतीक्षा करू"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "दिनांक आ समय"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "कृप्या सिस्टमक लेल दिनांक आ समय सेट करू."
 
@@ -302,9 +270,9 @@ msgstr "कृप्या सिस्टमक लेल दिनांक �
 msgid "License Information"
 msgstr "समयक्षेत्र बिन्यास"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -316,7 +284,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -328,7 +296,7 @@ msgstr ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "समझ गेलहुँ, कृप्या आगाँ बढ़ू."
 
@@ -345,3 +313,39 @@ msgstr ""
 "अहाँक सिस्टमक प्रयोगक लेल तैआर करबाक पहिने किछु आओर चरण अछि. सेटअप प्रतिनिधि आब अहाँकेँ "
 "किछु मौलिक बिन्यासक माध्यमसँ मार्गदर्शन करताह.  कृप्या जारी रखबाक लेल नीच्चाँ दहिन्ना "
 "कोनामे \"आगाँ\" बटन दबाबू."
+
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "फर्स्टबूट चलाबैक लेल अहाँकेँ रूट होएबा चाही."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "कोनो फर्स्टबूट माड्यूल नहि भेटल."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "कोनो फर्स्टबूट अंतरफलककेँ बनाए नहि सकल."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "माड्यूल %s एकर UI केँ सेटअप नहि कएनए अछि, हटाए रहल अछि."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "पुरान माड्यूल %s केँ छोड़ि रहल अछि जे अद्यतन नहि कएल गेल अछि."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "माड्यूल %(module)s लोड करबामे त्रुटि:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "माड्यूल %s moduleClass नामक वर्ग नहि समाहित करैत अछि; छोड़ि रहल अछि."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr "माड्यूल %(module)s जरूरी गुण %(attr)s; नहि समाहित करैछ; छोड़ि रहल अछि."
+
+#~ msgid "Undefined"
+#~ msgstr "अपरिभाषित"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "अहाँकेँ ई सिस्टमक लेल प्रयोक्ता खाता जरूर सेट करबा चाही."

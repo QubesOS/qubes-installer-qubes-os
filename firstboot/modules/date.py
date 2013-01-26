@@ -35,7 +35,7 @@ from scdMainWindow import scdMainWindow
 class moduleClass(Module):
     def __init__(self):
         Module.__init__(self)
-        self.priority = 100
+        self.priority = 99
         self.sidebarTitle = N_("Date and Time")
         self.title = N_("Date and Time")
         self.icon = "system-config-date.png"
@@ -46,13 +46,10 @@ class moduleClass(Module):
         if testing:
             return RESULT_SUCCESS
 
-        try:
-            rc = self.scd.firstboot_apply()
-            if rc == 0 and self.scd.closeParent:
-                return RESULT_SUCCESS
-            else:
-                return RESULT_FAILURE
-        except:
+        rc = self.scd.firstboot_apply()
+        if rc == 0 and self.scd.closeParent:
+            return RESULT_SUCCESS
+        else:
             return RESULT_FAILURE
 
     def createScreen(self):

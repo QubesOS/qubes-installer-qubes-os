@@ -21,23 +21,31 @@ import gtk
 import libuser
 import os, string, sys, time
 import os.path
+import pwd
+import unicodedata
+import re
+import shutil
+import subprocess
 
 from firstboot.config import *
 from firstboot.constants import *
 from firstboot.functions import *
 from firstboot.module import *
+from firstboot.pwcheck import Password
+from firstboot.pwcheck import StrengthMeterWithLabel
 
 import gettext
 _ = lambda x: gettext.ldgettext("firstboot", x)
 N_ = lambda x: x
 
 sys.path.append("/usr/share/system-config-users")
+import mainWindow
 import userGroupCheck
 
 class moduleClass(Module):
     def __init__(self):
         Module.__init__(self)
-        self.priority = 100
+        self.priority = 90
         self.sidebarTitle = N_("Create User")
         self.title = N_("Create User")
         self.icon = "create-user.png"
@@ -77,12 +85,33 @@ class moduleClass(Module):
         if username == "":
             # Only allow not creating a user if there is at least
             # one non-system account already on the system
-            if self.admin.getFirstUnusedUid() > 500:
+            shells = "/etc/shells"
+            with open(shells) as fobj:
+                login_shells = [line.strip() for line in fobj.readlines()]
+                login_shells = [line for line in login_shells
+                                if line and line != "/sbin/nologin"]
+
+            users = [item[0] for item in pwd.getpwall()
+                     if item[0] != "root" and item[6] in login_shells]
+
+            if users:
                 return RESULT_SUCCESS
             else:
-                self._showErrorMessage(_("You must create a user account for this system."))
-                self.usernameEntry.grab_focus()
-                return RESULT_FAILURE
+                dlg = gtk.MessageDialog(None, 0, gtk.MESSAGE_WARNING,
+                                        gtk.BUTTONS_YES_NO,
+                                        _("You did not set up an user account "
+                                          "capable of logging into the system."
+                                          "\nAre you sure you want to continue?"))
+
+                dlg.set_position(gtk.WIN_POS_CENTER)
+                dlg.set_modal(True)
+                rc = dlg.run()
+                dlg.destroy()
+                if rc == gtk.RESPONSE_NO:
+                    self.usernameEntry.grab_focus()
+                    return RESULT_FAILURE
+                else:
+                    return RESULT_SUCCESS
 
         if not userGroupCheck.isUsernameOk(username, self.usernameEntry):
             return RESULT_FAILURE
@@ -104,12 +133,37 @@ class moduleClass(Module):
             self.confirmEntry.set_text("")
             self.passwordEntry.grab_focus()
             return RESULT_FAILURE
-        elif not userGroupCheck.isPasswordOk(password, self.passwordEntry):
-            return RESULT_FAILURE
+        #elif not userGroupCheck.isPasswordOk(password, self.passwordEntry):
+        #    return RESULT_FAILURE
 
         user = self.admin.lookupUserByName(username)
 
-        if user != None and user.get(libuser.UIDNUMBER)[0] < 500:
+        # get UID_MIN from /etc/login.defs
+        __ld_line = re.compile(r'^[ \t]*'      # Initial whitespace
+                               r'([^ \t]+)'    # Variable name
+                               r'[ \t][ \t"]*' # Separator - yes, may have multiple "s
+                               r'(([^"]*)".*'  # Value, case 1 - terminated by "
+                               r'|([^"]*\S)?\s*' # Value, case 2 - only drop trailing \s
+                               r')$')
+
+        res = {}
+        with open('/etc/login.defs') as f:
+            for line in f:
+                match = __ld_line.match(line)
+                if match is not None:
+                    name = match.group(1)
+                    if name.startswith('#'):
+                        continue
+                    value = match.group(3)
+                    if value is None:
+                        value = match.group(4)
+                        if value is None:
+                            value = ''
+                    res[name] = value # Override previous definition
+
+        uid_min = res.get('UID_MIN', 500)
+
+        if user != None and user.get(libuser.UIDNUMBER)[0] < uid_min:
             self._showErrorMessage(_("The username '%s' is a reserved system "
                                      "account.  Please specify another username."
                                      % username))
@@ -172,7 +226,25 @@ class moduleClass(Module):
                     gtk.main_iteration(False)
 
                 os.chown("/home/%s" % username, uidNumber, gidNumber)
-                os.path.walk("/home/%s" % username, self._chown, (uidNumber, gidNumber))
+                os.path.walk("/home/%s" % username, self._chown, (uidNumber,
+                                                                  gidNumber))
+
+                # selinux context
+                subprocess.call(['restorecon', '-R', '/home/%s' % username])
+
+                # copy skel files
+                for fname in os.listdir("/etc/skel"):
+                    dst = "/home/%s/%s" % (username, fname)
+                    if not os.path.exists(dst):
+                        src = "/etc/skel/%s" % fname
+                        if os.path.isdir(src):
+                            shutil.copytree(src, dst)
+                            os.path.walk(dst, self._chown, (uidNumber,
+                                                            gidNumber))
+                        else:
+                            shutil.copy2(src, dst)
+                            os.chown(dst, uidNumber, gidNumber)
+
                 dlg.destroy()
 
                 if len(self._problemFiles) > 0:
@@ -185,9 +257,11 @@ class moduleClass(Module):
 
                     fo.close()
 
-                    text = _("Problems were encountered fixing the attributes on "
-                             "some files in the home directory for %s.  Please refer "
-                             "to %s for which files caused the errors.") % (username, path)
+                    text = _("Problems were encountered fixing the attributes "
+                             "on some files in the home directory for %(user)s."
+                             "  Please refer to %(path)s for which files "
+                             "caused the errors.") % {"user": username,
+                                                      "path": path}
                     self._showErrorMessage(text)
         else:
             self.admin.modifyUser(userEnt)
@@ -197,7 +271,17 @@ class moduleClass(Module):
                      userEnt.get(libuser.GIDNUMBER)[0])
 
         self.admin.setpassUser(userEnt, self.passwordEntry.get_text(), 0)
-        os.system("usermod -a -G qubes %s" % username)
+
+        # add user to qubes, wheel and dialout group
+        wheelEnt = self.admin.lookupGroupByName("wheel")
+        wheelEnt.add(libuser.MEMBERNAME, username)
+        self.admin.modifyGroup(wheelEnt)
+        dialoutEnt = self.admin.lookupGroupByName("dialout")
+        dialoutEnt.add(libuser.MEMBERNAME, username)
+        self.admin.modifyGroup(dialoutEnt)
+        qubesEnt = self.admin.lookupGroupByName("qubes")
+        qubesEnt.add(libuser.MEMBERNAME, username)
+        self.admin.modifyGroup(qubesEnt)
 
         return RESULT_SUCCESS
 
@@ -213,22 +297,40 @@ class moduleClass(Module):
         label.set_size_request(500, -1)
 
         self.usernameEntry = gtk.Entry()
+
+        self.guessUserName = True
+        self.usernameEntry.connect("changed", self.usernameEntry_changed)
+
         self.passwordEntry = gtk.Entry()
         self.passwordEntry.set_visibility(False)
+        self.strengthLabel = StrengthMeterWithLabel()
         self.confirmEntry = gtk.Entry()
         self.confirmEntry.set_visibility(False)
+        self.confirmIcon = gtk.Image()
+        self.confirmIcon.set_alignment(0.0, 0.5)
+        self.confirmIcon.set_from_stock(gtk.STOCK_APPLY, gtk.ICON_SIZE_BUTTON)
+        # hide by default
+        self.confirmIcon.set_no_show_all(True)
+
+        self.passwordEntry.connect("changed", self.passwordEntry_changed,
+                                   self.strengthLabel,
+                                   self.confirmEntry, self.confirmIcon)
+
+        self.confirmEntry.connect("changed", self.confirmEntry_changed,
+                                  self.passwordEntry, self.confirmIcon)
 
         self.vbox.pack_start(label, False, True)
 
-        table = gtk.Table(2, 4)
+        table = gtk.Table(3, 4)
         table.set_row_spacings(6)
         table.set_col_spacings(6)
+
         label = gtk.Label(_("_Username:"))
         label.set_use_underline(True)
         label.set_mnemonic_widget(self.usernameEntry)
         label.set_alignment(0.0, 0.5)
-        table.attach(label, 0, 1, 0, 1, gtk.FILL)
-        table.attach(self.usernameEntry, 1, 2, 0, 1, gtk.SHRINK, gtk.FILL, 5)
+        table.attach(label, 0, 1, 1, 2, gtk.FILL)
+        table.attach(self.usernameEntry, 1, 2, 1, 2, gtk.SHRINK, gtk.FILL, 5)
 
         label = gtk.Label(_("_Password:"))
         label.set_use_underline(True)
@@ -244,51 +346,18 @@ class moduleClass(Module):
         table.attach(label, 0, 1, 3, 4, gtk.FILL)
         table.attach(self.confirmEntry, 1, 2, 3, 4, gtk.SHRINK, gtk.FILL, 5)
 
-        self.vbox.pack_start(table, False)
+        table.attach(self.strengthLabel, 2, 3, 2, 3, gtk.FILL)
+        table.attach(self.confirmIcon, 2, 3, 3, 4, gtk.FILL)
 
-#        label = gtk.Label(_("If you need to use network authentication, such as Kerberos or NIS, "
-#                            "please click the Use Network Login button."))
-#
-#        label.set_line_wrap(True)
-#        label.set_alignment(0.0, 0.5)
-#        label.set_size_request(500, -1)
-#        self.vbox.pack_start(label, False, True, padding=20)
-#
-#        authHBox = gtk.HBox()
-#        authButton = gtk.Button(_("Use Network _Login..."))
-#        authButton.connect("clicked", self._runAuthconfig)
-#        align = gtk.Alignment()
-#        align.add(authButton)
-#        align.set(0.0, 0.5, 0.0, 1.0)
-#        authHBox.pack_start(align, True)
-#        self.vbox.pack_start(authHBox, False, False)
+        self.vbox.pack_start(table, False)
 
     def focus(self):
         self.usernameEntry.grab_focus()
 
     def initializeUI(self):
-        pass
-
-    def _runAuthconfig(self, *args):
-        self.nisFlag = 1
-
-        # Create a gtkInvisible to block until authconfig is done.
-        i = gtk.Invisible()
-        i.grab_add()
-
-        pid = start_process("/usr/bin/authconfig-gtk", "--firstboot")
-
-        while True:
-            while gtk.events_pending():
-                gtk.main_iteration_do()
-
-            child_pid, status = os.waitpid(pid, os.WNOHANG)
-            if child_pid == pid:
-                break
-            else:
-                time.sleep(0.1)
-
-        i.grab_remove()
+        self.usernameEntry.set_text("")
+        self.passwordEntry.set_text("")
+        self.confirmEntry.set_text("")
 
     def _waitWindow(self, text):
         # Shamelessly copied from gui.py in anaconda.
@@ -314,3 +383,36 @@ class moduleClass(Module):
         rc = dlg.run()
         dlg.destroy()
         return None
+
+    def usernameEntry_changed(self, un_entry):
+        self.guessUserName = not bool(un_entry.get_text())
+
+    def passwordEntry_changed(self, entry, strengthLabel,
+                              confirmEntry, confirmIcon):
+
+        self.confirmEntry_changed(confirmEntry, entry, confirmIcon)
+
+        pw = entry.get_text()
+        if not pw:
+            strengthLabel.set_text("")
+            strengthLabel.set_fraction(0.0)
+            return
+
+        username = self.usernameEntry.get_text() or None
+
+        pw = Password(pw, username)
+        strengthLabel.set_fraction(pw.strength_frac)
+        strengthLabel.set_text('%s' % pw.strength_string)
+
+    def confirmEntry_changed(self, entry, passwordEntry, confirmIcon):
+        pw = passwordEntry.get_text()
+        if not pw:
+            # blank icon
+            confirmIcon.hide()
+            return
+
+        if pw == entry.get_text():
+            confirmIcon.show()
+        else:
+            # blank icon
+            confirmIcon.hide()

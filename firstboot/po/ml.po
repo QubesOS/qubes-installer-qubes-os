@@ -1,95 +1,36 @@
-# translation of firstboot.master.ml.po to
-# translation of ml.po to
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
 #
-# Ani Peter <apeter@redhat.com>, 2006, 2007.
+# Ani Peter <apeter@redhat.com>, 2006, 2007, 2010.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master.ml\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-09-22 12:15+0530\n"
-"Last-Translator: \n"
-"Language-Team:  <en@li.org>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: glezos <glezos@indifex.com>\n"
+"Language-Team: Malayalam <discuss@lists.smc.org.in>\n"
+"Language: ml\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"\n"
-"\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "ഫര്‍സ്റ്റ്ബൂട്ട് പ്രവര്‍ത്തിപ്പിക്കുന്നതിനായി നിങ്ങള്‍ റൂട്ട് ആകേണ്ടതുണ്ട്."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "ഫര്‍സ്റ്റ്ബൂട്ട് തുടങ്ങുവാന്‍ സാധ്യമാകുന്നില്ല."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "ഫര്‍സ്റ്റ്ബൂട്ട് ഘടകങ്ങള്‍ ലഭ്യമല്ല."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "ഒരു ഫര്‍സ്റ്റ്ബൂട്ട് സംയോജകഘടകവും ഉണ്ടാക്കുവാന്‍ സാധ്യമായില്ല."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "%s മൊഡ്യൂളിന് തകരാര്‍ സംഭവിച്ചിരിക്കുന്നു."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"%s മൊഡ്യൂളില്‍ തകരാറുള്ളതിനാല്‍ ,\n"
-"ഫര്‍സ്റ്റബൂട്ട് ഇത് ഒഴികെ ബാക്കി എല്ലാ ഘടകങ്ങളും \n"
-"പ്രവര്‍ത്തിപ്പിക്കുവാന്‍ ശ്രമിക്കുന്നു."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "ഫര്‍സ്റ്റ്ബൂട്ടില്‍ ഒരു തകരാര്‍ സംഭവിച്ചിരിക്കുന്നു."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "ഏതോ ഒരു തകരാറുള്ളതിനാല്‍, ഫര്‍സ്റ്റ്ബൂട്ടില്‍ നിന്നും പുറത്ത് കടക്കുന്നു."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"ഡീബഗ് ചെയ്ത് ഔട്ട്പുട്ടിന്റെ ഒരു പകര്‍പ്പ് %s-ല്‍ സംരക്ഷിച്ചിരിക്കുന്നു\n"
-"ബഗ് റിപ്പോര്‍ട്ടിനൊപ്പം ഈ ഫയല്‍ കൂട്ടിച്ചേര്‍ത്തിട്ടുണ്ട് എന്നുറപ്പ് വരുത്തുക.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"'firstboot'-ന് എതിരെ http://www.redhat.com/bugzilla-ലുളള\n"
-"Red Hat-ന്റെ ബഗ് ട്രാക്കിങ് സിസ്റ്റത്തില്‍ ഒരു ബഗ് രേഖപ്പെടുത്തുക.\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
-msgstr "തിരികെ പോകാന്‍ ശ്രമിച്ചു, പക്ഷേ നാള്‍വഴി കാലിയാണ്."
+msgstr "തിരികെ പോകാന്‍ ശ്രമിച്ചു, പക്ഷേ നാള്‍വഴി ശൂന്യമാണു്."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
-msgstr "അവസാനിച്ചിരിക്കുന്നു (_F)"
+msgstr "_അവസാനിച്ചിരിക്കുന്നു"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
-msgstr "നിങ്ങള്‍ തിരഞ്ഞെടുത്തവ പ്രാവര്‍ത്തികമാക്കുന്നതിനായി കംപ്യൂട്ടര്‍ റീബൂട്ട് ചെയ്യേണ്ടതാണ്."
+msgstr "നിങ്ങള്‍ തിരഞ്ഞെടുത്തവ പ്രാവര്‍ത്തികമാക്കുന്നതിനായി കമ്പ്യൂട്ടര്‍ റീബൂട്ട് ചെയ്യേണ്ടതാണു്."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
@@ -99,48 +40,58 @@ msgstr "_പുറകോട്ട്"
 msgid "_Forward"
 msgstr "_മുമ്പോട്ട്"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "%s എന്ന ഘടകം അതിനുള്ള യുഐ ക്രമികരിച്ചില്ല, അതിനാല്‍ നീക്കം ചെയ്യുന്നു."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "%s എന്ന ഘടകത്തിനുള്ള യുഐ സജ്ജമല്ല;: അതിനാല്‍ നീക്കം ചെയ്യുന്നു."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "moveToPage എന്നതിന് ഒരു ഘടത്തിന്റെ തലക്കെട്ട് അല്ലെങ്കില്‍ പേജ് നംബര്‍ നല്‍കേണ്ടതാകുന്നു."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "സ്ക്രീന്‍ഷോട്ട് ഡയറക്ടറി ഉണ്ടാക്കുവാന്‍ സാധിച്ചില്ല; ഉപേക്ഷിക്കുന്നു‌."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "%s എന്ന തലക്കെട്ടില്‍ ഒരു ഘടകവും ലഭ്യമല്ല."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "പരിഷ്കരിച്ചിട്ടില്ലാത്ത %s എന്ന പഴയ ഘടകം ഉപേക്ഷിക്കുന്നു."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "%s എന്ന ഘടകത്തിന് മൊഡ്യൂള്‍ക്ലാസ്സ് എന്ന പേരിലുള്ള ക്ലാസ്സ് ലഭ്യമല്ല; അതിനാല്‍ ഉപേക്ഷിക്കുന്നു."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "%s എന്ന ഘടകത്തിന് ആവശ്യമുള്ള %s എന്ന വിശേഷത ലഭ്യമല്ല; അതിനാല്‍ ഉപേക്ഷിക്കുന്നു."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "%s എന്ന പിക്സ്മാപ്പ് ലഭ്യമാക്കുവാന്‍ സാധിച്ചില്ല. ഇത് %s ഘടകത്തിനുള്ളതാകുന്നു."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "%s എന്ന ഘടകത്തിനുള്ള യുഐ സജ്ജമല്ല;: അതിനാല്‍ നീക്കം ചെയ്യുന്നു."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr ""
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr ""
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr ""
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr ""
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr ""
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -162,7 +113,7 @@ msgstr ""
 msgid "Please insert any additional software install cds at this time."
 msgstr ""
 "പുതുതായി ഏതെങ്കിലും സോഫ്റ്റ്‌വെയര്‍ ഇനിയും ഇന്‍‌സ്റ്റോള്‍ ചെയ്യുവാന്‍ ഉണ്ടെങ്കില്‍ അതിനാവശ്യാമായുള്ള "
-"സിഡികള്‍ ഇപ്പോള്‍ കംപ്യൂട്ടറില്‍ ഇടുക."
+"സിഡികള്‍ ഇപ്പോള്‍ കമ്പ്യൂട്ടറില്‍ ഇടുക."
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -187,37 +138,41 @@ msgid ""
 "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
 "click \"OK\" to continue."
 msgstr ""
-"CD-ROM ഇല്ലെന്നു് കണ്ടെത്തിയിരിക്കുന്നു.  ദയവായി ഡ്രൈവില്‍ CD-ROM നിക്ഷേപിക്കുക, ശേഷം "
-"മുമ്പോട്ട് പോകുന്നതിനായി \"ശരി\" അമര്‍ത്തുക."
+"CD-ROM ഇല്ലെന്നു് കണ്ടെത്തിയിരിക്കുന്നു.  ദയവായി ഡ്രൈവില്‍ CD-ROM നിക്ഷേപിക്കുക, ശേഷം മുമ്പോട്ട് "
+"പോകുന്നതിനായി \"ശരി\" അമര്‍ത്തുക."
 
 #: ../modules/additional_cds.py:146
-msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr "CDയില്‍ ഓട്ടോറണ്‍ പ്രോഗ്രാം ലഭ്യമല്ല. തുടരുന്നതിനായി \"ശരി\" അമര്‍ത്തുക."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "ഉപയോക്താവിനെ ഉണ്ടാക്കുക"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "നിങ്ങളുടെ സിസ്റ്റമിനുള്ള ഉപയോക്താവിനുള്ള അക്കൌണ്ട് ദയവായി ക്രമികരിക്കുക."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr "നിങ്ങളുടെ സിസ്റ്റമിനുള്ള ഉപയോക്താവിനുള്ള രഹസ്യവാക്ക് ദയവായി ഉറപ്പാക്കുക."
+msgstr "നിങ്ങളുടെ സിസ്റ്റത്തിനുള്ള ഉപയോക്താവിനുള്ള രഹസ്യവാക്ക് ദയവായി ഉറപ്പാക്കുക."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "രഹസ്യവാക്കുകള്‍ പൊരുത്തപ്പെടുന്നില്ല.  ദയവായി രഹസ്യവാക്ക് വീണ്ടും നല്‍കുക."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
-msgstr "'%s' എന്ന പേര് മുന്‍നിശ്ചയിച്ചിട്ടുള്ള സിസ്റ്റം അക്കൌണ്ടാകുന്നു.  ദയവായി മറ്റൊരു പേര് നല്‍കുക."
+msgstr ""
+"'%s' എന്ന പേര് മുന്‍നിശ്ചയിച്ചിട്ടുള്ള സിസ്റ്റം അക്കൌണ്ടാകുന്നു.  ദയവായി മറ്റൊരു പേര് നല്‍കുക."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -231,21 +186,23 @@ msgstr ""
 "ഏതെങ്കിലും SELinux ലേബലുകള്‍ അല്ലെങ്കില്‍ അനുമതികള്‍ സജ്ജമാക്കുന്നു. ഈ ഹോം ഡയറക്ടറി നിങ്ങള്‍ക്കു് "
 "വീണ്ടും ഉപയോഗിക്കണമോ? വേണ്ടായെങ്കില്‍, ദയവായി മറ്റൊരു പേരു് തെരഞ്ഞെടുക്കുക."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
-msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr "%s-നുള്ള ഹോം ഡയറക്ടറിയിലുള്ള വിശേഷതകള്‍ പരിഹരിക്കുന്നു.  ഇതു് അല്പ സമയം എടുക്കുന്നു."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"%s-നുള്ള ഹോം ഡയറക്ടറിയില്‍ ചില ഫയലുകള്‍ക്കുള്ള വിശേഷതകള്‍ പരിഹരിക്കുന്നതില്‍ പിശക് "
-"ഉണ്ടായിരിക്കുന്നു. പിശക് ഉണ്ടായ ഫയലുകള്‍ക്കായി ദയവായി %s കാണുക."
+"%(user)s-നുള്ള ഹോം ഡയറക്ടറിയില്‍ ചില ഫയലുകള്‍ക്കുള്ള വിശേഷതകള്‍ പരിഹരിക്കുന്നതില്‍ പിശക് "
+"ഉണ്ടായിരിക്കുന്നു. പിശക് ഉണ്ടായ ഫയലുകള്‍ക്കായി ദയവായി %(path)s കാണുക."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
@@ -255,23 +212,27 @@ msgstr ""
 "ഒരു 'ഉപയോക്തൃനാമം' ഉണ്ടാക്കുന്നത് ഉചിതമാകുന്നു. ഒരു സിസ്റ്റം 'ഉപയോക്തൃനാമം' ഉണ്ടാക്കുന്നതിനായി, "
 "താഴെ ആവശ്യപ്പെട്ടിരിക്കുന്ന വിവരങ്ങള്‍ ദയവായി നല്‍കുക."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "_ഉപയോക്തൃനാമം:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "പൂര്‍ണ്ണ _നാമം:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_ഉപയോക്തൃനാമം:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "_രഹസ്യവാക്ക്:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "രഹസ്യവാക്ക് ഉ_റപ്പാക്കുക:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr ""
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -279,19 +240,31 @@ msgstr ""
 "Kerberos അല്ലെങ്കില്‍ NIS പോലുള്ള നെറ്റ്‌വര്‍ക്ക് ആധികാരികതകള്‍ ഉപയോഗിക്കണമെങ്കില്‍, ദയവായി "
 "നെറ്റ്‌വര്‍ക്ക് പ്രവേശനം ഉപയോഗിക്കുക എന്ന ബട്ടണ്‍ അമര്‍ത്തുക."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "നെറ്റ്‌വര്‍ക്ക് _പ്രവേശനം ഉപയോഗിക്കുക..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"ഉപയോക്താവിനെ (ഹോം ഡയറക്ടറി, യുഐഡി വ്യക്തമാക്കുക) തയ്യാറാക്കുമ്പോള്‍, കൂടുതല്‍ നിയന്ത്രണം "
+"ആവശ്യമെങ്കില്‍, സങ്കീര്‍ണ്ണം എന്ന ബട്ടണ്‍ അമര്‍ത്തുക."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "_സങ്കീര്‍ണ്ണം..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "ദയവായി കാത്തിരിക്കുക"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "തീയതിയും സമയവും"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "നിങ്ങളുടെ സിസ്റ്റത്തിനുള്ള തീയതിയും സമയവും ദയവായി ക്രമികരിക്കുക."
 
@@ -299,9 +272,9 @@ msgstr "നിങ്ങളുടെ സിസ്റ്റത്തിനുള�
 msgid "License Information"
 msgstr "ലൈസന്‍സ് വിവരം"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -313,7 +286,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -325,7 +298,7 @@ msgstr ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "മുമ്പോട്ട് തുടരുക."
 
@@ -339,7 +312,42 @@ msgid ""
 "Setup Agent will now guide you through some basic configuration.  Please "
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
-"കംപ്യൂട്ടര്‍ പൂര്‍ണ്ണമായി ഉപയോഗ്യമാക്കുന്നതിലേക്ക് ഇനിയും കുറേ നടപടി ക്രമങ്ങള്‍ കൂടി ബാക്കിയുണ്ട്. ഇനി "
+"കമ്പ്യൂട്ടര്‍ പൂര്‍ണ്ണമായി ഉപയോഗ്യമാക്കുന്നതിലേക്ക് ഇനിയും കുറേ നടപടി ക്രമങ്ങള്‍ കൂടി ബാക്കിയുണ്ട്. ഇനി "
 "ചില അടിസ്ഥാന ക്രമീകരണങ്ങളില്‍ കൂടി സെറ്റപ്പ് ഏജന്റ് നിങ്ങളെ നയിക്കുന്നതാണ്.  ദയവായി താഴെ "
 "വലത്തുളള \"മുമ്പോട്ട്\" എന്ന ബട്ടണില്‍ ക്ലിക്ക് ചെയ്ത് തുടരുക."
 
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "ഫസ്റ്റ്ബൂട്ട് പ്രവര്‍ത്തിപ്പിക്കുന്നതിനായി നിങ്ങള്‍ റൂട്ട് ആകേണ്ടതുണ്ടു്."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "ഫസ്റ്റ്ബൂട്ട് ഘടകങ്ങള്‍ ലഭ്യമല്ല."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "ഒരു ഫസ്റ്റ്ബൂട്ട് സംയോജകഘടകവും ഉണ്ടാക്കുവാന്‍ സാധ്യമായില്ല."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "%s എന്ന ഘടകം അതിനുള്ള യുഐ ക്രമികരിച്ചില്ല, അതിനാല്‍ നീക്കം ചെയ്യുന്നു."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "പരിഷ്കരിച്ചിട്ടില്ലാത്ത %s എന്ന പഴയ ഘടകം ഉപേക്ഷിക്കുന്നു."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "ഘടകം %(module)s ലഭ്യമാക്കുന്നതില്‍ പിശക്:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr ""
+#~ "%s എന്ന ഘടകത്തിന് മൊഡ്യൂള്‍ക്ലാസ്സ് എന്ന പേരിലുള്ള ക്ലാസ്സ് ലഭ്യമല്ല; അതിനാല്‍ ഉപേക്ഷിക്കുന്നു."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "%(module)s എന്ന ഘടകത്തിന് ആവശ്യമുള്ള %(attr)s എന്ന വിശേഷത ലഭ്യമല്ല; അതിനാല്‍ "
+#~ "ഉപേക്ഷിക്കുന്നു."
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "നിങ്ങളുടെ സിസ്റ്റത്തിനുള്ള ഉപയോക്താവിനുള്ള അക്കൌണ്ട് ദയവായി ക്രമീകരിക്കുക."

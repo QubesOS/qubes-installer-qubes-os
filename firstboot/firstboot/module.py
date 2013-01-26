@@ -184,3 +184,7 @@ class Module:
            that need other behavior should override this method.
         """
         return True
+
+    @property
+    def reconfig(self):
+        return self.mode == MODE_RECONFIG

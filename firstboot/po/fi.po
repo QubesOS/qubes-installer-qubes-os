@@ -1,91 +1,37 @@
-# Finnish translation for firstboot.
-# This file is distributed under the same license as the firstboot package.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 #
 # Mikko Ikola <ikola@iki.fi>, 2004.
-# Lauri Nurmi <lanurmi@iki.fi>, 2004-2007.
-# Ville-Pekka Vainio <vpivaini@cs.helsinki.fi>, 2007-2009.
+# Lauri Nurmi <lanurmi@iki.fi>, 2004.
+# Ville-Pekka Vainio <vpivaini@cs.helsinki.fi>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-03-23 12:55+0200\n"
-"Last-Translator: Ville-Pekka Vainio <vpivaini@cs.helsinki.fi>\n"
-"Language-Team: Finnish\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: vpv <vpvainio@iki.fi>\n"
+"Language-Team: Finnish (http://www.transifex.net/projects/p/fedora/team/"
+"fi/)\n"
+"Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "Sinun on oltava pääkäyttäjä firstbootin suorittamiseksi."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "Mitään firstboot-edustaohjelmaa ei voitu käynnistää."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "Yhtään firstboot-moduulia ei löytynyt."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "Ei voitu luoda mitään firstboot-käyttöliittymää."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Tapahtui virhe moduulissa %s."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Koska moduulissa %s on ongelma,\n"
-"firstboot ei lataa sitä ja\n"
-"yrittää suorittaa jäljellä olevat moduulit."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "Firstbootissa tapahtui virhe."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "Firstboot lopettaa ongelman vuoksi."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"Kopio vianjäljitystulosteesta on tallennettu tiedostoon %s.\n"
-"Muista liittää tämä tiedosto vikailmoitukseen.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Tee firstbootia koskeva vikailmoitus Red Hatin\n"
-"vianjäljitysjärjestelmässä http://www.redhat.com/bugzilla/.\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "Yritettiin mennä takaisin, mutta historia on tyhjä."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_Valmis"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr ""
 "Järjestelmä käynnistyy nyt uudelleen, jotta tehdyt valinnat tulevat käyttöön."
@@ -98,48 +44,58 @@ msgstr "_Edellinen"
 msgid "_Forward"
 msgstr "_Seuraava"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
 msgstr "Moduuli %s ei asettanut käyttöliittymäänsä, poistetaan."
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "moveToPagelle on annettava moduulin nimi tai sivunumero."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "Ruudunkaappaushakemistoa ei voi luoda, ohitetaan."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "Moduulia nimeltä %s ei ole olemassa."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "Ohitetaan vanha moduuli %s, jota ei ole päivitetty."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "Moduuli %s ei sisällä luokkaa nimeltä moduleClass, ohitetaan."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "Moduuli %s ei sisällä vaadittua attribuuttia %s, ohitetaan."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "Ei voi ladata moduulin %s bittikarttakuvaa %s."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "Moduuli %s ei asettanut käyttöliittymäänsä, poistetaan."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Erittäin heikko"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Heikko"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Melko vahva"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Vahva"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Erittäin vahva"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -191,23 +147,25 @@ msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr "Autorun-ohjelmaa ei löytynyt CD:ltä. Napsauta ”OK” jatkaaksesi."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "Luo käyttäjä"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "Tähän järjestelmään on luotava käyttäjätunnus."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
 msgstr "Tälle käyttäjälle on annettava salasana ja se on vahvistettava."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "Salasanat eivät ole samat.  Syötä salasana uudelleen."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
@@ -216,7 +174,7 @@ msgstr ""
 "Käyttäjätunnus ”%s” on varattu järjestelmätunnus.  Syötä toinen "
 "käyttäjätunnus."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -225,13 +183,13 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"Käyttäjän %s kotihakemisto on jo olemassa. Haluatko jatkaa, jolloin "
-"uudesta käyttäjästä tulee tämän hakemiston ja kaiken sen sisällön omistaja? "
-"Tämän tekeminen voi kestää jonkin aikaa, koska oikeudet ja SELinux-nimiöt on "
-"asetettava uudelleen. Haluatko käyttää tätä kotihakemistoa? Jos et, "
-"valitse toinen käyttäjätunnus."
+"Käyttäjän %s kotihakemisto on jo olemassa. Haluatko jatkaa, jolloin uudesta "
+"käyttäjästä tulee tämän hakemiston ja kaiken sen sisällön omistaja? Tämän "
+"tekeminen voi kestää jonkin aikaa, koska oikeudet ja SELinux-nimiöt on "
+"asetettava uudelleen. Haluatko käyttää tätä kotihakemistoa? Jos et, valitse "
+"toinen käyttäjätunnus."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
@@ -239,17 +197,18 @@ msgstr ""
 "Korjataan käyttäjän %s kotihakemiston määreitä. Tämä voi kestää muutaman "
 "minuutin."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"Käyttäjän %s kotihakemiston joidenkin tiedostojen määreiden korjaamisessa "
-"oli ongelmia. Tiedostossa %s on lisätietoja ongelmia aiheuttaneista "
-"tiedostoista."
+"Käyttäjän %(user)s kotihakemiston joidenkin tiedostojen määreiden "
+"korjaamisessa oli ongelmia. Tiedostossa %(path)s on lisätietoja ongelmia "
+"aiheuttaneista tiedostoista."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
@@ -258,23 +217,27 @@ msgstr ""
 "On suositeltua luoda käyttäjätunnus järjestelmän peruskäyttöön (joka ei ole "
 "ylläpitoa). Syötä alla pyydetyt tiedot käyttäjätunnuksen luomiseksi."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "_Käyttäjätunnus:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "Koko _nimi:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_Käyttäjätunnus:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "_Salasana:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "_Vahvista salasana:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Lisää Järjestelmänvalvojien ryhmään"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -282,19 +245,31 @@ msgstr ""
 "Jos tarvitset verkkokirjautumista, kuten Kerberosta tai NIS:ää, napsauta "
 "Käytä verkkokirjautumista -painiketta."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "Käytä verkko_kirjautumista..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Napsauttamalla Lisäasetukset voit määritellä luotavan käyttäjätunnuksen "
+"ominaisuuksia, kuten kotihakemiston ja UID:n, tarkemmin."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "_Lisäasetukset..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "Odota hetki"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "Päivämäärä ja aika"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "Aseta järjestelmän päivä ja aika"
 
@@ -302,9 +277,9 @@ msgstr "Aseta järjestelmän päivä ja aika"
 msgid "License Information"
 msgstr "Lisenssitiedot"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -316,7 +291,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Kiitos kun asensit Qubesn. Qubes on kokoelma ohjelmistopaketteja, joista "
+"Kiitos kun asensit Fedoran. Fedora on kokoelma ohjelmistopaketteja, joista "
 "jokaisella on oma lisenssinsä. Kokoelma on asetettu saataville GNU General "
 "Public License versio 2:n alaisena. Tämän koodin käyttöä, kopiointia tai "
 "muokkaamista ei ole rajoitettu. Koodin levitykseen niin muokatussa kuin "
@@ -327,8 +302,7 @@ msgstr ""
 "Ymmärtääksesi mitä nämä rajoitukset ovat katso osoite http://fedoraproject."
 "org/wiki/Legal/Licenses/LicenseAgreement."
 
-# Voisi olla paremminkin...
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "Ymmärretty, jatka eteenpäin."
 
@@ -346,21 +320,39 @@ msgstr ""
 "ohjaa sinua nyt muutamien perusasetusten määrittelyssä. Jatka napsauttamalla "
 "oikeassa alanurkassa olevaa ”Eteenpäin”-painiketta."
 
-#~ msgid "Waiting for X server to start... log located in %s\n"
-#~ msgstr ""
-#~ "Odotetaan X-palvelimen käynnistymistä... loki kirjoitetaan tiedostoon %s\n"
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "Sinun on oltava pääkäyttäjä firstbootin suorittamiseksi."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Yhtään firstboot-moduulia ei löytynyt."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Ei voitu luoda mitään firstboot-käyttöliittymää."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "Moduuli %s ei asettanut käyttöliittymäänsä, poistetaan."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Ohitetaan vanha moduuli %s, jota ei ole päivitetty."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "On erittäin suositeltavaa luoda henkilökohtainen käyttäjätunnus.  Jos "
-#~ "jatkat ilman käyttäjätunnuksen luomista, voit kirjautua vain root-"
-#~ "tunnuksella, joka on varattu pelkkään ylläpitokäyttöön."
+#~ "Virhe ladattaessa moduulia %(module)s:\n"
+#~ "%(error)s"
 
-#~ msgid "_Continue"
-#~ msgstr "_Jatka"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "Moduuli %s ei sisällä luokkaa nimeltä moduleClass, ohitetaan."
 
-#~ msgid "Create _account"
-#~ msgstr "Luo _tunnus"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "Moduuli %(module)s ei sisällä vaadittua attribuuttia %(attr)s, ohitetaan."
+
+#~ msgid "Undefined"
+#~ msgstr "Määrittelemätön"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Tähän järjestelmään on luotava käyttäjätunnus."

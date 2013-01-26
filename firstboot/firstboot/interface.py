@@ -34,7 +34,7 @@ class Control:
         self.history = []
         self.moduleList = []
 
-class Interface:
+class Interface(object):
     def __init__(self, autoscreenshot=False, moduleList=[], testing=False):
         """Create a new Interface instance.  Instance attributes:
 
@@ -111,7 +111,7 @@ class Interface:
         # The sidebar pointer only works in terms of the top-level module list
         # as we don't display anything on the side for a ModuleSet and making
         # the pointer move around then would be confusing.
-        for i in range(len(self.moduleList)):
+        for i in range(len(self.sidebar.get_children())):
             (alignment, label) = self.sidebar.get_children()[i].get_children()
             pix = alignment.get_children()[0]
 
@@ -188,6 +188,18 @@ class Interface:
         dlg.destroy()
         os.system("/sbin/reboot")
 
+    def fit_window_to_screen(self):
+        # need this to get the monitor
+        self.win.show()
+
+        screen = self.win.get_screen()
+        monitor = screen.get_monitor_at_window(self.win.get_window())
+        geometry = screen.get_monitor_geometry(monitor)
+        self._x_size = geometry.width
+        self._y_size = geometry.height
+        logging.info("Setting size to %sx%s" % (self._x_size, self._y_size))
+        self.win.set_size_request(self._x_size, self._y_size)
+
     def createMainWindow(self):
         """Create and initialize the main window.  This includes switching to
            fullscreen mode if necessary, adding buttons, displaying artwork,
@@ -196,10 +208,12 @@ class Interface:
         """
         # Create the initial window and a vbox to fill it with.
         self.win = gtk.Window()
-        self.win.set_position(gtk.WIN_POS_CENTER)
+        self.win.set_position(gtk.WIN_POS_NONE)
         self.win.set_decorated(False)
         # we don't set border width here so that the sidebar will meet
         # the edge of the screen
+
+        self.fit_window_to_screen()
 
         # Create a box that will hold all other widgets.
         self.mainHBox = gtk.HBox(False, 10)
@@ -269,18 +283,28 @@ class Interface:
            UI elements for each page and stuffs the rendered page into a UI
            wrapper containing the module's title and icon.
         """
+        loaded_modules = []
+
         for module in self.moduleList:
             try:
                 module.createScreen()
-
-                if isinstance(module, Module) and module.vbox is None:
-                    logging.error(_("Module %s did not set up its UI, removing.") % module.title)
-                    self.moduleList.remove(module)
-
-                module.renderModule(self)
-            except:
-                self.moduleList.remove(module)
+            except Exception as e:
+                logging.error(_("Module %s raised an exception while loading: %s" % (module.title, e)))
                 continue
+
+            if isinstance(module, Module) and module.vbox is None:
+                logging.error(_("Module %s did not set up its UI properly.") % module.title)
+                continue
+
+            try:
+                module.renderModule(self)
+            except Exception as e:
+                logging.error(_("Module %s raised an exception while rendering: %s" % (module.title, e)))
+                continue
+
+            loaded_modules.append(module)
+
+        self.moduleList = loaded_modules
 
     def createSidebar(self):
         """Add the sidebarTitle from every module to the sidebar."""
@@ -333,6 +357,11 @@ class Interface:
         currentModule = self.moduleList[self._control.currentPage]
 
         currentModule.initializeUI()
+        if currentModule.vbox is None:
+            err = _("Module %s did not setup its UI properly") % currentModule.title
+            logging.error(err)
+            raise RuntimeError, err
+
         self.rightBox.pack_start(currentModule.vbox)
         currentModule.focus()
         self.win.show_all()

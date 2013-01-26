@@ -1,95 +1,39 @@
-# translation of firstboot.pot to Bulgarian
-# translation of bg.po to Bulgarian
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) 2008 THE PACKAGE'S COPYRIGHT HOLDER.
 #
-# Николай Сърмаджиев,преносим <nikolayds@msn.com>, 2004.
-# Николай Сърмаджиев <nikolayd@sarmadzhiev.tk>, 2004.
-# Doncho N. Gunchev <mr700@globalnet.bg>, 2004, 2005.
-# Doncho N. Gunchev <gunchev@gmail.com>, 2006, 2007.
 # Alexander Todorov <atodorov@redhat.com>, 2008.
+# Valentin Laskov <laskov@festa.bg>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2008-04-10 11:22-0400\n"
-"Last-Translator: Alexander Todorov <atodorov@redhat.com>\n"
-"Language-Team: Bulgarian <Bulgarian Translators' Team <dict@fsa-bg.org>>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-04-14 20:39+0000\n"
+"Last-Translator: laskov <laskov@festa.bg>\n"
+"Language-Team: Bulgarian <trans-bg@lists.fedoraproject.org>\n"
+"Language: bg\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "Трябва да сте root, за да стартирате firstboot."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "Не може да бъде стартиран firstboot."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "Не са намерени никакви модули за firstboot."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "Не може да бъде създаден никакъв интерфейс."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Възникна грешка в модул %s."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Тъй като има проблем с модул %s, \n"
-"firstboot няма да го зареди и ще се \n"
-"опита да стартира останалите модули."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "Възникна грешка в firstboot."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "Т.к. има някакъв проблем firstboot ще се прекрати."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"Копие на debug изхода е запазен в %s. \n"
-"Моля прикачете файла към рапорта за грешката. \n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Моля съобщете за грешката във 'firstboot' на следящата за \n"
-"грешки система на Red Hat на http://www.redhat.com/bugzilla. \n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
-msgstr "Опит за връщане назад, но липсва история."
+msgstr "Опит за връщане назад, но историята липсва."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_Край"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
-msgstr "Системата следва да презареди за да влязат в сила част от промените."
+msgstr ""
+"Системата трябва да бъде рестартирана сега, за да влязат в сила част от "
+"направените от Вас промени."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
@@ -99,52 +43,63 @@ msgstr "_Назад"
 msgid "_Forward"
 msgstr "На_пред"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "Модул %s не зареди своя ГИ, премахва се."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Модулът %s не зареди своя потребителски интерфейс. Премахва се."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "moveToPage изисква име на модул или номер на страница."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
-msgstr "Не може да бъде създадена директория за снимки на екрана, пропускане."
+msgstr ""
+"Не може да бъде създадена директория за снимки на екрана, пропускаме го."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "Не съществува модул с име %s."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "Пропускане на модул %s, който е стар и не е бил обновен."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "Модул %s не съдържа клас с име moduleClass, пропускане."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "Модул %s не съдържа задължителния атрибут %s, пропускане."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "Не може да се зареди изображение %s за модул %s."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
-msgstr "Модул·%s·не·зареди·своя·ГИ,·премахва·се."
+msgstr "Модулът %s не зареди своя потребителски интерфейс. Премахва се."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Много слаба"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Слаба"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Доста добра"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Добра"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Много добра"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
-msgstr "Допълнителни дискове"
+msgstr "Допълнителни CD-та"
 
 #: ../modules/additional_cds.py:55
 msgid ""
@@ -160,7 +115,7 @@ msgstr ""
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
-msgstr "Моля поставете допълнителни инсталационни компакт дискове сега."
+msgstr "Моля поставете допълнителни инсталационни CD-та, ако има такива, сега."
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -171,10 +126,9 @@ msgid ""
 "Extras disc now."
 msgstr ""
 "\n"
-"\n"
-"За да включите поддръжка за 32-битови приложения на Intel Itanium2 "
-"архитектури, сега трябва да инсталирате пакета Intel Execution Layer от "
-"диска с добавки(Extras)."
+"За да включите поддръжка за 32-битови приложения на архитектури с процесор "
+"Intel Itanium2, трябва да инсталирате пакета Intel Execution Layer от диска "
+"с добавки (Extras) сега."
 
 #: ../modules/additional_cds.py:73
 msgid "Install..."
@@ -185,43 +139,45 @@ msgid ""
 "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
 "click \"OK\" to continue."
 msgstr ""
-"CD-ROM не бе намерен.  Моля поставете CD-ROM в устройството и натиснете "
-"\"Добре\" за продължение."
+"Не беше намерен CD-ROM диск.  Моля поставете CD-ROM диск в устройството и "
+"натиснете \"OK\" за продължение."
 
 #: ../modules/additional_cds.py:146
 msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr ""
-"Няма автоматично стартиращата програма на този диск. Натиснете \"да\" за да "
+"На този диск няма автоматично стартираща се програма. Натиснете \"OK\" за да "
 "продължите."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "Създаване на потребител"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
 msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr ""
+msgstr "Трябва да въведете и потвърдите парола за този потребител."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "Паролите на съвпадат.  Моля, въведете паролата отново."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr ""
-"Потребителското име '%s' е резервирано за системна сметка.  Моля, въведете "
-"друго потребителско име."
+"Потребителското име '%s' е резервирано за системата.  Моля, въведете друго "
+"потребителско име."
 
-#: ../modules/create_user.py:132
-#, fuzzy, python-format
+#: ../modules/create_user.py:186
+#, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
 "making the new user the owner of this directory and all its contents?  Doing "
@@ -229,80 +185,105 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"Вече съществува домашна директория за потребител %s. Желаете ли да я "
-"използвате?  Ако не, моля, изберете друго потребителско име."
+"Домашната директория за потребителя %s вече съществува. Искате ли да "
+"продължите като направите новия потребител собственик на тази директория и "
+"цялото и съдържание? Това може да отнеме известно време, за да бъдат "
+"зададени правата и етикетите на SELinux. Искате ли да използвате тази "
+"директория? Ако не, моля изберете друго име на потребителя."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
+"Задаване атрибутите на домашната директория на %s. Това може да отнеме "
+"няколко минути."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
+"Появиха се проблеми при задаването на атрибутите на някои файлове в "
+"домашната директория на %(user)s. Моля вижте в %(path)s файловете, "
+"предизвикали грешките."
 
-#: ../modules/create_user.py:213
-#, fuzzy
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"Препоръчително е да създадете потребителска сметка за нормална (не "
-"административна) работа със системата. За да създадете потребителска сметка, "
-"моля, попълнете необходимата информация по-долу."
+"Трябва да създадете 'потребителски' акаунт за нормална (не административна) "
+"работа със системата. За да създадете 'потребителски' акаунт, моля, "
+"попълнете необходимата информация по-долу."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "_Потребител:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "_Истинско име:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_Потребител:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "П_арола:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
-msgstr "П_отвърждение:"
+msgstr "Паролата _отново:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Добави към група Администратори"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
 msgstr ""
 "Ако е необходимо да използвате мрежово удостоверяване като Kerberos или NIS, "
-"моля натиснете бутона \"Използване на мрежови вход\"."
+"моля цъкнете върху бутона \"Вход чрез мрежово удостоверяване...\"."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr "Използване на _мрежови вход..."
+msgstr "Вход чрез _мрежово удостоверяване..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Ако искате по-голям контрол при създаването на потребителя (за да посочите "
+"домашна директория, и/или UID), моля, цъкнете върху бутона \"За напреднали..."
+"\""
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "З_а напреднали ..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
-msgstr ""
+msgstr "Моля изчакайте"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
-msgstr ""
+msgstr "Дата и Час"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
-msgstr ""
+msgstr "Моля задайте дата и час за вашата система."
 
 #: ../modules/eula.py:35 ../modules/eula.py:36
 msgid "License Information"
 msgstr "Лицензионна информация"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -314,20 +295,20 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Благодарим Ви че инсталирахте Qubes.  Qubes е набор от софтуерни пакети, "
+"Благодарим Ви че инсталирате Fedora.  Fedora е набор от софтуерни пакети, "
 "всеки със собствен лиценз.  Този набор е достъпен според условията на Общия "
 "Публичен Лиценз на GNU версия 2.  Няма ограничения за ползване, копиране или "
 "промяна на кода.  Съществуват обаче ограничения, отнасящи се за "
-"редистрибутирането на кода, в оригинална или модифициран вид.  Измежду други "
-"неща, тези ограничения/задължения се отнасят до лицензирането или "
+"редистрибутирането на кода, в оригинален или модифициран вид.  Измежду други "
+"неща, тези ограничения/задължения се отнасят до лицензирането при "
 "редистрибутиране, правата върху запазените марки и контрола за износ.\n"
 "\n"
 "Ако искате да разберете какви са тези ограничения, моля посетете http://"
 "fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
-msgstr "Ясно, нататък."
+msgstr "Ясно. Нека продължим."
 
 #: ../modules/welcome.py:35 ../modules/welcome.py:36
 msgid "Welcome"
@@ -339,21 +320,47 @@ msgid ""
 "Setup Agent will now guide you through some basic configuration.  Please "
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
-"Има още няколко стъпки преди системата Ви да бъде готова за работа.  Агента "
-"за настройка (firstboot) ще Ви преведе през някои основни настройки.  Моля "
-"натиснете бутон \"Следващ\" в долния десен ъгъл, за да продължите."
+"Има още няколко стъпки преди системата Ви да бъде готова за работа.  "
+"Програмата за първоначално зареждане ще Ви преведе през някои основни "
+"настройки. Моля натиснете бутона \"Напред\" в долния десен ъгъл, за да "
+"продължите."
+
+#~ msgid "You must be root to run firstboot."
+#~ msgstr ""
+#~ "Трябва да сте root, за да стартирате процедурата първоначално зареждане."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Не са намерени никакви модули на програмата първоначално зареждане."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr ""
+#~ "Създаването на интерфейс.на програмата първоначално зареждане е неуспешно."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "Модулът %s не зареди своя потребителски интерфейс. Премахва се."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Пропускаме модула %s. Стар е и не е бил обновен."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "Силно се препоръчва създаването на лична потребителска сметка.  Ако не я "
-#~ "създадете, ще може да влизате само като root, което е сметката използвана "
-#~ "за администиране на системата."
+#~ "Грешка при зареждане на модула %(module)s:\n"
+#~ "%(error)s"
 
-#~ msgid "_Continue"
-#~ msgstr "_Продължаване"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "Модулът %s не съдържа клас с име moduleClass. Пропускаме.го."
 
-#~ msgid "Create _account"
-#~ msgstr "Създаване на _сметка"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "Модулът %(module)s не съдържа необходимият атрибут %(attr)s. Пропускаме "
+#~ "го."
+
+#~ msgid "Undefined"
+#~ msgstr "Неопределен"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Трябва да създадете потребителски акаунт за тази система."

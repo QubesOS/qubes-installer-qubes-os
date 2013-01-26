@@ -1,152 +1,106 @@
-# translation of firstboot.master.po to
-# Translation of firstboot to Traditional Chinese
-# Copyright (C) 2002 Red Hat Inc.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 #
-# Ben Wu <hpwu@redhat.com>, 2002,2003, 2004.
-# Chester Cheng <ccheng@redhat.com>, 2004, 2005, 2006, 2007, 2008.
-# Waika Liu <wliu@redhat.com>, 2005.
 # Walter Cheuk <wwycheuk@netvigator.com>, 2005.
+# Ben Wu <hpwu@redhat.com>, 2002, 2003, 2004.
+# Waika Liu <wliu@redhat.com>, 2005.
+# Chester Cheng <ccheng@redhat.com>, 2004, 2005, 2006, 2007, 2008.
 # Terry Chuang <tchuang@redhat.com>, 2008, 2009.
+# Cheng-Chia Tseng <pswo10680@gmail.com>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-04-01 09:23+1000\n"
-"Last-Translator: Terry Chuang <tchuang@redhat.com>\n"
-"Language-Team:  <zh@li.org>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-04-15 03:16+0000\n"
+"Last-Translator: zerng07 <pswo10680@gmail.com>\n"
+"Language-Team: Chinese (Taiwan) <trans-zh_TW@lists.fedoraproject.org>\n"
+"Language: zh_TW\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: pygettext.py 1.4\n"
-"X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "您必須是 root 才能執行 firstboot。"
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "無法啟動任何 firstboot 前端。"
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "沒有找到 firstboot 模組。"
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "無法建立任何 firstboot 介面。"
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "模組 %s 發生一個錯誤。"
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"因為 %s 模組有問題，\n"
-"因此 firstboot 將不會載入此模組，\n"
-"它將會嘗試執行其餘的模組。"
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "firstboot 中發生了一項錯誤。"
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "因為發生了問題，因此 firstboot 將會退出。"
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"除錯輸出的複本已經儲存到 %s \n"
-"請記得在程式錯誤報告中，附上這個檔案。\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"請針對「firstboot」程式，向 Red Hat 的程式錯誤追蹤系統\n"
-"http://www.redhat.com/bugzilla 回報程式錯誤。\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "嘗試復原，不過歷史卻是空的。"
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
-msgstr "完成（_F）"
+msgstr "完成(_F)"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr "為了讓您的選擇生效，系統現在必須重新啟動。"
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
-msgstr "上一步（_B）"
+msgstr "返回(_B)"
 
 #: ../firstboot/interface.py:250
 msgid "_Forward"
-msgstr "下一步（_F）"
+msgstr "下一步(_F)"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "模組 %s 並未設定它的 UI，正在進行移除。"
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "%s 模組並未設定它的使用者介面；即將進行移除。"
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "您必須提供 moveToPage 一個模組標題或是頁數。"
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "無法建立 dir 的畫面；即將略過。"
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "標題為 %s 的模組不存在。"
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "跳過還未被更新過的較舊模組 %s。"
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "%s 模組不包含稱為「moduleClass」的類型名稱；即將略過。"
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "%s 模組不包含必要的 %s 屬性；即將略過。"
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "無法載入 %s 模組的 pixmap %s。"
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
-msgstr "%s 模組並未設定它的 UI；即將進行移除。"
+msgstr "%s 模組並未設定它的使用者介面；即將進行移除。"
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "非常弱"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "弱"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "相當強"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "強"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "非常強"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
-msgstr "其他的光碟"
+msgstr "其他光碟"
 
 #: ../modules/additional_cds.py:55
 msgid ""
@@ -156,12 +110,12 @@ msgid ""
 "additional software at this time."
 msgstr ""
 "請放入「Red Hat Enterprise Linux Extras」光碟，以安裝協力廠商的嵌入程式與應用"
-"程式。您也可以放入文件光碟，或其他 Red Hat 所提供的光碟，好一併安裝其他額外的"
-"軟體。"
+"程式。您也可以放入文件光碟，或其他 Red Hat 所提供的光碟，好一併安裝其他額外軟"
+"體。"
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
-msgstr "現在請插入任何額外的軟體安裝光碟。"
+msgstr "現在請插入任何額外軟體的安裝光碟。"
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -173,7 +127,7 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"要在英特爾（Intel）Itanium2 架構下支援 32 位元的應用程式，您現在必須從 "
+"要在英特爾 (Intel) Itanium2 架構下支援 32 位元的應用程式，您現在必須從 "
 "Extras 光碟中安裝 Intel Execution Layer 套件。"
 
 #: ../modules/additional_cds.py:73
@@ -187,33 +141,36 @@ msgid ""
 msgstr "偵測不到光碟片。請將光碟片放入光碟機中，並按下「確定」以繼續。"
 
 #: ../modules/additional_cds.py:146
-msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr "在光碟上找不到 autorun 程式。請點選「確定」以繼續。"
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
-msgstr "建立用戶"
+msgstr "建立使用者"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "您必須為此系統建立用戶帳號。"
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr "您必須進入並確認此用戶的密碼。"
+msgstr "您必須進入並確認此使用者的密碼。"
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "密碼不正確。請再次輸入密碼。"
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
-msgstr "「%s」這個用戶名稱是個預留的系統帳號。請指定另一個用戶名稱。"
+msgstr "「%s」這個使用者名稱是個預留的系統帳號。請指定另一個使用者名稱。"
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -221,64 +178,88 @@ msgid ""
 "so may take a while to reset permissions and any SELinux labels.  Would you "
 "like to reuse this home directory?  If not, please choose a different "
 "username."
-msgstr "%s 這個用戶的家目錄已存在。您是否希望使新用戶成為此目錄以及其所有內容的擁有者？若這麼作系統可能會花上一些時間重設權限以及任何 SELinux 標籤。您是否希望重複使用此家目錄？若您不希望重複使用的話，請選擇另一個不同的用戶名稱。"
+msgstr ""
+"%s 這個使用者的家目錄已存在。您是否希望使新使用者成為此目錄以及其所有內容的擁"
+"有者？若這麼作系統可能會花上一些時間重設權限以及任何 SELinux 標籤。您是否希望"
+"重複使用此家目錄？若您不希望重複使用的話，請選擇另一個不同的使用者名稱。"
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
-msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr "正在為 %s 修正家目錄上的屬性。這可能會花上幾分鐘。"
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
-msgstr "當為 %s 修正家目錄中一些檔案的屬性時遇上了問題。請參閱 %s 來查看哪個檔案造成了錯誤。"
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
+msgstr ""
+"修正 %(user)s 家目錄中的一些檔案屬性時遭遇到問題。請參考 %(path)s 以瞭解哪些"
+"檔案造成錯誤。"
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"您必須建立一個使用於系統一般（非管理用）情況下的 '用戶名稱'。若要建立一"
-"個系統 '用戶名稱'，請提供下列所要求的資訊。"
+"您必須建立一個使用於系統一般 (非管理用) 情況下的 'username'。若要建立系統 "
+"'username'，請提供下列所要求的資訊。"
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "用戶名稱（_U）："
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
-msgstr "全名（_e）："
+msgstr "全名(_E)："
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "使用者名稱(_U)："
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
-msgstr "密碼（_P）："
+msgstr "密碼(_P)："
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
-msgstr "確認密碼（_m）："
+msgstr "確認密碼(_M)："
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "加入至「管理員」群組"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
-msgstr "若您需要使用網路驗證（例如 kerberos 或是 NIS）請按下使用網路登錄的按鈕。"
+msgstr ""
+"若您需要使用網路驗證 (例如 kerberos 或是 NIS) 請按下使用網路登入的按鈕。"
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr "使用網路登錄（_L）..."
+msgstr "使用網路登入(_L)…"
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"若您需要更多建立使用者的控制選項 (指定家目錄、與/或 UID)，請點擊「進階」按"
+"鈕。"
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "進階(_A)..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
-msgstr "請稍等"
+msgstr "請稍候"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "日期與時間"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "請為您的系統設定日期與時間。"
 
@@ -286,9 +267,9 @@ msgstr "請為您的系統設定日期與時間。"
 msgid "License Information"
 msgstr "授權資訊"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -300,17 +281,17 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"謝謝您安裝 Qubes。Qubes 是軟體套件的集成，每個套件都有自己的授權。本集成的"
-"授權依據為 GNU 一般公眾版權的第二版（GNU General Public Licence 2），並不限制"
+"謝謝您安裝 Fedora。Fedora 是軟體套件的集成，每個套件都有自己的授權。本集成的"
+"授權依據為 GNU 一般公眾版權的第二版 (GNU General Public Licence 2) ，並不限制"
 "使用者使用、複製、或修改原始碼。然而，重新散佈原有或修改過的原始碼，必須遵循"
 "一些限制或義務。這些限制或義務均從屬於散佈之授權、商標、以及出口限制。\n"
 "\n"
-"如果您想了解這些限制，請參閱 http://fedoraproject.org/wiki/Legal/Licenses/"
+"如果您想瞭解這些限制，請參閱 http://fedoraproject.org/wiki/Legal/Licenses/"
 "LicenseAgreement.。"
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
-msgstr "了解，請繼續。"
+msgstr "若您已瞭解，請繼續。"
 
 #: ../modules/welcome.py:35 ../modules/welcome.py:36
 msgid "Welcome"
@@ -323,5 +304,40 @@ msgid ""
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
 "在使用您的系統之前，您要先完成幾個步驟。現在「設定代理程式」將引導您做一些基"
-"本設定。請點選右下角的「下一頁」按鈕來繼續進行。"
+"本設定。請點選右下角的「下一步」按鈕來繼續進行。"
 
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "您必須是 root 才能執行 firstboot。"
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "找不到 firstboot 模組。"
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "無法建立任何 firstboot 介面。"
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "模組 %s 並未設定它的使用者介面，正在進行移除。"
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "跳過還未被更新過的較舊模組 %s。"
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "載入模組 %(module)s 時發生錯誤：\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "%s 模組不包含稱為「moduleClass」的類型名稱；即將略過。"
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr "模組 %(module)s 不包含需要的屬性 %(attr)s；即將略過。"
+
+#~ msgid "Undefined"
+#~ msgstr "未定義"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "您必須為此系統建立使用者帳號。"

@@ -1,145 +1,110 @@
-# translation of firstboot.master.po to Persian(fa)
-# translation of firstboot to Persian
-# Copyright (C) 2003, 2004 Abbas Izad.
-# Copyright (C) 2005, 2006 Sharif FarsiWeb, Inc.
-# Copyright (C) 2008 Amir Farsi.
-# Abbas Izad <abbasizad@hotmail.com>, 2003, 2004.
-# Hamed Malek <hamed@bamdad.org>, 2005
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
 # Meelad Zakaria <meelad@farsiweb.info>, 2005, 2006.
-# Roozbeh Pournader <roozbeh@farsiweb.info>, 2006.
+# Amir Farsi <afarsi@ymail.com>, 2008.
+# Abbas Izad <abbasizad@hotmail.com>, 2003, 2004.
 # Elnaz Sarbar <elnaz@farsiweb.info>, 2006.
-# Amir Farsi <afarsi@ymail.com>, 2008
+# Roozbeh Pournader <roozbeh@farsiweb.info>, 2006.
+# Hamed Malek <hamed@bamdad.org>, 2005.
+# Daniyal Yousefi <da.yousefi@gmail.com>, 2011.
+# adib Rastegarnia <adib.rastegar.ir@gmail.com>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2008-07-19 06:41+0330\n"
-"Last-Translator: Amir Farsi\n"
-"Language-Team: Persian(fa) <fedora-trans-fa@redhat.com>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-07-30 19:23+0000\n"
+"Last-Translator: danialyousefi <da.yousefi@gmail.com>\n"
+"Language-Team: Persian (http://www.transifex.net/projects/p/fedora/team/"
+"fa/)\n"
+"Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=1; plural=0\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "برای اجرای firstboot شما باید کاربر root باشید."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr ""
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr ""
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "‌خطایی در پیمانهٔ %s رخ داده است."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "یک خطا در firstboot رخ داده است"
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
-msgstr ""
+msgstr "تلاش برای بازگشت، اما تاریخچه خالی است."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
-msgstr "ـپایان"
+msgstr "پایان"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr ""
+"برای اعمال شدن برخی از انتخاب‌های شما سیستم باید هم‌اکنون مجدداً راه‌اندازی شود."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
-msgstr "_عقب"
+msgstr "عقب"
 
 #: ../firstboot/interface.py:250
 msgid "_Forward"
-msgstr "ـجلو"
+msgstr "جلو"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
+msgid "Module %s raised an exception while loading: %s"
 msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "ماژول %s رابط گرافیکی‌اش تنظیم نشده است، در حال حذف."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
-msgstr ""
+msgstr "moveToPage باید عنوان ماژول یا شمارهٔ صفحه‌ای باشد."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
-msgstr "قادر به ایجاد پوشه screenshot نمیباشد، در حال رد کردن."
+msgstr "قادر به ایجاد پوشه screenshot نیست، در حال رد کردن."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "هیچ ماژولی با عنوان %s وجود ندارد."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr ""
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr ""
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr ""
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr ""
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
-msgstr ""
+msgstr "ماژول %s رابط گرافیکی‌اش تنظیم نشده است، در حال حذف."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "بسیار ضعیف"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "ضعیف"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "کمی قوی"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "قوی"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "بسیار قوی"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
-msgstr "سی دی های اضافی"
+msgstr "سی‌دی‌های اضافی"
 
 #: ../modules/additional_cds.py:55
 msgid ""
@@ -148,13 +113,13 @@ msgid ""
 "insert the Documentation disc, or other Red Hat-provided discs to install "
 "additional software at this time."
 msgstr ""
-"لطفاً دیسکی را که برچسب «اضافات لینوکس انترپرایز رِدهَت» دارد وارد کنید تا نصب "
+"لطفاً دیسکی را که برچسب «اضافات لینوکس انترپرایز ردهت» دارد وارد کنید تا نصب "
 "متصل‌شونده‌ها و برنامه‌های طرف سوم ممکن شود. همچنین می‌توانید دیسک مستندات یا "
 "دیسک‌های دیگر ارائه شده توسط رِدهَت را وارد کنید تا نرم‌افزارهای اضافی نصب شوند."
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
-msgstr "هم اکنون لطفا سی دی هرگونه نرم افزار اضافی را قرار دهید"
+msgstr "اکنون همهٔ سی‌دی‌های نرم‌افزارهای اضافی را قرار دهید"
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -164,6 +129,10 @@ msgid ""
 "architecture you must install the Intel Execution Layer package from the "
 "Extras disc now."
 msgstr ""
+"\n"
+"برای فعال کردن پشتیبانی زمان اجرای برنامه‌های ۳۲-بیتی در معماری لنتیوم۲ "
+"اینتل، شما باید بستهٔ 'Intel Execution Layer package' را از دیسک اضافه اکنون "
+"نصب کنید."
 
 #: ../modules/additional_cds.py:73
 msgid "Install..."
@@ -181,33 +150,36 @@ msgstr ""
 msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr ""
+"برنامهٔ خوداجرا در سی‌دی  یافت نشد. بر روی  \"تأیید\" برای ادامه دادن کلیک "
+"کنید."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "ایجاد کاربر"
 
-#: ../modules/create_user.py:83
-#, fuzzy
-msgid "You must create a user account for this system."
-msgstr "لطفا تاریخ و ساعت را برای سیستم تنظیم کنید."
-
-#: ../modules/create_user.py:94
-msgid "You must enter and confirm a password for this user."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
 msgstr ""
 
-#: ../modules/create_user.py:101
-msgid "The passwords do not match.  Please enter the password again."
-msgstr "رمزهای عبور همخوانی ندارند. لطفا رمز عبور را دوباره وارد کنید."
+#: ../modules/create_user.py:123
+msgid "You must enter and confirm a password for this user."
+msgstr "شما باید گذرواژه‌ای برای این کاربر وارد و آن را تأیید کنید."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:130
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "گذرواژه‌ها همخوانی ندارند. لطفاً رمز عبور را دوباره وارد کنید."
+
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
-msgstr ""
+msgstr "نام کاربری '%s' برای حساب سیستم محفوظ است. لطفاً نام دیگری انتخاب کنید."
 
-#: ../modules/create_user.py:132
-#, fuzzy, python-format
+#: ../modules/create_user.py:186
+#, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
 "making the new user the owner of this directory and all its contents?  Doing "
@@ -215,79 +187,102 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"یک پوشه آغازه(home) برای کاربر %s یافت شده است. آیا شما دوست دارید مجددا از "
-"پوشه آغازه(home) استفاده کنید؟ اگر نه، لطفا یک نام کاربری متفاوت را انتخاب "
-"کنید."
+"یک شاخهٔ خانگی برای کاربر  %s کنونی وجود دارد. اگر مایل هستید ادامه دهید،‌ "
+"مطمئن شوید کاربر جدید دارندهٔ این شاخهٔ و همهٔ محتوای آن است. انجام این کار "
+"مدتی طول می‌کشد تا مجوزها و همهٔ برچسپ‌های سی‌لینوکس بازنشانی شوند. آیا می‌خواهید "
+"همان شاخهٔ قبلی را مجدداً مورد استفاده قرار دهید؟ اگر نه، نام کاربری دیگری را "
+"انتخاب کنید."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
+"تغییر نشانه‌گذاری‌های شاخهٔ خانه برای %s. این ممکن است چندین دقیقه طول بکشد."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
+"مشکلاتی در تغییر نشانه‌های در برخی فایل در شاخهٔ خانه برای %(path)s رخد داده "
+"است. لطفاً به%(user)s جهت فایل‌هایی که باعث خطا شده‌اند مراجعه کنید."
 
-#: ../modules/create_user.py:213
-#, fuzzy
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"این توصیه شده است که شما یک نام کاربری برای استفاده ویژه(غیر مدیریتی) سیستم "
-"خودتان ایجاد کنید. برای ایجاد نام کاربری، لطفا اطلاعاتی که در زیر درخواست "
+"توصیه شده است که شما یک 'نام کاربری' برای استفادهٔ ویژه (غیر مدیریتی) سیستم "
+"خودتان ایجاد کنید. برای ایجاد 'نام کاربری'، لطفاً اطلاعاتی که در زیر خواسته "
 "شده است را ارایه دهید."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "نام کـارـبری:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "نام ـکـامل:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "نام کـارـبری:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "ـرمز عبور:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "تایید رـمز عبور:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "اضافه کردن به گروه مدیران"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
 msgstr ""
+"اگر نیاز به استفاده از تأیید شبکه‌ای دارید از Kerberos یا NIS استفاده کنید. "
+"لطفا بر روی دکمه Use Network Login کلیک کنید."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr ""
+msgstr "استفاده از لاگین شبکه..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"اگر شما در هنگام ساختن کاربر( شاخه خانه ی کاربر و شناسه کاربری) به کنترل "
+"بیشتر نیاز دارید، لطفا بر روی دکمه پیشرفته کلیک کنید."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "پیشرفته..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
-msgstr ""
+msgstr "لطفاً صبر کنید"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "تاریخ و ساعت"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
-msgstr "لطفا تاریخ و ساعت را برای سیستم تنظیم کنید."
+msgstr "لطفاً تاریخ و ساعت را برای سیستم تنظیم کنید."
 
 #: ../modules/eula.py:35 ../modules/eula.py:36
 msgid "License Information"
-msgstr "اطلاعات لیسانس"
+msgstr "اطلاعات مجوز"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -299,10 +294,19 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
+"از شما برای نصب فدورا تشکر می‌کنیم. فدورا مجموعه‌ای از بسته‌های نرم افزاری است "
+"که هر کدام مجوز خود را دارند. این مجموعه تحت مجوز عمومی گنو نسخه ۲ تهیه شده "
+"است. هیچ محدودیت در استفاده، کپی یا تغییر در این کد وجود ندارد. هرچند برخی "
+"محدودیت‌های قانونی بر بازبخش این کد، چه نسخهٔ اصلی یا تغییر یافته‌ای آن وجود "
+"دارد. در میان سایر چیزها چیزهایی مانند محدودیت/معذوریت‌ها به‌خاطر بازپخش، حقوق "
+"نشان تجاری، و محدودیت‌های صادرات وجود دارد.\n"
+"\n"
+"اگر می‌خواهید دربارهٔ این محدودیت‌ها بیشتر بدانید به  http://fedoraproject.org/"
+"wiki/Legal/Licenses/LicenseAgreement مراجعه کنید."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
-msgstr ""
+msgstr "فهمیدم، پیشروی لطفا."
 
 #: ../modules/welcome.py:35 ../modules/welcome.py:36
 msgid "Welcome"
@@ -314,18 +318,42 @@ msgid ""
 "Setup Agent will now guide you through some basic configuration.  Please "
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
+"چند مرحلهٔ دیگر قبل از آنکه سیستم شما برای استفاده آماده شود وجود دارد. عامل "
+"تنظیم شما را با تنظیمات اولیه شما را کمک خواهد کرد. لطفا بر روی دکمه \"جلو\" "
+"در گوشه پایین گوشه سمت راست جهت ادامهٔ کار کلیک کنید"
+
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "برای اجرای firstboot شما باید کاربر root باشید."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "هیچ ماژول راه‌اندازی اولیه یافت نشد."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "نمی‌تواند هیچ‌گونه میانگر اجرای اولینی را بسازد."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "ماژول %s رابط گرافیکی‌اش تنظیم نشده است، در حال حذف."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "نادیده گرفتن ماژول قدیمی %s که هنوز به‌روز نشده‌اند."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "این بسیار توصیه شده است که یک حساب کاربری شخصی ایجاد شود. اگر شما بدون یک "
-#~ "حساب ادامه دهید، شما فقط میتوانید با حساب root که برای استفاده مدیریتی "
-#~ "ذخیره شده است وارد شوید."
+#~ "خطا در بارگذاری ماژول %(module)s:\n"
+#~ "%(error)s"
 
-#~ msgid "_Continue"
-#~ msgstr "ـادامه"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "ماژول %s شامل کلاسی به نام moduleClass نیست، نادیده گرفتن."
 
-#~ msgid "Create _account"
-#~ msgstr "ایجاد ـحساب"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr "ماژول  %(module)s شامل نشانهٔ %(attr)s مورد نیاز نیست، ردکردنش"
+
+#~ msgid "Undefined"
+#~ msgstr "تعریف نشده"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "شما باید برای این سیستم یک حساب کاربری ایجاد کتید."

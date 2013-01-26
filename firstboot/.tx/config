@@ -1,0 +1,8 @@
+[main]
+host = https://www.transifex.net
+
+[firstboot.default]
+file_filter = po/<lang>.po
+source_file = po/firstboot.pot
+source_lang = en
+

@@ -1,88 +1,36 @@
-# Ukrainian translation to firstboot.
-# Copyright (C) Free Software Foundation
-# This file is distributed under the same license as the firstboot package.
-# Maxim Dziumanenko <dziumanenko@gmail.com>, 2003-2007.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 #
+# Yuri Chornoivan <yurchor@ukr.net>, 2011.
+# Maxim Dziumanenko <dziumanenko@gmail.com>, 2003.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-09-10 11:19-0400\n"
-"Last-Translator: Maxim Dziumanenko <dziumanenko@gmail.com>\n"
-"Language-Team: Ukrainian <uk@li.org>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: yurchor <yurchor@ukr.net>\n"
+"Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
+"Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "Для запуску firstboot треба бути користувачем root."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "Неможливо запустити жоден з інтерфейсів firstboot."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "Не знайдено модулі firstboot."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "Неможливо створити жоден з интерфейсів firstboot."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Виникла помилка у модулі %s."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Через проблему у модулі %s, \n"
-"firstboot не буде завантажувати цей модуль\n"
-"та спробує завантажити решту модулів."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "Виникла помилка у модулі firstboot."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "У зв'язку з проблемою у firstboot завершує свою роботу."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"Копію налагоджувальної інформації 'firstboot' збережено у %s \n"
-"Переконайтесь, що ви приєднали цей файл до повідомлення про помилку.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Заповніть це повідомлення про помилку у 'firstboot' в \n"
-"системі обробки помилок Red Hat за адресою http://www.redhat.com/bugzilla. \n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "При спробі повернуться назад виявлено, що історія повернень порожня."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_Завершити"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr ""
 "Систему треба перезавантажити, перш ніж деякі зроблені зміни наберуть сили."
@@ -95,49 +43,58 @@ msgstr "_Назад"
 msgid "_Forward"
 msgstr "_Далі"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "Модуль %s не налаштував свій інтерфейс користувача, та буде видалений."
-
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
-msgid "moveToPage must be given a module title or page number."
+msgid "Module %s raised an exception while loading: %s"
 msgstr ""
-"moveToPage має бути заголовком модуля або номером сторінки."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Модуль %s не налаштував свій інтерфейс користувача та буде видалений."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage має бути заголовком модуля або номером сторінки."
+
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
-msgstr "Неможливо створити каталог знімків екрану, пропускаемо."
+msgstr "Неможливо створити каталог знімків екрану, пропускаємо."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "Немає модуля із заголовком %s."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "Пропускаємо старий модуль %s, який не було оновлено."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "Модуль %s не містить класу moduleClass; пропускаемо."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "Модуль %s не містить потрібного атрибуту %s; пропускаемо."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "Неможливо завантажити зображення %s для модуля %s."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "Модуль %s не налаштував свій інтерфейс користувача та буде видалений."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Дуже простий"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Простий"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Доволі складний"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Складний"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Дуже складний"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -150,7 +107,7 @@ msgid ""
 "insert the Documentation disc, or other Red Hat-provided discs to install "
 "additional software at this time."
 msgstr ""
-"Вставте диск с надписом \"Red Hat Enterprise Linux Extras\" для встановлення "
+"Вставте диск з надписом \"Red Hat Enterprise Linux Extras\" для встановлення "
 "програм та додаткових модулів (plug-in) третіх фірм.  Ви також можете "
 "вставити диск з документацією або інший диск, що постачається компанією Red "
 "Hat, для встановлення додаткового програмного забезпечення на цьому етапі."
@@ -182,41 +139,42 @@ msgid ""
 "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
 "click \"OK\" to continue."
 msgstr ""
-"CD-ROM не знайдено. Вставте CD-ROM у пристрій та натисніть \"Гаразд\" для "
+"CD-ROM не знайдено. Вставте CD-ROM у пристрій та натисніть «Гаразд» для "
 "продовження."
 
 #: ../modules/additional_cds.py:146
 msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr ""
-"Програму autorun не знайдено на CD. Натисніть \"Гаразд\", щоб продовжити."
+"Програму autorun не знайдено на CD. Натисніть «Гаразд», щоб продовжити."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "Створити користувача"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "Треба створити обліковий запис користувача для цієї системи."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
 msgstr "Потрібно ввести та підтвердити пароль користувача."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "Паролі не збігаються.  Введіть пароль знову."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr ""
-"Користувач %s -- зарезервований системний обліковий запис. Вкажіть "
-"іншу назву."
+"Користувач %s — зарезервований системний обліковий запис. Вкажіть іншу назву."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -225,56 +183,61 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"Домашній каталог для користувача %s вже існує. Дійсно хочете "
-"зробити нового користувача власником цього каталогу та його змісту?  У "
-"цьому випадку перепризначення дозволів та міток SELinux може зайняти певний "
-"час. Ви хочете повторно використати цей домашній каталог? Якщо ні, "
-"виберіть інше ім'я користувача."
+"Домашній каталог для користувача %s вже існує. Дійсно хочете зробити нового "
+"користувача власником цього каталогу та його вмісту?  У цьому випадку "
+"перепризначення прав доступу та міток SELinux може зайняти певний час. Ви "
+"хочете повторно використати цей домашній каталог? Якщо ні, виберіть інше "
+"ім'я користувача."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
-"Фіксуються атрибути домашнього каталогу для %s. Це може зайняти декілька "
+"Виправлення атрибутів домашнього каталогу для %s. Це може зайняти декілька "
 "хвилин."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"Проблема при фіксації атрибутів деяких файлів у домашньому каталозі для %s. "
-"Зверніться до %s для отримання інформації про те, які файли викликали помилки."
+"Проблема під час виправлення атрибутів деяких файлів у домашньому каталозі "
+"%(user)s. Дані щодо файлів, обробка яких призвела до помилок, наведено у "
+"%(path)s."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
 "Потрібно створити 'користувача' для повсякденного (не адміністративного) "
-"використання вашої системи. Для створення користувача введіть потрібні "
-"дані."
+"використання вашої системи. Для створення користувача введіть потрібні дані."
 
-#: ../modules/create_user.py:231
+#: ../modules/create_user.py:332
+msgid "Full Nam_e:"
+msgstr "Повне ім’_я:"
+
+#: ../modules/create_user.py:339
 msgid "_Username:"
 msgstr "_Ім'я користувача:"
 
-#: ../modules/create_user.py:238
-msgid "Full Nam_e:"
-msgstr "Повне ім_я:"
-
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:346
 msgid "_Password:"
-msgstr "_Пароль:"
+msgstr "П_ароль:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "Повто_р пароля:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Додати до групи адміністраторів"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -282,29 +245,42 @@ msgstr ""
 "Якщо потрібно використовувати перевірку автентичності по мережі, наприклад "
 "Kerberos чи NIS, натисніть кнопку Використовувати вхід через мережу."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "Використовувати _вхід через мережу..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Якщо вам потрібен доступ до додаткових параметрів створення облікового "
+"запису користувача (домашнього каталогу і/або ідентифікатора користувача), "
+"натисніть кнопку «Додатково»."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "Д_одатково…"
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "Зачекайте"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "Дата та час"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
-msgstr "Будь-ласка встановіть дату й час для системи."
+msgstr "Будь ласка, встановіть дату й час для системи."
 
 #: ../modules/eula.py:35 ../modules/eula.py:36
 msgid "License Information"
-msgstr "Інформація про ліцензію"
+msgstr "Інформація щодо ліцензування"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -316,18 +292,19 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Дякуємо, за встановлення Qubes. Qubes містить множину пакетів, кожен з "
+"Дякуємо, за встановлення Fedora. Fedora містить множину пакетів, кожен з "
 "яких має власну ліцензію. Використання цих пакетів можливе завдяки ліцензії "
 "GNU General Public License версії 2. Немає жодних обмежень на використання, "
-"копіювання та зміну програмного коду. Проте існую обмеження та обов'язки, що "
-"дозволяють розповсюджувати це програмне забезпечення лише у оригінальному, "
-"незмінному вигляді. Ці обмеження також мають відношення до ліцензування "
-"розповсюдження, правам на торгові марки та контроль використання.\n"
+"копіювання та зміну програмного коду. Проте існують обмеження та обов'язки, "
+"що дозволяють розповсюджувати це програмне забезпечення лише у "
+"оригінальному, незмінному вигляді. Ці обмеження також мають відношення до "
+"ліцензування розповсюдження, прав на торгові марки та контроль "
+"використання.\n"
 "\n"
 "Якщо хочете дізнатись, у чому саме полягають ці обмеження, відвідайте "
 "сторінку http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "Зрозуміло, можна продовжувати."
 
@@ -342,5 +319,45 @@ msgid ""
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
 "Лишилось ще декілька кроків, після яких ваша система буде готова до роботи. "
-"Помічник налаштовування допоможе вам з цим. Для продовження "
-"натисніть \"Далі\"у лівому нижньому куті."
+"Помічник налаштовування допоможе вам з цим. Для продовження натисніть «Далі» "
+"у лівому нижньому куті."
+
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "Для запуску firstboot треба бути користувачем root."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Не знайдено модулі firstboot."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Неможливо створити жоден з інтерфейсів firstboot."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr ""
+#~ "Модуль %s не налаштував свій інтерфейс користувача, отже його буде "
+#~ "вилучено."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Пропускаємо старий модуль %s, який не було оновлено."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "Помилка під час спроби завантаження модуля %(module)s:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "Модуль %s не містить класу moduleClass; пропускаємо."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "У модулі %(module)s не міститься потрібного атрибута %(attr)s; "
+#~ "пропускаємо."
+
+#~ msgid "Undefined"
+#~ msgstr "Не визначено"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Треба створити обліковий запис користувача для цієї системи."

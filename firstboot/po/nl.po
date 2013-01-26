@@ -1,94 +1,41 @@
-# Dutch translation of firstboot.
-# Copyright (C) 2003-2009 The Free Software Foundation, Inc.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 #
 # Tino Meinen <a.t.meinen@chello.nl>, 2003.
-# Peter van Egdom <p.van.egdom@gmail.com>, 2003-2009.
+# Peter van Egdom <p.van.egdom@gmail.com>, 2003.
 # Sjoerd Smink <sjoerdsmink@hotmail.com>, 2004.
-# Geert Warrink <geert.warrink@onsnet.nu>, 2009.
+# Geert Warrink <geert.warrink@onsnet.nu>, 2009, 2010, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-07-26 19:39+0200\n"
-"Last-Translator: Peter van Egdom <p.van.egdom@gmail.com>\n"
-"Language-Team: Dutch <fedora-trans-list@redhat.com>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: warrink <geert.warrink@onsnet.nu>\n"
+"Language-Team: Dutch (http://www.transifex.net/projects/p/fedora/team/nl/)\n"
+"Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "U dient root te zijn om firstboot uit te voeren."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "Kon geen enkele firstboot frontend opstarten."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "Er zijn geen firstboot modules gevonden."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "Kon geen enkele firstboot interface aanmaken."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Er is een fout opgetreden in de %s module."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Omdat er een probleem is met de %s module,\n"
-"zal firstboot deze module niet laden en zal\n"
-"proberen de overige modules uit te voeren."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "Er is een fout opgetreden in firstboot."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "Omdat er een probleem is, zal firstboot beëindigen."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"Een kopie van de debug-uitvoer is opgeslagen naar %s\n"
-"Vergeet niet om dit bestand als bijlage te voegen bij het\n"
-"foutrapport.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Rapporteer een bug voor 'firstboot' in het bug-tracking\n"
-"systeem van Red Hat op http://www.redhat.com/bugzilla.\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "Geprobeerd om terug te gaan, maar de geschiedenis is leeg."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_Voltooien"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr ""
-"Het systeem wordt nu herstart om de keuzes die u hebt gemaakt door te voeren."
+"Het systeem wordt nu opnieuw gestart om de keuzes die je gemaakt hebt door "
+"te voeren."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
@@ -98,50 +45,59 @@ msgstr "_Terug"
 msgid "_Forward"
 msgstr "_Vooruit"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "Module %s heeft zijn UI niet ingesteld, verwijderen."
-
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
-msgid "moveToPage must be given a module title or page number."
+msgid "Module %s raised an exception while loading: %s"
 msgstr ""
-"moveToPage dient een module-titel of paginanummer meegegeven te krijgen."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Module %s heeft zijn UI niet ingesteld; verwijderen."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage moet een module titel of paginanummer meegegeven krijgen."
+
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr ""
-"Niet in staat om de map voor schermafbeeldingen aan te maken; overslaan."
+"Niet in staat om de map voor scherm afbeeldingen aan te maken; overslaan."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "Er bestaat geen module met de titel %s."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "Oude module %s, die niet is bijgewerkt, wordt overgeslagen."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "Module %s bevat geen klasse genaamd moduleClass; overslaan."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "Module %s bevat niet het vereiste attribuut %s; overslaan."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "Niet in staat om pixmap %s voor module %s te laden."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "Module %s heeft zijn UI niet ingesteld; verwijderen."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Heel zwak"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Zwak"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Vrij sterk"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Sterk"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Heel sterk"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -154,14 +110,14 @@ msgid ""
 "insert the Documentation disc, or other Red Hat-provided discs to install "
 "additional software at this time."
 msgstr ""
-"Voer de CD genaamd \"Red Hat Enterprise Linux Extras\" in om third-party "
-"plug-in software en applicaties te installeren.  U kunt ook de documentatie-"
-"CD, of andere CD's geleverd door Red Hat, invoeren om additionele software "
-"te installeren."
+"Voer de CD genaamd \"Red Hat Enterprise Linux Extras\" in om plug-in "
+"software van derden en toepassingen te installeren.  Je kunt ook de "
+"documentatie CD, of andere CD's geleverd door Red Hat, invoeren om extra "
+"software te installeren."
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
-msgstr "U kunt op dit moment additionele software-installatie CD's invoeren."
+msgstr "Je kunt nu extra software installatie CD's invoeren."
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -173,9 +129,9 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"Om ondersteuning voor 32-bit applicaties op het Intel Itanium2 platform aan "
-"te zetten, dient u het Intel Execution Layer pakket te installeren dat op de "
-"'Extras' CD staat."
+"Om ondersteuning voor 32-bit toepassingen in de Intel Itanium2 architectuur "
+"aan te zetten, moet je nu het Intel Execution Layer pakket installeren dat "
+"op de 'Extras' CD staat."
 
 #: ../modules/additional_cds.py:73
 msgid "Install..."
@@ -195,32 +151,34 @@ msgstr ""
 "Het 'autorun' programma kan niet worden gevonden op de CD. Klik op \"OK\" om "
 "door te gaan."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "Gebruiker aanmaken"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "U moet een gebruikersaccount voor dit systeem aanmaken."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr "U moet een wachtwoord voor deze gebruiker opgeven en bevestigen."
+msgstr "Je moet een wachtwoord voor deze gebruiker opgeven en bevestigen."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "De wachtwoorden komen niet overeen.  Voer het wachtwoord nogmaals in."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr ""
-"De gebruikersnaam '%s' is een gereserveerd systeemaccount.  Geef een andere "
+"De gebruikersnaam '%s' is een gereserveerd systeem account.  Geef een andere "
 "gebruikersnaam op."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -229,88 +187,106 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"Er bestaat al een persoonlijke map voor gebruiker %s. Wilt u doorgaan en de "
+"Er bestaat al een persoonlijke map voor gebruiker %s. Wil je doorgaan en de "
 "nieuwe gebruiker eigenaar laten worden van deze map en al zijn inhoud?  Zo "
-"ja, dan kan dit even duren omdat alle rechten en SELinux-labels hersteld "
-"moeten worden.  Wilt u deze persoonlijke map opnieuw gebruiken?  Zo niet, "
+"ja, dan kan dit even duren omdat alle rechten en SELinux labels hersteld "
+"moeten worden.  Wil je deze persoonlijke map opnieuw gebruiken?  Zo niet, "
 "kies dan een andere gebruikersnaam."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
-"Herstellen van kenmerken van de persoonlijke map voor %s.  Dit kan even "
+"Herstellen van attributen van de persoonlijke map voor %s.  Dit kan even "
 "duren."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"Er zijn problemen met het herstellen van de kenmerken van sommige bestanden "
-"in de persoonlijke map voor %s.  Refereer naar %s om te zien welke bestanden "
-"de fouten veroorzaakt hebben."
+"Er zijn problemen met het herstellen van de attributen van sommige bestanden "
+"in de persoonlijke map voor %(user)s.  Refereer naar %(path)s om te zien "
+"welke bestanden de fouten veroorzaakt hebben."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"U moet voor het normale dagelijkse gebruik van het systeem (dus geen "
-"systeembeheer) een persoonlijk gebruikersaccount aanmaken.  Om een "
-"persoonlijk gebruikersaccount aan te maken, moet u de beneden gevraagde "
+"Je moet voor het normale dagelijkse gebruik van het systeem (dus geen "
+"systeembeheer) een persoonlijk gebruiker account aanmaken.  Om een "
+"persoonlijk gebruiker account aan te maken, moet je de hieronder gevraagde "
 "informatie leveren."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "Gebr_uikersnaam:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "Volledig_e naam:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "Gebr_uikersnaam:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "W_achtwoord:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "Wachtwoord _bevestigen:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Toevoegen aan Administrators groep"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
 msgstr ""
-"Als u netwerkauthenticatie wilt gebruiken, zoals Kerberos of NIS, klik dan "
-"op de knop: Netwerkaanmelding gebruiken."
+"Als je netwerk authenticatie wilt gebruiken, zoals Kerberos of NIS, klik dan "
+"op de knop: Netwerk inloggen gebruiken."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr "Netwerkaanmelding gebruiken..."
+msgstr "Netwerk inloggen gebruiken..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Als je meer controle nodig hebt bij het aanmaken van de gebruiker (het "
+"specificeren van de persoonlijke map, en/of UID), klikt je op de knop "
+"Geavanceerd."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "_Geavanceerd..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
-msgstr "Wacht even"
+msgstr "Even wachten"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "Datum en tijd"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "Stel de datum en tijd voor het systeem in."
 
 #: ../modules/eula.py:35 ../modules/eula.py:36
 msgid "License Information"
-msgstr "Licentieinformatie"
+msgstr "Licentie informatie"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -322,7 +298,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Bedankt voor het installeren van Qubes.  Qubes is een compilatie van "
+"Bedankt voor het installeren van Fedora.  Fedora is een compilatie van "
 "softwarepakketten, elk onder een eigen licentie.  De compilatie is "
 "beschikbaar gemaakt onder de GNU General Public License version 2.  Er zijn "
 "geen restricties met betrekking tot het gebruiken, kopiëren of aanpassen van "
@@ -332,10 +308,10 @@ msgstr ""
 "toepassing op de licentie van de opnieuw gedistribueerde code, handelsmerken "
 "en export-controle.\n"
 "\n"
-"Als u wilt weten wat deze beperkingen zijn, bezoek dan http://fedoraproject."
+"Als je wilt weten wat deze beperkingen zijn, bezoek dan http://fedoraproject."
 "org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "Begrepen, ga verder."
 
@@ -349,28 +325,44 @@ msgid ""
 "Setup Agent will now guide you through some basic configuration.  Please "
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
-"Er zijn nog een aantal stappen te nemen voordat uw systeem klaar is voor "
-"gebruik.  De Setup Agent zal u nu helpen met het maken van een "
-"basisconfiguratie.  Klik op de knop \"Vooruit\" rechtsonder in het scherm om "
-"door te gaan"
+"Er zijn nog een aantal stappen te nemen voordat jouw systeem klaar is voor "
+"gebruik.  De Instel agent zal je nu helpen met het maken van een basis "
+"configuratie.  Klik op de knop \"Vooruit\" rechtsonder in het scherm om door "
+"te gaan"
 
-#~ msgid "Waiting for X server to start... log located in %s\n"
-#~ msgstr ""
-#~ "Wachten op het opstarten van de X-server... logbestand bevindt zich in %"
-#~ "s\n"
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "Je moet root te zijn om firstboot uit te voeren."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Er zijn geen firstboot modules gevonden."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Kon geen enkele firstboot interface aanmaken."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "Module %s heeft zijn UI niet ingesteld, verwijderen."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Oude module %s, die niet is bijgewerkt, wordt overgeslagen."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "Het wordt sterk aanbevolen om een persoonlijk gebruikersaccount aan te "
-#~ "maken.  Als u nu doorgaat zonder een account, kunt u zich alleen "
-#~ "aanmelden met het root-account, hetgeen alleen bedoeld is voor "
-#~ "systeembeheer."
+#~ "Fout bij laden van module%(module)s:\n"
+#~ "%(error)s"
 
-#~ msgid "_Continue"
-#~ msgstr "_Doorgaan"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "Module %s bevat geen klasse genaamd moduleClass; overslaan."
 
-#~ msgid "Create _account"
-#~ msgstr "Account _aanmaken"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "Module %(module)s bevat niet het vereiste attribuut %(attr)s; overslaan."
+
+#~ msgid "Undefined"
+#~ msgstr "Onbepaald"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Je moet een gebruiker account voor dit systeem aanmaken."

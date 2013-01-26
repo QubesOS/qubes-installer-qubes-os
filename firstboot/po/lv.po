@@ -1,153 +1,105 @@
-# translation of lv.po to latvian
+# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
-# Gatis Kalnins <gatis.kalnins@metatrons.lv>, 2006.
 # Janis Ozolins <johnij@fedoraproject.org>, 2008.
+# Gatis Kalnins <gatis.kalnins@metatrons.lv>, 2006.
+# Tranzistors <rudolfs.mazurs@gmail.com>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: lv\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2008-09-20 20:41+0100\n"
-"Last-Translator: Janis Ozolins <johnij@fedoraproject.org>\n"
-"Language-Team: latvian <locale@laka.lv>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-04-02 22:07+0000\n"
+"Last-Translator: Tranzistors <rudolfs.mazurs@gmail.com>\n"
+"Language-Team: Latvian (http://www.transifex.net/projects/p/fedora/team/"
+"lv/)\n"
+"Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.1\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : "
+"2)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr ""
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr ""
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr ""
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Konstatēta kļūda modulī %s."
-
-#: ../firstboot/exceptionWindow.py:51
-#, fuzzy, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Sakarā ar problēmām modulī %s,\n"
-"Red Hat Uzstādīšanas Aģents nelādēs šo moduli,\n"
-"bet mēģinās ielādēt pārējos moduļus."
-
-#: ../firstboot/exceptionWindow.py:55
-#, fuzzy
-msgid "An error has occurred in firstboot."
-msgstr "Konstatēta kļūda modulī %s."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr ""
-
-#: ../firstboot/exceptionWindow.py:66
-#, fuzzy, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"Lūdzu, aizpildiet paziņojumu par 'firstboot' kļūmi Red Hat\n"
-"kļūdu apstrādes sistēmā adresē http://www.redhat.com/bugzilla.\n"
-"Atkļūdošanas informācija saglabāta datnē %s\n"
-"Pārliecinieties, ka šī datne pievienota paziņojumam par kļudu.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-#, fuzzy
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Lūdzu, aizpildiet paziņojumu par 'firstboot' kļūmi Red Hat\n"
-"kļūdu apstrādes sistēmā adresē http://www.redhat.com/bugzilla.\n"
-"Atkļūdošanas informācija saglabāta datnē %s\n"
-"Pārliecinieties, ka šī datne pievienota paziņojumam par kļudu.\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
-msgstr ""
+msgstr "Mēģināja doties atpakaļ, bet vēsture ir tukša."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
-msgstr "Pabeigt"
+msgstr "_Pabeigt"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr "Lai iestatījumi stātos spēkā, jāpārstartē sistēma."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
-msgstr "Atpakaļ"
+msgstr "_Atpakaļ"
 
 #: ../firstboot/interface.py:250
 msgid "_Forward"
-msgstr "Uz priekšu"
+msgstr "_Uz priekšu"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
+msgid "Module %s raised an exception while loading: %s"
 msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Modulis %s neiestatīja savu UI; noņem."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
-msgstr ""
+msgstr "moveToPage jānorāda moduļa nosaukums vai lapas numurs."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
-msgstr ""
+msgstr "Nevar izveidot ekrānuzņēmumu mapi; izlaiž."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
-msgstr ""
+msgstr "Nav moduļa ar nosaukumu %s."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr ""
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr ""
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr ""
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr ""
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
-msgstr ""
+msgstr "Modulis %s neiestatīja savu UI; noņem."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Ļoti vāja"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Vāja"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Diezgan stipra"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Stipra"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Ļoti stipra"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
-msgstr "Papildus CD"
+msgstr "Papildu CD"
 
 #: ../modules/additional_cds.py:55
 msgid ""
@@ -156,14 +108,14 @@ msgid ""
 "insert the Documentation disc, or other Red Hat-provided discs to install "
 "additional software at this time."
 msgstr ""
-"Lūdzu ievietojiet disku ar nosaukumu \"Red Hat Enterprise Linux Extras\", "
-"lai varētu uzstādīt citu firmu izstrādātās programmas. Jūs varat ievietot "
+"Lūdzu, ievietojiet disku ar nosaukumu \"Red Hat Enterprise Linux Extras\", "
+"lai varētu instalēt trešo pušu izstrādātās programmas. Jūs varat ievietot "
 "arī Dokumentācijas vai citu kompānijas Red Hat izveidoto disku, lai "
-"uzstādītu programmatūru tagad."
+"instalētu papildu programmatūru tagad."
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
-msgstr "Lūdzu, ievietojiet CD ar papildus programmām."
+msgstr "Lūdzu, ievietojiet CD ar papildu programmām."
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -177,50 +129,54 @@ msgstr ""
 "\n"
 "Lai uz Intel Itanium2 arhitektūras datoriem varētu izmantot 32-bitu "
 "programmatūru, nepieciešams papildus uzstādīt pakotni Intel Execution Layer "
-"no CD ar papildus parogrammām (Extras)."
+"no CD ar papildus programmām (Extras)."
 
 #: ../modules/additional_cds.py:73
 msgid "Install..."
-msgstr "Uzstādīšana..."
+msgstr "Instalēt..."
 
 #: ../modules/additional_cds.py:110
 msgid ""
 "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
 "click \"OK\" to continue."
 msgstr ""
-"CD nav atrasts. Lūdzu ievietojiet CD iekārtā disku un nospiediet \"OK\"."
+"CD nav atrasts. Lūdzu ievietojiet CD iekārtā disku un spiediet \"Labi\"."
 
 #: ../modules/additional_cds.py:146
 msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
-msgstr "Autostartēšanas programma uz CD nav atrasta. Nospiediet \"OK\"."
+msgstr ""
+"Autostartēšanas programma nav atrasta uz CD. Spiediet \"Labi\", lai "
+"turpinātu."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "Izveidot lietotāju"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
 msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr ""
+msgstr "Jums jāievada un jāapstiprina parole šim lietotājam."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
-msgstr "Paroles nesakrīt. Lūdzu ievadiet paroli vēlreiz."
+msgstr "Paroles nesakrīt. Lūdzu, ievadiet paroli vēlreiz."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr ""
-"Lietotājvārds '%s' ir rezervēts sistēmas konts. Lūdzu norādiet citu "
+"Lietotājvārds '%s' ir rezervēts sistēmas konts. Lūdzu, norādiet citu "
 "lietotājvārdu."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -229,72 +185,100 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
+"Mājas mape lietotājam %s jau eksistē. Vai vēlaties turpināt, padarot jauno "
+"lietotāju par šīs mapes un visa tās satura īpašnieku?  Tas var aizņemt kādu "
+"laiciņu lai atstatītu atļaujas un esošās SELinux iezīmes.  Vai vēlaties "
+"izmantot šo mājas mapi?  Ja nē, lūdzu, izvelieties citu lietotājvārdu."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
-msgstr ""
+msgstr "Labo %s mājas mapes atribūtus. Tas var aizņemt dažas minūtes."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
+"Radās problēmas, labojot dažus failus lietotāja %(user)s mājas mapē. Lai "
+"redzētu failus, kas izraisa problēmas, skatiet %(path)s."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
+"Jums jāizveido 'username' parastai (ne administratīvai) sistēmas lietošanai. "
+"Lai izveidotu sistēmas 'username', lūdzu, norādiet pieprasīto informāciju "
+"zemāk."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "Lietotājvārds:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
-msgstr "Vārds, uzvārds:"
+msgstr "Vārds un _uzvārds:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_Lietotājvārds:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "_Parole:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
-msgstr "Apstipriniet paroli:"
+msgstr "Apstipri_niet paroli:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Pievienot administratoru grupai"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
 msgstr ""
+"Ja jums jāizmanto tīkla autentifikācija, piemēram, Kerberos vai NIS, "
+"spiediet pogu 'Lietot tīkla ierakstīšanos'."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr ""
+msgstr "_Lietot tīkla ierakstīšanos..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Ja, veidojot lietotāju, ir jānorāda sīkāka informācija (jānorāda mājas mape, "
+"un/vai UID), spiediet pogu 'Paplašināti'."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "_Paplašināti..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
-msgstr ""
+msgstr "Lūdzu, uzgaidiet"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "Datums un laiks"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
-msgstr ""
+msgstr "Lūdzu, iestatiet sistēmai datumu un laiku."
 
 #: ../modules/eula.py:35 ../modules/eula.py:36
 msgid "License Information"
 msgstr "Licences informācija"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -306,28 +290,67 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
+"Paldies, ka instalējāt Fedora.  Fedora ir programmatūras pakotņu "
+"kompilācija, katra ar savu licenci.  Kompilācija ir pieejama zem GNU General "
+"Public License versijas 2.  Nav ierobežojumu lietošanai, kopēšanai, vai koda "
+"modificēšanai.  Bet ir ierobežojumi un pienākumi izplatot kodu vai nu "
+"sākotnējā vai modificētā formā.  Cita starpā, šie ierobežojumi/pienākumi "
+"attiecas uz izplatīšanu, prečzīmēm un eksporta kontroles licencēšanu.\n"
+"\n"
+"Ja vēlaties saprast, kādi šie ierobežojumi ir, apmeklējiet http://"
+"fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
-msgstr ""
+msgstr "Sapratu. Lūdzu, turpiniet."
 
 #: ../modules/welcome.py:35 ../modules/welcome.py:36
 msgid "Welcome"
 msgstr "Sveicināti"
 
 #: ../modules/welcome.py:45
-#, fuzzy
 msgid ""
 "There are a few more steps to take before your system is ready to use.  The "
 "Setup Agent will now guide you through some basic configuration.  Please "
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
-"Atlikuši daži soļi, pēc kuriem Jūsu sistēma būs gatava darbam. Tos paveikt "
-"Jums palīdzēs Uzstādīšanas Palīgs. Nospiediet pogu \"Uz priekšu\" labajā "
-"apakšējā stūrī."
+"Ir vēl daži soļi, kas jāveic pirms sistēma ir gatava darbam. Iestatīšanas "
+"aģents jūs izvadīs cauri pamat konfigurācijai. Spiediet pogu \"Uz priekšu\" "
+"labajā stūrī, lai turpinātu."
 
-#~ msgid "_Continue"
-#~ msgstr "Turpināt"
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "Jums ir jābūt root lietotājam, lai palaistu firstboot."
 
-#~ msgid "Create _account"
-#~ msgstr "Izveidot kontu"
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Nav atrastu firstboot moduļu."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Nevarēja izveidot nevienu firstboot saskarni."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "Modulis %s neiestatīja savu UI, noņem."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Izlaiž veco moduli %s, kas netika atjaunināts."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "Kļūda, ielādējot moduli %(module)s:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "Modulis %s nesatur klasi ar nosaukumu moduleClass; izlaiž."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "Modulis %(module)s nesatur nepieciešamos atribūtus %(attr)s; izlaiž."
+
+#~ msgid "Undefined"
+#~ msgstr "Nedefinēta"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Jums jāizveido lietotāja konts šai sistēmai."

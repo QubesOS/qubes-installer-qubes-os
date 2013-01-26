@@ -1,0 +1,354 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+#   <tctovsli@gmail.com>, 2011.
+msgid ""
+msgstr ""
+"Project-Id-Version: Firstboot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-07-14 16:39+0000\n"
+"Last-Translator: teecee <tctovsli@gmail.com>\n"
+"Language-Team: Norwegian Nynorsk (http://www.transifex.net/projects/p/fedora/"
+"team/nn/)\n"
+"Language: nn\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+#: ../firstboot/interface.py:79
+msgid "Attempted to go back, but history is empty."
+msgstr "Prøvar å gå tilbake, men historikken er tom."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
+msgid "_Finish"
+msgstr "_Avslutt"
+
+#: ../firstboot/interface.py:184
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr ""
+"Systemet må no startas om for at nokon av vala du tok skal trå i kraft."
+
+#: ../firstboot/interface.py:243
+msgid "_Back"
+msgstr "Til_bake"
+
+#: ../firstboot/interface.py:250
+msgid "_Forward"
+msgstr "_Fram"
+
+#: ../firstboot/interface.py:278
+#, python-format
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Modul %s sat ikkje opp noko brukargrensesnitt; fjernar denne."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage må få ein modultittel eller eit sidenummer."
+
+#: ../firstboot/interface.py:442
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "Kunne ikkje opprette skjermskotmappe; hoppar over."
+
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "Inga modul med namn %s finnast."
+
+#: ../firstboot/moduleset.py:92
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "Modul %s sat ikkje opp noko brukargrensesnitt; fjernar denne."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Veldig svak"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Svak"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Nokså sterk"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Sterk"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Veldig sterk"
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "Andre CD-ar"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr ""
+"Sett inn plata merkt \"Red Hat Enterprise Linux Extras\" for installasjon av "
+"utvidingar og programvare frå 3.partar.  Sett også inn Dokumentasjonsplata, "
+"eller andre plater levera av Red Hat for å installera ytterlegare "
+"programvare no."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "Sett inn andre installasjonsplater no."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 "
+"architecture you must install the Intel Execution Layer package from the "
+"Extras disc now."
+msgstr ""
+"\n"
+"\n"
+"For å få støtte for 32-bits applikasjonar på Intel Itanium2 arkitekturen, må "
+"pakka for Intel Execution Layer installeras frå plata merka Extras no."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "Installer…"
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr ""
+"Fann inga CD-plate.  Sett inn ei CD-plate og trykk «OK» for å fortsette."
+
+#: ../modules/additional_cds.py:146
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr ""
+"Autorun kunne ikkje bli funnet på CD-plata. Trykk «OK» for å fortsette."
+
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
+msgid "Create User"
+msgstr "Opprett brukar"
+
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
+
+#: ../modules/create_user.py:123
+msgid "You must enter and confirm a password for this user."
+msgstr "Det må fyllas inn og bekreftas eit passord for denne brukaren."
+
+#: ../modules/create_user.py:130
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "Passorda er ikkje like.  Skriv inn passordet på nytt."
+
+#: ../modules/create_user.py:167
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr ""
+"Brukarnamnet '%s' er ein reservera systemkonto.  Vel ei anna brukarnamn. "
+
+#: ../modules/create_user.py:186
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing "
+"so may take a while to reset permissions and any SELinux labels.  Would you "
+"like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr ""
+"Ei heimemappe for brukaren %s finnes allereie. Om du vel å fortsette , vil "
+"denne din brukar få eigarrettigheitar til denne mappa og alt innhold.  Det "
+"kan take lang tid å sette rettigheitane og endre eventuelle SELinux labels.  "
+"Vil du bruke denne heimemappa?  Om ikkje, vel eit anna brukarnamn."
+
+#: ../modules/create_user.py:229
+#, python-format
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgstr ""
+"Fiksar attributtane på heimemappa til brukaren %s.  Dette kan take nokre "
+"minutt."
+
+#: ../modules/create_user.py:267
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
+msgstr ""
+"Problem oppstod ved endring av attributtane på nokon av filane i heimemappa "
+"til brukaren %(user)s.  Sjå på %(path)s for kva filer det gjeld."
+
+#: ../modules/create_user.py:293
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr ""
+"Du må opprette eit «brukarnamn» for vanleg (ikkje-administrativ) bruk av "
+"systemet.  For å opprette eit slik «brukarnamn», fyll ut følgande felt."
+
+#: ../modules/create_user.py:332
+msgid "Full Nam_e:"
+msgstr "Fult _namn:"
+
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_Brukarnamn:"
+
+#: ../modules/create_user.py:346
+msgid "_Password:"
+msgstr "_Passord:"
+
+#: ../modules/create_user.py:353
+msgid "Confir_m Password:"
+msgstr "_Bekreft passord:"
+
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Legg til i gruppa for administratorar"
+
+#: ../modules/create_user.py:369
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr ""
+"Nyttast autentisering over nettverk, slik som Kerberos eller NIS, trykk "
+"knappen Autentiser over nettverk"
+
+#: ../modules/create_user.py:378
+msgid "Use Network _Login..."
+msgstr "_Autentiser over nettverk"
+
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"For meir kontroll ved oppretting av brukar (vele heimemappe, og/eller UID), "
+"trykk knappen Avansera."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "A_vansera…"
+
+#: ../modules/create_user.py:437
+msgid "Please wait"
+msgstr "Vent litt"
+
+#: ../modules/date.py:39 ../modules/date.py:40
+msgid "Date and Time"
+msgstr "Dato og tid"
+
+#: ../modules/date.py:58
+msgid "Please set the date and time for the system."
+msgstr "Sett dato og tid for systemet."
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "Lisensinformasjon"
+
+#: ../modules/eula.py:45
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software "
+"packages, each under its own license.  The compilation is made available "
+"under the GNU General Public License version 2.  There are no restrictions "
+"on using, copying, or modifying this code.  However, there are restrictions "
+"and obligations that apply to the redistribution of the code, either in its "
+"original or a modified form.  Among other things, those restrictions/"
+"obligations pertain to the licensing of the redistribution, trademark "
+"rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit "
+"http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr ""
+"Takk for at du installera Fedora.  Fedora er ei samling programvarepakker, "
+"kvar og ein under eigne lisensar.  Samlinga er gjort tilgjengeleg under GNU "
+"General Public License versjon 2.  Det er ingen restriksjonar på bruk, "
+"kopiering eller endring av denne koden, men det er restriksjonar og "
+"obligasjonar som gjeld redistribusjon av koden, anten i original eller "
+"modifisera form.  Dei restriksjonane/obligasjonane gjeld lisensiering av "
+"redistribusjon, varemerkerettigheitar og eksportkontroll, blandt anna.\n"
+"\n"
+"Om du vil vite kva desse restriksjonane er, sjå http://fedoraproject.org/"
+"wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:60
+msgid "Understood, please proceed."
+msgstr "Forstått, gå vidare."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "Velkomen."
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr ""
+"Det er eit par steg att før systemet er klart til bruk.  Setup Agent vil no "
+"gå gjennom grunnleggande konfigurasjon.  Trykk \"Framover\" nede til høgre "
+"for å fortsette."
+
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "Du må vera root for å køyra firstboot."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Inga firstboot-modular vart funne."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Kunne ikkje opprette firstboot grensesnitt."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "Modul %s sat ikkje opp noko brukargrensesnitt; fjernar denne."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "Hoppar over den gamle modulen %s som ikkje har blitt oppdatera."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "Feil ved lasting av modul %(module)s:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr ""
+#~ "Modul %s inneheld ikkje ei klasse med namn moduleClass; hoppar over."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "Modulen %(module)s inneheld ikkje den påkrevde attributten %(attr)s; "
+#~ "hoppar over."
+
+#~ msgid "Undefined"
+#~ msgstr "Udefinera"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Det må opprettas ein brukarkonto på dette systemet."

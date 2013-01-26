@@ -1,0 +1,272 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+# Nik Kalach <nikka@fedoraproject.org>, 2012.
+# Nik Kalach <nik.kalach@inbox.ru>, 2012.
+msgid ""
+msgstr ""
+"Project-Id-Version: Firstboot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-26 09:15+0200\n"
+"PO-Revision-Date: 2012-10-08 00:41+0000\n"
+"Last-Translator: Nik Kalach <nik.kalach@inbox.ru>\n"
+"Language-Team: Interlingua <trans-ia@lists.fedoraproject.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ia\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../firstboot/interface.py:79
+msgid "Attempted to go back, but history is empty."
+msgstr "Se tentava retornar, ma le historia es vacue."
+
+#. If we were previously on the last page, we need to set the Next
+#. button's label back to normal.
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
+msgid "_Finish"
+msgstr "_Finir"
+
+#: ../firstboot/interface.py:184
+msgid "The system must now reboot for some of your selections to take effect."
+msgstr "Le systema debe ora reinitiar se pro render certe selectiones effective."
+
+#: ../firstboot/interface.py:257
+msgid "_Back"
+msgstr "_Previe"
+
+#: ../firstboot/interface.py:264
+msgid "_Forward"
+msgstr "_Sequente"
+
+#: ../firstboot/interface.py:292
+#, python-format
+msgid "Module %s raised an exception while loading: %s"
+msgstr "Le modulo %s ha actionate un exception durante le cargamento: %s"
+
+#: ../firstboot/interface.py:296
+#, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "Le modulo %s non ha establite su interfacie de usator correctemente."
+
+#: ../firstboot/interface.py:302
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr "Le modulo %s ha actionate un exception durante le render: %s"
+
+#: ../firstboot/interface.py:361
+#, python-format
+msgid "Module %s did not setup its UI properly"
+msgstr "Le modulo %s non establiva su interfacie de usator correctemente"
+
+#: ../firstboot/interface.py:376 ../firstboot/interface.py:377
+msgid "moveToPage must be given a module title or page number."
+msgstr "Un titulo de modulo o un numero de pagina debe esser date al entrata de moveToPage."
+
+#: ../firstboot/interface.py:461
+msgid "Unable to create the screenshot dir; skipping."
+msgstr "Incapace de crear le directorio a capturar le schermo; se omitte."
+
+#: ../firstboot/interface.py:501 ../firstboot/interface.py:502
+#, python-format
+msgid "No module exists with the title %s."
+msgstr "Necun modulo existe con le titulo %s."
+
+#: ../firstboot/moduleset.py:92
+#, python-format
+msgid "Module %s did not set up its UI; removing."
+msgstr "Le modulo %s non establiva su interfacie de usator; se elimina."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Multo debile"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Debile"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Assatis forte"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Forte"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Multo forte"
+
+#: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
+msgid "Additional CDs"
+msgstr "CDs additional"
+
+#: ../modules/additional_cds.py:55
+msgid ""
+"Please insert the disc labeled \"Red Hat Enterprise Linux Extras\" to allow "
+"for installation of third-party plug-ins and applications.  You may also "
+"insert the Documentation disc, or other Red Hat-provided discs to install "
+"additional software at this time."
+msgstr "Insere le disco con le etiquetta \"Red Hat Enterprise Linux Extra\" pro permitter le installation de extra modulos e applicationes de tertios. Ora il es anque possibile inserer le disco Documentation o altere discos de Red Hat pro installar software additional."
+
+#: ../modules/additional_cds.py:61
+msgid "Please insert any additional software install cds at this time."
+msgstr "Insere ora alicun CD de installation de software additional."
+
+#: ../modules/additional_cds.py:65
+msgid ""
+"\n"
+"\n"
+"To enable runtime support of 32-bit applications on the Intel Itanium2 architecture you must install the Intel Execution Layer package from the Extras disc now."
+msgstr "\n\nPro permitter le supporto de execution del applicationes de 32 bits sur le architectura Intel Itanium2, installa ora le pacchetto \"Intel Execution Layer\" del disco Extras."
+
+#: ../modules/additional_cds.py:73
+msgid "Install..."
+msgstr "Installar..."
+
+#: ../modules/additional_cds.py:110
+msgid ""
+"A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
+"click \"OK\" to continue."
+msgstr "Un CD-ROM non es detegite. Insere un CD-ROM in le lector e clicca sur \"OK\" pro continuar."
+
+#: ../modules/additional_cds.py:146
+msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgstr "Le programma autorun non es trovate sur le CD. Clicca sur \"OK\" pro continuar."
+
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
+msgid "Create User"
+msgstr "Crear un usator"
+
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr "Il ha necun conto de usator capace de entrar in le systema.\nEsque tu es secur que vole continuar?"
+
+#: ../modules/create_user.py:123
+msgid "You must enter and confirm a password for this user."
+msgstr "Il es necessari entrar e confirmar un contrasigno pro iste usator."
+
+#: ../modules/create_user.py:130
+msgid "The passwords do not match.  Please enter the password again."
+msgstr "Le contrasignos non es equal. Entra le contrasigno de novo."
+
+#: ../modules/create_user.py:167
+#, python-format
+msgid ""
+"The username '%s' is a reserved system account.  Please specify another "
+"username."
+msgstr "Le nomine '%s' es reservate per le systema. Selige altere nomine del conto."
+
+#: ../modules/create_user.py:186
+#, python-format
+msgid ""
+"A home directory for user %s already exists. Would you like to continue, "
+"making the new user the owner of this directory and all its contents?  Doing"
+" so may take a while to reset permissions and any SELinux labels.  Would you"
+" like to reuse this home directory?  If not, please choose a different "
+"username."
+msgstr "Un directorio domestic del usator %s jam existe. Velle tu continuar e render le nove usator le proprietario de iste directorio e su contento? Remontar de permissiones e etiquettas de SELinux pote prender le tempore. Velle tu reutilisar iste directorio domestic? Si non, selige un nomine de usator differente."
+
+#: ../modules/create_user.py:229
+#, python-format
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few "
+"minutes."
+msgstr "Reparation de attributos sur le directorio domestic pro %s. Illo pote prender qualque minutas."
+
+#: ../modules/create_user.py:267
+#, python-format
+msgid ""
+"Problems were encountered fixing the attributes on some files in the home "
+"directory for %(user)s.  Please refer to %(path)s for which files caused the"
+" errors."
+msgstr "Problemas era incontrate durante le reparation de attributos sur certe files in le directorio domestic del usator %(user)s. Refere se a %(path)s pro saper que files causava le errores."
+
+#: ../modules/create_user.py:296
+msgid ""
+"You must create a 'username' for regular (non-administrative) use of your "
+"system.  To create a system 'username', please provide the information "
+"requested below."
+msgstr "On debe crear un 'conto' pro le uso ordinari (non-administrative) del systema. Pro crear un 'conto' del systema, forni le information necessitate in basso."
+
+#: ../modules/create_user.py:335
+msgid "Full Nam_e:"
+msgstr "_Nomine complete:"
+
+#: ../modules/create_user.py:342
+msgid "_Username:"
+msgstr "_Conto:"
+
+#: ../modules/create_user.py:349
+msgid "_Password:"
+msgstr "Contra_signo:"
+
+#: ../modules/create_user.py:356
+msgid "Confir_m Password:"
+msgstr "Confir_ma le contrasigno:"
+
+#: ../modules/create_user.py:366
+msgid "Add to Administrators group"
+msgstr "Adder al gruppo de administratores"
+
+#: ../modules/create_user.py:372
+msgid ""
+"If you need to use network authentication, such as Kerberos or NIS, please "
+"click the Use Network Login button."
+msgstr "Si il es necessari usar le authentication de rete, tal como Kerberos o NIS, clicca sur le button Authenticar per rete."
+
+#: ../modules/create_user.py:381
+msgid "Use Network _Login..."
+msgstr "Authenticar per _rete"
+
+#: ../modules/create_user.py:389
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr "Si il es necessari controlar le detalios del creation de usator, tal como le directorio domestic e/o UID, clicca sur le button Avantiate."
+
+#: ../modules/create_user.py:399
+msgid "_Advanced..."
+msgstr "_Avantiate"
+
+#: ../modules/create_user.py:440
+msgid "Please wait"
+msgstr "Patientar"
+
+#: ../modules/date.py:39 ../modules/date.py:40
+msgid "Date and Time"
+msgstr "Data e tempore"
+
+#: ../modules/date.py:58
+msgid "Please set the date and time for the system."
+msgstr "Configura le data e le tempore del systema."
+
+#: ../modules/eula.py:35 ../modules/eula.py:36
+msgid "License Information"
+msgstr "Information super le licentia"
+
+#: ../modules/eula.py:45
+msgid ""
+"Thank you for installing Fedora.  Fedora is a compilation of software packages, each under its own license.  The compilation is made available under the GNU General Public License version 2.  There are no restrictions on using, copying, or modifying this code.  However, there are restrictions and obligations that apply to the redistribution of the code, either in its original or a modified form.  Among other things, those restrictions/obligations pertain to the licensing of the redistribution, trademark rights, and export control.\n"
+"\n"
+"If you would like to understand what those restrictions are, please visit http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+msgstr "Gratias pro installar Fedora. Fedora es un compilation de pacchettos de software, cata uno con su proprie licentia. Le compilation es disponibile secundo le Licentia public general de GNU version 2. Il ha nulle restrictiones sur le uso, copiar o modifcation de iste codice. Totevia, il ha restrictiones e obligationes que se applica al redistribution del codice, sia in su forma original o modificate. Inter alteres, iste restrictiones/obligationes pertine al licentiamento de redistribution, derectos de marcas commercial e controlo de exportation.\n\nLe information detaliate super le restrictiones es disponibile a http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
+
+#: ../modules/eula.py:60
+msgid "Understood, please proceed."
+msgstr "Clicca sur le button de continuation, si il es clar."
+
+#: ../modules/welcome.py:35 ../modules/welcome.py:36
+msgid "Welcome"
+msgstr "Benvenite"
+
+#: ../modules/welcome.py:45
+msgid ""
+"There are a few more steps to take before your system is ready to use.  The "
+"Setup Agent will now guide you through some basic configuration.  Please "
+"click the \"Forward\" button in the lower right corner to continue"
+msgstr "Le agente de configuration adjutara effectuar qualque actiones post que le systema essera preste pro uso. Clicca sur le button de continuation."

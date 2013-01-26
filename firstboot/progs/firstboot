@@ -1,210 +1,179 @@
-#!/usr/bin/python2
+#! /usr/bin/env python
+
 #
-# Chris Lumens <clumens@redhat.com>
+# firstboot
 #
-# Copyright 2007, 2008 Red Hat, Inc.
+# Copyright (C) 2011  Red Hat, Inc.
 #
-# This copyrighted material is made available to anyone wishing to use, modify,
-# copy, or redistribute it subject to the terms and conditions of the GNU
-# General Public License v.2.  This program is distributed in the hope that it
-# will be useful, but WITHOUT ANY WARRANTY expressed or implied, including the
-# implied warranties of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc., 51
-# Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  Any Red Hat
-# trademarks that are incorporated in the source code or documentation are not
-# subject to the GNU General Public License and may only be used or replicated
-# with the express permission of Red Hat, Inc. 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-import meh
-import os, string, sys
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Red Hat Author(s):  Martin Gracik <mgracik@redhat.com>
+#
 
-# Since X may be starting up immediately after firstboot crashes, we might
-# not have any way to see the traceback.  This lets it be logged somewhere
-# useful.  Set this up as early as possible.
+import optparse
+import os
+import sys
+import tempfile
+import traceback
 
-# Set up some exception handling as early as possible, in case we traceback
-# before any interface is even up, let alone configured.  This lets it be
-# logged somewhere useful.  We will override this with python-meh later.
-def earlyExnHandler(type, value, tb):
-    import tempfile, traceback
+import firstboot.frontend
+import firstboot.loader
 
-    (fd, path) = tempfile.mkstemp("", "firstboot-", "/tmp")
-    fo = os.fdopen(fd, "w")
-
-    traceback.print_exception(type, value, tb, None, fo)
-    fo.close()
-
-    # Also print on stderr just in case we have time to see the problem.
-    traceback.print_exception(type, value, tb)
-
-sys.excepthook = earlyExnHandler
-
-from firstboot.config import *
 from firstboot.constants import *
-from firstboot.loader import *
-import logging
-from optparse import OptionParser
-from system_config_keyboard.keyboard import Keyboard
+
+# XXX
+from firstboot.config import *
+
+import meh
+import meh.dump
 
 import gettext
 _ = lambda x: gettext.ldgettext("firstboot", x)
 
-def finish(opts):
-    # Now make sure we don't run again on the next reboot.
-    if not opts.test and not opts.debug:
-        logging.debug("Writing /etc/sysconfig/firstboot file")
-        writeSysconfigFile()
+def exception_handler(type, value, tb, obj):
+    # write exception to a file
+    fd, path = tempfile.mkstemp(prefix='/var/tmp/firstboot-', suffix='.trace')
+    exception_lines = traceback.format_exception(type, value, tb)
+    os.write(fd, "".join(exception_lines))
+    os.close(fd)
 
-    if opts.reconfig and not opts.test:
-        logging.debug("Removing /etc/reconfigSys")
+    meh_conf = meh.Config(programName='firstboot',
+                              programVersion='@VERSION@')
 
-        try:
-            os.unlink("/etc/reconfigSys")
-        except:
-            pass
+    dump_obj = meh.dump.ExceptionDump((type, value, tb), meh_conf)
+    exn_dump = dump_obj.traceback_and_object_dump(obj)
 
-def getRunlevel():
-    line = os.popen("/sbin/runlevel", "r").readline()
-    line = string.strip(line)
+    fd, path = tempfile.mkstemp(prefix='firstboot-tb-')
+    os.write(fd, exn_dump)
+    os.close(fd)
 
-    # This can happen in kadischi, for instance
-    if line.startswith("unknown"):
-        return 3
-    else:
-        tokens = string.split(line)
-        return int(tokens[-1])
+    # that's basically what python-meh's Save button does, except that the
+    # following code just creates directories ABRT wants for reporting bug
+    import report
+    params = dict()
+    params.update(dump_obj.environment_info)
 
-def writeSysconfigFile():
-    fd = open("/etc/sysconfig/firstboot", "w")
-    fd.write("RUN_FIRSTBOOT=NO\n")
-    fd.close()
+    params.setdefault('component', 'firstboot')
+    params.setdefault('package', 'firstboot-@VERSION@')
 
-# Find the first directory in the themes dir that's not the default and use
-# that.  If there is no theme, return None and the default will end up getting
-# used.
-def findDefaultThemeDir():
-    import glob
-    lst = filter(lambda d: d.find("default") == -1, glob.glob(BASEDIR+"themes/*"))
-    if len(lst) == 0:
-        return None
-    else:
-        return lst[0]
+    params['hashmarkername'] = 'firstboot'
+    params['duphash'] = dump_obj.hash
+    params['reason'] = dump_obj.desc
+    params['description'] = 'Traceback from firstboot:\n%s' % str(dump_obj)
+    params['firstboot-tb'] = exn_dump
+    params['uid'] = "%d" % os.geteuid()
 
-if __name__ == "__main__":
-    logLevelMap = {"debug": logging.DEBUG, "info": logging.INFO,
-                   "warning": logging.WARNING, "error": logging.ERROR,
-                   "critical": logging.CRITICAL}
+    problem_data = report.createPythonUnhandledExceptionSignature(**params)
 
-    op = OptionParser()
-    op.add_option("-s", "--autoscreenshot", action="store_true", default=False,
-                  help="take a screenshot on every page")
-    op.add_option("-d", "--debug", action="store_true", default=False,
-                  help="enable debugging mode")
-    op.add_option("-g", "--forcegui", action="store_true", default=False,
-                  help="use the GUI interface no matter what")
-    op.add_option("-l", "--loglevel", type="choice",
-                  choices=["debug", "info", "warning", "error", "critical"], default="error",
-                  help="set the logging level: debug, info, warning, error, or critical [default: %default]")
-    op.add_option("-m", "--moduleDir", action="store", default=BASEDIR+"modules/",
-                  help="set the directory containing firstboot modules [default: %default]")
-    op.add_option("-r", "--reconfig", action="store_true", default=False,
-                  help="enable reconfiguration mode")
-    op.add_option("-t", "--test", action="store_true", default=False,
-                  help="only test, don't configure the system")
-    op.add_option("--themeDir", action="store", dest="themeDir", default=findDefaultThemeDir(),
-                  help="set the directory containing the theme [default: %default]")
-    (opts, args) = op.parse_args()
+    problem_data.create_dump_dir('/var/spool/abrt')
 
-    config.moduleDir = opts.moduleDir
-    config.themeDir = opts.themeDir
+    print _('Unhandled exception in firstboot occured.')
+    print _('Bugreport directory was created and once you login, ABRT should\n'
+            'let you file a bug. (Don\'t forget to check "Show all problems")')
+    answer = raw_input (_('Do you want to start /usr/bin/setup so that you can\n'
+                          'create your user account? [Y/n] '))
 
-    if opts.debug:
-        opts.loglevel = "debug"
+    if not answer.lower() in [_('n'), _('no')]:
+        os.system('/usr/bin/setup')
 
-    if logLevelMap.has_key(opts.loglevel):
-        logging.basicConfig(level=logLevelMap[opts.loglevel],
-                            format="firstboot %(levelname)s: %(message)s")
 
-    if opts.reconfig:
-        logging.info("Starting up in reconfig mode")
-        config.mode = config.mode | MODE_RECONFIG
+if __name__ == '__main__':
+    # set up exception handling first
+    sys.excepthook = lambda ty, value, tb: exception_handler(ty, value, tb,
+                                                              config)
 
-    # First check to see if firstboot should even run.
-    if not opts.test and (os.getuid() > 0 or os.geteuid() > 0):
-        logging.error(_("You must be root to run firstboot."))
-        os._exit(0)
+    # only root can do this
+    if not os.geteuid() == 0:
+        print >> sys.stderr, 'only root can do this'
+        sys.exit(1)
 
-    # If we have a $DISPLAY set, we are either in debug mode or in reconfig
-    # mode from a terminal already running under X.  Otherwise, run in text
-    # mode if in runlevel 3, or start up our own X server.
-    if os.environ.has_key("DISPLAY") or opts.debug:
-        config.needInterface = True
-        logging.debug("X is already running, not using any frontend")
-    elif (getRunlevel() == 3 and not opts.forcegui):
-        logging.debug("Running text mode interface")
-        if os.access("/usr/bin/setup", os.X_OK):
-            os.system("/usr/bin/setup")
+    parser = optparse.OptionParser()
+    parser.add_option('-m', '--moduledir', dest='module_dir')
+    parser.add_option('-r', '--reconfig',
+                      action='store_true', default=False)
+    parser.add_option('-s', '--autoscreenshot',
+                      action='store_true', default=False)
+    parser.add_option('-t', '--test',
+                      action='store_true', default=False)
+    parser.add_option('--themedir', dest='theme_dir')
 
-        finish(opts)
-        os._exit(0)
-    elif not os.environ.has_key("DISPLAY"):
-        from firstboot.xfrontend import XFrontEnd
-        config.frontend = XFrontEnd()
-        config.needInterface = True
-        logging.debug("Using X frontend")
-    else:
-        logging.error(_("Could not start any firstboot frontend."))
-        raise RuntimeError, _("Could not start any firstboot frontend.")
+    opts, args = parser.parse_args()
 
-    # If X was already running, we don't need to make a frontend so skip this
-    # step.  This also means that frontends can't do anything besides set
-    # themselves up.
-    if config.frontend is not None:
-        logging.debug("Starting frontend")
-        config.frontend.start()
+    # XXX should we run?
+    if os.path.isfile('/etc/sysconfig/firstboot'):
+        with open('/etc/sysconfig/firstboot') as fobj:
+            for line in fobj:
+                if line.strip() == 'RUN_FIRSTBOOT=NO':
+                    os.system('systemctl stop firstboot-graphical.service > /dev/null 2>&1')
+                    os.system('systemctl stop firstboot-text.service > /dev/null 2>&1')
+                    sys.exit(0)
 
-    if config.needInterface:
-        from firstboot.interface import *
-        config.interface = Interface(autoscreenshot=opts.autoscreenshot,
-                                     testing=opts.test)
-        logging.debug("Using GTK interface")
+    if not opts.module_dir:
+        opts.module_dir = MODULE_DIR
 
-    # This must come as early as possible so we can present the UI for the
-    # widest class of problems, BUT it also has to come late enough for us
-    # to have already imported gtk.
-    meh.makeRHHandler("firstboot", "@VERSION@", config)
+    if not opts.theme_dir:
+        themes = [d for d in os.listdir(THEME_DIR) if d != 'default']
+        if themes:
+            opts.theme_dir = os.path.join(THEME_DIR, themes[0])
+        else:
+            opts.theme_dir = os.path.join(THEME_DIR, 'default')
 
-    config.moduleList = loadModules(config.moduleDir, config.mode)
-    if not config.moduleList:
-        logging.error(_("No firstboot modules were found."))
-        raise RuntimeError, _("No firstboot modules were found.")
+    # XXX set the theme dir in config
+    config.themeDir = opts.theme_dir
 
-    config.interface.moduleList = config.moduleList
+    frontend = None
+    if 'DISPLAY' not in os.environ:
+        frontend = firstboot.frontend.Frontend()
+        frontend.set_lang()
+        frontend.startx()
+        frontend.init_gtk()
+        frontend.start_wm()
+        frontend.merge_xres()
 
-    # Set up the keyboard just in case we're running as a real program.
-    kbd = Keyboard()
-    kbd.read()
-    kbd.activate()
+    # these modules import gtk, so we need to have a display first
+    import firstboot.interface
 
-    if config.interface is None:
-        logging.error(_("Could not create any firstboot interface."))
-        raise RuntimeError, _("Could not create any firstboot interface.")
+    # XXX set up the interface
+    config.frontend = frontend
+    config.interface = firstboot.interface.Interface(opts.autoscreenshot,
+                                                     opts.test)
 
-    win = config.interface.createMainWindow()
-    config.interface.createSidebar()
+    # load modules
+    loader = firstboot.loader.Loader()
+    modules = loader.load_modules(module_dir=opts.module_dir,
+                                  reconfig=opts.reconfig)
+
+    if not modules:
+        err = 'no modules found'
+        raise RuntimeError(err)
+
+    # TODO rewrite the interface
+    config.interface.moduleList = modules
+    config.interface.createMainWindow()
     config.interface.createScreens()
+    config.interface.createSidebar()
     config.interface.run()
 
-    # We arrive back here after the interface has been torn down.  Now
-    # kill whatever frontend is running.
-    if config.frontend is not None:
-        logging.debug("Stopping frontend")
-        config.frontend.stop()
+    if frontend is not None:
+        frontend.kill()
 
-    finish(opts)
+    if not opts.test:
+        with open('/etc/sysconfig/firstboot', 'w') as f:
+            f.write('RUN_FIRSTBOOT=NO\n')
 
-    # If X is still running for some reason, exiting now should take it down.
-    os._exit(0)
+        if opts.reconfig:
+            try:
+                os.unlink('/etc/reconfigSys')
+            except OSError:
+                pass

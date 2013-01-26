@@ -1,92 +1,39 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
 # Tamas Szanto <tszanto@mol.hu>, 2004.
-# Széll Tamás <tomi@digiflex.hu>, 2004.
 # Arpad Biro <biro_arpad@yahoo.com>, 2005, 2007.
-# Szentiványi Gábor <szentivanyi.gabor@ulx.hu>, 2006.
-# Gábor Szentiványi <szenti@ulx.hu>, 2006.
+# Zoltan Hoppár <hopparz@gmail.com>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-03-18 21:11+0100\n"
-"Last-Translator: Sulyok Péter <peti@sulyok.hu>\n"
-"Language-Team: Hungarian <fedora-trans-hu@redhat.com>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: zoltanh721 <hopparz@gmail.com>\n"
+"Language-Team: Hungarian <trans-hu@lists.fedoraproject.org>\n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "A firstboot csak rendszergazdaként futtatható."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "Nem sikerült elindítani a firstboot előtétjét."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "Nincsenek firstboot modulok."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "Semmilyen firstboot felületet sem sikerült teremteni."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "Hiba történt %s modulban."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"Mivel baj van %s modullal, \n"
-"firstboot nem fogja betölteni, \n"
-"hanem a maradék modulokkal próbál futni."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "Hiba történt firstbootban."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "Mivel baj van, firstboot kiszáll."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"A hibaelhárító kimenetet %s fájlba mentettük. \n"
-"Csatolja ezt a fájlt a hibabejelentéshez!\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"Kérem jelentse be a hibát a „firstboot”-ra a Red Hat \n"
-"hibakövető rendszerében itt: http://www.redhat.com/bugzilla. \n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
-msgstr "Megpróbálta vissza, de a történet üres."
+msgstr "A visszalépés nem lehetséges, mert nincs előzmény."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_Befejezés"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr ""
-"A változások érvénybe léptetéséhez most újra kell indítani a rendszert."
+"Néhány változás érvénybe léptetéséhez most újra kell indítani a rendszert."
 
 #: ../firstboot/interface.py:243
 msgid "_Back"
@@ -96,48 +43,60 @@ msgstr "_Vissza"
 msgid "_Forward"
 msgstr "_Tovább"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "%s modul használói felülete nem állt fel. Eltávolítás."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr ""
+"A(z) %s modul felhasználói felületének elindítása sikertelen, eltávolítás..."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
-msgstr "moveToPage-nek meg kell adni egy modul címét vagy egy lap számát."
+msgstr "A moveToPage-nek meg kell adni egy modul címét vagy egy lap számát."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
-msgstr "Nem sikerült képernyőkép mappát teremteni. Ugrás."
+msgstr "Nem sikerült létrehozni a képernyőkép mappáját, kihagyás."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
-msgstr "Nincs %s című modul."
+msgstr "Nincs %s nevű modul."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "A nem frissített régi %s modul átugrása."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "%s modul nem tartalmaz moduleClass; nevű osztályt. Ugrás."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "%s modul nem tartalmazza a szükséges %s jelzőt. Ugrás."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "Nem lehet betölteni %s képet %s modulnak."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
-msgstr "%s modul használói felülete nem állt fel. Eltávolítás."
+msgstr ""
+"A(z) %s modul felhasználói felületének elindítása sikertelen, eltávolítás..."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "Nagyon gyenge"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "Gyenge"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "Elég erős"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "Erős"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "Nagyon erős"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -151,14 +110,14 @@ msgid ""
 "additional software at this time."
 msgstr ""
 "Helyezze be a „Red Hat Enterprise Linux Extras” feliratú lemezt a más "
-"gyártótól származó bővítőmodulok és alkalmazások telepítéséhez. Más "
-"telepítési lemez is megadható (például a dokumentáció vagy a Red Hat által "
-"készített valamilyen más szoftver lemeze)."
+"gyártótól származó bővítőmodulok és alkalmazások telepítéséhez. Behelyezheti "
+"a dokumentáció lemezét, illetve más telepítési lemezt, melyről például a Red "
+"Hat által készített valamilyen egyéb szoftver is telepíthető most."
 
 #: ../modules/additional_cds.py:61
 msgid "Please insert any additional software install cds at this time."
 msgstr ""
-"Ha rendelkezik további szoftvertelepítési CD-vel, most helyezze be azt."
+"Ha rendelkezik további szoftver telepítési CD-jével, most helyezze be azt."
 
 #: ../modules/additional_cds.py:65
 msgid ""
@@ -184,39 +143,45 @@ msgid ""
 "click \"OK\" to continue."
 msgstr ""
 "Nem található CD-lemez a meghajtóban. Kérem helyezzen egy lemezt a "
-"meghajtóba és kattintson az „OK” gombra!"
+"meghajtóba és kattintson az „OK” gombra a folytatáshoz."
 
 #: ../modules/additional_cds.py:146
 msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr ""
-"Nincs a CD-n automatikusan elindítandó program. Továbblépéshez kattintson az "
-"„OK” gombra."
+"Nincs a CD-n automatikusan elindítandó program. A továbblépéshez kattintson "
+"az „OK” gombra."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
-msgstr "Használó teremtése"
+msgstr "Felhasználó Létrehozása"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "Teremtenie kell egy használó számlát e rendszerben."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr "Meg kell adnia és meg kell erősítenie egy jelszót e használó számára."
+msgstr ""
+"Meg kell adnia egy jelszót a felhasználó számára és ismételt begépelésével "
+"megerősítenie azt."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "A jelszavak nem egyeznek meg. Írja be a jelszót ismét!"
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
-msgstr "„%s” nevet a rendszer számára tartják fent. Adjon meg másik nevet!"
+msgstr ""
+"A(z) „%s” név a rendszer számára fenntartott. Kérem adjon meg egy másik "
+"nevet!"
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -225,73 +190,93 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"%s használó számára már van mappa. Kívánja folytatni megtéve az új "
-"használót e mappa és minden tartalma tulajdonosának?  Ha így tesz, "
+"A(z) %s felhasználó mappája már létezik. Kívánja folytatni megtéve az új "
+"felhasználót e mappa és minden tartalma tulajdonosának?  Ha így tesz, "
 "eltarthat egy ideig a jogosultságok és a SELinux címkék beállítása.  Kívánja "
 "újrahasznosítani e saját mappát?  Ha nem, kérem válasszon más nevet!"
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
 "Tulajdonságok javítása %s saját mappájára.  Ez eltarthat néhány percig."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"Baj történt %s saját mappájában néhány fájl tulajdonságait javítván.  "
-"Kérem tekintse meg %s fájlt, hogy megtudja mely fájlok okoztak hibát."
+"Problémák merültek fel néhány fájl attribútumainak javításánál a home "
+"könyvtárban %(user)s felhasználónál.  Kérem figyeljen az elérési útra "
+"%(path)s, hogy mely fájlok okozták a hibákat."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"Ajánlott legalább egy „használót” teremteni rendszeres (nem adminisztratív) "
-"használatra.  Használó teremtéséhez kérem adja meg az alább kért adatokat."
+"Ajánlott legalább egy felhasználót létrehoznia rendszeres (nem "
+"adminisztratív) használatra.  Felhasználó teremtéséhez kérem adja meg az "
+"alább kért adatokat."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "_Név:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "_Teljes név:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_Felhasználónév:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "_Jelszó:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "Jelszó _megerősítése:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "Hozzáadás az Adminisztrátor csoporthoz"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
 msgstr ""
-"Ha hálózati hitelesítést kell használni – pl. Kerberos-t vagy NIS-t – kérem "
-"kattintson a Hálózati bejelentkezés használata gombra!"
+"Ha hálózati hitelesítést szeretne használni – pl. Kerberos-t vagy NIS-t – "
+"kérem kattintson a Hálózati bejelentkezés használata gombra!"
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
-msgstr "Hálózati be_jelentkezés használata..."
+msgstr "_Hálózati bejelentkezés használata..."
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"Ha szügsége van még bővebb kontrollra a felhasználó létrehozásakor (home "
+"könyvtár meghatározása, és/vagy UID), kérem kattintson a Haladó beállítások "
+"gombra."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "H_aladó beállítások..."
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "Kérem várjon"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "Dátum és idő"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "Kérem állítsa be a dátumot és az időt!"
 
@@ -299,9 +284,9 @@ msgstr "Kérem állítsa be a dátumot és az időt!"
 msgid "License Information"
 msgstr "Engedély tájékoztató"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -313,7 +298,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Köszönjük, hogy a Qubes rendszert telepítette. A Qubes egy "
+"Köszönjük, hogy a Fedora rendszert telepítette. A Fedora egy "
 "szoftvercsomagokból álló gyűjtemény, amelyben minden csomagnak saját licence "
 "van. A teljes rendszert a GNU General Public License (GPL) 2-es verziója "
 "alapján bocsátjuk rendelkezésre. A kód használatára, másolására és "
@@ -323,11 +308,11 @@ msgstr ""
 "és kötelezettségek többek közt a terjesztés, a védjegy-jogok és az export-"
 "szabályzás licencelésére vonatkoznak.\n"
 "\n"
-"Ha szeretne többet tudni arról, mik ezek a korlátozások, akkor látogassa meg "
-"a következő weblapot: http://fedoraproject.org/wiki/Legal/Licenses/"
+"Ha szeretne többet tudni arról, melyek ezek a korlátozások, akkor látogassa "
+"meg a következő weblapot: http://fedoraproject.org/wiki/Legal/Licenses/"
 "LicenseAgreement"
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "Elfogadom, lépjünk tovább."
 
@@ -342,23 +327,47 @@ msgid ""
 "click the \"Forward\" button in the lower right corner to continue"
 msgstr ""
 "A rendszer használatba vétele előtt még néhány lépést el kell végezni. A "
-"telepítő átsegít néhány alapvető beállításon. A folytatáshoz kérem "
+"telepítő segít megtenni néhány alapvető beállítást. A folytatáshoz kérem "
 "kattintson a „Tovább” gombra a jobb alsó sarokban!"
 
-#~ msgid "Waiting for X server to start... log located in %s\n"
-#~ msgstr "X kiszolgáló indulására várok... napló %s helyen\n"
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "A firstboot csak rendszergazdaként futtatható."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "Nem találhatóak a firstboot modulok."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "Semmilyen firstboot felületet sem sikerült létrehozni."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr ""
+#~ "A(z) %s modul felhasználói felületének elindítása sikertelen, "
+#~ "eltávolítás..."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "A régi %s modul átugrása, ami nem került frissítésre."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "Erősen ajánlott egy személyes használó számla teremtése. Ha számla nélkül "
-#~ "folytatja, akkor csak a root számlára jelentkezhet be, amit csak "
-#~ "adminisztráció céljára tartanak fent."
+#~ "Hiba a %(module)s modul betöltésekor:\n"
+#~ "%(error)s "
 
-#~ msgid "_Continue"
-#~ msgstr "_Folytatás"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr ""
+#~ "A(z) %s modul nem tartalmaz moduleClass nevű osztályt, ezért kihagyásra "
+#~ "kerül."
 
-#~ msgid "Create _account"
-#~ msgstr "_Számla teremtése"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr ""
+#~ "A %(module)s modul nem tartalmazza a szükséges  %(attr)s attribútumokat; "
+#~ "így kihagyásra kerülnek."
+
+#~ msgid "Undefined"
+#~ msgstr "Meghatározatlan"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "Létre kell hoznia egy felhasználói fiókot ezen a rendszeren."

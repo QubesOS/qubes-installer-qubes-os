@@ -1,95 +1,36 @@
-# translation of firstboot.master.te.po to Telugu
-# translation of te.po to
-# translation of te.po to
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER, 2006.
 #
 # Sree Ganesh <sthottem@redhat.com>, 2006.
+# Krishnababu Krothapalli <krisnababu@gmail.com>, 2011.
 # Krishna Babu K <kkrothap@redhat.com>, 2007, 2008, 2009.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master.te\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2009-04-03 11:38+0530\n"
-"Last-Translator: Krishna Babu K <kkrothap@redhat.com>\n"
-"Language-Team: Telugu <en@li.org>\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: krishnababu <krisnababu@gmail.com>\n"
+"Language-Team: Telugu (http://www.transifex.net/projects/p/fedora/team/te/)\n"
+"Language: te\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n!=1);\n\n"
-"\n"
-"\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "ఫస్ట్‍‌బూట్‌ను నడుపుటకు నువ్వు తప్పక బుట్ చేయాలి."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr "ఏ ఫస్ట్‍‌బూట్ ఫ్రంట్ఎండ్‌ను ప్రారంభించలేము."
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "ఏ ఫస్ట్‍‌బూట్ మాడ్యూల్స్‍ కనబడలేదు."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "ఏ ఫస్ట్‍‌బూట్ అంతర్‌ఫలకం సృష్టించబడలేక పోయింది."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "ఈ %s గుణకంలో దోషం సంభవించింది"
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"ఇప్పటికీ %s గుణకంతో ఇబ్బంది ఉంది, \n"
-"ఫస్ట్‍‌బూట్ ఈ మాడ్యూల్‌ను నింపబోదు మరియు\n"
-"మిగిలిన మాడ్యూల్స్‍‌ను నడుపుటకు ప్రయత్నిస్తుంది."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "ఫస్ట్‍‌బూట్ నందు ఒక దోషము ఎదురైంది."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "అక్కడ సమస్య ఉన్నప్పటికి, ఫస్ట్‍‌బూట్ వుండబోతోంది."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"డీబగ్ అవుట్‌పుట్ యొక్క ఒక నకలు %s కు దాయబడింది\n"
-"ఆ దస్త్రాన్ని ఖచ్చితంగా బగ్ నివేదికకు అనుబందించండి.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"'ఫస్ట్‍‌బూట్‌'కు వ్యతిరేకంగా Red Hat నందు దయచేసి బగ్‌ను నమోదు చేయండి\n"
-"బగ్ పరిశీలన వ్యవస్థ http://www.redhat.com/bugzilla వద్ద.\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "వెనుకకు వెళ్ళుటకు ప్రయత్నించింది, అయితే చరిత్ర ఖాళీగావుంది."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "అయ్యింది (_F)"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr "మీయొక్క కొన్ని ఎన్నికలు ప్రభావితం అవటానికి కంప్యూటరును పునఃప్రారంభించాలి."
 
@@ -101,48 +42,58 @@ msgstr "వెనుకకు (_B)"
 msgid "_Forward"
 msgstr "ముందుకు (_F)"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "మాడ్యూల్ %s దాని UI ను అమర్చలేదు, తీసివేస్తోంది."
+msgid "Module %s raised an exception while loading: %s"
+msgstr ""
 
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "మాడ్యూల్ %s దాని UI ను అమర్చలేదు; తీసివేయుచున్నది."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
 msgid "moveToPage must be given a module title or page number."
 msgstr "moveToPage తప్పక మాడ్యూల్ శీర్షికను కాని లేదా పుట సంఖ్యను కాని ఇవ్వాలి."
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "తెరపట్టు సంచయన్ని సృష్టించలేక పోయింది; వదిలివేస్తోంది."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "శీర్షిక %s తో ఏ మాడ్యూల్ లేదు."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "నవీకరించకుండా వున్న పాత మాడ్యూల్ %s ను వదిలివేయుచున్నది."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "moduleClass నామపు తరగతిని మాడ్యూల్ %s కలిగిలేదు; వదిలివేయుచున్నది."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "మాడ్యూల్ %s కావలిసిన యాట్రిబ్యూట్ %s ను కలిగిలేదు; వదిలివేయుచున్నది."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr "పిక్స్‍‌మాప్ %s ను మాడ్యూల్ %s కొరకు నింపలేక పోయింది."
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "మాడ్యూల్ %s దాని UI ను అమర్చలేదు; తీసివేయుచున్నది."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "చాలా బలహీనం"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "బలహీనం"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "చాలా గట్టిది"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "గట్టిది"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "బాగా గట్టిది"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -184,36 +135,40 @@ msgstr "సంస్థాపన..."
 msgid ""
 "A CD-ROM has not been detected.  Please insert a CD-ROM in the drive and "
 "click \"OK\" to continue."
-msgstr "CD-ROM కనుగొనబడలేదు.  దయచేసి ఒక CD-ROMని driveలో ఉంచి కొనసాగించటానికి \"సరే\"ను నొక్కండి."
+msgstr ""
+"CD-ROM కనుగొనబడలేదు.  దయచేసి ఒక CD-ROMని driveలో ఉంచి కొనసాగించటానికి \"సరే\"ను నొక్కండి."
 
 #: ../modules/additional_cds.py:146
-msgid "The autorun program cannot be found on the CD. Click \"OK\" to continue."
+msgid ""
+"The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr "CDలో తనకుతానుగా పనిచేసే ప్రక్రమం కనుగొనబడలేదు. కొనసాగించటానికి \"సరే\"ను నొక్కండి."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "వినియోగదారుని సృష్టించు"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "ఈ సిస్టమ్ కొరకు మీరు తప్పక ఒక వినియోగదారి ఖాతాను సృష్టించాలి."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
 msgstr "ఈ వినియోగదారి కొరకు మీరు తప్పక సంకేతపదమును ప్రవేశపెట్టి మరియు నిర్ధారించాలి."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "సంకేతపదము సరిపోలలేదు.  మళ్లీ సంకేతపదము ఇవ్వండి."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr "'%s'వినియోగదారి నామము ప్రత్యేక విధానంతోకూడిన ఖాతా కలిగిఉంది.  దయచేసి వేరే వినియోగదారినామము తెల్పండి."
 
-#: ../modules/create_user.py:132
+#: ../modules/create_user.py:186
 #, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
@@ -222,56 +177,58 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"వినియోగదారి %s కొరకు ఒక నివాస సంచయం ఇప్పటికే వుంది. కొత్త వినియోగదారిని ఈ సంచయముకు "
-"మరియు దాని సారములకు యజమానిని చేయుటకు, మీరు యిష్టపడతారా?  అయితే గనుక, అనుమతులు "
-"మరియు ఏవైనా SELinux లేబుళ్ళను తిరిగిఅమర్చుటకు కొంత సమయం పట్టవచ్చును.   మీరు ఈ నివాస "
-"సంచయంను తిరిగి‌వుపయోగించుంటకు ఇష్టపడతారా?  లేదంటే, దయచేసి వేరే వినియోగదారినామమును "
-"ఎంచుకొనుము."
+"వినియోగదారి %s కొరకు ఒక నివాస సంచయం ఇప్పటికే వుంది. కొత్త వినియోగదారిని ఈ సంచయముకు మరియు దాని "
+"సారములకు యజమానిని చేయుటకు, మీరు యిష్టపడతారా?  అయితే గనుక, అనుమతులు మరియు ఏవైనా SELinux "
+"లేబుళ్ళను తిరిగిఅమర్చుటకు కొంత సమయం పట్టవచ్చును.   మీరు ఈ నివాస సంచయంను తిరిగి‌వుపయోగించుంటకు "
+"ఇష్టపడతారా?  లేదంటే, దయచేసి వేరే వినియోగదారినామమును ఎంచుకొనుము."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
-msgid "Fixing attributes on the home directory for %s.  This may take a few minutes."
+msgid ""
+"Fixing attributes on the home directory for %s.  This may take a few minutes."
 msgstr ""
-"నివాస సంచయము నందు %s కొరకు యాట్రిబ్యూట్లను పరిష్కరిస్తోంది.  దీనికి కొన్ని నిముషముల "
-"సమయం పడుతుంది."
+"నివాస సంచయము నందు %s కొరకు యాట్రిబ్యూట్లను పరిష్కరిస్తోంది.  దీనికి కొన్ని నిముషముల సమయం పడుతుంది."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
-"నివాస సంచయము నందు %s కొరకు కొన్ని దస్త్రములపై యాట్రిబ్యూట్లను పరిష్కరించుటలో "
-"సమస్యలు యెదురైనవి.  దోషములకు కారణమైన దస్త్రముల కొరకు దయచేసి %sను "
-"పరిశీలించండి."
+"%(user)s కొరకు నివాస సంచయం నందు కొన్ని ఫైళ్ళపై యాట్రిబ్యూట్లను పరిష్కరించుటలో సమస్యలు యెదురైనవి. ఏ "
+"ఫైళ్ళు దోషాలకు కారణమైనవో తెలుసుకొనుటకు దయచేసి %(path)s చూడండి."
 
-#: ../modules/create_user.py:213
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"మీ సిస్టము రోజువారి (నిర్వహణావిధులు-కాని) వినియోగము కొరకు మీరు తప్పక "
-"'వినియోగదారినామము'ను సృష్టించాలి. సిస్టము 'వినియోగదారినామము'ను "
-"సృష్టించటానికి, దయచేసి కింద అడిగిన సమాచారాన్ని సమకూర్చండి."
+"మీ సిస్టము రోజువారి (నిర్వహణావిధులు-కాని) వినియోగము కొరకు మీరు తప్పక 'వినియోగదారినామము'ను సృష్టించాలి. "
+"సిస్టము 'వినియోగదారినామము'ను సృష్టించటానికి, దయచేసి కింద అడిగిన సమాచారాన్ని సమకూర్చండి."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "వినియోగదారినామము(_U):"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "పూర్తి నామము (_e):"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "వినియోగదారినామము(_U):"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "సంకేతపదము (_P):"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "నిర్ధారిత సంకేతపదము: (_m)"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "నిర్వహకుల సమూహంకు జతచేయి"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -279,19 +236,31 @@ msgstr ""
 "Kerberos లేక NIS వంటి network ప్రామాణీకరణలను ఉపయోగించటం మీకు అవసరమైతే దయచేసి Use Network "
 "Login మీటను నొక్కండి."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "నెట్వర్కు లాగిన్ ఉపయోగించు (_L)"
 
-#: ../modules/create_user.py:308
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
+msgstr ""
+"వాడుకరిని సృష్టించునప్పుడు మీకు మరింత నియంత్రణ కావలెనంటే (నివాస సంచయం, మరియు/లేదా UID "
+"తెలుపుతూ), దయచేసి అధునాతన బటన్‌ను నొక్కండి."
+
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "అధునాతన... (_A)"
+
+#: ../modules/create_user.py:437
 msgid "Please wait"
 msgstr "దయచేసి వేచివుండండి"
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "తేది మరియు సమయం"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "దయచేసి సిస్టమ్ తేది మరియు సమయంను అమర్చుము."
 
@@ -299,9 +268,9 @@ msgstr "దయచేసి సిస్టమ్ తేది మరియు �
 msgid "License Information"
 msgstr "దృవీకరణ సమాచారం"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -313,7 +282,7 @@ msgid ""
 "If you would like to understand what those restrictions are, please visit "
 "http://fedoraproject.org/wiki/Legal/Licenses/LicenseAgreement."
 msgstr ""
-"Qubes సంస్థాపించినందుకు ధన్యవాదములు.Qubes తన స్వంత దృవీరణతో కూడిన సాఫ్టువేర్ ప్యాకేజీస్ "
+"Fedora సంస్థాపించినందుకు ధన్యవాదములు.Fedora తన స్వంత దృవీరణతో కూడిన సాఫ్టువేర్ ప్యాకేజీస్ "
 "కంపైలేషన్. ఈ కంపైలేషన్ GNU జెనరల్ పబ్లిక్ లైసెన్సు విడుదల 2 క్రింద మీకు లభిస్తుంది.దీనిని ఉపయోగించటానికి,"
 "తెచ్చుకోవటానికి మరియు మార్చుటకు ఎటువంటి నియంత్రణా లేదు.కాకపోతే  దీనిని వాస్తవంగా గాని లేక మార్చిగాని "
 "పంచుటకు కొన్ని నియమ నిబద్దతలు ఉన్నవి.ఈ నియమ నిబద్దతలు, పంచటానికి,ట్రేడ్ మార్కు హక్కు,మరియు ఎగుమతి "
@@ -322,7 +291,7 @@ msgstr ""
 "ఈ నియంత్రణలు ఏమిటో మీరు అర్ధంచేసుకోవాలి అనుకుంటే,దయచేసి దర్శించండి http://fedoraproject.org/"
 "wiki/Legal/Licenses/LicenseAgreement."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "అర్ధమైతే,దయచేసి కొనసాగించండి."
 
@@ -340,3 +309,38 @@ msgstr ""
 "ఆకృతీకరణ ద్వారా మిమ్మల్ని నిర్దేశిస్తాడు.  కొనసాగించుటకు దయచేసి క్రింది కుడిప్రక్క మూలనగల \"ముందుకు\" "
 "బటన్‌ను నొక్కండి."
 
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "ఫస్ట్‍‌బూట్‌ను నడుపుటకు నువ్వు తప్పక బుట్ చేయాలి."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "ఏ ఫస్ట్‍‌బూట్ మాడ్యూల్స్‍ కనబడలేదు."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "ఏ ఫస్ట్‍‌బూట్ అంతర్‌ఫలకం సృష్టించబడలేక పోయింది."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "మాడ్యూల్ %s దాని UI ను అమర్చలేదు, తీసివేస్తోంది."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "నవీకరించకుండా వున్న పాత మాడ్యూల్ %s ను వదిలివేయుచున్నది."
+
+#~ msgid ""
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
+#~ msgstr ""
+#~ "మాడ్యూల్ %(module)s లోడుచేయుటలో దోషం:\n"
+#~ "%(error)s"
+
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "moduleClass నామపు తరగతిని మాడ్యూల్ %s కలిగిలేదు; వదిలివేయుచున్నది."
+
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr "మాడ్యూల్ %(module)s అనునది కావలసిన యాట్రిబ్యూట్ %(attr)s; కలిగిలేదు వదిలివేయుచున్నది."
+
+#~ msgid "Undefined"
+#~ msgstr "నిర్వచించని"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "ఈ సిస్టమ్ కొరకు మీరు తప్పక ఒక వినియోగదారి ఖాతాను సృష్టించాలి."

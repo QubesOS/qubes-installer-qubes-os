@@ -3,8 +3,8 @@
 Summary: Initial system configuration utility
 Name: firstboot
 URL: http://fedoraproject.org/wiki/FirstBoot
-Version: 1.110
-Release: 1%{?dist}
+Version: 18.6
+Release: 2%{?dist}
 Epoch: 1000
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
@@ -17,16 +17,23 @@ ExclusiveOS: Linux
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: gettext
 BuildRequires: python-devel, python-setuptools-devel
-Requires: metacity, pygtk2, python
-Requires: setuptool, libuser-python, system-config-users, system-config-date
+BuildRequires: systemd-units
+Requires: pygtk2, python
+Requires: setuptool, libuser-python, system-config-date
+Requires: system-config-users >= 1.2.111-1
 Requires: authconfig-gtk, python-meh
 Requires: system-config-keyboard
 Requires: python-ethtool
-Requires(post): chkconfig
+Requires: python-pwquality
+Requires(post): systemd-units systemd-sysv chkconfig
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+Requires: firstboot(windowmanager)
+Requires: libreport-python
 
 %define debug_package %{nil}
 
-Obsoletes: firstboot-tui
+Obsoletes: firstboot-tui < 1.90-1
 
 %description
 The firstboot utility runs after installation.  It guides the user through
@@ -48,16 +55,30 @@ install -m 0755 -D firstboot-qubes-text %{buildroot}%{_sbindir}/firstboot-qubes-
 rm -rf %{buildroot}
 
 %post
-if ! [ -f /etc/sysconfig/firstboot ]; then
-  chkconfig --add firstboot
+if [ $1 -ne 2 -a ! -f /etc/sysconfig/firstboot ]; then
+  platform="$(arch)"
+  if [ "$platform" = "s390" -o "$platform" = "s390x" ]; then
+    echo "RUN_FIRSTBOOT=YES" > /etc/sysconfig/firstboot
+  else
+    %systemd_post firstboot-graphical.service
+  fi
 fi
 
 %preun
 if [ $1 = 0 ]; then
   rm -rf /usr/share/firstboot/*.pyc
   rm -rf /usr/share/firstboot/modules/*.pyc
-  chkconfig --del firstboot
 fi
+%systemd_preun firstboot-graphical.service
+
+%postun
+%systemd_postun_with_restart firstboot-graphical.service
+
+%triggerun -- firstboot < 1.117
+%{_bindir}/systemd-sysv-convert --save firstboot > /dev/null 2>&1 ||:
+/bin/systemctl enable firstboot-graphical.service > /dev/null 2>&1
+/sbin/chkconfig --del firstboot > /dev/null 2>&1 || :
+/bin/systemctl try-restart firstboot-graphical.service > /dev/null 2>&1 || :
 
 %files -f %{name}.lang
 %defattr(-,root,root,-)
@@ -65,7 +86,6 @@ fi
 %dir %{_datadir}/firstboot/modules/
 %dir %{_datadir}/firstboot/themes/
 %dir %{_datadir}/firstboot/themes/default
-%config %{_initrddir}/firstboot
 %{python_sitelib}/*
 %{_sbindir}/firstboot
 %{_sbindir}/firstboot-qubes-text
@@ -75,8 +95,158 @@ fi
 %{_datadir}/firstboot/modules/welcome.py*
 %{_datadir}/firstboot/modules/qubes_setup.py*
 %{_datadir}/firstboot/themes/default/*
+/lib/systemd/system/firstboot-graphical.service
+%ifarch s390 s390x
+%dir %{_sysconfdir}/profile.d
+%{_sysconfdir}/profile.d/firstboot.sh
+%{_sysconfdir}/profile.d/firstboot.csh
+%endif
+
 
 %changelog
+* Tue Nov 06 2012 Martin Sivak <msivak@redhat.com> 18.6-1
+- Add support for MATE's window manager (#873342) (msivak@redhat.com)
+
+* Thu Oct 18 2012 Martin Sivak <msivak@redhat.com> 18.5-1
+- Add interlingua localization (nikka@fedoraproject.org)
+
+* Wed Sep 19 2012 Martin Sivak <msivak@redhat.com> 18.4-1
+- Scriptlets replaced with new systemd macros (#850112) (vpavlin@redhat.com)
+- When creating first user in system with no root, force the user to be admin
+  (#856194) (msivak@redhat.com)
+
+* Wed Sep 12 2012 Martin Sivak <msivak@redhat.com> 18.3-1
+- patch systemd service to refer to display-manager.service
+  not prefdm.service (awilliam@redhat.com)
+- Make the created user administrator by default (#856194)
+
+* Thu Aug 23 2012 Brian C. Lane <bcl@redhat.com> 18.2-1
+- Fix traceback when /etc/sysconfig/i18n doesn't exist (#849967)
+  (vpodzime@redhat.com)
+- Don't crash firstboot with python-meh's Gtk3 UI (#849118)
+  (vpodzime@redhat.com)
+
+* Tue Jun 26 2012 Martin Gracik <mgracik@redhat.com> 18.1-1
+- Change archive type to gz (mgracik@redhat.com)
+
+* Tue Jun 26 2012 Martin Gracik <mgracik@redhat.com> 18.0-1
+- new package built with tito
+
+* Thu May 17 2012 Brian C. Lane <bcl@redhat.com> 17.3-1
+- Let WM place the window (#821077) (bcl)
+- Fix no modules error handling (mgracik)
+- Check if firstboot is run under root (#816628) (mgracik)
+
+* Fri Apr 20 2012 Martin Gracik <mgracik@redhat.com> 17.2-1
+- Get the dimensions of the actual monitor (#800662)
+- Add the admin user to dialout group (#771918)
+
+* Wed Apr 11 2012 Martin Gracik <mgracik@redhat.com> 17.1-1
+- Use -merge for xrdb (#808919)
+- Translation updates
+- Improve module loading (#797896)
+- Load the screens before making the sidebar
+- Use pwquality for password strength checking
+
+* Thu Mar 01 2012 Martin Gracik <mgracik@redhat.com> 17.0-1
+- Disable minimize and maximize buttons on s-c-u (#747829)
+- Change priority of create_user module (#750527)
+- Clear the user entry text fields (#736193)
+- firstboot-text.service no longer exists (#750195)
+- Do not run firstboot in text mode automatically (#737118)
+- Relabel reused home directory (#750090)
+- Do not catch exceptions from system-config-date (#737882)
+- Add a firstboot-text wrapper (#734306)
+- Translation updates (#734305)
+
+* Tue Jul 26 2011 Martin Gracik <mgracik@redhat.com> 16.1-2
+- Enable firstboot after install (#725566)
+
+* Mon Jul 25 2011 Martin Gracik <mgracik@redhat.com> 16.1-1
+- Don't run firstboot if it's set in /etc/sysconfig/firstboot (#723526)
+- Copy skel files even if the home directory exists (#598957)
+
+* Tue Jul 19 2011 Martin Gracik <mgracik@redhat.com> 16.0-1
+- Honor the tty set by console kernel argument (#701648)
+- Translation updates
+
+* Tue Jul 19 2011 Martin Gracik <mgracik@redhat.com> 1.118-1
+- Get UID_MIN from /etc/login.defs (#717113)
+- Drop SysV support (Jóhann B. Guðmundsson) (#714668)
+- Fix firstboot-text.service (#696320)
+- Fix firstboot for s390 architecture (#463564)
+- Set the theme directory
+- Changes to systemd service files
+- Save exception to a file
+- Remove init file from the spec
+- New systemd service files
+- Remove old init from setup
+- Remove the old init
+- Use the new loader in moduleset
+- Rewritten the firstboot executable
+- Added reconfig property to module and moduleset
+- Added new constants
+- Rewritten frontend
+- Rewritten loader
+- Update systemd config to prevent tty conflict (#681292)
+- Fix username guessing
+- We need to quit plymouth before running firstboot (#679171)
+
+* Fri Feb 18 2011 Martin Gracik <mgracik@redhat.com> 1.117-1
+- Fix username guessing with unicode chars (#678070)
+
+* Tue Feb 15 2011 Martin Gracik <mgracik@redhat.com> 1.116-1
+- systemd's ValidNoProcess renamed to RemainAfterExit
+- Don't run Xorg with -nr option and use vt1
+- Translation updates
+
+* Fri Jan 14 2011 Martin Gracik <mgracik@redhat.com> 1.115-1
+- Don't enable firstboot service on upgrade (#626676)
+- Set HOME to /root rather than / (#578903)
+- Translation updates
+
+* Mon Dec 20 2010 Martin Gracik <mgracik@redhat.com> 1.114-1
+- Support other window managers than metacity (#605675)
+- firstboot -> metacity dep (#605675) (rdieter)
+- Change how we check for user account
+- Use StrengthMeter widget instead of ProgressBar
+- Add StrengthMeter widget to pwcheck
+- Increase the weight of cracklib password check
+- Show the password strength in a progress bar
+- Add strength fraction property to pwcheck
+- Translation updates
+- Change the way we warn for a weak password
+- Add the pwcheck module for getting the password strength
+- Do not show tabs in date and time module
+- Allow the user to be added to wheel group (#462161)
+- Guess user name from full name (#517269)
+
+* Thu Aug 26 2010 Martin Gracik <mgracik@redhat.com> 1.113-1
+- Updated the .pot file
+- Changed string formatting for translations (#618610)
+- Syntax changed in new systemd
+- Make sure we start before tty1 in text mode
+- Don't use the legacy sysv services anymore
+- Translation updates
+
+* Tue Aug 10 2010 Martin Gracik <mgracik@redhat.com> 1.112-1
+- Add systemd support (adamw)
+- Translation updates
+
+* Thu Jul 15 2010 Martin Gracik <mgracik@redhat.com> 1.111-1
+- Fixed indenting
+- Set the LANG variable if running our own X frontend (#599296)
+- Added the spec file obsoletes version number
+- Add requirement for cracklib-python
+- Allow more control when creating new user (#602030)
+- Fix functioning of module sets (#595320)
+- Don't try to use the X frontend when run in console (#537717)
+- Update to work with new python-meh with report support (#562659)
+- Add weak password checking (#612362)
+- Source the lang.sh file instead of just i18n (#563547)
+- Run Xorg with -nr option, so we have less flicker (ajax)
+- Many translation updates
+
 * Wed Oct 14 2009 Chris Lumens <clumens@redhat.com> 1.110-1
 - Always attempt to display the Fedora logo, if present (jmccann).
 - Fix a bunch of small firstboot UI problems (jmccann).

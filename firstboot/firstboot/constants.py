@@ -25,3 +25,23 @@ RESULT_SUCCESS = 1
 RESULT_JUMP = 2
 
 BASEDIR = "/usr/share/firstboot/"
+
+
+# new constants
+MODULE_DIR = '/usr/share/firstboot/modules'
+THEME_DIR = '/usr/share/firstboot/themes'
+
+I18N = '/etc/sysconfig/i18n'
+DISPLAY = ':9'
+VT = 'vt1'
+
+WMS = ('metacity',
+       'kwin',
+       'xfwm4',
+       'openbox',
+       'marco')
+
+XRES = '/etc/X11/Xresources'
+
+MODCLASS = 'moduleClass'
+

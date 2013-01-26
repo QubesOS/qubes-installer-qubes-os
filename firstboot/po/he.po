@@ -1,92 +1,35 @@
-# translation of firstboot.master.po to Hebrew
-# Hebrew translations for PACKAGE package.
-# Copyright (C) 2004 THE PACKAGE'S COPYRIGHT HOLDER
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
-# Automatically generated, 2004.
 # Richard Frontaine <richardfrontaine@gmail.com>, 2007.
+# Elad Alfassa <el.il@doom.co.il>, 2011.
+# Dimitris Glezos <glezos@indifex.com>, 2011.
 msgid ""
 msgstr ""
-"Project-Id-Version: firstboot.master\n"
+"Project-Id-Version: Firstboot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-03-12 16:50-0400\n"
-"PO-Revision-Date: 2008-10-18 22:53GMT\n"
-"Last-Translator: Oron Peled <oron@actcom.co.il>\n"
-"Language-Team: Hebrew\n"
+"POT-Creation-Date: 2012-03-23 12:56+0100\n"
+"PO-Revision-Date: 2011-03-22 15:08+0000\n"
+"Last-Translator: elad <el.il@doom.co.il>\n"
+"Language-Team: Hebrew <he-users@lists.fedoraproject.org>\n"
+"Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../progs/firstboot:140
-msgid "You must be root to run firstboot."
-msgstr "חובה להיות root בכדי להריץ את תכנת ההפעלה הראשונה."
-
-#: ../progs/firstboot:163 ../progs/firstboot:164
-msgid "Could not start any firstboot frontend."
-msgstr ""
-
-#: ../progs/firstboot:180 ../progs/firstboot:181
-msgid "No firstboot modules were found."
-msgstr "לא נמצאו מודולי הפעלה ראשונה."
-
-#: ../progs/firstboot:190 ../progs/firstboot:191
-msgid "Could not create any firstboot interface."
-msgstr "כישלון ביצירת מנשק לתכנת ההפעלה הראשונה."
-
-#: ../firstboot/exceptionWindow.py:50
-#, python-format
-msgid "An error has occurred in the %s module."
-msgstr "שגיאה התרחשה במודול %s."
-
-#: ../firstboot/exceptionWindow.py:51
-#, python-format
-msgid ""
-"Since there is a problem with the %s module,\n"
-"firstboot will not load this module and will\n"
-"attempt to run the remaining modules."
-msgstr ""
-"מכיוון שיש בעיה עם מודול %s,‏\n"
-"תכנת ההפעלה הראשונה לא תטען את המודול הזה\n"
-"ותנסה להריץ את המודולים הנותרים."
-
-#: ../firstboot/exceptionWindow.py:55
-msgid "An error has occurred in firstboot."
-msgstr "שגיאה קרתה בתכנת ההפעלה הראשונה."
-
-#: ../firstboot/exceptionWindow.py:56
-msgid "Since there is a problem, firstboot will exit."
-msgstr "תכנת ההפעלה הראשונה תסתיים עקב בעיה."
-
-#: ../firstboot/exceptionWindow.py:66
-#, python-format
-msgid ""
-"A copy of the debug output has been saved to %s\n"
-"Be sure to attach that file to the bug report.\n"
-msgstr ""
-"עותק של פלט לניפוי שגיאות נשמר בקובץ ‎%s‏‏\n"
-"יש לצרף קובץ זה לדיווח השגיאה.\n"
-
-#: ../firstboot/exceptionWindow.py:71
-msgid ""
-"Please file a bug against 'firstboot' in the Red Hat\n"
-"bug tracking system at http://www.redhat.com/bugzilla.\n"
-msgstr ""
-"נא לתייק דיווח שגיאה כנגד 'firstboot' במערכת \n"
-"דיווחי שגיאה של Red Hat ב-‎http://www.redhat.com/bugzilla.‏\n"
-
-#: ../firstboot/interface.py:75
+#: ../firstboot/interface.py:79
 msgid "Attempted to go back, but history is empty."
 msgstr "לא ניתן לחזור אחורה, אין היסטוריה."
 
 #. If we were previously on the last page, we need to set the Next
 #. button's label back to normal.
-#: ../firstboot/interface.py:83 ../firstboot/interface.py:162
+#: ../firstboot/interface.py:87 ../firstboot/interface.py:163
 msgid "_Finish"
 msgstr "_סיום"
 
-#: ../firstboot/interface.py:183
+#: ../firstboot/interface.py:184
 msgid "The system must now reboot for some of your selections to take effect."
 msgstr "המערכת צריכה לבצע הפעלה מחדש בכדי שחלק מהשינויים שנבחרו יהיו בתוקף."
 
@@ -98,48 +41,58 @@ msgstr "_הקודם"
 msgid "_Forward"
 msgstr "_הבא"
 
-#: ../firstboot/interface.py:277
+#: ../firstboot/interface.py:278
 #, python-format
-msgid "Module %s did not set up its UI, removing."
-msgstr "המודול %s לא אתחל את מנשק המשתמש שלו, מסיר אותו."
-
-#: ../firstboot/interface.py:353 ../firstboot/interface.py:354
-msgid "moveToPage must be given a module title or page number."
+msgid "Module %s raised an exception while loading: %s"
 msgstr ""
 
-#: ../firstboot/interface.py:438
+#: ../firstboot/interface.py:282
+#, fuzzy, python-format
+msgid "Module %s did not set up its UI properly."
+msgstr "המודול %s לא אתחל את מנשק המשתמש שלו; מסיר אותו."
+
+#: ../firstboot/interface.py:288
+#, python-format
+msgid "Module %s raised an exception while rendering: %s"
+msgstr ""
+
+#: ../firstboot/interface.py:357 ../firstboot/interface.py:358
+msgid "moveToPage must be given a module title or page number."
+msgstr "moveToPage must be given a module title or page number."
+
+#: ../firstboot/interface.py:442
 msgid "Unable to create the screenshot dir; skipping."
 msgstr "יצירת תיקיית צילומי מסך נכשלה, מדלג."
 
-#: ../firstboot/interface.py:478 ../firstboot/interface.py:479
+#: ../firstboot/interface.py:482 ../firstboot/interface.py:483
 #, python-format
 msgid "No module exists with the title %s."
 msgstr "לא נמצא מודול עם הכותרת %s."
 
-#: ../firstboot/loader.py:90
-#, python-format
-msgid "Skipping old module %s that has not been updated."
-msgstr "מדלג על מודול מיושן %s שלא עודכן."
-
-#: ../firstboot/loader.py:102
-#, python-format
-msgid "Module %s does not contain a class named moduleClass; skipping."
-msgstr "במודול %s אין מחלקה בשם moduleClass; מדלג."
-
-#: ../firstboot/loader.py:113
-#, python-format
-msgid "Module %s does not contain the required attribute %s; skipping."
-msgstr "במודול %s חסרה התכונה הנדרשת %s; מדלג."
-
-#: ../firstboot/module.py:187
-#, python-format
-msgid "Unable to load pixmap %s for module %s."
-msgstr ""
-
-#: ../firstboot/moduleset.py:93
+#: ../firstboot/moduleset.py:92
 #, python-format
 msgid "Module %s did not set up its UI; removing."
 msgstr "המודול %s לא אתחל את מנשק המשתמש שלו; מסיר אותו."
+
+#: ../firstboot/pwcheck.py:46
+msgid "Very weak"
+msgstr "מאוד חלש"
+
+#: ../firstboot/pwcheck.py:47
+msgid "Weak"
+msgstr "חלש"
+
+#: ../firstboot/pwcheck.py:48
+msgid "Fairly strong"
+msgstr "די חזק"
+
+#: ../firstboot/pwcheck.py:49
+msgid "Strong"
+msgstr "חזק"
+
+#: ../firstboot/pwcheck.py:50
+msgid "Very strong"
+msgstr "חזק מאוד"
 
 #: ../modules/additional_cds.py:43 ../modules/additional_cds.py:44
 msgid "Additional CDs"
@@ -188,32 +141,33 @@ msgid ""
 "The autorun program cannot be found on the CD. Click \"OK\" to continue."
 msgstr "תכנית ההרצה האוטומטית לא נמצאה על התקליטור. יש ללחוץ \"אישור\" להמשך."
 
-#: ../modules/create_user.py:41 ../modules/create_user.py:42
+#: ../modules/create_user.py:49 ../modules/create_user.py:50
 msgid "Create User"
 msgstr "יצירת משתמש"
 
-#: ../modules/create_user.py:83
-msgid "You must create a user account for this system."
-msgstr "חובה ליצור חשבון משתמש עבור מערכת זו."
+#: ../modules/create_user.py:102
+msgid ""
+"You did not set up an user account capable of logging into the system.\n"
+"Are you sure you want to continue?"
+msgstr ""
 
-#: ../modules/create_user.py:94
-#, fuzzy
+#: ../modules/create_user.py:123
 msgid "You must enter and confirm a password for this user."
-msgstr "חובה ליצור חשבון משתמש עבור מערכת זו."
+msgstr "אתה חייב להקליד ולאשר סיסמה למשתמש זה."
 
-#: ../modules/create_user.py:101
+#: ../modules/create_user.py:130
 msgid "The passwords do not match.  Please enter the password again."
 msgstr "הססמאות אינן תואמות. יש להקליד את הססמה מחדש."
 
-#: ../modules/create_user.py:113
+#: ../modules/create_user.py:167
 #, python-format
 msgid ""
 "The username '%s' is a reserved system account.  Please specify another "
 "username."
 msgstr "שם המשתמש '%s' שמור לחשבון מערכת. יש לבחור שם שונה."
 
-#: ../modules/create_user.py:132
-#, fuzzy, python-format
+#: ../modules/create_user.py:186
+#, python-format
 msgid ""
 "A home directory for user %s already exists. Would you like to continue, "
 "making the new user the owner of this directory and all its contents?  Doing "
@@ -221,49 +175,57 @@ msgid ""
 "like to reuse this home directory?  If not, please choose a different "
 "username."
 msgstr ""
-"למשתמש %s יש כבר תיקיית בית. האם ברצונך להשתמש בה עבור המשתמש החדש? אם לא, "
-"יש לבחור שם משתמש שונה."
+"תקיית בית עבור המשתמש %s כבר קיימת. האם אתה רוצה להמשיך, ולהפוך את המשתמש "
+"החדש לבעלים של תקייה זו וכל התוכן שלה? הפיכת המשתמש החדש לבעלים של תקיה זו "
+"עלולה לקחת זמן, מכיוון שיהיה צורך לאפס את ההרשאות ואת התוויות של SELinux. "
+"האם אתה רוצה להשתמש מחדש בתקיית הבית הזו? אם לא, אנא בחר שם משתמש שונה."
 
-#: ../modules/create_user.py:175
+#: ../modules/create_user.py:229
 #, python-format
 msgid ""
 "Fixing attributes on the home directory for %s.  This may take a few minutes."
-msgstr ""
+msgstr "מתקן תכונות לתקיית הבית של %s. זה עלול לקחת מספר דקות."
 
-#: ../modules/create_user.py:195
+#: ../modules/create_user.py:267
 #, python-format
 msgid ""
 "Problems were encountered fixing the attributes on some files in the home "
-"directory for %s.  Please refer to %s for which files caused the errors."
+"directory for %(user)s.  Please refer to %(path)s for which files caused the "
+"errors."
 msgstr ""
+"היו בעיות בתיקון התכונות של מספר קבצים בתקיית הבית של ‎%(user)s. אנא פנה לנתיב"
+" ‎%(path)s כדי לגלות איזה קבצים גרמו לבעיות."
 
-#: ../modules/create_user.py:213
-#, fuzzy
+#: ../modules/create_user.py:293
 msgid ""
 "You must create a 'username' for regular (non-administrative) use of your "
 "system.  To create a system 'username', please provide the information "
 "requested below."
 msgstr ""
-"מומלץ ליצור חשבון משתמש לעבודה רגילה (להבדיל מניהול המערכת). ליצירת חשבון "
-"משתמש כזה, נא לספק את המידע הנדרש להלן."
+"אתה חייב ליצור משתמש לשימוש רגיל (לא למטרות ניהול) במערכת. כדי ליצור משתמש, "
+"אנא ספק את המידע המבוקש למטה."
 
-#: ../modules/create_user.py:231
-msgid "_Username:"
-msgstr "_שם משתמש:"
-
-#: ../modules/create_user.py:238
+#: ../modules/create_user.py:332
 msgid "Full Nam_e:"
 msgstr "שם _מלא:"
 
-#: ../modules/create_user.py:245
+#: ../modules/create_user.py:339
+msgid "_Username:"
+msgstr "_שם משתמש:"
+
+#: ../modules/create_user.py:346
 msgid "_Password:"
 msgstr "_ססמה:"
 
-#: ../modules/create_user.py:252
+#: ../modules/create_user.py:353
 msgid "Confir_m Password:"
 msgstr "_אישור ססמה:"
 
-#: ../modules/create_user.py:261
+#: ../modules/create_user.py:363
+msgid "Add to Administrators group"
+msgstr "הוספה לקבוצת המנהלים"
+
+#: ../modules/create_user.py:369
 msgid ""
 "If you need to use network authentication, such as Kerberos or NIS, please "
 "click the Use Network Login button."
@@ -271,19 +233,31 @@ msgstr ""
 "אם ברצונך להשתמש בשרותי רשת לאימות הכניסה למערכת כגון Kerberos או NIS, יש "
 "ללחוץ על  כפתור \"שירותי רשת לאימות כניסה\"."
 
-#: ../modules/create_user.py:270
+#: ../modules/create_user.py:378
 msgid "Use Network _Login..."
 msgstr "שרותי רשת לאימות _כניסה למערכת (login)..."
 
-#: ../modules/create_user.py:308
-msgid "Please wait"
+#: ../modules/create_user.py:386
+msgid ""
+"If you need more control when creating the user (specifying home directory, "
+"and/or UID), please click the Advanced button."
 msgstr ""
+"אם אתה צריך שליטה ברמה גבוהה יותר ביצירת המשתמש (לדוגמה לציין תיקיית בית ו"
+"\\או UID), לחץ על הכפתור \"מתקדם\"."
 
-#: ../modules/date.py:40 ../modules/date.py:41
+#: ../modules/create_user.py:396
+msgid "_Advanced..."
+msgstr "_מתקדם..."
+
+#: ../modules/create_user.py:437
+msgid "Please wait"
+msgstr "אנא המתן"
+
+#: ../modules/date.py:39 ../modules/date.py:40
 msgid "Date and Time"
 msgstr "תאריך ושעה"
 
-#: ../modules/date.py:62
+#: ../modules/date.py:58
 msgid "Please set the date and time for the system."
 msgstr "יש להגדיר את התאריך והשעה עבור המערכת."
 
@@ -291,9 +265,9 @@ msgstr "יש להגדיר את התאריך והשעה עבור המערכת."
 msgid "License Information"
 msgstr "מידע אודות רישוי"
 
-#: ../modules/eula.py:53
+#: ../modules/eula.py:45
 msgid ""
-"Thank you for installing Qubes.  Qubes is a compilation of software "
+"Thank you for installing Fedora.  Fedora is a compilation of software "
 "packages, each under its own license.  The compilation is made available "
 "under the GNU General Public License version 2.  There are no restrictions "
 "on using, copying, or modifying this code.  However, there are restrictions "
@@ -313,7 +287,7 @@ msgstr ""
 "האלו במלואן, אנא בקר באתר: http://fedoraproject.org/wiki/Legal/Licenses/"
 "LicenseAgreement ."
 
-#: ../modules/eula.py:64
+#: ../modules/eula.py:60
 msgid "Understood, please proceed."
 msgstr "מובן, אנא המשך."
 
@@ -331,19 +305,38 @@ msgstr ""
 "ההתקנה תוביל אותך עכשיו דרך כמה שלבים של הגדרות בסיסית. יש ללחוץ על כפתור "
 "\"הבא\" בפינה הימנית תחתונה בכדי להמשיך"
 
-#~ msgid "Waiting for X server to start... log located in %s\n"
-#~ msgstr "ממתין להפעלת שרת X... ניתן למצוא ב-%s את קובץ היומן שלו\n"
+#~ msgid "You must be root to run firstboot."
+#~ msgstr "חובה להיות root בכדי להריץ את תכנת ההפעלה הראשונה."
+
+#~ msgid "No firstboot modules were found."
+#~ msgstr "לא נמצאו מודולי הפעלה ראשונה."
+
+#~ msgid "Could not create any firstboot interface."
+#~ msgstr "כישלון ביצירת מנשק לתכנת ההפעלה הראשונה."
+
+#~ msgid "Module %s did not set up its UI, removing."
+#~ msgstr "המודול %s לא אתחל את מנשק המשתמש שלו, מסיר אותו."
+
+#~ msgid "Skipping old module %s that has not been updated."
+#~ msgstr "מדלג על מודול מיושן %s שלא עודכן."
 
 #~ msgid ""
-#~ "It is highly recommended that a personal user account be created.  If you "
-#~ "continue without an account, you can only log in with the root account, "
-#~ "which is reserved for administrative use only."
+#~ "Error loading module %(module)s:\n"
+#~ "%(error)s"
 #~ msgstr ""
-#~ "מומלץ מאוד ליצור חשבון משתמש אישי. אי יצירת חשבון כזה תגרום לכך שיהיה "
-#~ "ניתן להכנס למערכת רק לחשבון root אשר מיועד לניהול המערכת בלבד."
+#~ "שגיאה בטעינת המודול ‎%(module)s:\n"
+#~ "%(error)s"
 
-#~ msgid "_Continue"
-#~ msgstr "_המשך"
+#~ msgid "Module %s does not contain a class named moduleClass; skipping."
+#~ msgstr "במודול %s אין מחלקה בשם moduleClass; מדלג."
 
-#~ msgid "Create _account"
-#~ msgstr "יצירת חשבון _משתמש"
+#~ msgid ""
+#~ "Module %(module)s does not contain the required attribute %(attr)s; "
+#~ "skipping."
+#~ msgstr "במודול ‎%(module)s חסרה התכונה הנדרשת ‎%(attr)s; מדלג."
+
+#~ msgid "Undefined"
+#~ msgstr "לא מוגדר"
+
+#~ msgid "You must create a user account for this system."
+#~ msgstr "חובה ליצור חשבון משתמש עבור מערכת זו."
