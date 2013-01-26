@@ -67,9 +67,9 @@ def doConfiguration(storage, payload, ksdata, instClass):
         ksdata.firewall.execute(storage, ksdata, instClass)
         ksdata.xconfig.execute(storage, ksdata, instClass)
 
-    if not flags.flags.imageInstall:
-        with progress_report(_("Writing network configuration")):
-            ksdata.network.execute(storage, ksdata, instClass)
+    #if not flags.flags.imageInstall:
+    #    with progress_report(_("Writing network configuration")):
+    #        ksdata.network.execute(storage, ksdata, instClass)
 
     # Creating users and groups requires some pre-configuration.
     with progress_report(_("Creating users")):

@@ -27,6 +27,7 @@ systemctl disable systemd-readahead-collect.service \
                   systemd-readahead-replay.service \
                   mdmonitor.service \
                   mdmonitor-takeover.service \
+                  NetworkManager.service \
                   lvm2-monitor.service
 ## These services can't be disabled normally (they're linked into place in
 ## /usr/lib/systemd rather than /etc/systemd), so we have to mask them.
