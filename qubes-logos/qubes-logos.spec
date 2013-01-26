@@ -37,7 +37,9 @@ rm -rf $RPM_BUILD_ROOT
 
 # should be ifarch i386
 mkdir -p $RPM_BUILD_ROOT/boot/grub
+mkdir -p $RPM_BUILD_ROOT/boot/grub2/themes/system
 install -p -m 644 bootloader/splash.xpm.gz $RPM_BUILD_ROOT/boot/grub/splash.xpm.gz
+install -p -m 644 bootloader/fireworks.png $RPM_BUILD_ROOT/boot/grub2/themes/system/fireworks.png
 # end i386 bits
 
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/firstboot/themes/qubes
@@ -87,6 +89,7 @@ cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymout
 %{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png
 # should be ifarch i386
 /boot/grub/splash.xpm.gz
+/boot/grub2/themes/system/fireworks.png
 # end i386 bits
 
 %changelog
