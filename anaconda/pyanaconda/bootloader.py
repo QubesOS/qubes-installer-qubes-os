@@ -1498,9 +1498,11 @@ class GRUB2(GRUB):
         except (BootLoaderError, OSError, RuntimeError) as e:
             log.error("bootloader password setup failed: %s" % e)
 
+        # disable non-xen entries
+        os.chmod("%s/etc/grub.d/10_linux" % ROOT_PATH, 0644)
+
         # make sure the default entry is the OS we are installing
-        entry_title = "%s Linux, with Linux %s" % (productName,
-                                                   self.default.version)
+        entry_title = "%s, with Xen hypervisor" % (productName)
         rc = iutil.execWithRedirect("grub2-set-default",
                                     [entry_title],
                                     root=ROOT_PATH,
