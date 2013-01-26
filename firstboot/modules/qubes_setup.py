@@ -193,7 +193,7 @@ class moduleClass(Module):
         self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'dom0'])
 
     def do_start_networking(self):
-        subprocess.check_call(['/etc/init.d/qubes_netvm', 'start'])
+        subprocess.check_call(['/usr/sbin/service', 'qubes_netvm', 'start'])
 
     def do_configure_template(self):
         subprocess.check_call(['/bin/mkdir', '-p', '/mnt/template-root'])
