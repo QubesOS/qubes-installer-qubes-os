@@ -72,13 +72,8 @@ cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
 EOF
 
 %post
-# On Mar 31, 2012, the Qubes signing key has changed
-# The new key is brought by this RPM, but we also
-# need to explicitly import it to RPM DB
-# Also need to import other keys - especially release 2 (for upgrade purpose)
-if [ $1 -gt 1 ]; then
-    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-* || true
-fi
+# Import all keys b/c rpm won't do it automatically (as opposite to yum)
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-* || true
 
 
 %clean
