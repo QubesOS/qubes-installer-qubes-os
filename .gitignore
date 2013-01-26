@@ -3,3 +3,4 @@ src/*.pyc
 src/modules/*.pyc
 installer
 *~
+build/

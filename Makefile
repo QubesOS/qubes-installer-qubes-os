@@ -39,8 +39,12 @@ LORAXQBS_VERSION := $(call spec_version,lorax-templates-qubes/lorax-templates-qu
 
 PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
-    PUNGI_OPTS += --isfinal --ver="$(QUBES_RELEASE)"
+    ISO_VERSION := $(QUBES_RELEASE)
+    PUNGI_OPTS += --isfinal
+else
+    ISO_VERSION := $(shell date +%Y%m%d)
 endif
+PUNGI_OPTS += --ver="$(ISO_VERSION)"
 
 help:
 	@echo "make rpms             <--- make all rpms and sign them";\
@@ -118,9 +122,16 @@ update-repo-unstable:
 	ln -f $(RPMS) ../yum/current-release/unstable/dom0/rpm/
 
 iso:
-	# TODO? cp rpm_verify /usr/local/bin/
+	ln -sf `pwd` /tmp/qubes-installer
 	pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg
-	# TODO rpm_verify build/work/revisor-install/*/qubes-x86_64/x86_64/os/Packages/*.rpm
+	./rpm_verify $(ISO_VERSION)/x86_64/os/Packages/*/*.rpm
+	# Currently netinstall not supported
+	rm $(ISO_VERSION)/x86_64/iso/*-netinst.iso
+	# Move result files to known-named directories
+	mkdir -p build/ISO/qubes-x86_64/iso build/work
+	mv $(ISO_VERSION)/x86_64/iso/*-DVD.iso build/ISO/qubes-x86_64/iso/
+	rm -rf build/work/$(ISO_VERSION)
+	mv $(ISO_VERSION)/x86_64/os build/work/$(ISO_VERSION)
 
 clean-repos:
 	@echo "--> Removing old rpms from the installer repos..."
