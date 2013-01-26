@@ -32,4 +32,12 @@ kde-filesystem-4.4.5
 bzip2-devel
 libXt-devel
 libXxf86misc-devel
-
+gtk3-devel
+gtk-doc
+gobject-introspection-devel
+glade-devel
+pygobject3
+libgnomekbd-devel
+python-pyblock
+python-nose
+transifex-client
