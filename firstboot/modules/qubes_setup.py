@@ -175,18 +175,18 @@ class moduleClass(Module):
         return  net_devices
 
     def do_create_netvm(self):
-        self.run_command(['/usr/bin/qvm-create', '--force-root', '--net', '--label', 'red', self.netvm_name])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create --net --label red %s' % self.netvm_name, self.qubes_user])
         for dev in self.find_net_devices():
             self.run_command(['/usr/bin/qvm-pci', '-a', self.netvm_name, dev])
 
     def do_create_fwvm(self):
-        self.run_command(['/usr/bin/qvm-create', '--force-root', '--proxy', '--label', 'green', self.fwvm_name])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create --proxy --label green %s' % self.fwvm_name, '-', self.qubes_user])
 
     def do_create_dvm(self):
-        self.run_command(['/usr/bin/qvm-create-default-dvm', '--default-template', '--default-script'])
+        self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
 
     def do_set_netvm_networking(self):
-        self.run_command(['/usr/bin/qvm-prefs', '--set', self.fwvm_name, 'netvm', self.netvm_name])
+        self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', self.fwvm_name, 'netvm', self.netvm_name])
         self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', self.fwvm_name])
 
     def do_set_dom0_networking(self):
