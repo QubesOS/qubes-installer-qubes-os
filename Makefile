@@ -104,7 +104,8 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/lorax-templates-qubes-$(LORAXQBS_VERSION)-*.rpm \
-	rpm/x86_64/anaconda-$(ANACONDA_VERSION)-*.rpm \
+	rpm/noarch/anaconda*-$(ANACONDA_VERSION)-*.rpm \
+	rpm/x86_64/anaconda*-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm
 
 update-repo:
