@@ -36,6 +36,8 @@ FIRSTBOOT_VERSION := $(call spec_version,firstboot/firstboot.spec)
 QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
 LORAXQBS_VERSION := $(call spec_version,lorax-templates-qubes/lorax-templates-qubes.spec)
+PUNGI_VERSION := $(call spec_version,pungi/pungi.spec)
+PYKICKSTART_VERSION := $(call spec_version,pykickstart/pykickstart.spec)
 
 PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
@@ -61,9 +63,10 @@ help:
 	    exit 0;
 
 .PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax \
+	rpms_pungi rpms_pykickstart \
 	update-repo update-repo-testing clean iso
 
-rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax
+rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax rpms_pungi rpms_pykickstart
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
 rpms-dom0: rpms
@@ -91,6 +94,12 @@ rpms_anaconda: rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2
 rpms_lorax: rpm/SOURCES/lorax-templates-qubes-$(LORAXQBS_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb lorax-templates-qubes/lorax-templates-qubes.spec
 
+rpms_pungi: pungi/pungi-$(PUNGI_VERSION).tar.bz2 pungi/pungi.spec
+	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/pungi" -bb pungi/pungi.spec
+
+rpms_pykickstart: pykickstart/pykickstart-$(PYKICKSTART_VERSION).tar.gz pykickstart/pykickstart.spec
+	rpmbuild --define "_rpmdir rpm/" --define "_sourcedir $(TOP)/pykickstart" -bb pykickstart/pykickstart.spec
+
 rpms_firstboot: rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb firstboot/firstboot.spec
 
@@ -104,6 +113,8 @@ RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/lorax-templates-qubes-$(LORAXQBS_VERSION)-*.rpm \
+	rpm/noarch/pungi-$(PUNGI_VERSION)-*.rpm \
+	rpm/noarch/pykickstart-$(PYKICKSTART_VERSION)-*.rpm \
 	rpm/noarch/anaconda*-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/anaconda*-$(ANACONDA_VERSION)-*.rpm \
 	rpm/x86_64/firstboot-$(FIRSTBOOT_VERSION)-*.rpm

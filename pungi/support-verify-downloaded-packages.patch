@@ -1,0 +1,58 @@
+Handle "repo --gpgkey" in kickstart to verify downloaded packages
+
+Especially important for lorax - they will not verified in any way without
+setting yum options here.
+
+Signed-off-by: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Index: pungi-2.13/src/pypungi/__init__.py
+===================================================================
+--- pungi-2.13.orig/src/pypungi/__init__.py
++++ pungi-2.13/src/pypungi/__init__.py
+@@ -145,7 +145,7 @@ class Pungi(pypungi.PungiBase):
+ 
+     def _add_yum_repo(self, name, url, mirrorlist=False, groups=True,
+                       cost=1000, includepkgs=[], excludepkgs=[],
+-                      proxy=None):
++                      proxy=None, gpgkey=None):
+         """This function adds a repo to the yum object.
+ 
+         name: Name of the repo
+@@ -189,6 +189,10 @@ class Pungi(pypungi.PungiBase):
+         thisrepo.exclude = excludepkgs
+         thisrepo.includepkgs = includepkgs
+         thisrepo.cost = cost
++        if gpgkey:
++            thisrepo.gpgcheck = True
++            thisrepo.gpgkey = yum.parser.varReplace(gpgkey,
++                                                    self.ayum.conf.yumvar)
+         # Yum doesn't like proxy being None
+         if proxy:
+             thisrepo.proxy = proxy
+@@ -219,6 +223,7 @@ class Pungi(pypungi.PungiBase):
+         yumconf.installroot = os.path.join(self.workdir, 'yumroot')
+         yumconf.uid = os.geteuid()
+         yumconf.cache = 0
++        yumconf.assumeyes = True
+         yumconf.failovermethod = 'priority'
+         yumvars = yum.config._getEnvVar()
+         yumvars['releasever'] = self.config.get('pungi', 'version')
+@@ -277,7 +282,8 @@ class Pungi(pypungi.PungiBase):
+                                    cost=repo.cost,
+                                    includepkgs=repo.includepkgs,
+                                    excludepkgs=repo.excludepkgs,
+-                                   proxy=repo.proxy)
++                                   proxy=repo.proxy,
++                                   gpgkey=repo.gpgkey)
+             else:
+                 self._add_yum_repo(repo.name, repo.baseurl,
+                                    mirrorlist=False,
+@@ -285,7 +291,8 @@ class Pungi(pypungi.PungiBase):
+                                    cost=repo.cost,
+                                    includepkgs=repo.includepkgs,
+                                    excludepkgs=repo.excludepkgs,
+-                                   proxy=repo.proxy)
++                                   proxy=repo.proxy,
++                                   gpgkey=repo.gpgkey)
+         
+         self.logger.info('Getting sacks for arches %s' % arches)
+         self.ayum._getSacks(archlist=arches)

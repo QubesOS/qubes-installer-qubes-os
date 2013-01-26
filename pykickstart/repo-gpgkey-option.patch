@@ -1,0 +1,44 @@
+Add --gpgkey option to repo command
+
+This will be used to verify packages by pungi, which have no other way to get
+key location (no real .repo files).
+
+Signed-off-by: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Index: pykickstart-1.99.22/pykickstart/commands/repo.py
+===================================================================
+--- pykickstart-1.99.22.orig/pykickstart/commands/repo.py
++++ pykickstart-1.99.22/pykickstart/commands/repo.py
+@@ -131,7 +131,22 @@ class F14_RepoData(F13_RepoData):
+ 
+ RHEL6_RepoData = F14_RepoData
+ 
+-F15_RepoData = F14_RepoData
++class F15_RepoData(F14_RepoData):
++    removedKeywords = F14_RepoData.removedKeywords
++    removedAttrs = F14_RepoData.removedAttrs
++
++    def __init__(self, *args, **kwargs):
++        F14_RepoData.__init__(self, *args, **kwargs)
++        self.gpgkey = kwargs.get("gpgkey", None)
++
++    def _getArgsAsStr(self):
++        retval = F14_RepoData._getArgsAsStr(self)
++
++        if self.gpgkey:
++            retval += " --gpgkey=\"%s\"" % self.gpgkey
++
++        return retval
++
+ 
+ class FC6_Repo(KickstartCommand):
+     removedKeywords = KickstartCommand.removedKeywords
+@@ -253,3 +268,9 @@ class F15_Repo(F14_Repo):
+     removedAttrs = F14_Repo.removedAttrs
+ 
+     urlRequired = False
++
++    def _getParser(self):
++        op = F14_Repo._getParser(self)
++        op.add_option("--gpgkey", action="store", type="string")
++        return op
++
