@@ -1,7 +1,7 @@
 Name: qubes-logos
 Summary: Icons and pictures
 Version: 1
-Release: 3.2
+Release: 4
 Group: System Environment/Base
 Source0: qubes-logos-%{version}.tar.bz2
 License: GPLv2 and LGPL
