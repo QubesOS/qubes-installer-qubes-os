@@ -296,57 +296,6 @@
     </packagelist>
   </group>
   <group>
-    <id>anaconda-tools</id>
-    <name>Anaconda tools</name>
-    <name xml:lang="de">Anaconda-Werkzeuge</name>
-    <name xml:lang="hu">Anaconda eszközök</name>
-    <name xml:lang="ja">Anaconda ツール</name>
-    <name xml:lang="nb">Anaconda-verktøy</name>
-    <name xml:lang="nl">Anaconda gereedschappen</name>
-    <name xml:lang="pl">Narzędzia dla instalatora Anaconda</name>
-    <name xml:lang="uk">Засоби Anaconda</name>
-    <name xml:lang="zh_TW">Anaconda 工具</name>
-    <description/>
-    <default>false</default>
-    <uservisible>false</uservisible>
-    <packagelist>
-      <packagereq>authconfig</packagereq>
-      <packagereq>btrfs-progs</packagereq>
-      <packagereq>chkconfig</packagereq>
-      <packagereq>cryptsetup</packagereq>
-      <packagereq>device-mapper-multipath</packagereq>
-      <packagereq>dmraid</packagereq>
-      <packagereq>dosfstools</packagereq>
-      <packagereq>dracut-network</packagereq>
-      <packagereq>e2fsprogs</packagereq>
-      <packagereq>efibootmgr</packagereq>
-      <packagereq>fcoe-utils</packagereq>
-      <packagereq>gfs2-utils</packagereq>
-      <packagereq>grub2</packagereq>
-      <packagereq>grub2-efi</packagereq>
-      <packagereq>hfsplus-tools</packagereq>
-      <packagereq>iscsi-initiator-utils</packagereq>
-      <packagereq>lvm2</packagereq>
-      <packagereq>mactel-boot</packagereq>
-      <packagereq>mdadm</packagereq>
-      <packagereq>ntfsprogs</packagereq>
-      <packagereq>reiserfs-utils</packagereq>
-      <packagereq>s390utils</packagereq>
-      <packagereq>s390utils-base</packagereq>
-      <packagereq>shim</packagereq>
-      <packagereq>silo</packagereq>
-      <packagereq>system-config-firewall-base</packagereq>
-      <packagereq>tboot</packagereq>
-      <packagereq>uboot-beagle</packagereq>
-      <packagereq>uboot-origen</packagereq>
-      <packagereq>uboot-panda</packagereq>
-      <packagereq>uboot-tools</packagereq>
-      <packagereq>xfsprogs</packagereq>
-      <packagereq>yaboot</packagereq>
-    </packagelist>
-  </group>
-
-  <group>
     <id>fonts</id>
     <name>Fonts</name>
     <name xml:lang="ar">خطوط</name>
