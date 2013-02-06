@@ -1068,6 +1068,7 @@
     <id>kde-desktop-qubes</id>
     <name>KDE Desktop Environment</name>
     <default>true</default>
+    <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">kcm_touchpad</packagereq>
       <packagereq type="mandatory">kdegraphics</packagereq>
@@ -1083,7 +1084,7 @@
     <name>Xfce (EXPERIMENTAL)</name>
     <description>A lightweight desktop environment that works well on low end machines.</description>
     <default>true</default>
-    <uservisible>true</uservisible>
+    <uservisible>false</uservisible>
     <packagelist>
       <packagereq>desktop-backgrounds-compat</packagereq>
       <packagereq>xfce4-panel</packagereq>
@@ -1194,10 +1195,8 @@
      <groupid>fonts</groupid>
      <groupid>qubes</groupid>
      <groupid>xfce-desktop-qubes</groupid>
-    </grouplist>
-    <optionlist>
      <groupid>xfce-extra-plugins</groupid>
-    </optionlist>
+    </grouplist>
   </environment>
   <langpacks>
     <match name="kdelibs" install="kde-l10n-%s"/>
