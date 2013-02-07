@@ -996,6 +996,20 @@
     </packagelist>
   </group>
   <group>
+    <id>sound-basic</id>
+    <name>Sound basic support</name>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="default">alsamixergui</packagereq>
+      <packagereq type="default">paman</packagereq>
+      <packagereq type="default">paprefs</packagereq>
+      <packagereq type="default">pavucontrol</packagereq>
+      <packagereq type="default">pavumeter</packagereq>
+      <packagereq type="default">volumeicon</packagereq>
+    </packagelist>
+  </group>
+  <group>
     <id>base-x</id>
     <name>X Window System</name>
     <default>true</default>
@@ -1026,6 +1040,7 @@
       <packagereq type="mandatory">oxygen-icon-theme</packagereq>
       <packagereq type="mandatory">qubes-kde-dom0</packagereq>
       <packagereq type="mandatory">xsettings-kde</packagereq>
+      <packagereq type="default">kmix</packagereq>
     </packagelist>
   </group>
   <group>
@@ -1078,6 +1093,31 @@
     </packagelist>
   </group>
   <group>
+    <id>xfce-media</id>
+    <name>Multimedia support for Xfce</name>
+    <name xml:lang="de">Multimedia-Unterstützung für Xfce</name>
+    <name xml:lang="hu">Multimédia támogatás az XFCE számára</name>
+    <name xml:lang="ja">Xfce 向けのマルチメディアサポート</name>
+    <name xml:lang="nl">Multimedia ondersteuning voor Xfce</name>
+    <name xml:lang="pl">Obsługa multimediów w środowisku Xfce</name>
+    <name xml:lang="uk">Мультимедійні програми для Xfce</name>
+    <name xml:lang="zh_TW">Xfce 多媒體支援</name>
+    <description>Multimedia support for Xfce</description>
+    <description xml:lang="de">Multimedia-Unterstützung für Xfce</description>
+    <description xml:lang="hu">Multimédia támogatás az XFCE számára</description>
+    <description xml:lang="ja">Xfce 向けのマルチメディアサポート</description>
+    <description xml:lang="nl">Multimedia ondersteuning voor Xfce</description>
+    <description xml:lang="pl">Obsługa multimediów w środowisku Xfce</description>
+    <description xml:lang="uk">Мультимедійні програми для Xfce</description>
+    <description xml:lang="zh_TW">Xfce 多媒體支援</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>pavucontrol</packagereq>
+      <packagereq>xfce4-mixer</packagereq>
+    </packagelist>
+  </group>
+  <group>
     <id>xfce-extra-plugins</id>
     <name>Extra plugins for the Xfce panel</name>
     <default>true</default>
@@ -1127,6 +1167,7 @@
      <groupid>base-x</groupid>
      <groupid>hardware-support</groupid>
      <groupid>fonts</groupid>
+     <groupid>sound-basic</groupid>
      <groupid>qubes</groupid>
      <groupid>kde-desktop-qubes</groupid>
     </grouplist>
@@ -1142,9 +1183,11 @@
      <groupid>base-x</groupid>
      <groupid>hardware-support</groupid>
      <groupid>fonts</groupid>
+     <groupid>sound-basic</groupid>
      <groupid>qubes</groupid>
      <groupid>xfce-desktop-qubes</groupid>
      <groupid>xfce-extra-plugins</groupid>
+     <groupid>xfce-media</groupid>
     </grouplist>
   </environment>
   <langpacks>
