@@ -85,8 +85,9 @@ rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2: firstboot firstboot/firstboo
 rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2: qubes-logos qubes-logos/qubes-logos.spec
 	$(call package,qubes-logos,$(QBSLOGOS_VERSION))
 
-rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release qubes-release/qubes-release.spec
+rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release qubes-release/qubes-release.spec conf/comps-qubes.xml
 	$(call package,qubes-release,$(QBSRELEASE_VERSION))
+	cp conf/comps-qubes.xml rpm/SOURCES/Qubes-comps.xml
 
 rpms_anaconda: rpm/SOURCES/anaconda-$(ANACONDA_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb anaconda/anaconda.spec

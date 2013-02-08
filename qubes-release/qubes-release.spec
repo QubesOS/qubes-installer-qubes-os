@@ -9,6 +9,7 @@ Release:	2
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
+Source1:	Qubes-comps.xml
 Obsoletes:	fedora-release
 Obsoletes:	redhat-release
 Provides:	fedora-release = %{fedora_base_version}-%{release}
@@ -59,6 +60,9 @@ for file in {qubes,fedora,fedora-updates}*repo ; do
   install -m 644 $file $RPM_BUILD_ROOT/etc/yum.repos.d
 done
 
+install -d -m 755 $RPM_BUILD_ROOT/usr/share/qubes
+install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
+
 # Set up the dist tag macros
 install -d -m 755 $RPM_BUILD_ROOT/etc/rpm
 cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
@@ -96,6 +100,7 @@ rm -rf $RPM_BUILD_ROOT
 %config %attr(0644,root,root) /etc/rpm/macros.dist
 %dir /etc/pki/rpm-gpg
 /etc/pki/rpm-gpg/*
+/usr/share/qubes/Qubes-comps.xml
 
 %files notes
 %defattr(-,root,root,-)
