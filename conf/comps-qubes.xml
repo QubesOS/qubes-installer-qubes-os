@@ -1001,12 +1001,9 @@
     <default>false</default>
     <uservisible>false</uservisible>
     <packagelist>
-      <packagereq type="default">alsamixergui</packagereq>
       <packagereq type="default">paman</packagereq>
       <packagereq type="default">paprefs</packagereq>
       <packagereq type="default">pavucontrol</packagereq>
-      <packagereq type="default">pavumeter</packagereq>
-      <packagereq type="default">volumeicon</packagereq>
     </packagelist>
   </group>
   <group>
@@ -1019,7 +1016,6 @@
       <packagereq type="mandatory">firstboot</packagereq>
       <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">gnome-packagekit</packagereq>
-      <packagereq type="mandatory">libgnomeui</packagereq>
       <packagereq type="mandatory">xorg-x11-drivers</packagereq>
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
       <packagereq type="mandatory">xorg-x11-utils</packagereq>
@@ -1034,7 +1030,7 @@
     <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">kcm_touchpad</packagereq>
-      <packagereq type="mandatory">kdegraphics</packagereq>
+      <packagereq type="mandatory">ksnapshot</packagereq>
       <packagereq type="mandatory">kdm</packagereq>
       <packagereq type="mandatory">mesa-libEGL</packagereq>
       <packagereq type="mandatory">oxygen-icon-theme</packagereq>
