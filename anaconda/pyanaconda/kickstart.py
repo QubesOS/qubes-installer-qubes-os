@@ -1142,6 +1142,11 @@ class RaidData(commands.raid.F18_RaidData):
             storage.createDevice(luksdev)
 
 class RootPw(commands.rootpw.F18_RootPw):
+    def __init__(self, writePriority=100, *args, **kwargs):
+        if 'lock' not in kwargs:
+            kwargs['lock'] = True
+        super(RootPw, self).__init__(writePriority=writePriority, *args, **kwargs)
+
     def execute(self, storage, ksdata, instClass, users):
         algo = getPassAlgo(ksdata.authconfig.authconfig)
         users.setRootPassword(self.password, self.isCrypted, self.lock, algo)
