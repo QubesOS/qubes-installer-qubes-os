@@ -1088,6 +1088,7 @@
       <packagereq>xfce4-quicklauncher-plugin</packagereq>
       <packagereq>xfce4-screenshooter-plugin</packagereq>
       <packagereq>xfwm4-themes</packagereq>
+      <packagereq>zenity</packagereq>
     </packagelist>
   </group>
   <group>
