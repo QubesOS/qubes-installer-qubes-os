@@ -242,13 +242,12 @@ class Authconfig(commands.authconfig.FC3_Authconfig):
         except RuntimeError as msg:
             log.error("Error running /usr/sbin/authconfig %s: %s", args, msg)
 
-class Qubes2_AutoPart(commands.autopart.F18_AutoPart):
+class AutoPart(commands.autopart.F18_AutoPart):
     def __init__(self, writePriority=100, *args, **kwargs):
         if 'encrypted' not in kwargs:
             kwargs['encrypted'] = True
-        super(Qubes2_AutoPart, self).__init__(writePriority=writePriority, *args, **kwargs)
+        super(AutoPart, self).__init__(writePriority=writePriority, *args, **kwargs)
 
-class AutoPart(Qubes2_AutoPart):
     def execute(self, storage, ksdata, instClass):
         from pyanaconda.storage.partitioning import doAutoPartition
 
