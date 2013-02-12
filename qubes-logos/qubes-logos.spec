@@ -63,6 +63,8 @@ for k in charge qubes; do
 done
 install -p -m 644 plymouth/plymouthd.defaults.qubes $RPM_BUILD_ROOT%{_datadir}/plymouth
 
+install -D icons/96-logo.png $RPM_BUILD_ROOT%{_datadir}/icons/hicolor/96x96/apps/qubes-logo-icon.png
+
 (cd anaconda; make DESTDIR=$RPM_BUILD_ROOT install)
 
 %clean
@@ -85,6 +87,7 @@ cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymout
 %{_datadir}/plymouth/themes/charge/*
 %{_datadir}/plymouth/themes/qubes/*
 %{_datadir}/pixmaps/splash/*
+%{_datadir}/icons/hicolor/96x96/apps/qubes-logo-icon.png
 /usr/lib/anaconda-runtime/*.jpg
 %{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png
 # should be ifarch i386
