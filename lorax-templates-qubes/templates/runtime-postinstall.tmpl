@@ -49,6 +49,9 @@ install ${configdir}/sysctl.conf etc/sysctl.d/anaconda.conf
     install ${configdir}/selinux.config etc/selinux/config
 %endif
 
+## disable NetworkManager
+install ${configdir}/NetworkManager.state var/lib/NetworkManager/NetworkManager.state
+
 ## set up sshd
 install ${configdir}/sshd_config.anaconda etc/ssh
 install ${configdir}/pam.sshd etc/pam.d/sshd
