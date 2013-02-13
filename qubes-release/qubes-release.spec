@@ -42,7 +42,7 @@ Qubes release notes package.
 rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT/etc
 echo "Qubes release %{version} (%{release_name})" > $RPM_BUILD_ROOT/etc/qubes-release
-echo "cpe://o:qubes:qubes:%{version}" > $RPM_BUILD_ROOT/etc/system-release-cpe
+echo "cpe:/o:ITL:qubes:%{version}" > $RPM_BUILD_ROOT/etc/system-release-cpe
 cp -p $RPM_BUILD_ROOT/etc/qubes-release $RPM_BUILD_ROOT/etc/issue
 echo "Kernel \r on an \m (\l)" >> $RPM_BUILD_ROOT/etc/issue
 cp -p $RPM_BUILD_ROOT/etc/issue $RPM_BUILD_ROOT/etc/issue.net
@@ -50,6 +50,16 @@ echo >> $RPM_BUILD_ROOT/etc/issue
 ln -s qubes-release $RPM_BUILD_ROOT/etc/fedora-release
 ln -s qubes-release $RPM_BUILD_ROOT/etc/redhat-release
 ln -s qubes-release $RPM_BUILD_ROOT/etc/system-release
+
+cat << EOF >>$RPM_BUILD_ROOT/etc/os-release
+NAME=Qubes
+VERSION="%{version} (%{release_name})"
+ID=qubes
+VERSION_ID=%{version}
+PRETTY_NAME="Qubes %{version} (%{release_name})"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:ITL:qubes:%{version}"
+EOF
 
 install -d -m 755 $RPM_BUILD_ROOT/etc/pki/rpm-gpg
 
@@ -86,6 +96,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc GPL 
+%config %attr(0644,root,root) /etc/os-release
 %config %attr(0644,root,root) /etc/qubes-release
 %config %attr(0644,root,root) /etc/fedora-release
 /etc/redhat-release
