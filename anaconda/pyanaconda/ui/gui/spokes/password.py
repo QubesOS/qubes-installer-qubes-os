@@ -84,10 +84,10 @@ class PasswordSpoke(NormalSpoke):
     def status(self):
         if self._error:
             return _("Error setting root password")
-        if self.data.rootpw.password:
-            return _("Root password is set")
-        elif self.data.rootpw.lock:
+        if self.data.rootpw.lock:
             return _("Root account is disabled")
+        elif self.data.rootpw.password:
+            return _("Root password is set")
         else:
             return _("Root password is not set")
 
