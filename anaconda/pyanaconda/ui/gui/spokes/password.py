@@ -52,16 +52,25 @@ class PasswordSpoke(NormalSpoke):
         self._password = None
         self._error = False
         self._oldweak = None
+        self._lock = self.data.rootpw.lock
 
     def initialize(self):
         NormalSpoke.initialize(self)
         # place holders for the text boxes
         self.pw = self.builder.get_object("pw")
         self.confirm = self.builder.get_object("confirm")
+        self.lock = self.builder.get_object("lock")
 
     def refresh(self):
 #        self.setCapsLockLabel()
-        self.pw.grab_focus()
+        self.lock.set_active(self._lock)
+        self.on_lock_clicked(self.lock)
+
+    def on_lock_clicked(self, lock):
+        self.pw.set_sensitive(not lock.get_active())
+        self.confirm.set_sensitive(not lock.get_active())
+        if not lock.get_active():
+            self.pw.grab_focus()
 
 # Caps lock detection isn't hooked up right now
 #    def setCapsLockLabel(self):
@@ -83,9 +92,10 @@ class PasswordSpoke(NormalSpoke):
             return _("Root password is not set")
 
     def apply(self):
-        self.data.rootpw.password = cryptPassword(self._password)
-        self.data.rootpw.isCrypted = True
-        self.data.rootpw.lock = False
+        if self._password:
+            self.data.rootpw.password = cryptPassword(self._password)
+            self.data.rootpw.isCrypted = True
+        self.data.rootpw.lock = self._lock
 
     @property
     def completed(self):
@@ -98,6 +108,14 @@ class PasswordSpoke(NormalSpoke):
         self._error = False
         pw = self.pw.get_text()
         confirm = self.confirm.get_text()
+        lock = self.lock.get_active()
+
+        if lock:
+            self._lock = True
+            self._password = None
+            self.clear_info()
+            self._error = False
+            return True
 
         if not pw and not confirm:
             self._error = _("You must provide and confirm a password.")
@@ -120,6 +138,7 @@ class PasswordSpoke(NormalSpoke):
 
         # if no errors, clear the info for next time we go into the spoke
         self._password = pw
+        self._lock = False
         self.clear_info()
         self._error = False
         return True
