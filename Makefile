@@ -136,15 +136,18 @@ update-repo-unstable:
 
 iso:
 	ln -sf `pwd` /tmp/qubes-installer
-	pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg
-	./rpm_verify $(ISO_VERSION)/x86_64/os/Packages/*/*.rpm
+	mkdir -p work
+	pushd work; pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg; popd
+	./rpm_verify work/$(ISO_VERSION)/x86_64/os/Packages/*/*.rpm
 	# Currently netinstall not supported
-	rm $(ISO_VERSION)/x86_64/iso/*-netinst.iso
+	rm work/$(ISO_VERSION)/x86_64/iso/*-netinst.iso
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
-	mv $(ISO_VERSION)/x86_64/iso/*-DVD.iso build/ISO/qubes-x86_64/iso/
+	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD.iso build/ISO/qubes-x86_64/iso/
 	rm -rf build/work/$(ISO_VERSION)
-	mv $(ISO_VERSION)/x86_64/os build/work/$(ISO_VERSION)
+	mv work/$(ISO_VERSION)/x86_64/os build/work/$(ISO_VERSION)
+	chown --reference=Makefile -R build
+	rm -rf work
 
 clean-repos:
 	@echo "--> Removing old rpms from the installer repos..."
