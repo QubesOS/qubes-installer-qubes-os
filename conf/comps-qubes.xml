@@ -1160,8 +1160,8 @@
   <environment>
    <id>qubes-kde</id>
    <display_order>2</display_order>
-   <name>Qubes with KDE</name>
-   <description>Qubes standard installation.</description>
+   <name>Qubes OS with KDE</name>
+   <description>Standard installation with KDE enviroment in Dom0.</description>
     <grouplist>
      <groupid>base</groupid>
      <groupid>base-x</groupid>
@@ -1176,8 +1176,8 @@
   <environment>
    <id>qubes-xfce</id>
    <display_order>1</display_order>
-   <name>Qubes with Xfce</name>
-   <description>Qubes standard installation with Xfce.</description>
+   <name>Qubes OS with Xfce</name>
+   <description>Standard installation with Xfce enviroment in Dom0.</description>
     <grouplist>
      <groupid>base</groupid>
      <groupid>base-x</groupid>
@@ -1193,8 +1193,8 @@
   <environment>
    <id>qubes-kde-xfce</id>
    <display_order>3</display_order>
-   <name>Qubes with KDE and Xfce</name>
-   <description>Qubes standard installation with KDE and Xfce.</description>
+   <name>Qubes OS with KDE and Xfce</name>
+   <description>Standard installation with both KDE and Xfce enviroments in Dom0 (selectable on startup).</description>
     <grouplist>
      <groupid>base</groupid>
      <groupid>base-x</groupid>
