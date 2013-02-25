@@ -1153,6 +1153,7 @@
       <packagereq type="default">qubes-core-dom0-pvdrivers-win7</packagereq>
       <packagereq type="default">qubes-doc-dom0</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
+      <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
     </packagelist>
   </group>
 
