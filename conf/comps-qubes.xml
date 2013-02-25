@@ -1054,6 +1054,7 @@
       <packagereq>xfce4-settings-qubes</packagereq>
       <packagereq>xfconf</packagereq>
       <packagereq>xfwm4</packagereq>
+      <packagereq>xfdesktop</packagereq>
       <packagereq>ConsoleKit</packagereq>
       <packagereq>firstboot</packagereq>
       <!-- FIXME? <packagereq>fedora-icon-theme</packagereq>-->
