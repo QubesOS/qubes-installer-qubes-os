@@ -205,6 +205,7 @@ class moduleClass(Module):
             subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
             subprocess.check_call(['cp', '/etc/ntp.conf', '/mnt/template-root/etc'])
             subprocess.check_call(['/bin/umount', '/mnt/template-root'])
+            subprocess.check_call(['/bin/rmdir', '/mnt/template-root'])
 
     def do_create_appvms(self):
         self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
