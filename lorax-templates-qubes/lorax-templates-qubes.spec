@@ -1,5 +1,5 @@
 Name:		lorax-templates-qubes
-Version:	1.0
+Version:	1.1
 Release:	1%{?dist}
 Summary:	Lorax templates for Qubes installation ISO
 
