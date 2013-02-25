@@ -139,8 +139,6 @@ iso:
 	mkdir -p work
 	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg && popd
 	./rpm_verify work/$(ISO_VERSION)/x86_64/os/Packages/*/*.rpm
-	# Currently netinstall not supported
-	rm work/$(ISO_VERSION)/x86_64/iso/*-netinst.iso
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
 	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD.iso build/ISO/qubes-x86_64/iso/

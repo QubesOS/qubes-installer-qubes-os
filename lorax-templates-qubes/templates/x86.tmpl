@@ -80,14 +80,14 @@ hardlink ${KERNELDIR}/initrd.img ${BOOTDIR}
     <%include file="efi.tmpl" args="configdir=configdir, KERNELDIR=KERNELDIR, efiarch=efiarch, isolabel=isolabel"/>
 %endif
 
-## make boot.iso
-runcmd mkisofs -o ${outroot}/images/boot.iso \
-       -b ${BOOTDIR}/isolinux.bin -c ${BOOTDIR}/boot.cat \
-       -boot-load-size 4 -boot-info-table -no-emul-boot \
-       ${efiargs} -R -J -V '${isolabel}' -T -graft-points \
-       ${BOOTDIR}=${outroot}/${BOOTDIR} \
-       ${KERNELDIR}=${outroot}/${KERNELDIR} \
-       ${LIVEDIR}=${outroot}/${LIVEDIR} \
-       ${efigraft}
-runcmd isohybrid ${efihybrid} ${outroot}/images/boot.iso
-treeinfo images-${basearch} boot.iso images/boot.iso
+## ## make boot.iso
+## runcmd mkisofs -o ${outroot}/images/boot.iso \
+##        -b ${BOOTDIR}/isolinux.bin -c ${BOOTDIR}/boot.cat \
+##        -boot-load-size 4 -boot-info-table -no-emul-boot \
+##        ${efiargs} -R -J -V '${isolabel}' -T -graft-points \
+##        ${BOOTDIR}=${outroot}/${BOOTDIR} \
+##        ${KERNELDIR}=${outroot}/${KERNELDIR} \
+##        ${LIVEDIR}=${outroot}/${LIVEDIR} \
+##        ${efigraft}
+## runcmd isohybrid ${efihybrid} ${outroot}/images/boot.iso
+## treeinfo images-${basearch} boot.iso images/boot.iso
