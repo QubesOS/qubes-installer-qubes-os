@@ -64,11 +64,6 @@ class InstallClass(BaseInstallClass):
             if autoreq.mountpoint == "/home":
 		storage.autoPartitionRequests.remove(autoreq)
 
-    def postAction(self, anaconda):
-        # Import rpm keys, so that qubes-receive-updates can call rpm -K
-        subprocess.check_call(['/usr/sbin/chroot', anaconda.rootPath,
-            '/bin/bash', '-c', 'rpm --import /etc/pki/rpm-gpg/*'])
-
     def productMatches(self, oldprod):
         if oldprod is None:
             return False
