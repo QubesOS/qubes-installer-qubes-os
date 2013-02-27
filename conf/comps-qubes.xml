@@ -1176,7 +1176,7 @@
 
   <environment>
    <id>qubes-xfce</id>
-   <display_order>1</display_order>
+   <display_order>3</display_order>
    <name>Qubes OS with Xfce</name>
    <description>Standard installation with Xfce enviroment in Dom0.</description>
     <grouplist>
@@ -1193,7 +1193,7 @@
   </environment>
   <environment>
    <id>qubes-kde-xfce</id>
-   <display_order>3</display_order>
+   <display_order>1</display_order>
    <name>Qubes OS with KDE and Xfce</name>
    <description>Standard installation with both KDE and Xfce enviroments in Dom0 (selectable on startup).</description>
     <grouplist>
