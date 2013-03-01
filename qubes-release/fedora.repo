@@ -4,6 +4,7 @@ failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/18/Everything/x86_64/os/
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-18&arch=x86_64
 enabled=1
+enablegroups=0
 metadata_expire=7d
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
@@ -14,6 +15,7 @@ failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/18/Everything/x86_64/debug/
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-debug-18&arch=x86_64
 enabled=0
+enablegroups=0
 metadata_expire=7d
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
@@ -24,6 +26,7 @@ failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/releases/18/Everything/source/SRPMS/
 mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-source-18&arch=x86_64
 enabled=0
+enablegroups=0
 metadata_expire=7d
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-18-primary
