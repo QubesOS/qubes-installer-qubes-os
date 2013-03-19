@@ -1,3 +1,7 @@
+%if 0%{?qubes_builder}
+%define _builddir %(pwd)/lorax-templates-qubes
+%endif
+
 Name:		lorax-templates-qubes
 Version:	1.1
 Release:	1%{?dist}
@@ -16,8 +20,9 @@ BuildArch:      noarch
 Lorax templates for Qubes installation ISO.
 
 %prep
+%if ! 0%{?qubes_builder}
 %setup -q
-
+%endif
 
 %build
 

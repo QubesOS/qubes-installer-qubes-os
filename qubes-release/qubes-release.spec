@@ -2,6 +2,10 @@
 %define release_name R%{dist_version}
 %define fedora_base_version 18
 
+%if 0%{?qubes_builder}
+%define _builddir %(pwd)/qubes-release
+%endif
+
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
@@ -34,7 +38,9 @@ Qubes release notes package.
 
 
 %prep
+%if ! 0%{?qubes_builder}
 %setup -q
+%endif
 
 %build
 
@@ -71,7 +77,11 @@ for file in {qubes,fedora,fedora-updates}*repo ; do
 done
 
 install -d -m 755 $RPM_BUILD_ROOT/usr/share/qubes
+%if 0%{?qubes_builder}
+install -m 644 ../conf/comps-qubes.xml $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
+%else
 install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
+%endif
 
 # Set up the dist tag macros
 install -d -m 755 $RPM_BUILD_ROOT/etc/rpm

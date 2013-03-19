@@ -1,5 +1,9 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 
+%if 0%{?qubes_builder}
+%define _builddir %(pwd)/firstboot
+%endif
+
 Summary: Initial system configuration utility
 Name: firstboot
 URL: http://fedoraproject.org/wiki/FirstBoot
@@ -40,7 +44,9 @@ The firstboot utility runs after installation.  It guides the user through
 a series of steps that allows for easier configuration of the machine.
 
 %prep
+%if ! 0%{?qubes_builder}
 %setup -q
+%endif
 
 %build
 

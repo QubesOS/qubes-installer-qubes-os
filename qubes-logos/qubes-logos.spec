@@ -1,3 +1,7 @@
+%if 0%{?qubes_builder}
+%define _builddir %(pwd)/qubes-logos
+%endif
+
 Name: qubes-logos
 Summary: Icons and pictures
 Version: 1
@@ -30,7 +34,9 @@ The qubes-logos package contains various image files which can be
 used by the bootloader, anaconda, and other related tools.
 
 %prep
+%if ! 0%{?qubes_builder}
 %setup -q
+%endif
 
 %build
 
