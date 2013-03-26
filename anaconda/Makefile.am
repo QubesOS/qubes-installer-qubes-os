@@ -22,14 +22,13 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = pyanaconda po data \
 	  tests utils scripts docs dracut widgets
 
-EXTRA_DIST = config.rpath COPYING \
-             anaconda.spec.in
+EXTRA_DIST = config.rpath COPYING
 
 MAINTAINERCLEANFILES = Makefile.in config.guess config.h.in config.sub \
                        depcomp install-sh ltmain.sh missing ABOUT-NLS \
                        INSTALL aclocal.m4 configure *.pyc py-compile
 
-CLEANFILES = *~ anaconda.spec
+CLEANFILES = *~
 
 MOSTLYCLEANDIRS = m4
 
@@ -46,8 +45,8 @@ sed_verbose_0 = @echo "  SED    "$@;
 TX_PULL_ARGS = -a --disable-overwrite
 TX_PUSH_ARGS = -s
 
-$(PACKAGE_NAME).spec: $(PACKAGE_NAME).spec.in
-	$(sed_verbose)sed -e 's/#VERSION#/$(PACKAGE_VERSION)/' < $< > $@
+#$(PACKAGE_NAME).spec: $(PACKAGE_NAME).spec.in
+#	$(sed_verbose)sed -e 's/#VERSION#/$(PACKAGE_VERSION)/' < $< > $@
 
 tag:
 	@git tag -s -a -m "Tag as $(ARCHIVE_TAG)" $(ARCHIVE_TAG)
@@ -85,7 +84,7 @@ bumpver: po-pull
 	tx push $(TX_PUSH_ARGS)
 
 install-buildrequires:
-	yum install $$(grep BuildRequires: anaconda.spec.in | cut -d ' ' -f 2)
+	yum install $$(grep BuildRequires: anaconda.spec | cut -d ' ' -f 2)
 
 # Generate an updates.img based on the changed files since the release
 # was tagged.  Updates are copied to ./updates-img and then the image is
