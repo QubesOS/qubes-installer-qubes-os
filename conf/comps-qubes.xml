@@ -1157,6 +1157,21 @@
     </packagelist>
   </group>
 
+  <group>
+    <id>qubes-dom0-debug</id>
+    <name>Qubes dom0 debug tools (for developers only)</name>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>strace</packagereq>
+      <packagereq>gdb</packagereq>
+      <packagereq>xen-debuginfo</packagereq>
+      <packagereq>qubes-core-dom0-debuginfo</packagereq>
+      <packagereq>qubes-core-dom0-linux-debuginfo</packagereq>
+      <packagereq>qubes-gui-dom0-debuginfo</packagereq>
+    </packagelist>
+  </group>
+
   <environment>
    <id>qubes-kde</id>
    <display_order>2</display_order>
