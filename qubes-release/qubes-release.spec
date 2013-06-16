@@ -1,4 +1,4 @@
-%define dist_version 2
+%define dist_version 3
 %define release_name R%{dist_version}
 %define fedora_base_version %{fedora}
 
