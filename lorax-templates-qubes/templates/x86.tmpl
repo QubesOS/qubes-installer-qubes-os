@@ -24,14 +24,13 @@ install ${configdir}/grub.conf ${BOOTDIR}
 install usr/share/anaconda/boot/syslinux-splash.png ${BOOTDIR}/splash.png
 install boot/memtest* ${BOOTDIR}/memtest
 
-## configure bootloader
-replace @VERSION@ ${product.version} ${BOOTDIR}/grub.conf ${BOOTDIR}/isolinux.cfg ${BOOTDIR}/*.msg
-replace @PRODUCT@ '${product.name}'  ${BOOTDIR}/grub.conf ${BOOTDIR}/isolinux.cfg ${BOOTDIR}/*.msg
-replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${BOOTDIR}/isolinux.cfg
-
 ## install kernels
 mkdir ${KERNELDIR}
 %for kernel in kernels:
+    # Use short kernel version because of ISO9660 filename length limitation
+    <%
+    shortkver = kernel.version.replace('.pvops.qubes','')
+    %>
     %if kernel.flavor:
         ## i386 PAE
         installkernel images-xen ${kernel.path} ${KERNELDIR}/vmlinuz-${kernel.flavor}
@@ -47,7 +46,22 @@ mkdir ${KERNELDIR}
             installupgradeinitrd images-${basearch} ${kernel.upgrade.path} ${KERNELDIR}/upgrade.img
         %endif
     %endif
+    installkernel images-alt-${shortkver} ${kernel.path} ${BOOTDIR}/vmlinuz-${shortkver}
+    installinitrd images-alt-${shortkver} ${kernel.initrd.path} ${BOOTDIR}/initrd-${shortkver}.img
+    replace '@EXTRAKERNELS@' 'label kernel-${kernel.version}\n\
+  menu indent count 5\n\
+  menu label ^Install @PRODUCT@ using ${kernel.version} kernel\n\
+  kernel mboot.c32\n\
+  append xen.gz --- vmlinuz-${shortkver} @ROOT@ quiet --- initrd-${shortkver}.img\n\
+  @EXTRAKERNELS@' ${BOOTDIR}/isolinux.cfg
+
 %endfor
+
+## configure bootloader
+replace @VERSION@ ${product.version} ${BOOTDIR}/grub.conf ${BOOTDIR}/isolinux.cfg ${BOOTDIR}/*.msg
+replace @PRODUCT@ '${product.name}'  ${BOOTDIR}/grub.conf ${BOOTDIR}/isolinux.cfg ${BOOTDIR}/*.msg
+replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${BOOTDIR}/isolinux.cfg
+replace @EXTRAKERNELS@ '' ${BOOTDIR}/isolinux.cfg
 
 hardlink ${KERNELDIR}/vmlinuz ${BOOTDIR}
 hardlink ${KERNELDIR}/initrd.img ${BOOTDIR}
