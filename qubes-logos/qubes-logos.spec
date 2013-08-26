@@ -104,5 +104,5 @@ cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymout
 # end i386 bits
 
 %changelog
-* Tue Jan 13 2010 Tomasz Sterna <smoku@xiaoka.com> - 1
+* Wed Jan 13 2010 Tomasz Sterna <smoku@xiaoka.com> - 1
 - Initial Qubes 1 Release package

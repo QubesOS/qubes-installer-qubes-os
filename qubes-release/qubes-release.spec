@@ -128,5 +128,5 @@ rm -rf $RPM_BUILD_ROOT
 %doc README.Qubes-Release-Notes
 
 %changelog
-* Tue Jan 13 2010 Tomasz Sterna <smoku@xiaoka.com> - 1
+* Wed Jan 13 2010 Tomasz Sterna <smoku@xiaoka.com> - 1
 - Initial Qubes 1 Release package
