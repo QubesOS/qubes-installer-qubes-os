@@ -8,6 +8,9 @@ KERNELDIR=PXEBOOTDIR
 LIVEDIR="LiveOS"
 EXTRAKERNELS="extrakernels"
 %>
+<%!
+from distutils.version import LooseVersion
+%>
 
 mkdir ${LIVEDIR}
 install ${runtime_img} ${LIVEDIR}/squashfs.img
@@ -31,7 +34,11 @@ install ../../../../yum/qubes-dom0/rpm/kernel-[0-9]*rpm ${EXTRAKERNELS}
 
 ## install kernels
 mkdir ${KERNELDIR}
-%for kernel in kernels:
+<%
+sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
+%>
+
+%for kernel in sortedkernels:
     # Use short kernel version because of ISO9660 filename length limitation
     <%
     shortkver = kernel.version.replace('.pvops.qubes','')
