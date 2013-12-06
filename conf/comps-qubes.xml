@@ -1151,9 +1151,9 @@
       <packagereq type="mandatory">qubes-logos</packagereq>
       <packagereq type="mandatory">qubes-manager</packagereq>
       <packagereq type="mandatory">qubes-template-fedora-18-x64</packagereq>
-      <packagereq type="default">qubes-core-dom0-pvdrivers-win7</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
       <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
+      <packagereq type="default">qubes-windows-tools</packagereq>
     </packagelist>
   </group>
 
