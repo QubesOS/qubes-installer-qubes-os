@@ -1,0 +1,12 @@
+--- pungi-2.13/src/pypungi/__init__.py.orig	2013-12-07 23:25:33.790299986 +0100
++++ pungi-2.13/src/pypungi/__init__.py	2013-12-07 23:27:06.347452833 +0100
+@@ -1143,7 +1143,8 @@
+ 
+         if self.config.get('pungi', 'arch') == 'i386' or self.config.get('pungi', 'arch') == 'x86_64':
+             extraargs.extend(x86bootargs)
+-            if self.config.get('pungi', 'arch') == 'x86_64':
++            if self.config.get('pungi', 'arch') == 'x86_64' and \
++                    os.path.exists(os.path.join(self.topdir, 'images', 'efiboot.img')):
+                 extraargs.extend(efibootargs)
+                 isohybrid.append('-u')
+                 if os.path.exists(os.path.join(self.topdir, 'images', 'macboot.img')):
