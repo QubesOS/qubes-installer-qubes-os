@@ -24,6 +24,7 @@ Conflicts: redhat-artwork <= 5.0.5
 # For _kde4_appsdir macro:
 BuildRequires: kde-filesystem
 Requires: plymouth-plugin-script
+Requires: plymouth-plugin-label
 # For plymouth-set-default-theme
 Requires(post): plymouth-scripts
 
@@ -70,6 +71,8 @@ for k in charge qubes; do
     done
 done
 install -p -m 644 plymouth/plymouthd.defaults.qubes $RPM_BUILD_ROOT%{_datadir}/plymouth
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/dracut.conf.d
+install -p -m 644 plymouth/plymouth-missing-fonts.conf $RPM_BUILD_ROOT%{_sysconfdir}/dracut.conf.d
 
 install -D icons/96-logo.png $RPM_BUILD_ROOT%{_datadir}/icons/hicolor/96x96/apps/qubes-logo-icon.png
 
@@ -97,6 +100,7 @@ cp -f %{_datadir}/plymouth/plymouthd.defaults.qubes %{_datadir}/plymouth/plymout
 %{_datadir}/pixmaps/splash/*
 %{_datadir}/icons/hicolor/96x96/apps/qubes-logo-icon.png
 /usr/lib/anaconda-runtime/*.jpg
+%{_sysconfdir}/dracut.conf.d/plymouth-missing-fonts.conf
 %{_kde4_appsdir}/ksplash/Themes/Leonidas/2048x1536/logo.png
 # should be ifarch i386
 /boot/grub/splash.xpm.gz
