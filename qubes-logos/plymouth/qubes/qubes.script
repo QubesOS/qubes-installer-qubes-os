@@ -101,6 +101,9 @@ fun display_normal_callback ()
 
 fun display_password_callback (prompt, bullets)
   {
+    if (prompt.SubString(0,32) == "Please enter passphrase for disk") {
+        prompt = "Disk password";
+    }
     global.status = "password";
     if (!global.dialog)
         dialog_setup(prompt);
