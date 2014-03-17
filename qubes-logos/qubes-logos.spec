@@ -4,7 +4,7 @@
 
 Name: qubes-logos
 Summary: Icons and pictures
-Version: 1.1
+Version: 1.2
 Release: 1
 Group: System Environment/Base
 Source0: qubes-logos-%{version}.tar.bz2
