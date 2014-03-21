@@ -70,6 +70,8 @@ class moduleClass(Module):
             if self.radio_dontdoanything.get_active():
                 return RESULT_SUCCESS
 
+            interface.nextButton.set_sensitive(False)
+
             self.create_default_netvm()
             self.create_default_fwvm()
             self.set_networking_type(netvm=True)
@@ -80,6 +82,7 @@ class moduleClass(Module):
             if self.radio_servicevms_and_appvms.get_active():
                 self.create_appvms()
 
+            interface.nextButton.set_sensitive(True)
             return RESULT_SUCCESS
         except Exception as e:
             md = gtk.MessageDialog(interface.win, gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -91,6 +94,7 @@ class moduleClass(Module):
             self.progress.hide()
 
             self.radio_dontdoanything.set_active(True)
+            interface.nextButton.set_sensitive(True)
 
             return RESULT_FAILURE
 
