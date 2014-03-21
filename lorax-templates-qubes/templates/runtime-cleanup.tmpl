@@ -12,9 +12,6 @@ remove usr/share/i18n
 ## no sound support, thanks
 removepkg alsa* flac gstreamer-tools libsndfile pulseaudio* sound-theme-freedesktop
 removepkg midisport-firmware
-## no fancy video, either
-removepkg libcrystalhd crystalhd-firmware ivtv-firmware cx18-firmware
-removepkg mesa-dri-drivers
 ## we don't create new initramfs/bootloader conf inside anaconda
 ## (that happens inside the target system after we install dracut/grubby)
 removepkg dracut-network grubby anaconda-dracut
@@ -254,7 +251,6 @@ removefrom libxml2-python /usr/${libdir}/python?.?/site-packages/libxml2mod.la
 removefrom lldpad /etc/* /usr/sbin/lldptool
 removefrom lua /usr/bin/*
 removefrom lvm2 /etc/*
-removefrom lzo /usr/${libdir}/liblzo2.*
 removefrom madan-fonts /usr/share/fonts/madan/*
 removefrom mdadm /etc/*
 removefrom module-init-tools /etc/* /usr/sbin/insmod.static /usr/sbin/weak-modules
