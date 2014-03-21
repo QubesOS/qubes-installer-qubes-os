@@ -4,6 +4,7 @@ Summary: Graphical system installer
 Name:    anaconda
 Version: 18.37.11
 Release: 3%{?dist}
+Epoch:   1000
 License: GPLv2+
 Group:   Applications/System
 URL:     http://fedoraproject.org/wiki/Anaconda
@@ -101,7 +102,7 @@ BuildRequires: iscsi-initiator-utils-devel >= %{iscsiver}
 BuildRequires: s390utils-devel
 %endif
 
-Requires: anaconda-widgets = %{version}-%{release}
+Requires: anaconda-widgets = %{epoch}:%{version}-%{release}
 Requires: gnome-icon-theme-symbolic
 Requires: python-meh >= %{mehver}
 Requires: policycoreutils
