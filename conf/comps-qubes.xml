@@ -204,7 +204,6 @@
       <packagereq type="mandatory">bzip2</packagereq>
       <packagereq type="mandatory">cronie</packagereq>
       <packagereq type="mandatory">dbus</packagereq>
-      <packagereq type="mandatory">device-mapper-multipath</packagereq>
       <packagereq type="mandatory">diffutils</packagereq>
       <packagereq type="mandatory">dmraid</packagereq>
       <packagereq type="mandatory">dump</packagereq>
@@ -971,7 +970,6 @@
       <packagereq>btrfs-progs</packagereq>
       <packagereq>chkconfig</packagereq>
       <packagereq>cryptsetup</packagereq>
-      <packagereq>device-mapper-multipath</packagereq>
       <packagereq>dmraid</packagereq>
       <packagereq>dosfstools</packagereq>
       <packagereq>dracut-network</packagereq>
