@@ -178,7 +178,9 @@ char *iface_ip2str(char *ifname, int family) {
         return NULL;
     }
 
+#if !GLIB_CHECK_VERSION(2,35,0)
     g_type_init();
+#endif
 
     client = nm_client_new();
     if (!client) {
@@ -420,7 +422,9 @@ gboolean is_nm_connected(void) {
     NMState state;
     NMClient *client = NULL;
 
+#if !GLIB_CHECK_VERSION(2,35,0)
     g_type_init();
+#endif
 
     client = nm_client_new();
     if (!client)
@@ -440,7 +444,9 @@ gboolean is_nm_running(void) {
     gboolean running;
     NMClient *client = NULL;
 
+#if !GLIB_CHECK_VERSION(2,35,0)
     g_type_init();
+#endif
 
     client = nm_client_new();
     if (!client)
@@ -456,7 +462,9 @@ gboolean is_iface_activated(char * ifname) {
     NMClient *client = NULL;
     const GPtrArray *devices;
 
+#if !GLIB_CHECK_VERSION(2,35,0)
     g_type_init();
+#endif
 
     client = nm_client_new();
     if (!client)
