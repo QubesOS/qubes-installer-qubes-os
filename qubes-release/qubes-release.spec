@@ -1,6 +1,6 @@
 %define dist_version 2
 %define release_name R%{dist_version}
-%define fedora_base_version 18
+%define fedora_base_version %{fedora}
 
 %if 0%{?qubes_builder}
 %define _builddir %(pwd)/qubes-release
@@ -72,9 +72,10 @@ install -d -m 755 $RPM_BUILD_ROOT/etc/pki/rpm-gpg
 install -m 644 RPM-GPG-KEY* $RPM_BUILD_ROOT/etc/pki/rpm-gpg/
 
 install -d -m 755 $RPM_BUILD_ROOT/etc/yum.repos.d
-for file in {qubes,fedora,fedora-updates}*repo ; do
+for file in {fedora,fedora-updates}*repo ; do
   install -m 644 $file $RPM_BUILD_ROOT/etc/yum.repos.d
 done
+sed -e "s/%%DIST%%/fc%{fedora_base_version}/" qubes-dom0.repo.in > $RPM_BUILD_ROOT/etc/yum.repos.d/qubes-dom0.repo
 
 install -d -m 755 $RPM_BUILD_ROOT/usr/share/qubes
 %if 0%{?qubes_builder}
@@ -115,8 +116,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/yum.repos.d
 %config(noreplace) /etc/yum.repos.d/fedora.repo
 %config(noreplace) /etc/yum.repos.d/fedora-updates.repo
-%config(noreplace) /etc/yum.repos.d/qubes-dom0-r2-beta2.repo
-%config(noreplace) /etc/yum.repos.d/qubes-dom0-r2-beta3.repo
+%config(noreplace) /etc/yum.repos.d/qubes-dom0.repo
 %config(noreplace) %attr(0644,root,root) /etc/issue
 %config(noreplace) %attr(0644,root,root) /etc/issue.net
 %config %attr(0644,root,root) /etc/rpm/macros.dist
