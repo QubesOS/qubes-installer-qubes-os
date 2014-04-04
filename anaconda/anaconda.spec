@@ -3,7 +3,7 @@
 Summary: Graphical system installer
 Name:    anaconda
 Version: 18.37.11
-Release: 3%{?dist}
+Release: 4%{?dist}
 Epoch:   1000
 License: GPLv2+
 Group:   Applications/System
