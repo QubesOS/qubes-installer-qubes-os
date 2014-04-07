@@ -5,7 +5,7 @@
 %endif
 
 Name:           pungi
-Version:        2.13
+Version:        3.03
 Release:        1.3%{?dist}
 Summary:        Distribution compose tool
 
@@ -16,7 +16,7 @@ Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name
 Patch0:         support-verify-downloaded-packages.patch
 Patch1:         disable-efi.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:       anaconda >= 14.3, yum => 3.2.19, repoview, createrepo >= 0.4.11
+Requires:       yum => 3.4.3-28, repoview, createrepo >= 0.4.11
 Requires:       lorax
 BuildRequires:  python-devel
 
@@ -64,6 +64,42 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Oct 31 2013 Dennis Gilmore <dennis@ausil.us> - 3.03-1
+- revert to the old way of doing versioning as the change in 3.01 did not work
+
+* Thu Oct 31 2013 Dennis Gilmore <dennis@ausil.us> - 3.02-1
+- fix typo in call to __version__ (Dennis Gilmore)
+
+* Sun Oct 27 2013 Daniel Mach <dmach@redhat.com> - 3.01-1
+- Add 'make log' command to print changelog for spec. (Daniel Mach)
+- Implement %prepopulate config section as an additional package input. (Daniel Mach)
+- Don't automatically apply fulltree on input multilib packages. (Daniel Mach)
+- Implement %multilib-blacklist and %multilib-whitelist config sections. (Daniel Mach)
+- Turn off fulltree for multilib packages. (Daniel Mach)
+- Return package flags: input, fulltree-exclude, langpack, multilib, fulltree (Daniel Mach)
+- Exclude srpms from conditional deps. (Daniel Mach)
+- Improve greedy methods: none, all, build. (Daniel Mach)
+- Add .gitignore. (Daniel Mach)
+- Add 'yaboot' multilib method. (Daniel Mach)
+- Drop pulseaudio-utils from runtime whitelist (Daniel Mach)
+- Remove packages which are in lookaside repos from regular repos. (Daniel Mach)
+- Print repoid to make clear from which repo a package came. (Daniel Mach)
+- Don't pull conditional deps in when --nodeps is used. (Daniel Mach)
+- Multilib fix - consider only *.so* libs which are also listed in Provides. (Daniel Mach)
+- Fix --nodeps by setting Pungi.is_resolve_deps according to config. (Daniel Mach)
+- Add test_arch.py. (Daniel Mach)
+
+* Tue Aug 20 2013 Dennis Gilmore <dennis@ausil.us> - 3.00-1
+- apply patches from Daniel Mach
+- make sure we only use mac support on x86_64
+- make sure deltarpm is disabled
+
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.13-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.13-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
 * Fri Dec 21 2012 Dennis Gilmore <dennis@ausil.us> - 2.13-1
 - strip groups from comps not listed in the kickstart
 - fix ppc64 runtime installation (#888887)

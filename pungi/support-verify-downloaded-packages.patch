@@ -4,20 +4,20 @@ Especially important for lorax - they will not verified in any way without
 setting yum options here.
 
 Signed-off-by: Marek Marczykowski <marmarek@invisiblethingslab.com>
-Index: pungi-2.13/src/pypungi/__init__.py
+Index: pungi-3.03/src/pypungi/__init__.py
 ===================================================================
---- pungi-2.13.orig/src/pypungi/__init__.py
-+++ pungi-2.13/src/pypungi/__init__.py
-@@ -145,7 +145,7 @@ class Pungi(pypungi.PungiBase):
+--- pungi-3.03.orig/src/pypungi/__init__.py
++++ pungi-3.03/src/pypungi/__init__.py
+@@ -242,7 +242,7 @@
  
      def _add_yum_repo(self, name, url, mirrorlist=False, groups=True,
-                       cost=1000, includepkgs=[], excludepkgs=[],
+                       cost=1000, includepkgs=None, excludepkgs=None,
 -                      proxy=None):
 +                      proxy=None, gpgkey=None):
          """This function adds a repo to the yum object.
- 
          name: Name of the repo
-@@ -189,6 +189,10 @@ class Pungi(pypungi.PungiBase):
+         url: Full url to the repo
+@@ -279,6 +279,10 @@
          thisrepo.exclude = excludepkgs
          thisrepo.includepkgs = includepkgs
          thisrepo.cost = cost
@@ -28,15 +28,15 @@ Index: pungi-2.13/src/pypungi/__init__.py
          # Yum doesn't like proxy being None
          if proxy:
              thisrepo.proxy = proxy
-@@ -219,6 +223,7 @@ class Pungi(pypungi.PungiBase):
+@@ -309,6 +313,7 @@
          yumconf.installroot = os.path.join(self.workdir, 'yumroot')
          yumconf.uid = os.geteuid()
          yumconf.cache = 0
 +        yumconf.assumeyes = True
          yumconf.failovermethod = 'priority'
+         yumconf.deltarpm = 0
          yumvars = yum.config._getEnvVar()
-         yumvars['releasever'] = self.config.get('pungi', 'version')
-@@ -277,7 +282,8 @@ class Pungi(pypungi.PungiBase):
+@@ -339,7 +344,8 @@
                                     cost=repo.cost,
                                     includepkgs=repo.includepkgs,
                                     excludepkgs=repo.excludepkgs,
@@ -46,13 +46,13 @@ Index: pungi-2.13/src/pypungi/__init__.py
              else:
                  self._add_yum_repo(repo.name, repo.baseurl,
                                     mirrorlist=False,
-@@ -285,7 +291,8 @@ class Pungi(pypungi.PungiBase):
+@@ -347,7 +353,8 @@
                                     cost=repo.cost,
                                     includepkgs=repo.includepkgs,
                                     excludepkgs=repo.excludepkgs,
 -                                   proxy=repo.proxy)
 +                                   proxy=repo.proxy,
 +                                   gpgkey=repo.gpgkey)
-         
-         self.logger.info('Getting sacks for arches %s' % arches)
-         self.ayum._getSacks(archlist=arches)
+ 
+         self.logger.info('Getting sacks for arches %s' % self.valid_arches)
+         self.ayum._getSacks(archlist=self.valid_arches)
