@@ -124,8 +124,6 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
     @property
     def status(self):
-        if self._error:
-            return _("Error setting root password")
         if self.data.rootpw.lock:
             return _("Root account is disabled")
         elif self.data.rootpw.password:
