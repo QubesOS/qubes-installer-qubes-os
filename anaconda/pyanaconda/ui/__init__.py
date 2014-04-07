@@ -22,7 +22,7 @@
 __all__ = ["UserInterface"]
 
 import os
-from common import collect
+from pyanaconda.ui.common import collect, PathDict
 
 class UserInterface(object):
     """This is the base class for all kinds of install UIs.  It primarily
@@ -59,6 +59,24 @@ class UserInterface(object):
         from pyanaconda.errors import errorHandler
         errorHandler.ui = self
 
+
+    basepath = os.path.dirname(__file__)
+    basemask = "pyanaconda.ui"
+    paths = PathDict({})
+
+    @property
+    def tty_num(self):
+        """Returns the number of tty the UserInterface is running on."""
+        raise NotImplementedError
+
+    @classmethod
+    def update_paths(cls, pathdict):
+        """Receives pathdict and appends it's contents to the current
+           class defined search path dictionary."""
+        for k,v in pathdict.iteritems():
+            cls.paths.setdefault(k, [])
+            cls.paths[k].extend(v)
+
     def setup(self, data):
         """Construct all the objects required to implement this interface.
            This method must be provided by all subclasses.
@@ -69,6 +87,15 @@ class UserInterface(object):
         """Run the interface.  This should do little more than just pass
            through to something else's run method, but is provided here in
            case more is needed.  This method must be provided by all subclasses.
+        """
+        raise NotImplementedError
+
+    @property
+    def meh_interface(self):
+        """
+        Returns an interface for exception handling (defined by python-meh's
+        AbstractIntf class).
+
         """
         raise NotImplementedError
 
@@ -98,47 +125,48 @@ class UserInterface(object):
         """
         raise NotImplementedError
 
-    def getActionClasses(self, module_pattern, path, hubs, standalone_class):
+    def _collectActionClasses(self, module_pattern_w_path, standalone_class):
         """Collect all the Hub and Spoke classes which should be enqueued for
-           processing and order them according to their pre/post dependencies.
+           processing.
 
-           :param module_pattern: the full name pattern (pyanaconda.ui.gui.spokes.%s)
-                                  of modules we about to import from path
-           :type module_pattern: string
+           :param module_pattern_w_path: the full name patterns (pyanaconda.ui.gui.spokes.%s)
+                                         and directory paths to modules we are about to import
+           :type module_pattern_w_path: list of (string, string)
 
-           :param path: the directory we are picking up modules from
-           :type path: string
+           :param standalone_class: the parent type of Spokes we want to pick up
+           :type standalone_class: common.StandaloneSpoke based types
+
+           :return: list of Spoke classes with standalone_class as a parent
+           :rtype: list of Spoke classes
+
+        """
+        standalones = []
+
+        for module_pattern, path in module_pattern_w_path:
+            standalones.extend(collect(module_pattern, path, lambda obj: issubclass(obj, standalone_class) and \
+                                       getattr(obj, "preForHub", False) or getattr(obj, "postForHub", False)))
+
+        return standalones
+
+    def _orderActionClasses(self, spokes, hubs):
+        """Order all the Hub and Spoke classes which should be enqueued for
+           processing according to their pre/post dependencies.
+
+           :param spokes: the classes we are to about order according
+                          to the hub dependencies
+           :type spokes: list of Spoke instances
 
            :param hubs: the list of Hub classes we check to be in pre/postForHub
                         attribute of Spokes to pick up
            :type hubs: common.Hub based types
-
-           :param standalone_class: the parent type of Spokes we want to pick up
-           :type standalone_class: common.StandaloneSpoke based types
         """
-
-
-        standalones = collect(module_pattern, path, lambda obj: issubclass(obj, standalone_class) and \
-                              getattr(obj, "preForHub", False) or getattr(obj, "postForHub", False))
 
         actionClasses = []
         for hub in hubs:
-            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "preForHub", None) == hub, standalones),
+            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "preForHub", None) == hub, spokes),
                                         key=lambda obj: obj.priority))
             actionClasses.append(hub)
-            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "postForHub", None) == hub, standalones),
+            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "postForHub", None) == hub, spokes),
                                         key=lambda obj: obj.priority))
 
         return actionClasses
-
-    def mainExceptionWindow(self, text, exn_file):
-        """Return window with the exception and buttons for debugging, bug
-           reporting and exitting the installer.
-
-           This method will be called only when unhandled exception appears.
-        """
-        raise NotImplementedError
-
-    def saveExceptionWindow(self, account_manager, signature):
-        """Show a window that provides a way to report a bug."""
-        raise NotImplementedError

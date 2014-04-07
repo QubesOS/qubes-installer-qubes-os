@@ -22,25 +22,28 @@
 # which has the same license and authored by David Lehman <dlehman@redhat.com>
 #
 
+from pyanaconda.ui.lib.disks import getDisks, size_str
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, CheckboxWidget
 
-from pykickstart.constants import AUTOPART_TYPE_LVM
-from pyanaconda.storage.size import Size
-from pyanaconda.storage.errors import StorageError
+from pykickstart.constants import AUTOPART_TYPE_LVM, AUTOPART_TYPE_BTRFS, AUTOPART_TYPE_PLAIN
+from blivet.size import Size
+from blivet.errors import StorageError
 from pyanaconda.flags import flags
 from pyanaconda.kickstart import doKickstartStorage
 from pyanaconda.threads import threadMgr, AnacondaThread
+from pyanaconda.constants import THREAD_STORAGE, THREAD_STORAGE_WATCHER
+from pyanaconda.constants_text import INPUT_PROCESSED
+from pyanaconda.i18n import _, P_
+from pyanaconda.bootloader import BootLoaderError
 
-from pykickstart.constants import *
+from pykickstart.constants import CLEARPART_TYPE_ALL, CLEARPART_TYPE_LINUX, CLEARPART_TYPE_NONE
+from pykickstart.errors import KickstartValueError
+
+from collections import OrderedDict
 
 import logging
 log = logging.getLogger("anaconda")
-
-import gettext
-
-_ = lambda x: gettext.ldgettext("anaconda", x)
-P_ = lambda x, y, z: gettext.ldngettext("anaconda", x, y, z)
 
 __all__ = ["StorageSpoke", "AutoPartSpoke"]
 
@@ -48,83 +51,73 @@ CLEARALL = _("Use All Space")
 CLEARLINUX = _("Replace Existing Linux system(s)")
 CLEARNONE = _("Use Free Space")
 
-parttypes = {CLEARALL: CLEARPART_TYPE_ALL, CLEARLINUX: CLEARPART_TYPE_LINUX,
+PARTTYPES = {CLEARALL: CLEARPART_TYPE_ALL, CLEARLINUX: CLEARPART_TYPE_LINUX,
              CLEARNONE: CLEARPART_TYPE_NONE}
 
-class FakeDiskLabel(object):
-    def __init__(self, free=0):
-        self.free = free
-
-class FakeDisk(object):
-    def __init__(self, name, size=0, free=0, partitioned=True, vendor=None,
-                 model=None, serial=None, removable=False):
-        self.name = name
-        self.size = size
-        self.format = FakeDiskLabel(free=free)
-        self.partitioned = partitioned
-        self.vendor = vendor
-        self.model = model
-        self.serial = serial
-        self.removable = removable
-
-    @property
-    def description(self):
-        return "%s %s" % (self.vendor, self.model)
-
-def getDisks(devicetree, fake=False):
-    if not fake:
-        disks = [d for d in devicetree.devices if d.isDisk and
-                                                  not d.format.hidden and
-                                                  not (d.protected and
-                                                       d.removable)]
-    else:
-        disks = []
-        disks.append(FakeDisk("sda", size=300000, free=10000, serial="00001",
-                              vendor="Seagate", model="Monster"))
-        disks.append(FakeDisk("sdb", size=300000, free=300000, serial="00002",
-                              vendor="Seagate", model="Monster"))
-        disks.append(FakeDisk("sdc", size=8000, free=2100, removable=True,
-                              vendor="SanDisk", model="Cruzer", serial="00003"))
-
-    return disks
-
 class StorageSpoke(NormalTUISpoke):
-    title = _("Install Destination")
-    category = "destination"
+    """
+    Storage spoke where users proceed to customize storage features such
+    as disk selection, partitioning, and fs type.
+    """
+    title = _("Installation Destination")
+    category = "system"
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        self.selected_disks = self.data.ignoredisk.onlyuse[:]
 
         self._ready = False
+        self.selected_disks = self.data.ignoredisk.onlyuse[:]
+
+        self.autopart = None
+        self.clearPartType = None
 
         # This list gets set up once in initialize and should not be modified
         # except perhaps to add advanced devices. It will remain the full list
         # of disks that can be included in the install.
         self.disks = []
         self.errors = []
+        self.warnings = []
+
+        if not flags.automatedInstall:
+            # default to using autopart for interactive installs
+            self.data.autopart.autopart = True
 
     @property
     def completed(self):
-        return bool(self.storage.rootDevice and not self.errors)
+        retval = bool(self.storage.rootDevice and not self.errors)
+
+        return retval
 
     @property
     def ready(self):
         # By default, the storage spoke is not ready.  We have to wait until
         # storageInitialize is done.
-        return self._ready and not threadMgr.get("AnaStorageWatcher")
+        return self._ready and not threadMgr.get(THREAD_STORAGE_WATCHER)
+
+    @property
+    def mandatory(self):
+        return True
+
+    @property
+    def showable(self):
+        return not flags.dirInstall
 
     @property
     def status(self):
         """ A short string describing the current status of storage setup. """
         msg = _("No disks selected")
-        if self.data.ignoredisk.onlyuse:
+
+        if flags.automatedInstall and not self.storage.rootDevice:
+            return msg
+        elif self.data.ignoredisk.onlyuse:
             msg = P_(("%d disk selected"),
                      ("%d disks selected"),
                      len(self.data.ignoredisk.onlyuse)) % len(self.data.ignoredisk.onlyuse)
 
             if self.errors:
                 msg = _("Error checking storage configuration")
+            elif self.warnings:
+                msg = _("Warning checking storage configuration")
             # Maybe show what type of clearpart and which disks selected?
             elif self.data.autopart.autopart:
                 msg = _("Automatic partitioning selected")
@@ -162,7 +155,7 @@ class StorageSpoke(NormalTUISpoke):
 
         summary = (P_(("%d disk selected; %s capacity; %s free ..."),
                       ("%d disks selected; %s capacity; %s free ..."),
-                      count) % (count, str(Size(spec="%s MB" % capacity)), free))
+                      count) % (count, str(Size(en_spec="%f MB" % capacity)), free))
 
         if len(self.disks) == 0:
             summary = _("No disks detected.  Please shut down the computer, connect at least one disk, and restart to complete installation.")
@@ -172,6 +165,8 @@ class StorageSpoke(NormalTUISpoke):
         # Append storage errors to the summary
         if self.errors:
             summary = summary + "\n" + "\n".join(self.errors)
+        elif self.warnings:
+            summary = summary + "\n" + "\n".join(self.warnings)
 
         return summary
 
@@ -179,11 +174,9 @@ class StorageSpoke(NormalTUISpoke):
         NormalTUISpoke.refresh(self, args)
 
         # Join the initialization thread to block on it
-        initThread = threadMgr.get("AnaStorageWatcher")
-        if initThread:
-            # This print is foul.  Need a better message display
-            print(_("Probing storage..."))
-            initThread.join()
+        # This print is foul.  Need a better message display
+        print(_("Probing storage..."))
+        threadMgr.wait(THREAD_STORAGE_WATCHER)
 
         # synchronize our local data store with the global ksdata
         # Commment out because there is no way to select a disk right
@@ -195,8 +188,9 @@ class StorageSpoke(NormalTUISpoke):
 
         # loop through the disks and present them.
         for disk in self.disks:
-            c = CheckboxWidget(title="%i) %s" % (self.disks.index(disk) + 1,
-                                                 disk.name),
+            size = size_str(disk.size)
+            c = CheckboxWidget(title="%i) %s: %s (%s)" % (self.disks.index(disk) + 1,
+                                                 disk.model, size, disk.name),
                                completed=(disk.name in self.selected_disks))
             self._window += [c, ""]
 
@@ -207,34 +201,30 @@ class StorageSpoke(NormalTUISpoke):
     def input(self, args, key):
         """Grab the disk choice and update things"""
 
-        if key == "c":
-            if self.selected_disks:
-                newspoke = AutoPartSpoke(self.app, self.data, self.storage,
-                                         self.payload, self.instclass)
-                self.app.switch_screen_modal(newspoke)
-                self.apply()
-                self.execute()
-                self.close()
-            return None
-
         try:
-            number = int(key)
-            self._update_disk_list(self.disks[number -1])
-            return None
-
-        except (ValueError, KeyError, IndexError):
-            return key
+            keyid = int(key) - 1
+            self._update_disk_list(self.disks[keyid])
+            return INPUT_PROCESSED
+        except (ValueError, IndexError):
+            if key.lower() == "c":
+                if self.selected_disks:
+                    newspoke = AutoPartSpoke(self.app, self.data, self.storage,
+                                             self.payload, self.instclass)
+                    self.app.switch_screen_modal(newspoke)
+                    self.apply()
+                    self.execute()
+                    self.close()
+                return INPUT_PROCESSED
+            else:
+                return key
 
     def apply(self):
-        if not flags.automatedInstall:
-            # default to using autopart for interactive installs
-            self.data.autopart.autopart = True
-
         self.autopart = self.data.autopart.autopart
         self.data.ignoredisk.onlyuse = self.selected_disks[:]
         self.data.clearpart.drives = self.selected_disks[:]
 
-        self.data.autopart.type = AUTOPART_TYPE_LVM
+        if self.data.autopart.type is None:
+            self.data.autopart.type = AUTOPART_TYPE_LVM
 
         if self.autopart:
             self.clearPartType = CLEARPART_TYPE_ALL
@@ -251,6 +241,11 @@ class StorageSpoke(NormalTUISpoke):
 
         self.data.bootloader.location = "mbr"
 
+        if self.data.bootloader.bootDrive and \
+           self.data.bootloader.bootDrive not in self.selected_disks:
+            self.data.bootloader.bootDrive = ""
+            self.storage.bootloader.reset()
+
         self.storage.config.update(self.data)
 
         # If autopart is selected we want to remove whatever has been
@@ -263,65 +258,73 @@ class StorageSpoke(NormalTUISpoke):
         print(_("Generating updated storage configuration"))
         try:
             doKickstartStorage(self.storage, self.data, self.instclass)
-        except StorageError as e:
-            log.error("storage configuration failed: %s" % e)
+        except (StorageError, KickstartValueError) as e:
+            log.error("storage configuration failed: %s", e)
             print _("storage configuration failed: %s") % e
             self.errors = [str(e)]
+            self.data.bootloader.bootDrive = ""
             self.data.clearpart.type = CLEARPART_TYPE_ALL
             self.data.clearpart.initAll = False
             self.storage.config.update(self.data)
             self.storage.autoPartType = self.data.clearpart.type
             self.storage.reset()
             self._ready = True
+        except BootLoaderError as e:
+            log.error("BootLoader setup failed: %s", e)
+            print _("storage configuration failed: %s") % e
+            self.errors = [str(e)]
+            self.data.bootloader.bootDrive = ""
+            self._ready = True
         else:
             print(_("Checking storage configuration..."))
-            (self.errors, warnings) = self.storage.sanityCheck()
+            (self.errors, self.warnings) = self.storage.sanityCheck()
             self._ready = True
             for e in self.errors:
                 log.error(e)
                 print e
-            for w in warnings:
+            for w in self.warnings:
                 log.warn(w)
                 print w
 
     def initialize(self):
         NormalTUISpoke.initialize(self)
 
-        threadMgr.add(AnacondaThread(name="AnaStorageWatcher",
+        threadMgr.add(AnacondaThread(name=THREAD_STORAGE_WATCHER,
                                      target=self._initialize))
 
         self.selected_disks = self.data.ignoredisk.onlyuse[:]
         # Probably need something here to track which disks are selected?
 
     def _initialize(self):
-        # Secondary initialize so wait for the storage thread
-        # to complete before populating our disk list
+        """
+        Secondary initialize so wait for the storage thread to complete before
+        populating our disk list
+        """
 
-        storageThread = threadMgr.get("AnaStorageThread")
-        if storageThread:
-            storageThread.join()
+        threadMgr.wait(THREAD_STORAGE)
 
         self.disks = sorted(getDisks(self.storage.devicetree),
                             key=lambda d: d.name)
+        # if only one disk is available, go ahead and mark it as selected
+        if len(self.disks) == 1:
+            self._update_disk_list(self.disks[0])
 
         self._update_summary()
         self._ready = True
 
 class AutoPartSpoke(NormalTUISpoke):
+    """ Autopartitioning options are presented here. """
     title = _("Autopartitioning Options")
-    category = "destination"
+    category = "system"
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
         self.clearPartType = self.data.clearpart.type
+        self.parttypelist = sorted(PARTTYPES.keys())
 
     @property
     def indirect(self):
         return True
-
-    @property
-    def completed(self):
-        return True # We're always complete
 
     def refresh(self, args = None):
         NormalTUISpoke.refresh(self, args)
@@ -332,37 +335,105 @@ class AutoPartSpoke(NormalTUISpoke):
             # Default to clearing everything.
             self.clearPartType = CLEARPART_TYPE_ALL
 
-        self.parttypelist = sorted(parttypes.keys())
         for parttype in self.parttypelist:
             c = CheckboxWidget(title="%i) %s" % (self.parttypelist.index(parttype) + 1,
                                                  parttype),
-                               completed=(parttypes[parttype] == self.clearPartType))
+                               completed=(PARTTYPES[parttype] == self.clearPartType))
             self._window += [c, ""]
 
-        message = _("Installation requires partitioning of your hard drive.  Select what space to use for the install target.")
+        message = _("Installation requires partitioning of your hard drive. Select what space to use for the install target.")
 
         self._window += [TextWidget(message), ""]
 
         return True
 
     def apply(self):
+        # kind of a hack, but if we're actually getting to this spoke, there
+        # is no doubt that we are doing autopartitioning, so set autopart to
+        # True. In the case of ks installs which may not have defined any
+        # partition options, autopart was never set to True, causing some
+        # issues. (rhbz#1001061)
+        self.data.autopart.autopart = True
         self.data.clearpart.type = self.clearPartType
         self.data.clearpart.initAll = True
 
     def input(self, args, key):
         """Grab the choice and update things"""
 
-        if key == "c":
+        try:
+            keyid = int(key) - 1
+        except ValueError:
+            if key.lower() == "c":
+                newspoke = PartitionSchemeSpoke(self.app, self.data, self.storage,
+                                                self.payload, self.instclass)
+                self.app.switch_screen_modal(newspoke)
+                self.apply()
+                self.close()
+                return INPUT_PROCESSED
+            else:
+                return key
+
+        if 0 <= keyid < len(self.parttypelist):
+            self.clearPartType = PARTTYPES[self.parttypelist[keyid]]
             self.apply()
-            self.close()
-            return False
+        return INPUT_PROCESSED
+
+class PartitionSchemeSpoke(NormalTUISpoke):
+    """ Spoke to select what partitioning scheme to use on disk(s). """
+    title = _("Partition Scheme Options")
+    category = "system"
+
+    # set default FS to LVM, for consistency with graphical behavior
+    _selection = 1
+
+    def __init__(self, app, data, storage, payload, instclass):
+        NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
+        self.partschemes = OrderedDict([("Standard Partition", AUTOPART_TYPE_PLAIN),
+                        ("LVM", AUTOPART_TYPE_LVM), ("BTRFS", AUTOPART_TYPE_BTRFS)])
+
+    @property
+    def indirect(self):
+        return True
+
+    def refresh(self, args=None):
+        NormalTUISpoke.refresh(self, args)
+
+        schemelist = self.partschemes.keys()
+        for sch in schemelist:
+            box = CheckboxWidget(title="%i) %s" %(schemelist.index(sch) \
+                                 + 1, sch), completed=(schemelist.index(sch) \
+                                 == self._selection))
+            self._window += [box, ""]
+
+        message = _("Select a partition scheme configuration.")
+        self._window += [TextWidget(message), ""]
+        return True
+
+    def input(self, args, key):
+        """ Grab the choice and update things. """
 
         try:
-            number = int(key)
-            self.clearPartType = parttypes[self.parttypelist[number -1]]
-            self.apply()
-            self.close()
-            return False
+            keyid = int(key) - 1
+        except ValueError:
+            if key.lower() == "c":
+                self.apply()
+                self.close()
+                return INPUT_PROCESSED
+            else:
+                return key
 
-        except (ValueError, KeyError, IndexError):
-            return key
+        if 0 <= keyid < len(self.partschemes):
+            self._selection = keyid
+        return INPUT_PROCESSED
+
+    def apply(self):
+        """ Apply our selections. """
+
+        schemelist = self.partschemes.values()
+        try:
+            self.data.autopart.type = schemelist[self._selection]
+        except IndexError:
+            # we shouldn't ever see this, but just in case, don't crash.
+            # when autopart.type is detected as None in AutoPartSpoke.apply(),
+            # it'll automatically just be set to LVM
+            pass

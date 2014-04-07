@@ -21,59 +21,26 @@
 #
 
 import glob
-import os, string, stat, sys
-import shutil
-import signal
+import os
+import stat
 import os.path
 import errno
 import subprocess
-import threading
-import re
+import unicodedata
+import string
+import types
+from threading import Thread
+from Queue import Queue, Empty
 
-from flags import flags
-from constants import *
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from pyanaconda.flags import flags
+from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, ROOT_PATH, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW
+from pyanaconda.regexes import PROXY_URL_PARSE
 
 import logging
 log = logging.getLogger("anaconda")
 program_log = logging.getLogger("program")
 
-class ExecProduct(object):
-    def __init__(self, rc, stdout, stderr):
-        self.rc = rc
-        self.stdout = stdout
-        self.stderr = stderr
-
-#Python reimplementation of the shell tee process, so we can
-#feed the pipe output into two places at the same time
-class tee(threading.Thread):
-    def __init__(self, inputdesc, outputdesc, logmethod, command):
-        threading.Thread.__init__(self)
-        self.inputdesc = os.fdopen(inputdesc, "r")
-        self.outputdesc = outputdesc
-        self.logmethod = logmethod
-        self.running = True
-        self.command = command
-
-    def run(self):
-        while self.running:
-            try:
-                data = self.inputdesc.readline()
-            except IOError:
-                self.logmethod("Can't read from pipe during a call to %s. "
-                               "(program terminated suddenly?)" % self.command)
-                break
-            if data == "":
-                self.running = False
-            else:
-                self.logmethod(data.rstrip('\n'))
-                os.write(self.outputdesc, data)
-
-    def stop(self):
-        self.running = False
-        return self
+from pyanaconda.anaconda_log import program_log_lock
 
 def augmentEnv():
     env = os.environ.copy()
@@ -82,335 +49,150 @@ def augmentEnv():
                })
     return env
 
-## Run an external program and redirect the output to a file.
-# @param command The command to run.
-# @param argv A list of arguments.
-# @param stdin The file descriptor to read stdin from.
-# @param stdout The file descriptor to redirect stdout to.
-# @param stderr The file descriptor to redirect stderr to.
-# @param root The directory to chroot to before running command.
-# @return The return code of command.
-def execWithRedirect(command, argv, stdin = None, stdout = None,
-                     stderr = None, root = '/', env_prune=[]):
+def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None):
+    """ Run an external program, log the output and return it to the caller
+        :param argv: The command to run and argument
+        :param root: The directory to chroot to before running command.
+        :param stdin: The file object to read stdin from.
+        :param stdout: Optional file object to write stdout and stderr to.
+        :param env_prune: environment variable to remove before execution
+        :return: The return code of the command and the output
+    """
+    if env_prune is None:
+        env_prune = []
+
+    def chroot():
+        if root and root != '/':
+            os.chroot(root)
+            os.chdir("/")
+
+    with program_log_lock:
+        program_log.info("Running... %s", " ".join(argv))
+
+        env = augmentEnv()
+        for var in env_prune:
+            env.pop(var, None)
+
+        try:
+            proc = subprocess.Popen(argv,
+                                    stdin=stdin,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    preexec_fn=chroot, cwd=root, env=env)
+
+            out = proc.communicate()[0]
+            if out:
+                for line in out.splitlines():
+                    program_log.info(line)
+                    if stdout:
+                        stdout.write(line)
+                        stdout.write("\n")
+
+        except OSError as e:
+            program_log.error("Error running %s: %s", argv[0], e.strerror)
+            raise
+
+        program_log.debug("Return code: %d", proc.returncode)
+
+    return (proc.returncode, out)
+
+def execWithRedirect(command, argv, stdin=None, stdout=None,
+                     root='/', env_prune=None):
+    """ Run an external program and redirect the output to a file.
+        :param command: The command to run
+        :param argv: The argument list
+        :param stdin: The file object to read stdin from.
+        :param stdout: Optional file object to redirect stdout and stderr to.
+        :param root: The directory to chroot to before running command.
+        :param env_prune: environment variable to remove before execution
+        :return: The return code of the command
+    """
     if flags.testing:
-        log.info("not running command because we're testing: %s %s"
-                   % (command, " ".join(argv)))
+        log.info("not running command because we're testing: %s %s",
+                 command, " ".join(argv))
         return 0
 
-    def chroot ():
-        os.chroot(root)
+    argv = [command] + argv
+    return _run_program(argv, stdin=stdin, stdout=stdout, root=root, env_prune=env_prune)[0]
 
-    stdinclose = stdoutclose = stderrclose = lambda : None
-
-    argv = list(argv)
-    if isinstance(stdin, str):
-        if os.access(stdin, os.R_OK):
-            stdin = os.open(stdin, os.O_RDONLY)
-            stdinclose = lambda : os.close(stdin)
-        else:
-            stdin = sys.stdin.fileno()
-    elif isinstance(stdin, int):
-        pass
-    elif stdin is None or not isinstance(stdin, file):
-        stdin = sys.stdin.fileno()
-
-    orig_stdout = stdout
-    if isinstance(stdout, str):
-        stdout = os.open(stdout, os.O_RDWR|os.O_CREAT)
-        stdoutclose = lambda : os.close(stdout)
-    elif isinstance(stdout, int):
-        pass
-    elif stdout is None or not isinstance(stdout, file):
-        stdout = sys.stdout.fileno()
-
-    if isinstance(stderr, str) and isinstance(orig_stdout, str) and stderr == orig_stdout:
-        stderr = stdout
-    elif isinstance(stderr, str):
-        stderr = os.open(stderr, os.O_RDWR|os.O_CREAT)
-        stderrclose = lambda : os.close(stderr)
-    elif isinstance(stderr, int):
-        pass
-    elif stderr is None or not isinstance(stderr, file):
-        stderr = sys.stderr.fileno()
-
-    program_log.info("Running... %s" % (" ".join([command] + argv),))
-
-    #prepare os pipes for feeding tee proceses
-    pstdout, pstdin = os.pipe()
-    perrout, perrin = os.pipe()
-
-    env = augmentEnv()
-
-    for var in env_prune:
-        if env.has_key(var):
-            del env[var]
-
-    try:
-        #prepare tee proceses
-        proc_std = tee(pstdout, stdout, program_log.info, command)
-        proc_err = tee(perrout, stderr, program_log.error, command)
-
-        #start monitoring the outputs
-        proc_std.start()
-        proc_err.start()
-
-        proc = subprocess.Popen([command] + argv, stdin=stdin,
-                                stdout=pstdin,
-                                stderr=perrin,
-                                preexec_fn=chroot, cwd=root,
-                                env=env)
-
-        proc.wait()
-        ret = proc.returncode
-
-        #close the input ends of pipes so we get EOF in the tee processes
-        os.close(pstdin)
-        os.close(perrin)
-
-        #wait for the output to be written and destroy them
-        proc_std.join()
-        del proc_std
-
-        proc_err.join()
-        del proc_err
-
-        stdinclose()
-        stdoutclose()
-        stderrclose()
-    except OSError as e:
-        errstr = "Error running %s: %s" % (command, e.strerror)
-        log.error(errstr)
-        program_log.error(errstr)
-        #close the input ends of pipes so we get EOF in the tee processes
-        os.close(pstdin)
-        os.close(perrin)
-        proc_std.join()
-        proc_err.join()
-
-        stdinclose()
-        stdoutclose()
-        stderrclose()
-        raise RuntimeError, errstr
-
-    return ret
-
-## Run an external program and capture standard out.
-# @param command The command to run.
-# @param argv A list of arguments.
-# @param stdin The file descriptor to read stdin from.
-# @param stderr The file descriptor to redirect stderr to.
-# @param root The directory to chroot to before running command.
-# @param fatal Boolean to determine if non-zero exit is fatal.
-# @return The output of command from stdout.
-def execWithCapture(command, argv, stdin = None, stderr = None, root='/',
-                    fatal = False):
+def execWithCapture(command, argv, stdin=None, root='/'):
+    """ Run an external program and capture standard out and err.
+        :param command: The command to run
+        :param argv: The argument list
+        :param stdin: The file object to read stdin from.
+        :param root: The directory to chroot to before running command.
+        :return: The output of the command
+    """
     if flags.testing:
-        log.info("not running command because we're testing: %s %s"
-                    % (command, " ".join(argv)))
+        log.info("not running command because we're testing: %s %s",
+                 command, " ".join(argv))
         return ""
 
+    argv = [command] + argv
+    return _run_program(argv, stdin=stdin, root=root)[1]
+
+def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
+    """ Execute an external command and return the line output of the command
+        in real-time.
+
+        :param command: The command to run
+        :param argv: The argument list
+        :param stdin: The file object to read stdin from.
+        :param stdout: Optional file object to redirect stdout and stderr to.
+        :param stderr: not used
+        :param root: The directory to chroot to before running command.
+        :param env_prune: environment variable to remove before execution
+
+        Output from the file is not logged to program.log
+        This returns a generator with the lines from the command until it has finished
+    """
+    if env_prune is None:
+        env_prune = []
+
+    # Return the lines from stdout via a Queue
+    def queue_lines(out, queue):
+        for line in iter(out.readline, b''):
+            queue.put(line.strip())
+        out.close()
+
     def chroot():
-        if root is not None:
+        if root and root != '/':
             os.chroot(root)
+            os.chdir("/")
 
-    def closefds ():
-        stdinclose()
-        stderrclose()
+    argv = [command] + argv
+    with program_log_lock:
+        program_log.info("Running... %s", " ".join(argv))
 
-    stdinclose = stderrclose = lambda : None
-    rc = ""
-    argv = list(argv)
-
-    if isinstance(stdin, str):
-        if os.access(stdin, os.R_OK):
-            stdin = os.open(stdin, os.O_RDONLY)
-            stdinclose = lambda : os.close(stdin)
-        else:
-            stdin = sys.stdin.fileno()
-    elif isinstance(stdin, int):
-        pass
-    elif stdin is None or not isinstance(stdin, file):
-        stdin = sys.stdin.fileno()
-
-    if isinstance(stderr, str):
-        stderr = os.open(stderr, os.O_RDWR|os.O_CREAT)
-        stderrclose = lambda : os.close(stderr)
-    elif isinstance(stderr, int):
-        pass
-    elif stderr is None or not isinstance(stderr, file):
-        stderr = sys.stderr.fileno()
-
-    program_log.info("Running... %s" % (" ".join([command] + argv),))
-
+    env = augmentEnv()
+    for var in env_prune:
+        env.pop(var, None)
     try:
-        proc = subprocess.Popen([command] + argv, stdin=stdin,
+        proc = subprocess.Popen(argv,
+                                stdin=stdin,
                                 stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                preexec_fn=chroot, cwd=root,
-                                env=augmentEnv())
-
-        while True:
-            (outStr, errStr) = proc.communicate()
-            if outStr:
-                map(program_log.info, outStr.splitlines())
-                rc += outStr
-            if errStr:
-                map(program_log.error, errStr.splitlines())
-                os.write(stderr, errStr)
-
-            if proc.returncode is not None:
-                break
-        # if we have anything other than a clean exit, and we get the fatal
-        # option, raise the OSError.
-        if proc.returncode and fatal:
-            raise RuntimeError('Error running ' + command + ': Non-zero return code: %s' % proc.returncode)
+                                stderr=subprocess.STDOUT,
+                                bufsize=1,
+                                preexec_fn=chroot, cwd=root, env=env)
     except OSError as e:
-        log.error ("Error running " + command + ": " + e.strerror)
-        raise RuntimeError, "Error running " + command + ": " + e.strerror
-    finally:
-        closefds()
+        program_log.error("Error running %s: %s", argv[0], e.strerror)
+        raise
 
-    return rc
+    q = Queue()
+    t = Thread(target=queue_lines, args=(proc.stdout, q))
+    t.daemon = True # thread dies with the program
+    t.start()
 
-def execWithCallback(command, argv, stdin = None, stdout = None,
-                     stderr = None, echo = True, callback = None,
-                     callback_data = None, root = '/'):
-    if flags.testing:
-        log.info("not running command because we're testing: %s %s"
-                    % (command, " ".join(argv)))
-        return ExecProduct(0, '', '')
-
-    def chroot():
-        os.chroot(root)
-
-    def closefds ():
-        stdinclose()
-        stdoutclose()
-        stderrclose()
-
-    stdinclose = stdoutclose = stderrclose = lambda : None
-
-    argv = list(argv)
-    if isinstance(stdin, str):
-        if os.access(stdin, os.R_OK):
-            stdin = os.open(stdin, os.O_RDONLY)
-            stdinclose = lambda : os.close(stdin)
-        else:
-            stdin = sys.stdin.fileno()
-    elif isinstance(stdin, int):
-        pass
-    elif stdin is None or not isinstance(stdin, file):
-        stdin = sys.stdin.fileno()
-
-    if isinstance(stdout, str):
-        stdout = os.open(stdout, os.O_RDWR|os.O_CREAT)
-        stdoutclose = lambda : os.close(stdout)
-    elif isinstance(stdout, int):
-        pass
-    elif stdout is None or not isinstance(stdout, file):
-        stdout = sys.stdout.fileno()
-
-    if isinstance(stderr, str):
-        stderr = os.open(stderr, os.O_RDWR|os.O_CREAT)
-        stderrclose = lambda : os.close(stderr)
-    elif isinstance(stderr, int):
-        pass
-    elif stderr is None or not isinstance(stderr, file):
-        stderr = sys.stderr.fileno()
-
-    program_log.info("Running... %s" % (" ".join([command] + argv),))
-
-    p = os.pipe()
-    p_stderr = os.pipe()
-    childpid = os.fork()
-    if not childpid:
-        os.close(p[0])
-        os.close(p_stderr[0])
-        os.dup2(p[1], 1)
-        os.dup2(p_stderr[1], 2)
-        os.dup2(stdin, 0)
-        os.close(stdin)
-        os.close(p[1])
-        os.close(p_stderr[1])
-
-        os.execvp(command, [command] + argv)
-        os._exit(1)
-
-    os.close(p[1])
-    os.close(p_stderr[1])
-
-    log_output = ''
-    while 1:
+    while True:
         try:
-            s = os.read(p[0], 1)
-        except OSError as e:
-            if e.errno != 4:
-                map(program_log.info, log_output.splitlines())
-                raise IOError, e.args
-
-        if echo:
-            os.write(stdout, s)
-        log_output += s
-
-        if callback:
-            callback(s, callback_data=callback_data)
-
-        # break out early if the sub-process changes status.
-        # no need to flush the stream if the process has exited
-        try:
-            (pid, status) = os.waitpid(childpid,os.WNOHANG)
-            if pid != 0:
+            line = q.get(timeout=.1)
+            yield line
+            q.task_done()
+        except Empty:
+            if proc.poll() is not None:
                 break
-        except OSError as e:
-            log.critical("exception from waitpid: %s %s" %(e.errno, e.strerror))
+    q.join()
 
-        if len(s) < 1:
-            break
-
-    map(program_log.info, log_output.splitlines())
-
-    log_errors = ''
-    while 1:
-        try:
-            err = os.read(p_stderr[0], 128)
-        except OSError as e:
-            if e.errno != 4:
-                map(program_log.error, log_errors.splitlines())
-                raise IOError, e.args
-            break
-        log_errors += err
-        if len(err) < 1:
-            break
-
-    os.write(stderr, log_errors)
-    map(program_log.error, log_errors.splitlines())
-    os.close(p[0])
-    os.close(p_stderr[0])
-
-    try:
-        #if we didn't already get our child's exit status above, do so now.
-        if not pid:
-            (pid, status) = os.waitpid(childpid, 0)
-    except OSError as e:
-        log.critical("exception from waitpid: %s %s" %(e.errno, e.strerror))
-
-    closefds()
-
-    rc = 1
-    if os.WIFEXITED(status):
-        rc = os.WEXITSTATUS(status)
-    return ExecProduct(rc, log_output , log_errors)
-
-def _pulseProgressCallback(data, callback_data=None):
-    if callback_data:
-        callback_data.pulse()
-
-def execWithPulseProgress(command, argv, stdin = None, stdout = None,
-                          stderr = None, echo = True, progress = None,
-                          root = '/'):
-    return execWithCallback(command, argv, stdin=stdin, stdout=stdout,
-                     stderr=stderr, echo=echo, callback=_pulseProgressCallback,
-                     callback_data=progress, root=root)
 
 ## Run a shell.
 def execConsole():
@@ -418,34 +200,34 @@ def execConsole():
         proc = subprocess.Popen(["/bin/sh"])
         proc.wait()
     except OSError as e:
-        raise RuntimeError, "Error running /bin/sh: " + e.strerror
+        raise RuntimeError("Error running /bin/sh: " + e.strerror)
 
-def getDirSize(dir):
+def getDirSize(directory):
     """ Get the size of a directory and all its subdirectories.
-    @param dir The name of the directory to find the size of.
-    @return The size of the directory in kilobytes.
+    :param dir: The name of the directory to find the size of.
+    :return: The size of the directory in kilobytes.
     """
-    def getSubdirSize(dir):
+    def getSubdirSize(directory):
         # returns size in bytes
         try:
-            mydev = os.lstat(dir)[stat.ST_DEV]
+            mydev = os.lstat(directory)[stat.ST_DEV]
         except OSError as e:
-            log.debug("failed to stat %s: %s" % (dir, e))
+            log.debug("failed to stat %s: %s", directory, e)
             return 0
 
         try:
-            dirlist = os.listdir(dir)
+            dirlist = os.listdir(directory)
         except OSError as e:
-            log.debug("failed to listdir %s: %s" % (dir, e))
+            log.debug("failed to listdir %s: %s", directory, e)
             return 0
 
         dsize = 0
         for f in dirlist:
-            curpath = '%s/%s' % (dir, f)
+            curpath = '%s/%s' % (directory, f)
             try:
                 sinfo = os.lstat(curpath)
             except OSError as e:
-                log.debug("failed to stat %s/%s: %s" % (dir, f, e))
+                log.debug("failed to stat %s/%s: %s", directory, f, e)
                 continue
 
             if stat.S_ISDIR(sinfo[stat.ST_MODE]):
@@ -457,360 +239,46 @@ def getDirSize(dir):
                 dsize += sinfo[stat.ST_SIZE]
 
         return dsize
-    return getSubdirSize(dir)/1024
-
-## Get the amount of RAM not used by /tmp.
-# @return The amount of available memory in kilobytes.
-def memAvailable():
-    tram = memInstalled()
-
-    ramused = getDirSize("/tmp")
-    return tram - ramused
-
-## Get the amount of RAM installed in the machine.
-# @return The amount of installed memory in kilobytes.
-def memInstalled():
-    f = open("/proc/meminfo", "r")
-    lines = f.readlines()
-    f.close()
-
-    for l in lines:
-        if l.startswith("MemTotal:"):
-            fields = string.split(l)
-            mem = fields[1]
-            break
-
-    return long(mem)
+    return getSubdirSize(directory)/1024
 
 ## Create a directory path.  Don't fail if the directory already exists.
-# @param dir The directory path to create.
-def mkdirChain(dir):
+def mkdirChain(directory):
+    """
+    :param dir: The directory path to create
+
+    """
+
     try:
-        os.makedirs(dir, 0755)
+        os.makedirs(directory, 0755)
     except OSError as e:
         try:
-            if e.errno == errno.EEXIST and stat.S_ISDIR(os.stat(dir).st_mode):
+            if e.errno == errno.EEXIST and stat.S_ISDIR(os.stat(directory).st_mode):
                 return
         except OSError:
             pass
 
-        log.error("could not create directory %s: %s" % (dir, e.strerror))
+        log.error("could not create directory %s: %s", dir, e.strerror)
 
-## Copy a device node.
-# Copies a device node by looking at the device type, major and minor device
-# numbers, and doing a mknod on the new device name.
-#
-# @param src The name of the source device node.
-# @param dest The name of the new device node to create.
-def copyDeviceNode(src, dest):
-    filestat = os.lstat(src)
-    mode = filestat[stat.ST_MODE]
-    if stat.S_ISBLK(mode):
-        type = stat.S_IFBLK
-    elif stat.S_ISCHR(mode):
-        type = stat.S_IFCHR
-    else:
-        # XXX should we just fallback to copying normally?
-        raise RuntimeError, "Tried to copy %s which isn't a device node" % (src,)
+def get_active_console(dev="console"):
+    '''Find the active console device.
 
-    os.mknod(dest, mode | type, filestat.st_rdev)
+    Some tty devices (/dev/console, /dev/tty0) aren't actual devices;
+    they just redirect input and output to the real console device(s).
 
-## Get the SPARC machine variety type.
-# @return The SPARC machine type, or 0 if not SPARC.
-def getSparcMachine():
-    if not isSparc():
-        return 0
+    These 'fake' ttys have an 'active' sysfs attribute, which lists the real
+    console device(s). (If there's more than one, the *last* one in the list
+    is the primary console.)
+    '''
+    # If there's an 'active' attribute, this is a fake console..
+    while os.path.exists("/sys/class/tty/%s/active" % dev):
+        # So read the name of the real, primary console out of the file.
+        dev = open("/sys/class/tty/%s/active" % dev).read().split()[-1]
+    return dev
 
-    machine = None
-
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-    for line in lines:
-        if line.find('type') != -1:
-            machine = line.split(':')[1].strip()
-            return machine
-
-    return None
-
-## Get the PPC machine variety type.
-# @return The PPC machine type, or 0 if not PPC.
-def getPPCMachine():
-    if not isPPC():
-        return 0
-
-    ppcMachine = None
-    machine = None
-    platform = None
-
-    # ppc machine hash
-    ppcType = { 'Mac'      : 'PMac',
-                'Book'     : 'PMac',
-                'CHRP IBM' : 'pSeries',
-                'Pegasos'  : 'Pegasos',
-                'Efika'    : 'Efika',
-                'iSeries'  : 'iSeries',
-                'pSeries'  : 'pSeries',
-                'PReP'     : 'PReP',
-                'CHRP'     : 'pSeries',
-                'Amiga'    : 'APUS',
-                'Gemini'   : 'Gemini',
-                'Shiner'   : 'ANS',
-                'BRIQ'     : 'BRIQ',
-                'Teron'    : 'Teron',
-                'AmigaOne' : 'Teron',
-                'Maple'    : 'pSeries',
-                'Cell'     : 'pSeries',
-                'Momentum' : 'pSeries',
-                'PS3'      : 'PS3',
-                'PowerNV'  : 'pSeries'
-                }
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-    for line in lines:
-        if line.find('machine') != -1:
-            machine = line.split(':')[1]
-        elif line.find('platform') != -1:
-            platform = line.split(':')[1]
-
-    for part in (machine, platform):
-        if ppcMachine is None and part is not None:
-            for type in ppcType.items():
-                if part.find(type[0]) != -1:
-                    ppcMachine = type[1]
-
-    if ppcMachine is None:
-        log.warning("Unable to find PowerPC machine type")
-    elif ppcMachine == 0:
-        log.warning("Unknown PowerPC machine type: %s" %(ppcMachine,))
-
-    return ppcMachine
-
-## Get the powermac machine ID.
-# @return The powermac machine id, or 0 if not PPC.
-def getPPCMacID():
-    machine = None
-
-    if not isPPC():
-        return 0
-    if getPPCMachine() != "PMac":
-        return 0
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-    for line in lines:
-      if line.find('machine') != -1:
-        machine = line.split(':')[1]
-        machine = machine.strip()
-        return machine
-
-    log.warning("No Power Mac machine id")
-    return 0
-
-## Get the powermac generation.
-# @return The powermac generation, or 0 if not powermac.
-def getPPCMacGen():
-    # XXX: should NuBus be here?
-    pmacGen = ['OldWorld', 'NewWorld', 'NuBus']
-
-    if not isPPC():
-        return 0
-    if getPPCMachine() != "PMac":
-        return 0
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-    gen = None
-    for line in lines:
-      if line.find('pmac-generation') != -1:
-        gen = line.split(':')[1]
-        break
-
-    if gen is None:
-        log.warning("Unable to find pmac-generation")
-
-    for type in pmacGen:
-      if gen.find(type) != -1:
-          return type
-
-    log.warning("Unknown Power Mac generation: %s" %(gen,))
-    return 0
-
-## Determine if the hardware is an iBook or PowerBook
-# @return 1 if so, 0 otherwise.
-def getPPCMacBook():
-    if not isPPC():
-        return 0
-    if getPPCMachine() != "PMac":
-        return 0
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-
-    for line in lines:
-      if not string.find(string.lower(line), 'book') == -1:
-        return 1
-    return 0
-
-## Get the ARM processor variety.
-# @return The ARM processor variety type, or 0 if not ARM.
-def getARMMachine():
-    if not isARM():
-        return 0
-
-    if flags.armPlatform:
-        return flags.armPlatform
-
-    armMachine = os.uname()[2].rpartition('.' )[2]
-
-    if armMachine.startswith('arm'):
-        return None
-    else:
-        return armMachine
-
-
-cell = None
-## Determine if the hardware is the Cell platform.
-# @return True if so, False otherwise.
-def isCell():
-    global cell
-    if cell is not None:
-        return cell
-
-    cell = False
-    if not isPPC():
-        return cell
-
-    f = open('/proc/cpuinfo', 'r')
-    lines = f.readlines()
-    f.close()
-
-    for line in lines:
-      if not string.find(line, 'Cell') == -1:
-          cell = True
-
-    return cell
-
-mactel = None
-## Determine if the hardware is an Intel-based Apple Mac.
-# @return True if so, False otherwise.
-def isMactel():
-    global mactel
-    if mactel is not None:
-        return mactel
-
-    if not isX86():
-        mactel = False
-    elif not os.path.isfile(DMI_CHASSIS_VENDOR):
-        mactel = False
-    else:
-        buf = open(DMI_CHASSIS_VENDOR).read()
-        if buf.lower().find("apple") != -1:
-            mactel = True
-        else:
-            mactel = False
-    return mactel
-
-efi = None
-## Determine if the hardware supports EFI.
-# @return True if so, False otherwise.
-def isEfi():
-    global efi
-    if efi is not None:
-        return efi
-
-    efi = False
-    # XXX need to make sure efivars is loaded...
-    if os.path.exists("/sys/firmware/efi"):
-        efi = True
-
-    return efi
-
-# Architecture checking functions
-
-def isX86(bits=None):
-    arch = os.uname()[4]
-
-    # x86 platforms include:
-    #     i*86
-    #     athlon*
-    #     x86_64
-    #     amd*
-    #     ia32e
-    if bits is None:
-        if (arch.startswith('i') and arch.endswith('86')) or \
-           arch.startswith('athlon') or arch.startswith('amd') or \
-           arch == 'x86_64' or arch == 'ia32e':
-            return True
-    elif bits == 32:
-        if arch.startswith('i') and arch.endswith('86'):
-            return True
-    elif bits == 64:
-        if arch.startswith('athlon') or arch.startswith('amd') or \
-           arch == 'x86_64' or arch == 'ia32e':
-            return True
-
-    return False
-
-def isPPC(bits=None):
-    arch = os.uname()[4]
-
-    if bits is None:
-        if arch == 'ppc' or arch == 'ppc64':
-            return True
-    elif bits == 32:
-        if arch == 'ppc':
-            return True
-    elif bits == 64:
-        if arch == 'ppc64':
-            return True
-
-    return False
-
-def isS390():
-    return os.uname()[4].startswith('s390')
-
-def isIA64():
-    return os.uname()[4] == 'ia64'
-
-def isAlpha():
-    return os.uname()[4].startswith('alpha')
-
-def isSparc():
-    return os.uname()[4].startswith('sparc')
-
-def isARM():
-    return os.uname()[4].startswith('arm')
-
-def getArch():
-    if isX86(bits=32):
-        return 'i386'
-    elif isX86(bits=64):
-        return 'x86_64'
-    elif isPPC(bits=32):
-        return 'ppc'
-    elif isPPC(bits=64):
-        return 'ppc64'
-    elif isAlpha():
-        return 'alpha'
-    elif isSparc():
-        return 'sparc'
-    elif isARM():
-        return 'arm'
-    else:
-        return os.uname()[4]
-
-def isConsoleOnVirtualTerminal():
-    # XXX PJFIX is there some way to ask the kernel this instead?
-    if isS390():
-        return False
-    return not flags.serial
+def isConsoleOnVirtualTerminal(dev="console"):
+    console = get_active_console(dev)          # e.g. 'tty1', 'ttyS0', 'hvc1'
+    consoletype = console.rstrip('0123456789') # remove the number
+    return consoletype == 'tty'
 
 def strip_markup(text):
     if text.find("<") == -1:
@@ -828,93 +296,25 @@ def strip_markup(text):
             r += c
     return r.encode("utf-8")
 
-def notify_kernel(path, action="change"):
-    """ Signal the kernel that the specified device has changed.
-
-        Exceptions raised: ValueError, IOError
-    """
-    log.debug("notifying kernel of '%s' event on device %s" % (action, path))
-    path = os.path.join(path, "uevent")
-    if not path.startswith("/sys/") or not os.access(path, os.W_OK):
-        log.debug("sysfs path '%s' invalid" % path)
-        raise ValueError("invalid sysfs path")
-
-    f = open(path, "a")
-    f.write("%s\n" % action)
-    f.close()
-
-def get_sysfs_path_by_name(dev_node, class_name="block"):
-    """ Return sysfs path for a given device.
-
-        For a device node (e.g. /dev/vda2) get the respective sysfs path
-        (e.g. /sys/class/block/vda2). This also has to work for device nodes
-        that are in a subdirectory of /dev like '/dev/cciss/c0d0p1'.
-     """
-    dev_name = os.path.basename(dev_node)
-    if dev_node.startswith("/dev/"):
-        dev_name = dev_node[5:].replace("/", "!")
-    sysfs_class_dir = "/sys/class/%s" % class_name
-    dev_path = os.path.join(sysfs_class_dir, dev_name)
-    if os.path.exists(dev_path):
-        return dev_path
-    else:
-        raise RuntimeError("get_sysfs_path_by_name: Could not find sysfs path "
-                           "for '%s' (it is not at '%s')" % (dev_node, dev_path))
-
-def numeric_type(num):
-    """ Verify that a value is given as a numeric data type.
-
-        Return the number if the type is sensible or raise ValueError
-        if not.
-    """
-    if num is None:
-        num = 0
-    elif not (isinstance(num, int) or \
-              isinstance(num, long) or \
-              isinstance(num, float)):
-        raise ValueError("value (%s) must be either a number or None" % num)
-
-    return num
-
 def reIPL(ipldev):
     try:
-        rc = execWithRedirect("chreipl", ["node", "/dev/" + ipldev],
-                              stdout = "/dev/tty5",
-                              stderr = "/dev/tty5")
+        rc = execWithRedirect("chreipl", ["node", "/dev/" + ipldev])
     except RuntimeError as e:
         rc = True
         log.info("Unable to set reIPL device to %s: %s",
                  ipldev, e)
 
     if rc:
-        devstring = None
-
-        for disk in anaconda.storage.disks:
-            if disk.name == ipldev:
-                devstring = disk.description
-                break
-
-        if devstring is None:
-            devstring = _("the device containing /boot")
-
-        message = _("After shutdown, please perform a manual IPL from %s "
-                    "to continue installation." % devstring)
-
         log.info("reIPL configuration failed")
-        #os.kill(os.getppid(), signal.SIGUSR1)
     else:
-        message = None
         log.info("reIPL configuration successful")
-        #os.kill(os.getppid(), signal.SIGUSR2)
-
-    return message
 
 def resetRpmDb():
     for rpmfile in glob.glob("%s/var/lib/rpm/__db.*" % ROOT_PATH):
         try:
             os.unlink(rpmfile)
         except OSError as e:
-            log.debug("error %s removing file: %s" %(e,rpmfile))
+            log.debug("error %s removing file: %s", e, rpmfile)
 
 def parseNfsUrl(nfsurl):
     options = ''
@@ -929,76 +329,27 @@ def parseNfsUrl(nfsurl):
             (host, path) = s
         else:
             host = s[0]
+
     return (options, host, path)
 
-def insert_colons(a_string):
-    """
-    Insert colon between every second character.
-
-    E.g. creates 'al:go:ri:th:ms' from 'algoritms'. Useful for formatting MAC
-    addresses and wwids for output.
-    """
-    suffix = a_string[-2:]
-    if len(a_string) > 2:
-        return insert_colons(a_string[:-2]) + ':' + suffix
-    else:
-        return suffix
-
-def add_po_path(module, dir):
+def add_po_path(module, directory):
     """ Looks to see what translations are under a given path and tells
     the gettext module to use that path as the base dir """
-    for d in os.listdir(dir):
-        if not os.path.isdir("%s/%s" %(dir,d)):
+    for d in os.listdir(directory):
+        if not os.path.isdir("%s/%s" %(directory,d)):
             continue
-        if not os.path.exists("%s/%s/LC_MESSAGES" %(dir,d)):
+        if not os.path.exists("%s/%s/LC_MESSAGES" %(directory,d)):
             continue
-        for basename in os.listdir("%s/%s/LC_MESSAGES" %(dir,d)):
+        for basename in os.listdir("%s/%s/LC_MESSAGES" %(directory,d)):
             if not basename.endswith(".mo"):
                 continue
-            log.info("setting %s as translation source for %s" %(dir, basename[:-3]))
-            module.bindtextdomain(basename[:-3], dir)
+            log.info("setting %s as translation source for %s", directory, basename[:-3])
+            module.bindtextdomain(basename[:-3], directory)
 
 def setup_translations(module):
     if os.path.isdir(TRANSLATIONS_UPDATE_DIR):
         add_po_path(module, TRANSLATIONS_UPDATE_DIR)
     module.textdomain("anaconda")
-
-def copy_to_sysimage(source):
-    if not os.access(source, os.R_OK):
-        log.info("copy_to_sysimage: source '%s' does not exist." % source)
-        return False
-
-    target = ROOT_PATH + source
-    target_dir = os.path.dirname(target)
-    log.debug("copy_to_sysimage: '%s' -> '%s'." % (source, target))
-    if not os.path.isdir(target_dir):
-        os.makedirs(target_dir)
-    shutil.copy(source, target)
-    return True
-
-def get_sysfs_attr(path, attr):
-    if not attr:
-        log.debug("get_sysfs_attr() called with attr=None")
-        return None
-
-    attribute = "/sys%s/%s" % (path, attr)
-    attribute = os.path.realpath(attribute)
-
-    if not os.path.isfile(attribute) and not os.path.islink(attribute):
-        log.warning("%s is not a valid attribute" % (attr,))
-        return None
-
-    return open(attribute, "r").read().strip()
-
-def find_program_in_path(prog, raise_on_error=False):
-    for d in os.environ["PATH"].split(os.pathsep):
-        full = os.path.join(d, prog)
-        if os.access(full, os.X_OK):
-            return full
-
-    if raise_on_error:
-        raise RuntimeError("Unable to locate a needed executable: '%s'" % prog)
-    return None
 
 def fork_orphan():
     """Forks an orphan.
@@ -1015,23 +366,16 @@ def fork_orphan():
     os.waitpid(intermediate, 0)
     return 1
 
-def lsmod():
-    """ Returns list of names of all loaded modules. """
-    with open("/proc/modules") as f:
-        lines = f.readlines()
-    return [l.split()[0] for l in lines]
-
 def _run_systemctl(command, service):
     """
     Runs 'systemctl command service.service'
 
-    @return: exit status of the systemctl
+    :return: exit status of the systemctl
 
     """
 
     service_name = service + ".service"
-    ret = execWithRedirect("systemctl", [command, service_name], stdin=None,
-                           stdout="/dev/tty5", stderr="/dev/tty5")
+    ret = execWithRedirect("systemctl", [command, service_name])
 
     return ret
 
@@ -1060,6 +404,7 @@ def dracut_eject(device):
 
     try:
         if not os.path.exists(DRACUT_SHUTDOWN_EJECT):
+            mkdirChain(os.path.dirname(DRACUT_SHUTDOWN_EJECT))
             f = open(DRACUT_SHUTDOWN_EJECT, "w")
             f.write("#!/bin/sh\n")
             f.write("# Created by Anaconda\n")
@@ -1069,33 +414,22 @@ def dracut_eject(device):
         f.write("eject %s\n" % (device,))
         f.close()
         os.chmod(DRACUT_SHUTDOWN_EJECT, 0755)
-        log.info("Wrote dracut shutdown eject hook for %s" % (device,))
-    except Exception, e:
-        log.error("Error writing dracut shutdown eject hook for %s: %s" % (device, e))
-
-def get_option_value(opt_name, options):
-    """ Return the value of a named option in the specified options string. """
-    for opt in options.split(","):
-        if "=" not in opt:
-            continue
-
-        name, val = opt.split("=")
-        if name == opt_name:
-            return val.strip()
+        log.info("Wrote dracut shutdown eject hook for %s", device)
+    except (IOError, OSError) as e:
+        log.error("Error writing dracut shutdown eject hook for %s: %s", device, e)
 
 def vtActivate(num):
     """
     Try to switch to tty number $num.
 
-    @type num: int
-    @return: whether the switch was successful or not
-    @rtype: bool
+    :type num: int
+    :return: whether the switch was successful or not
+    :rtype: bool
 
     """
 
     try:
-        ret = execWithRedirect("chvt", [str(num)], stdout="/dev/tty5",
-                                stderr="/dev/tty5")
+        ret = execWithRedirect("chvt", [str(num)])
     except OSError as oserr:
         ret = -1
         log.error("Failed to run chvt: %s", oserr.strerror)
@@ -1158,8 +492,7 @@ class ProxyString(object):
         # 5 = hostname
         # 6 = port
         # 7 = extra
-        pattern = re.compile("([A-Za-z]+://)?(([A-Za-z0-9]+)(:[^:@]+)?@)?([^:/]+)(:[0-9]+)?(/.*)?")
-        m = pattern.match(self.url)
+        m = PROXY_URL_PARSE.match(self.url)
         if not m:
             raise ProxyStringError("malformed url, cannot parse it.")
 
@@ -1203,8 +536,249 @@ class ProxyString(object):
         """
         components = ["url", "noauth_url", "protocol", "host", "port",
                       "username", "password"]
-        return dict([(k, getattr(self, k)) for k in components]) 
+        return dict((k, getattr(self, k)) for k in components)
 
     def __str__(self):
         return self.url
 
+def getdeepattr(obj, name):
+    """This behaves as the standard getattr, but supports
+       composite (containing dots) attribute names.
+
+       As an example:
+
+       >>> import os
+       >>> from os.path import split
+       >>> getdeepattr(os, "path.split") == split
+       True
+    """
+
+    for attr in name.split("."):
+        obj = getattr(obj, attr)
+    return obj
+
+def setdeepattr(obj, name, value):
+    """This behaves as the standard setattr, but supports
+       composite (containing dots) attribute names.
+
+       As an example:
+
+       >>> class O:
+       >>>   pass
+       >>> a = O()
+       >>> a.b = O()
+       >>> a.b.c = O()
+       >>> setdeepattr(a, "b.c.d", True)
+       >>> a.b.c.d
+       True
+    """
+    path = name.split(".")
+    for attr in path[:-1]:
+        obj = getattr(obj, attr)
+    return setattr(obj, path[-1], value)
+
+def strip_accents(s):
+    """This function takes arbitrary unicode string
+    and returns it with all the diacritics removed.
+
+    :param s: arbitrary string
+    :type s: unicode
+
+    :return: s with diacritics removed
+    :rtype: unicode
+
+    """
+    return ''.join((c for c in unicodedata.normalize('NFD', s)
+                      if unicodedata.category(c) != 'Mn'))
+
+def cmp_obj_attrs(obj1, obj2, attr_list):
+    """ Compare attributes of 2 objects for changes
+
+        Missing attrs are considered a mismatch
+
+        :param obj1: First object to compare
+        :type obj1: Any object
+        :param obj2: Second object to compare
+        :type obj2: Any object
+        :param attr_list: List of attributes to compare
+        :type attr_list: list or tuple of strings
+        :returns: True if the attrs all match
+        :rtype: bool
+    """
+    for attr in attr_list:
+        if hasattr(obj1, attr) and hasattr(obj2, attr):
+            if getattr(obj1, attr) != getattr(obj2, attr):
+                return False
+        else:
+            return False
+    return True
+
+def dir_tree_map(root, func, files=True, dirs=True):
+    """
+    Apply the given function to all files and directories in the directory tree
+    under the given root directory.
+
+    :param root: root of the directory tree the function should be mapped to
+    :type root: str
+    :param func: a function taking the directory/file path
+    :type func: path -> None
+    :param files: whether to apply the function to the files in the dir. tree
+    :type files: bool
+    :param dirs: whether to apply the function to the directories in the dir. tree
+    :type dirs: bool
+
+    TODO: allow using globs and thus more trees?
+
+    """
+
+    for (dir_ent, _dir_items, file_items) in os.walk(root):
+        if dirs:
+            # try to call the function on the directory entry
+            try:
+                func(dir_ent)
+            except OSError:
+                pass
+
+        if files:
+            # try to call the function on the files in the directory entry
+            for file_ent in (os.path.join(dir_ent, f) for f in file_items):
+                try:
+                    func(file_ent)
+                except OSError:
+                    pass
+
+        # directories under the directory entry will appear as directory entries
+        # in the loop
+
+def chown_dir_tree(root, uid, gid, from_uid_only=None, from_gid_only=None):
+    """
+    Change owner (uid and gid) of the files and directories under the given
+    directory tree (recursively).
+
+    :param root: root of the directory tree that should be chown'ed
+    :type root: str
+    :param uid: UID that should be set as the owner
+    :type uid: int
+    :param gid: GID that should be set as the owner
+    :type gid: int
+    :param from_uid_only: if given, the owner is changed only for the files and
+                          directories owned by that UID
+    :type from_uid_only: int or None
+    :param from_gid_only: if given, the owner is changed only for the files and
+                          directories owned by that GID
+    :type from_gid_only: int or None
+
+    """
+
+    def conditional_chown(path, uid, gid, from_uid=None, from_gid=None):
+        stats = os.stat(path)
+        if (from_uid and stats.st_uid != from_uid) or \
+                (from_gid and stats.st_gid != from_gid):
+            # owner UID or GID not matching, do nothing
+            return
+
+        # UID and GID matching or not required
+        os.chown(path, uid, gid)
+
+    if not from_uid_only and not from_gid_only:
+        # the easy way
+        dir_tree_map(root, lambda path: os.chown(path, uid, gid))
+    else:
+        # conditional chown
+        dir_tree_map(root, lambda path: conditional_chown(path, uid, gid,
+                                                          from_uid_only,
+                                                          from_gid_only))
+
+def is_unsupported_hw():
+    """ Check to see if the hardware is supported or not.
+
+        :returns:   True if this is unsupported hardware, False otherwise
+        :rtype:     bool
+    """
+    try:
+        tainted = long(open("/proc/sys/kernel/tainted").read())
+    except (IOError, ValueError):
+        tainted = 0L
+
+    status = bool(tainted & UNSUPPORTED_HW)
+    if status:
+        log.debug("Installing on Unsupported Hardware")
+    return status
+
+# Define translations between ASCII uppercase and lowercase for
+# locale-independent string conversions. The tables are 256-byte string used
+# with string.translate. If string.translate is used with a unicode string,
+# even if the string contains only 7-bit characters, string.translate will
+# raise a UnicodeDecodeError.
+_ASCIIupper_table = string.maketrans(string.ascii_lowercase, string.ascii_uppercase)
+_ASCIIlower_table = string.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+
+def _toASCII(s):
+    """Convert a unicode string to ASCII"""
+    if type(s) == types.UnicodeType:
+        # Decompose the string using the NFK decomposition, which in addition
+        # to the canonical decomposition replaces characters based on
+        # compatibility equivalence (e.g., ROMAN NUMERAL ONE has its own code
+        # point but it's really just a capital I), so that we can keep as much
+        # of the ASCII part of the string as possible.
+        s = unicodedata.normalize('NKFD', s).encode('ascii', 'ignore')
+    elif type(s) != types.StringType:
+        s = ''
+    return s
+
+def upperASCII(s):
+    """Convert a string to uppercase using only ASCII character definitions.
+
+    The returned string will contain only ASCII characters. This function is
+    locale-independent.
+    """
+    return string.translate(_toASCII(s), _ASCIIupper_table)
+
+def lowerASCII(s):
+    """Convert a string to lowercase using only ASCII character definitions.
+
+    The returned string will contain only ASCII characters. This function is
+    locale-independent.
+    """
+    return string.translate(_toASCII(s), _ASCIIlower_table)
+
+def upcase_first_letter(text):
+    """
+    Helper function that upcases the first letter of the string. Python's
+    standard string.capitalize() not only upcases the first letter but also
+    lowercases all the others. string.title() capitalizes all words in the
+    string.
+
+    :type text: either a str or unicode object
+    :return: the given text with the first letter upcased
+    :rtype: str or unicode (depends on the input)
+
+    """
+
+    if not text:
+        # cannot change anything
+        return text
+    elif len(text) == 1:
+        return text.upper()
+    else:
+        return text[0].upper() + text[1:]
+
+def have_word_match(str1, str2):
+    """Tells if all words from str1 exist in str2 or not."""
+
+    if str1 is None or str2 is None:
+        # None never matches
+        return False
+
+    if str1 == "":
+        # empty string matches everything except from None
+        return True
+    elif str2 == "":
+        # non-empty string cannot be found in an empty string
+        return False
+
+    str1 = str1.lower()
+    str1_words = str1.split()
+    str2 = str2.lower()
+
+    return all(word in str2 for word in str1_words)

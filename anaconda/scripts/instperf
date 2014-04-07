@@ -22,8 +22,6 @@ def logit():
     swapTotal = 0
     swapFree = 0
 
-    global mem_logger
-
     with open("/proc/meminfo") as f:
         for line in f.readlines():
             if line.startswith("Buffers:"):
@@ -43,7 +41,7 @@ def logit():
          "swapUsed": int(swapTotal)-int(swapFree),
          "procs": topProcesses()}
 
-    mem_logger.debug("%(memUsed)d %(swapUsed)d %(procs)s" % d)
+    mem_logger.debug("%(memUsed)d %(swapUsed)d %(procs)s", d)
 
 mem_logger = logging.getLogger("memLog")
 mem_logger.setLevel(logging.DEBUG)

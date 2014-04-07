@@ -21,15 +21,16 @@
 #
 
 from pyanaconda.constants import ROOT_PATH
-from pyanaconda.storage import turnOnFilesystems
+from blivet import turnOnFilesystems
 from pyanaconda.bootloader import writeBootLoader
-from pyanaconda.progress import progress_report
+from pyanaconda.progress import progress_report, progressQ
 from pyanaconda.users import createLuserConf, getPassAlgo, Users
 from pyanaconda import flags
 from pyanaconda import timezone
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from pyanaconda.i18n import _
+from pyanaconda.threads import threadMgr
+import logging
+log = logging.getLogger("anaconda")
 
 def _writeKS(ksdata):
     import os
@@ -49,10 +50,15 @@ def _writeKS(ksdata):
     os.chmod(path, 0600)
 
 def doConfiguration(storage, payload, ksdata, instClass):
-    from pyanaconda import progress
     from pyanaconda.kickstart import runPostScripts
 
-    progress.send_init(4)
+    step_count = 6
+    # if a realm was discovered,
+    # increment the counter as the
+    # real joining step will be executed
+    if ksdata.realm.discovered:
+        step_count += 1
+    progressQ.send_init(step_count)
 
     # Now run the execute methods of ksdata that require an installed system
     # to be present first.
@@ -67,7 +73,7 @@ def doConfiguration(storage, payload, ksdata, instClass):
         ksdata.firewall.execute(storage, ksdata, instClass)
         ksdata.xconfig.execute(storage, ksdata, instClass)
 
-    if not flags.flags.imageInstall:
+    if not flags.flags.imageInstall and not flags.flags.dirInstall:
         with progress_report(_("Writing network configuration")):
             ksdata.network.execute(storage, ksdata, instClass)
 
@@ -79,14 +85,25 @@ def doConfiguration(storage, payload, ksdata, instClass):
         ksdata.group.execute(storage, ksdata, instClass, u)
         ksdata.user.execute(storage, ksdata, instClass, u)
 
-    with progress_report(_("Running post install scripts")):
+    with progress_report(_("Configuring addons")):
+        ksdata.addons.execute(storage, ksdata, instClass, u)
+        ksdata.configured_spokes.execute(storage, ksdata, instClass, u)
+
+    with progress_report(_("Generating initramfs")):
+        payload.recreateInitrds(force=True)
+
+    if ksdata.realm.discovered:
+        with progress_report(_("Joining realm: %s") % ksdata.realm.discovered):
+            ksdata.realm.execute(storage, ksdata, instClass)
+
+    with progress_report(_("Running post-installation scripts")):
         runPostScripts(ksdata.scripts)
 
     # Write the kickstart file to the installed system (or, copy the input
     # kickstart file over if one exists).
     _writeKS(ksdata)
 
-    progress.send_complete()
+    progressQ.send_complete()
 
 def doInstall(storage, payload, ksdata, instClass):
     """Perform an installation.  This method takes the ksdata as prepared by
@@ -94,9 +111,6 @@ def doInstall(storage, payload, ksdata, instClass):
        The two main tasks for this are putting filesystems onto disks and
        installing packages onto those filesystems.
     """
-    from pyanaconda import progress
-    from pyanaconda.kickstart import runPostScripts
-
     # First save system time to HW clock.
     if flags.can_touch_runtime_system("save system time to HW clock"):
         timezone.save_hw_clock(ksdata.timezone)
@@ -104,34 +118,58 @@ def doInstall(storage, payload, ksdata, instClass):
     # We really only care about actions that affect filesystems, since
     # those are the ones that take the most time.
     steps = len(storage.devicetree.findActions(type="create", object="format")) + \
-            len(storage.devicetree.findActions(type="resize", object="format")) + \
-            len(storage.devicetree.findActions(type="migrate", object="format"))
-    steps += 4  # packages setup, packages, bootloader, post install
-    progress.send_init(steps)
+            len(storage.devicetree.findActions(type="resize", object="format"))
+    steps += 6
+    # pre setup phase, packages setup, packages, bootloader, realmd,
+    # post install
+    progressQ.send_init(steps)
+
+    # This should be the only thread running, wait for the others to finish if not.
+    if threadMgr.running > 1:
+        with progress_report(_("Waiting for %s threads to finish") % (threadMgr.running-1)):
+            map(log.debug, ("Thread %s is running" % n for n in threadMgr.names))
+            threadMgr.wait_all()
+
+    with progress_report(_("Setting up the installation environment")):
+        ksdata.firstboot.setup(storage, ksdata, instClass)
+        ksdata.addons.setup(storage, ksdata, instClass)
+
+    storage.updateKSData()  # this puts custom storage info into ksdata
 
     # Do partitioning.
     payload.preStorage()
-    turnOnFilesystems(storage)
-    if not flags.flags.livecdInstall:
+
+    turnOnFilesystems(storage, mountOnly=flags.flags.dirInstall)
+    if not flags.flags.livecdInstall and not flags.flags.dirInstall:
         storage.write()
 
     # Do packaging.
 
+    # Discover information about realms to join,
+    # to determine additional packages
+    if ksdata.realm.join_realm:
+        with progress_report(_("Discovering realm to join")):
+            ksdata.realm.setup()
+
     # anaconda requires storage packages in order to make sure the target
     # system is bootable and configurable, and some other packages in order
     # to finish setting up the system.
-    packages = storage.packages + ["authconfig", "firewalld"]
-    payload.preInstall(packages=packages, groups=payload.languageGroups(ksdata.lang.lang))
+    packages = storage.packages + ["authconfig", "firewalld"] + ksdata.realm.packages
+
+    # don't try to install packages from the install class' ignored list
+    packages = [p for p in packages if p not in instClass.ignoredPackages]
+    payload.preInstall(packages=packages, groups=payload.languageGroups())
     payload.install()
 
     if flags.flags.livecdInstall:
         storage.write()
 
-    with progress_report(_("Performing post-install setup tasks")):
+    with progress_report(_("Performing post-installation setup tasks")):
         payload.postInstall()
 
     # Do bootloader.
-    with progress_report(_("Installing bootloader")):
-        writeBootLoader(storage, payload, instClass, ksdata)
+    if not flags.flags.dirInstall:
+        with progress_report(_("Installing bootloader")):
+            writeBootLoader(storage, payload, instClass, ksdata)
 
-    progress.send_complete()
+    progressQ.send_complete()

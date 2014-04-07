@@ -21,36 +21,56 @@
 #
 # Author: David Cantrell <dcantrell@redhat.com>
 
-import getopt
 import os
 import shutil
 import subprocess
 import sys
+import re
+import glob
+import urllib
+import threading
+import multiprocessing
+import argparse
+from collections import namedtuple
+try:
+    from rpmUtils import miscutils  # available from the yum-utils package
+except ImportError:
+    print("You need to install the yum-utils package to run makeupdates.")
+    exit(1)
+
+RPM_FOLDER_NAME = os.path.expanduser("~/.anaconda_updates_rpm_cache")
+KOJI_BASE_URL = "http://kojipkgs.fedoraproject.org//packages/" \
+                "%(toplevel_name)s/%(toplevel_version)s/%(release)s/%(arch)s/%(rpm_name)s"
+
+VERSION_EQUAL = "="
+VERSION_MORE_OR_EQUAL = ">="
+VERSION_LESS_OR_EQUAL = "<="
+
+VERSION_OP_MAP = {
+    "=": VERSION_EQUAL,
+    ">=": VERSION_MORE_OR_EQUAL,
+    "<=": VERSION_LESS_OR_EQUAL
+}
+
 
 def getArchiveTag(configure, spec):
     tag = ""
 
-    f = open(configure)
-    lines = f.readlines()
-    f.close()
+    with open(configure, "r") as f:
+        for line in f:
+            if line.startswith('AC_INIT('):
+                fields = line.split('[')
+                tag += fields[1].split(']')[0] + '-' + fields[2].split(']')[0]
+                break
+            else:
+                continue
 
-    for line in lines:
-        if line.startswith('AC_INIT('):
-            fields = line.split('[')
-            tag += fields[1].split(']')[0] + '-' + fields[2].split(']')[0]
-            break
-        else:
-            continue
-
-    f = open(spec)
-    lines = f.readlines()
-    f.close()
-
-    for line in lines:
-        if line.startswith('Release:'):
-            tag += '-' + line.split()[1].split('%')[0]
-        else:
-            continue
+    with open(spec, "r") as f:
+        for line in f:
+            if line.startswith('Release:'):
+                tag += '-' + line.split()[1].split('%')[0]
+            else:
+                continue
 
     return tag
 
@@ -82,7 +102,72 @@ def getArchiveTagOffset(configure, spec, offset):
     except IndexError:
         return tag
 
-def doGitDiff(tag, args=[]):
+def get_anaconda_version():
+    """Get current anaconda version as string from the configure script"""
+    with open("configure.ac") as f:
+        match = re.search(r"AC_INIT\(\[.*\],\ \[(.*)\],\ \[.*\]\)", f.read())
+    return match.groups()[0]
+
+def get_fedora_version():
+    """Return integer representing current Fedora number,
+    based on Anaconda version"""
+    anaconda_version = get_anaconda_version()
+    return int(anaconda_version.split(".")[0])
+
+def get_pkg_tuple(filename):
+    """Split package filename to name, version, release, epoch, arch
+
+    :param filename: RPM package filename
+    :type filename: string
+    :returns: package metadata tuple
+    :rtype: tuple
+    """
+    name, version, release, epoch, arch = miscutils.splitFilename(filename)
+    return (name, arch, epoch, version, release)
+
+def get_req_tuple(pkg_tuple, version_request):
+    """Return package version requirements tuple
+
+    :param pkg_tuple: package metadata tuple
+    :type pkg_tuple: tuple
+    :param version_request: version request constant or None
+    :returns: version request tuple
+    :rtype: tuple
+    """
+    name, _arch, epoch, version, release = pkg_tuple
+    return (name, version_request, (epoch, version, release))
+
+
+def check_package_version(filename, package):
+    """Check if package described by filename complies with the required
+    version and the version request operator
+
+    :param filename: the package filename to check
+    :type version: string
+    :param package: specification of the required package
+    :type: named tuple
+    :returns: True if filename satisfies package version request,
+              False otherwise
+    :rtype: bool
+    """
+    # drop all other path components than the filename
+    # (if present)
+    filename = os.path.basename(filename)
+    # split the name into components
+    pkg_tuple = get_pkg_tuple(filename)
+    # get release ids for request and the package
+    request_release = package.req_tuple[2][2]
+    package_release = pkg_tuple[4]
+    # rangeCheck actually ignores different release ids,
+    # so we need to do it here
+    if request_release != package_release:
+        return False
+    else:
+        return bool(miscutils.rangeCheck(package.req_tuple, pkg_tuple))
+
+def doGitDiff(tag, args=None):
+    if args is None:
+        args=[]
     proc = subprocess.Popen(['git', 'diff', '--name-status', tag] + args,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE).communicate()
@@ -90,24 +175,40 @@ def doGitDiff(tag, args=[]):
     lines = proc[0].split('\n')
     return lines
 
+def doGitContentDiff(tag, args=None):
+    if args is None:
+        args = []
+    proc = subprocess.Popen(['git', 'diff', tag] + args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE).communicate()
+    lines = proc[0].split('\n')
+    return lines
+
+def download_to_file(url, path):
+    """Download a file to the given path,
+    return the storage path if successful,
+    or None if the download fails for some reason
+    """
+    try:
+        result = urllib.urlretrieve(url, path)
+        # return the storage path
+        return result[0]
+    except IOError as e:
+        print("download of %s to %s failed with exception: %s" % (url, path, e))
+        return None
+
+def create_RPM_cache_folder():
+    """Create RPM package cache folder if it does not already exist"""
+    if not os.path.exists(RPM_FOLDER_NAME):
+        os.makedirs(RPM_FOLDER_NAME)
+
 def copyUpdatedFiles(tag, updates, cwd):
-    def pruneFile(src, names):
-        lst = []
-
-        for name in names:
-            if name.startswith('Makefile') or name.endswith('.pyc'):
-                lst.append(name)
-
-        return lst
-
     def install_to_dir(fname, relpath):
         sys.stdout.write("Including %s\n" % fname)
         outdir = os.path.join(updates, relpath)
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
-        shutil.copy2(file, outdir)
-
-    subdirs = []
+        shutil.copy2(fname, outdir)
 
     # Updates get overlaid onto the runtime filesystem. Anaconda expects them
     # to be in /run/install/updates, so put them in
@@ -124,66 +225,75 @@ def copyUpdatedFiles(tag, updates, cwd):
             continue
 
         status = fields[0]
-        file = fields[1]
+        gitfile = fields[1]
 
         if status == "D":
+            if gitfile.startswith('pyanaconda/'):
+                # deleted python module, write out a stub raising RemovedModuleError
+                file_path = os.path.join(tmpupdates, gitfile)
+                with open(file_path, "w") as fobj:
+                    fobj.write('from pyanaconda.errors import RemovedModuleError\n')
+                    fobj.write('raise RemovedModuleError("This module no longer exists!")\n')
+
             continue
 
-        if file.endswith('.spec.in') or (file.find('Makefile') != -1) or \
-           file.endswith('.c') or file.endswith('.h') or \
-           file.endswith('.sh') or file == 'configure.ac':
+        if gitfile.endswith('.spec.in') or (gitfile.find('Makefile') != -1) or \
+           gitfile.endswith('.c') or gitfile.endswith('.h') or \
+           gitfile.endswith('.sh') or gitfile == 'configure.ac':
             continue
 
-        if file.endswith('.glade'):
+        if gitfile.endswith('.glade'):
             # Some UI files should go under ui/<dir> where dir is the
             # directory above the file.glade
-            dir_parts = os.path.dirname(file).split(os.path.sep)
+            dir_parts = os.path.dirname(gitfile).split(os.path.sep)
             g_idx = dir_parts.index("gui")
             uidir = os.path.sep.join(dir_parts[g_idx+1:])
             path_comps = [tmpupdates, "ui"]
             if uidir:
                 path_comps.append(uidir)
-            install_to_dir(file, os.path.join(*path_comps))
-        elif file.startswith('pyanaconda/'):
+            install_to_dir(gitfile, os.path.join(*path_comps))
+        elif gitfile.startswith('pyanaconda/'):
             # pyanaconda stuff goes into /tmp/updates/[path]
-            dirname = os.path.join(tmpupdates, os.path.dirname(file))
-            install_to_dir(file, dirname)
-        elif file == 'anaconda':
+            dirname = os.path.join(tmpupdates, os.path.dirname(gitfile))
+            install_to_dir(gitfile, dirname)
+        elif gitfile == 'anaconda':
             # anaconda itself we just overwrite
-            install_to_dir(file, "usr/sbin")
-        elif file.endswith('.service') or file.endswith(".target"):
+            install_to_dir(gitfile, "usr/sbin")
+        elif gitfile.endswith('.service') or gitfile.endswith(".target"):
             # same for systemd services
-            install_to_dir(file, "lib/systemd/system")
-        elif file.endswith('/anaconda-generator'):
+            install_to_dir(gitfile, "lib/systemd/system")
+        elif gitfile.endswith('/anaconda-generator'):
             # yeah, this should probably be more clever..
-            install_to_dir(file, "lib/systemd/system-generators")
-        elif file == "data/tmux.conf":
-            install_to_dir(file, "usr/share/anaconda")
-        elif file == "data/interactive-defaults.ks":
-            install_to_dir(file, "usr/share/anaconda")
-        elif file == "data/liveinst/liveinst":
-            install_to_dir(file, "usr/sbin")
-        elif file == "data/70-anaconda.rules":
-            install_to_dir(file, "lib/udev/rules.d")
-        elif file.startswith("data/pixmaps"):
-            install_to_dir(file, "usr/share/anaconda/pixmaps")
-        elif file.startswith("data/ui/"):
-            install_to_dir(file, "usr/share/anaconda/ui")
-        elif file.startswith("data/post-scripts/"):
-            install_to_dir(file, "usr/share/anaconda/post-scripts")
-        elif file.find('/') != -1:
-            fields = file.split('/')
+            install_to_dir(gitfile, "lib/systemd/system-generators")
+        elif gitfile == "data/tmux.conf":
+            install_to_dir(gitfile, "usr/share/anaconda")
+        elif gitfile == "data/anaconda-gtk.css":
+            install_to_dir(gitfile, "usr/share/anaconda")
+        elif gitfile == "data/interactive-defaults.ks":
+            install_to_dir(gitfile, "usr/share/anaconda")
+        elif gitfile == "data/liveinst/liveinst":
+            install_to_dir(gitfile, "usr/sbin")
+        elif gitfile.startswith("data/pixmaps"):
+            install_to_dir(gitfile, "usr/share/anaconda/pixmaps")
+        elif gitfile.startswith("data/ui/"):
+            install_to_dir(gitfile, "usr/share/anaconda/ui")
+        elif gitfile.startswith("data/post-scripts/"):
+            install_to_dir(gitfile, "usr/share/anaconda/post-scripts")
+        elif gitfile.endswith("anaconda-yum"):
+            install_to_dir(gitfile, "usr/libexec/anaconda")
+        elif gitfile.find('/') != -1:
+            fields = gitfile.split('/')
             subdir = fields[0]
             if subdir in ['po', 'scripts','command-stubs', 'tests',
                           'docs', 'fonts', 'utils',
                           'liveinst', 'dracut', 'data']:
                 continue
             else:
-                sys.stdout.write("Including %s\n" % (file,))
-                install_to_dir(file, tmpupdates)
+                sys.stdout.write("Including %s\n" % (gitfile,))
+                install_to_dir(gitfile, tmpupdates)
         else:
-            sys.stdout.write("Including %s\n" % (file,))
-            install_to_dir(file, tmpupdates)
+            sys.stdout.write("Including %s\n" % (gitfile,))
+            install_to_dir(gitfile, tmpupdates)
 
 def _compilableChanged(tag, compilable):
     lines = doGitDiff(tag, [compilable])
@@ -195,13 +305,13 @@ def _compilableChanged(tag, compilable):
             continue
 
         status = fields[0]
-        file = fields[1]
+        gitfile = fields[1]
 
         if status == "D":
             continue
 
-        if file.startswith('Makefile') or file.endswith('.h') or \
-           file.endswith('.c'):
+        if gitfile.startswith('Makefile') or gitfile.endswith('.h') or \
+           gitfile.endswith('.c') or gitfile.endswith('.py'):
             return True
 
     return False
@@ -212,15 +322,22 @@ def isysChanged(tag):
 def widgetsChanged(tag):
     return _compilableChanged(tag, 'widgets')
 
-def copyUpdatedIsys(updates, cwd):
-    os.chdir(cwd)
-
-    if not os.path.isfile('Makefile'):
+def checkAutotools(srcdir, builddir):
+    # Assumes that cwd is srcdir
+    if not os.path.isfile(os.path.join(builddir, 'Makefile')):
         if not os.path.isfile('configure'):
             os.system('./autogen.sh')
-        os.system('./configure')
+        os.chdir(builddir)
+        os.system(os.path.join(srcdir, 'configure') + ' --prefix=`rpm --eval %_prefix` --enable-gtk-doc --enable-introspection')
+        os.chdir(srcdir)
 
-    os.system('make')
+def copyUpdatedIsys(updates, srcdir, builddir):
+    os.chdir(srcdir)
+    print("copyUpdatedIsys BUILDDIR %s" % builddir)
+
+    checkAutotools(srcdir, builddir)
+
+    os.system('make -C %s -j %d' % (builddir, multiprocessing.cpu_count()))
 
     # Updates get overlaid onto the runtime filesystem. Anaconda expects them
     # to be in /run/install/updates, so put them in
@@ -229,12 +346,16 @@ def copyUpdatedIsys(updates, cwd):
     if not tmpupdates.endswith("/run/install/updates/pyanaconda"):
         tmpupdates = os.path.join(tmpupdates, "run/install/updates/pyanaconda")
 
-    isysmodule = os.path.realpath(cwd + '/pyanaconda/isys/.libs/_isys.so')
+    if not os.path.isdir(tmpupdates):
+        os.makedirs(tmpupdates)
+
+    isysmodule = os.path.realpath(os.path.join(builddir,'pyanaconda/isys/.libs/_isys.so'))
+
     if os.path.isfile(isysmodule):
         shutil.copy2(isysmodule, tmpupdates)
 
-def copyUpdatedWidgets(updates, cwd):
-    os.chdir(cwd)
+def copyUpdatedWidgets(updates, srcdir, builddir):
+    os.chdir(srcdir)
 
     if os.path.isdir("/lib64"):
         libdir = "/lib64/"
@@ -247,119 +368,514 @@ def copyUpdatedWidgets(updates, cwd):
     if not os.path.isdir(updates + libdir + "girepository-1.0"):
         os.makedirs(updates + libdir + "girepository-1.0")
 
-    if not os.path.isfile('Makefile'):
-        if not os.path.isfile('configure'):
-            os.system('./autogen.sh')
-        os.system('./configure --enable-gtk-doc --enable-introspection')
+    checkAutotools(srcdir, builddir)
 
-    os.system('make')
+    os.system('make -C %s' % builddir)
 
-    files = ["libAnacondaWidgets.so", "libAnacondaWidgets.so.0", "libAnacondaWidgets.so.0.0.0"]
+    files = ["libAnacondaWidgets.so", "libAnacondaWidgets.so.1", "libAnacondaWidgets.so.1.0.0"]
     for f in files:
-        path = os.path.normpath(cwd + "/widgets/src/.libs/" + f)
+        path = os.path.normpath(builddir + "/widgets/src/.libs/" + f)
         if os.path.islink(path) and not os.path.exists(updates + libdir + os.path.basename(path)):
             os.symlink(os.readlink(path), updates + libdir + os.path.basename(path))
         elif os.path.isfile(path):
             shutil.copy2(path, updates + libdir)
 
-    typelib = os.path.realpath(cwd + "/widgets/src/AnacondaWidgets-1.0.typelib")
+    typelib = os.path.realpath(builddir + "/widgets/src/AnacondaWidgets-1.0.typelib")
     if os.path.isfile(typelib):
         shutil.copy2(typelib, updates + libdir + "girepository-1.0")
 
-def addRpms(updates, add_rpms):
+def addRpms(updates_path, add_rpms):
+    """Add content one or more RPM packages to the updates image
+
+    :param updates_path: path to the updates image folder
+    :type updates_path: string
+    :param add_rpms: list of paths to RPM files
+    :type add_rpms: list of strings
+    """
+    # convert all the RPM paths to absolute paths, so that
+    # relative paths can be used with -a/--add
+    add_rpms = map(os.path.abspath, add_rpms)
+
     for rpm in add_rpms:
-        cmd = "cd %s && rpm2cpio %s | cpio -dium" % (updates, rpm)
+        cmd = "cd %s && rpm2cpio %s | cpio -dium" % (updates_path, rpm)
         sys.stdout.write(cmd+"\n")
         os.system(cmd)
 
 def createUpdatesImage(cwd, updates):
     os.chdir(updates)
-    os.system("find . | cpio -c -o | gzip -9cv > %s/updates.img" % (cwd,))
+    os.system("find . | cpio -c -o | pigz -9cv > %s/updates.img" % (cwd,))
     sys.stdout.write("updates.img ready\n")
 
-def usage(cmd):
-    sys.stdout.write("Usage: %s [OPTION]...\n" % (cmd,))
-    sys.stdout.write("Options:\n")
-    sys.stdout.write("    -k, --keep       Do not delete updates subdirectory.\n")
-    sys.stdout.write("    -c, --compile    Compile code if there are isys changes.\n")
-    sys.stdout.write("    -h, --help       Display this help and exit.\n")
-    sys.stdout.write("    -t, --tag        Make image from TAG to HEAD.\n")
-    sys.stdout.write("    -o, --offset     Make image from (latest_tag - OFFSET) to HEAD.\n")
-    sys.stdout.write("    -a, --add        Add contents of rpm to the update\n")
+def check_for_new_packages(tag, arch, added_rpms, specfile_path):
+    """Download any new packages added to Requires and Defines
+    since the given tag, return list of RPM paths
+    """
+    new_packages = {}
+    version_vars = {}
+    all_used_version_vars = {}
+    fedora_number = get_fedora_version()
+    release_id = "fc%s" % fedora_number
 
-def main(argv):
-    prog = os.path.basename(sys.argv[0])
-    cwd = os.getcwd()
-    configure = os.path.realpath(cwd + '/configure.ac')
-    spec = os.path.realpath(cwd + '/anaconda.spec.in')
-    updates = cwd + '/updates'
-    keep, compile, help, unknown = False, False, False, False
-    tag = None
-    opts = []
-    offset = 0
-    add_rpms = []
+    Package = namedtuple("Package", "name version version_request req_tuple")
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'a:t:o:kc?',
-                                   ['add=', 'tag=', 'offset=',
-                                    'keep', 'compile', 'help'])
-    except getopt.GetoptError:
-        help = True
+    diff = doGitContentDiff(tag, ["anaconda.spec.in"])
+    new_requires = filter(lambda x: x.startswith("+Requires:"), diff)
+    new_defines = filter(lambda x: x.startswith("+%define"), diff)
+    with open(specfile_path) as f:
+        spec_content = f.readlines()
+        all_defines = filter(lambda x: x.startswith("%define"), spec_content)
+        all_requires = filter(lambda x: x.startswith("Requires:"), spec_content)
 
-    for o, a in opts:
-        if o in ('-k', '--keep'):
-            keep = True
-        elif o in ('-c', '--compile'):
-            compile = True
-        elif o in ('-?', '--help'):
-            help = True
-        elif o in ('-t', '--tag'):
-            tag = a
-        elif o in ('-o', '--offset'):
-            offset = int(a)
-        elif o in ('-a', '--add'):
-            add_rpms.append(os.path.abspath(a))
+    # parse all defines, to get the version variables
+    for define in all_defines:
+        # second word & split the "ver" suffix
+        package = define.split()[1][:-3]
+        version = define.split()[2]
+        version_vars[package] = version
+
+    # parse all Requires and store lines referencing
+    # version variables
+    # ex.: Requires: langtable-data >= %{langtablever}
+    # will be stored as:
+    # langtable : [(langtable-data, VERSION_MORE_OR_EQUAL)]
+
+    for require in all_requires:
+        parts = require.split()
+        # we are interest only in Requires lines using
+        # version variables
+        if len(parts) >= 4 and parts[3].startswith('%'):
+            package_name = parts[1]
+            version_request = VERSION_OP_MAP.get(parts[2])
+            # drop the %{ prefix and ver} suffix
+            version_var = parts[3][2:-4]
+            # store (package_name, version_request) tuples for the given
+            # version variable
+
+            # single version variable might be used to set version of multiple
+            # package, see langtable for an example of such usage
+            if version_var in all_used_version_vars:
+                all_used_version_vars[version_var].append((package_name, version_request))
+            else:
+                all_used_version_vars[version_var] = [(package_name, version_request)]
+
+    # parse all new defines
+    for define in new_defines:
+        # second word & split the "ver" suffix
+        parts = define.split()
+        version_var = parts[1][:-3]
+        version = parts[2]
+        # if there are any packages in Requires using the version variable
+        # corresponding to the current %define, add a new package request
+        packages_using_this_define = all_used_version_vars.get(version_var, [])
+        # multiple requests might be using a single version variable
+        for package_name, version_request in packages_using_this_define:
+            if not version.count("-"):
+                version = "%s-1" % version
+            pkg_name = "%s-%s.%s.%s.rpm" % (package_name, version,
+                                            release_id, arch)
+            pkg_tuple = get_pkg_tuple(pkg_name)
+            req_tuple = get_req_tuple(pkg_tuple, version_request)
+            new_packages[package_name] = Package(package_name, version,
+                                                 version_request, req_tuple)
+
+    # then parse requires and substitute version variables where needed
+    for req in new_requires:
+        parts = req.split()
+        if len(parts) < 2:
+            # must contain at least "+Requires:" and "some_package"
+            continue
+        package_name = parts[1]
+
+        # skip packages that were already added from new %defines
+        if package_name in new_packages:
+            continue
+
+        version_request = None
+        if len(parts) > 2:
+            # get the version request operator
+            version_operator = parts[2]
+            # at the moment only = (considered the default),
+            # >= and <= are supported
+            version_request = VERSION_OP_MAP.get(version_operator)
+            version = parts.pop()
         else:
-            unknown = True
+            version = ""
 
-    if help:
-        usage(prog)
-        sys.exit(0)
-    elif unknown:
-        sys.stderr.write("%s: extra operand `%s'" % (prog, sys.argv[1],))
-        sys.stderr.write("Try `%s --help' for more information." % (prog,))
-        sys.exit(1)
+        # handle version variables (%{package-namever})
+        if version.startswith("%"):
+            # drop the %{ prefix and ver} suffix
+            version_var = version[2:-4]
+            # resolve the variable to package version
+            try:
+                version = version_vars[version_var]
+            except KeyError:
+                # if there if this version variable is missing in version_vars,
+                # there must be a missing define in the specfile
+                print("%%define missing for %s in the Anaconda specfile" % version)
+                exit(1)
+        # create metadata tuple for version range checking
+        if version:
+            # check if version contains a build number
+            # and add a fake one if it doesn't, as the
+            # newest package will be fetched from Koji anyway
+            if not version.count("-"):
+                version = "%s-1" % version
+            pkg_name = "%s-%s.%s.%s.rpm" % (package_name, version, release_id, arch)
+            pkg_tuple = get_pkg_tuple(pkg_name)
+        else:
+            pkg_tuple = (package_name, arch, '', '', '')
+        req_tuple = get_req_tuple(pkg_tuple, version_request)
+        new_packages[package_name] = Package(package_name, version,
+                                             version_request, req_tuple)
+
+    # report about new package requests
+    if new_packages:
+        print("%d new packages found in Requires or updated %%defines for Requires:" %
+              len(new_packages))
+        for p in new_packages.values():
+            if p.version_request:
+                print("%s %s %s" % (p.name, p.version_request, p.version))
+            else:
+                print(p.name)
+    else:
+        print("no new Requires or updated %%defines for Requires found")
+        return []
+
+    # make sure the RPM cache folder exists
+    create_RPM_cache_folder()
+
+    # get package names for RPMs added by the -a/--add flags
+    added_names = {}
+    for path in added_rpms:
+        try:
+            basename = os.path.basename(path)
+            name = get_pkg_tuple(basename)[0]
+            added_names[name] = basename
+        except ValueError:
+            print("malformed RPM name ? : %s" % path)
+    # remove available packages from the list
+    new_packages, include_rpms = remove_local_packages(new_packages, arch,
+                                                       release_id, added_names)
+    # if some packages are not locally available, download them from Koji
+    if new_packages:
+        include_rpms.extend(get_RPMs_from_koji(new_packages, fedora_number, arch))
+    # return absolute paths for the packages
+    return map(os.path.abspath, include_rpms)
+
+def remove_local_packages(packages, arch, release_id, added_rpms):
+    """Remove locally available RPMs from the list of needed packages,
+    return locally unavailable packages and paths to relevant locally
+    available RPMs for inclusion"""
+    # list all package names and version for the RPMs already in cache
+    folder_glob = os.path.join(RPM_FOLDER_NAME, "*.rpm")
+    folder_glob = os.path.abspath(folder_glob)
+    include_rpms = []
+    skipped_packages = []
+
+    # first remove from packages any packages that were provided manually
+    for package_name in packages.keys():
+        # check if the package was added by the
+        # -a/--add option
+        if package_name in added_rpms:
+            # the package was added by the -a/--add option,
+            # remove it from the list so it is not loaded from
+            # RPM cache and not fetched
+            # NOTE: the version of the added package is not checked,
+            # so "added" packages are always used, even if their
+            # version does not comply with the one given in the specfile
+            del packages[package_name]
+            # remember which packages were skipped due to the
+            # -a/--add option
+            skipped_packages.append(added_rpms[package_name])
+
+    # only check RPMs that are either noarch or built for the
+    # currently specified architecture
+    allowed = ("noarch.rpm", "%s.rpm" % arch)
+    relevant_rpms = [x for x in glob.glob(folder_glob) if x.endswith(allowed)]
+
+    # iterate over all relevant cached RPMs and check if they are needed
+    for rpm_path in relevant_rpms:
+        proc = subprocess.Popen(['rpm', '-qp', '--queryformat',
+                                '%{NAME} %{VERSION} %{RELEASE}', rpm_path],
+                                stdout=subprocess.PIPE,
+                                stderr=None)
+        proc_output = proc.communicate()
+        if proc.returncode != 0:
+            continue
+        name, version, release = proc_output[0].split()
+        # get the build number and release id
+        build_id, package_release_id = release.split(".", 1)
+        # skip cached RPMs that have different release id
+        if package_release_id != release_id:
+            continue
+        # add the build id to the version string
+        version_build = "%s-%s" % (version, build_id)
+        # check if the package is needed
+        if name in packages:
+            package = packages[name]
+            package_version = package.version
+            # handle versions with build number and without it
+            if not package_version or package_version == version_build or \
+                    package_version == version or \
+                    check_package_version(rpm_path, package):
+                include_rpms.append(rpm_path)
+                del packages[name]
+
+    # return only those packages that are not locally available
+    if include_rpms and not packages and not added_rpms:
+        print("all %d required RPMs found locally:" % len(include_rpms))
+    elif include_rpms:
+        print("%d required RPMs found locally:" % len(include_rpms))
+    else:
+        print("no required packages found locally")
+
+    # print any locally found RPMs
+    for rpm in include_rpms:
+        print(os.path.basename(rpm))
+
+    # print skipped packages
+    if skipped_packages:
+        print('%d required packages found in the manually added RPMs:' % len(skipped_packages))
+        for item in skipped_packages:
+            print(item)
+
+    return packages, include_rpms
+
+def get_RPMs_from_koji(packages, fedora_number, arch):
+    """Get RPM download URLs for given packages and Fedora version,
+    return URLS and RPM filenames
+    """
+    threads = []
+    rpm_paths = []
+    # the print lock is used to make sure only one
+    # thread is printing to stdout at a time
+    print_lock = threading.Lock()
+
+    index = 1
+    print("starting %d worker threads" % len(packages))
+    for _package_name, package in packages.iteritems():
+        thread = threading.Thread(name=index, target=get_rpm_from_Koji_thread,
+                                  args=(package, fedora_number,
+                                        arch, rpm_paths, print_lock))
+        thread.start()
+        threads.append(thread)
+        index += 1
+    # wait for all threads to finish
+    for thread in threads:
+        thread.join()
+
+    print("%d RPMs have been downloaded" % len(rpm_paths))
+
+    # return the list of paths for the downloaded RPMs
+    return rpm_paths
+
+def get_rpm_from_Koji_thread(package, fedora_number, arch,
+                             rpm_paths, print_lock):
+    """Download the given package from Koji and if successful,
+    append the path to the downloaded file to the rpm_paths list
+    """
+    # just to be sure, create a separate session for each query,
+    # as the individual lookups will run in different threads
+    import koji
+    kojiclient = koji.ClientSession('http://koji.fedoraproject.org/kojihub', {})
+    version = package.version
+    if not version:
+        version = "*"
+    # check if version contains build number or not
+    if len(version.split("-")) == 1:
+        version = "%s-*" % version
+    # if there is a version-request, just get all package version for the given
+    # release and filter them afterwards
+    if package.version_request:
+        package_glob = "%s-*.fc%d.*.rpm" % (package.name, fedora_number)
+    else:
+        package_glob = "%s-%s.fc%d.*.rpm" % (package.name, version, fedora_number)
+
+    # get the current thread, so output can be prefixed by thread number
+    prefix = "thread %s:" % threading.current_thread().name
+    with print_lock:
+        if package.version_request:
+            print("%s searching for: %s (version %s %s) in Koji" % (
+                  prefix, package_glob, package.version_request, package.version))
+        else:
+            print("%s searching for: %s (any version) in Koji" % (prefix, package_glob))
+    # call the Koji API
+    results = kojiclient.search(package_glob, "rpm", "glob")
+    # leave only results that are either noarch
+    # or are built for the current architecture
+    allowed = ("noarch.rpm", "%s.rpm" % arch)
+    results = [x for x in results if x['name'].endswith(allowed)]
+
+    # remove results that don't fully match the package name
+    # Example: searching for glade3 and getting glade3-devel instead is wrong
+    results = [x for x in results if get_pkg_tuple(x['name'])[0] == package.name]
+
+    # if there is a version request (=,>=,<=), remove packages that
+    # are outside of the specified version range
+    if package.version_request:
+        filtered_results = []
+        for result in results:
+            # check if the version complies with the version request
+            if check_package_version(result['name'], package):
+                filtered_results.append(result)
+        # replace results with filtered results
+        results = filtered_results
+
+    if results:  # any packages left ?
+        # as the newest packages are on the bottom of the
+        # result list, just pop the last item
+        newest_package = results.pop()
+        package_metadata = {}
+        rpm_name = newest_package['name']
+        package_metadata['rpm_name'] = rpm_name
+        with print_lock:
+            print("%s RPM found: %s" % (prefix, rpm_name))
+        rpm_id = newest_package['id']
+
+        # get info about the RPM to
+        # get the arch and build_id
+        result = kojiclient.getRPM(rpm_id)
+        package_metadata['arch'] = result['arch']
+        package_metadata['release'] = result['release']
+        build_id = result['build_id']
+
+        # so we can get the toplevel package name and version
+        result = kojiclient.getBuild(build_id)
+        package_metadata['toplevel_name'] = result['package_name']
+        package_metadata['toplevel_version'] = result['version']
+
+        # and use the information to build the URL
+        url = KOJI_BASE_URL % package_metadata
+        # simple, isn't it ? :)
+
+        # append the RPM cache folder to the filename
+        download_path = os.path.join(RPM_FOLDER_NAME, rpm_name)
+        # check if the download was successful
+        storage_path = download_to_file(url, download_path)
+        if storage_path is not None:
+            with print_lock:
+                print("%s download done: %s" % (prefix, rpm_name))
+            # add successful downloads to the RPM inclusion list
+            rpm_paths.append(storage_path)
+            # GIL should be enough for appending to the list
+            # from multiple threads
+        else:
+            with print_lock:
+                print("%s download failed: %s @ %s" % (prefix, rpm_name, url))
+    else:
+        with print_lock:
+            if package.version_request:
+                print("%s %s in version %s %s was not found in Koji" % (
+                      prefix, package.name, package.version_request, package.version))
+            else:
+                print("%s %s in any version was not found in Koji" % (prefix, package.name))
+
+def main():
+    cwd = os.getcwd()
+    configure = os.path.realpath(os.path.join(cwd, 'configure.ac'))
+    spec = os.path.realpath(os.path.join(cwd, 'anaconda.spec.in'))
+    updates = os.path.join(cwd, 'updates')
+
+    parser = argparse.ArgumentParser(description="Make Anaconda updates image")
+
+    parser.add_argument('-k', '--keep', action='store_true',
+                        help='do not delete updates subdirectory')
+
+    parser.add_argument('-c', '--compile', action='store_true',
+                        help='compile code if there are isys changes')
+
+    parser.add_argument('-t', '--tag', action='store', type=str,
+                        help='make updates image from TAG to HEAD')
+
+    parser.add_argument('-o', '--offset', action='store', type=int, default=0,
+                        help='make image from (latest_tag - OFFSET) to HEAD')
+
+    # -a/--add can be both used multiple times and multiple paths can be
+    # passed to a single -a/--add option, all provided paths will be then added
+    # to the add_rpm list
+    #
+    # Example:
+    #
+    # makeupdates -a foo.rpm -a bar.rpm baz.rpm --add spam.rpm
+    #
+    # This will add foo.rpm, bar.rpm, baz.rpm and spam.rpm to the
+    # updates image.
+    parser.add_argument('-a', '--add', action='append', type=str, nargs='+',
+                        dest='add_rpms', metavar='PATH_TO_RPM', default=[],
+                        help='add contents of RPMs to the updates image')
+
+    parser.add_argument('-f', '--fetch', action='store', type=str, metavar="ARCH",
+                        help='autofetch new dependencies from Koji for ARCH')
+
+    parser.add_argument('-b', '--builddir', action='store', type=str,
+                        metavar='BUILDDIR', help='build directory for shared objects')
+
+    args = parser.parse_args()
 
     if not os.path.isfile(configure) and not os.path.isfile(spec):
         sys.stderr.write("You must be at the top level of the anaconda source tree.\n")
         sys.exit(1)
 
-    if not tag:
-        if offset < 1:
-            tag = getArchiveTag(configure, spec)
+    if not args.tag:
+        # add a fake tag to the arguments to be consistent
+        if args.offset < 1:
+            args.tag = getArchiveTag(configure, spec)
         else:
-            tag = getArchiveTagOffset(configure, spec, offset)
-        sys.stdout.write("Using tag: %s\n" % tag)
+            args.tag = getArchiveTagOffset(configure, spec, args.offset)
+        sys.stdout.write("Using tag: %s\n" % args.tag)
+
+    if args.builddir:
+        if os.path.isabs(args.builddir):
+            builddir = args.builddir
+        else:
+            builddir = os.path.join(cwd, args.builddir)
+    else:
+        builddir = cwd
+    print("BUILDDIR %s" % builddir)
 
     if not os.path.isdir(updates):
         os.makedirs(updates)
 
-    copyUpdatedFiles(tag, updates, cwd)
+    copyUpdatedFiles(args.tag, updates, cwd)
 
-    if compile:
-        if isysChanged(tag):
-            copyUpdatedIsys(updates, cwd)
+    if args.compile:
+        if isysChanged(args.tag):
+            copyUpdatedIsys(updates, cwd, builddir)
 
-        if widgetsChanged(tag):
-            copyUpdatedWidgets(updates, cwd)
+        if widgetsChanged(args.tag):
+            copyUpdatedWidgets(updates, cwd, builddir)
 
-    if add_rpms:
-        addRpms(updates, add_rpms)
+    if args.add_rpms:
+        # as using -a or --add mutltiple times
+        # adds a new list to the list instead of extending the
+        # original list, we need to "normalize" to a
+        # one-level list of strings
+        normalized_rpm_paths = []
+        for item in args.add_rpms:
+            if isinstance(item, list):
+                normalized_rpm_paths.extend(item)
+            else:
+                normalized_rpm_paths.append(item)
+        # also remove any duplicated paths
+        # by converting the list into a set
+        args.add_rpms = list(set(normalized_rpm_paths))
+
+        print('%d RPMs added manually:' % len(args.add_rpms))
+        for item in args.add_rpms:
+            print(os.path.basename(item))
+
+    if args.fetch:
+        arch = args.fetch
+        rpm_paths = check_for_new_packages(args.tag, arch, args.add_rpms, spec)
+        args.add_rpms.extend(rpm_paths)
+
+    if args.add_rpms:
+        addRpms(updates, args.add_rpms)
 
     createUpdatesImage(cwd, updates)
 
-    if not keep:
+    if not args.keep:
         shutil.rmtree(updates)
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

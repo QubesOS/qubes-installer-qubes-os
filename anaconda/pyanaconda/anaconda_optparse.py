@@ -19,7 +19,7 @@
 # Authors:
 #   Will Woods <wwoods@redhat.com>
 
-from flags import BootArgs
+from pyanaconda.flags import BootArgs
 from optparse import OptionParser, OptionConflictError
 
 class AnacondaOptionParser(OptionParser):
@@ -35,6 +35,7 @@ class AnacondaOptionParser(OptionParser):
     """
     def __init__(self, *args, **kwargs):
         self._boot_arg = dict()
+        self.deprecated_bootargs = []
         self.bootarg_prefix = kwargs.pop("bootarg_prefix","")
         self.require_prefix = kwargs.pop("require_prefix",True)
         OptionParser.__init__(self, *args, **kwargs)
@@ -57,7 +58,7 @@ class AnacondaOptionParser(OptionParser):
         bootargs = [a for a in args if not a.startswith('-')]
         do_bootarg = kwargs.pop("bootarg", True)
         option = OptionParser.add_option(self, *flags, **kwargs)
-        bootargs += [flag[2:] for flag in option._long_opts]
+        bootargs += (flag[2:] for flag in option._long_opts)
         if do_bootarg:
             for b in bootargs:
                 if b in self._boot_arg:
@@ -114,6 +115,7 @@ class AnacondaOptionParser(OptionParser):
             option.process(arg, val, values, self)
         return values
 
+    # pylint: disable-msg=W0221
     def parse_args(self, args=None, values=None, cmdline=None):
         """
         Like OptionParser.parse_args(), but also parses the boot cmdline.

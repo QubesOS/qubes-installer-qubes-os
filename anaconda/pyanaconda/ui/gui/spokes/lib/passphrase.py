@@ -19,49 +19,51 @@
 # Red Hat Author(s): David Lehman <dlehman@redhat.com>
 #
 
-from gi.repository import Gtk
-from gi.repository import Gdk
+from gi.repository import Gtk, Gdk
 
-import gettext
 import pwquality
 
 from pyanaconda.ui.gui import GUIObject
 
-from pyanaconda import keyboard
-
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
-P_ = lambda x, y, z: gettext.ldngettext("anaconda", x, y, z)
+from pyanaconda.i18n import _, N_
 
 __all__ = ["PassphraseDialog"]
 
-warning_label_template = N_("Warning: Your current keyboard layout is <b>%s</b>."
-                            "If you change your keyboard layout, you may not be "
-                            "able to decrypt your disks after install.")
-
 ERROR_WEAK = N_("You have provided a weak passphrase: %s")
-ERROR_NOT_MATCHING = N_("Passphrases do not match.") 
+ERROR_NOT_MATCHING = N_("Passphrases do not match.")
 
 class PassphraseDialog(GUIObject):
     builderObjects = ["passphrase_dialog"]
     mainWidgetName = "passphrase_dialog"
     uiFile = "spokes/lib/passphrase.glade"
 
+    def __init__(self, data):
+        GUIObject.__init__(self, data)
+
+        self._confirm_entry = self.builder.get_object("confirm_entry")
+        self._passphrase_entry = self.builder.get_object("passphrase_entry")
+
+        self._save_button = self.builder.get_object("passphrase_save_button")
+
+        self._strength_label = self.builder.get_object("strength_label")
+
+        # These will be set up later.
+        self._strength_bar = None
+        self._pwq = None
+        self._pwq_error = None
+        self.passphrase = ""
+
     def refresh(self):
-        super(GUIObject, self).refresh()
-        self._warning_label = self.builder.get_object("passphrase_warning_label")
+        super(PassphraseDialog, self).refresh()
 
         # disable input methods for the passphrase Entry widgets and make sure
         # the focus change mask is enabled
-        self._passphrase_entry = self.builder.get_object("passphrase_entry")
         self._passphrase_entry.set_property("im-module", "")
         self._passphrase_entry.set_icon_from_stock(Gtk.EntryIconPosition.SECONDARY, "")
         self._passphrase_entry.add_events(Gdk.EventMask.FOCUS_CHANGE_MASK)
-        self._confirm_entry = self.builder.get_object("confirm_entry")
         self._confirm_entry.set_property("im-module", "")
         self._confirm_entry.add_events(Gdk.EventMask.FOCUS_CHANGE_MASK)
 
-        self._save_button = self.builder.get_object("passphrase_save_button")
         self._save_button.set_can_default(True)
 
         # add the passphrase strength meter
@@ -69,27 +71,22 @@ class PassphraseDialog(GUIObject):
         self._strength_bar.set_mode(Gtk.LevelBarMode.DISCRETE)
         self._strength_bar.set_min_value(0)
         self._strength_bar.set_max_value(4)
+        self._strength_bar.add_offset_value("low", 2)
+        self._strength_bar.add_offset_value("medium", 3)
+        self._strength_bar.add_offset_value("high", 4)
         box = self.builder.get_object("strength_box")
         box.pack_start(self._strength_bar, False, True, 0)
         box.show_all()
-        self._strength_label = self.builder.get_object("strength_label")
 
         # set up passphrase quality checker
         self._pwq = pwquality.PWQSettings()
         self._pwq.read_config()
-
-        # update the warning label with the currently selected keymap
-        xkl_wrapper = keyboard.XklWrapper.get_instance()
-        keymap_name = xkl_wrapper.get_current_layout_name()
-        warning_label_text = _(warning_label_template) % keymap_name
-        self._warning_label.set_markup(warning_label_text)
 
         # initialize with the previously set passphrase
         self.passphrase = self.data.autopart.passphrase
 
         if not self.passphrase:
             self._save_button.set_sensitive(False)
-            self._confirm_entry.set_sensitive(False)
 
         self._passphrase_entry.set_text(self.passphrase)
         self._confirm_entry.set_text(self.passphrase)
@@ -98,6 +95,7 @@ class PassphraseDialog(GUIObject):
 
     def run(self):
         self.refresh()
+        self.window.show_all()
         rc = self.window.run()
         self.window.destroy()
         return rc
@@ -108,8 +106,8 @@ class PassphraseDialog(GUIObject):
         self._pwq_error = ""
         try:
             strength = self._pwq.check(passphrase, None, None)
-        except pwquality.PWQError as (e, msg):
-            self._pwq_error = msg
+        except pwquality.PWQError as e:
+            self._pwq_error = e[1]
 
         if strength < 50:
             val = 1
@@ -133,51 +131,43 @@ class PassphraseDialog(GUIObject):
 
     def on_passphrase_changed(self, entry):
         self._update_passphrase_strength()
-        if self._confirm_entry.get_text():
-            self._confirm_entry.set_text("")
+        if entry.get_text() and entry.get_text() == self._confirm_entry.get_text():
             self._set_entry_icon(self._confirm_entry, "", "")
+            self._save_button.set_sensitive(True)
+        else:
+            self._save_button.set_sensitive(False)
 
         if not self._pwq_error:
             self._set_entry_icon(entry, "", "")
 
-        self._save_button.set_sensitive(False)
-        self._confirm_entry.set_sensitive(False)
-
     def on_passphrase_editing_done(self, entry, *args):
-        sensitive = True
         if self._pwq_error:
             icon = "gtk-dialog-error"
             msg = _(ERROR_WEAK) % self._pwq_error
-            sensitive = False
             self._set_entry_icon(entry, icon, msg)
 
-        self._confirm_entry.set_sensitive(sensitive)
-        if sensitive:
-            self._confirm_entry.grab_focus()
-
-        return True
-
     def on_confirm_changed(self, entry):
-        if not self._save_button.get_sensitive() and \
-           entry.get_text() == self._passphrase_entry.get_text():
-            self._save_button.set_sensitive(True)
-            self._save_button.grab_focus()
-            self._save_button.grab_default()
+        if entry.get_text() and entry.get_text() == self._passphrase_entry.get_text():
             self._set_entry_icon(entry, "", "")
+            self._save_button.set_sensitive(True)
+        else:
+            self._save_button.set_sensitive(False)
 
     def on_confirm_editing_done(self, entry, *args):
         passphrase = self._passphrase_entry.get_text()
         confirm = self._confirm_entry.get_text()
         if passphrase != confirm:
-            match = False
             icon = "gtk-dialog-error"
             msg = ERROR_NOT_MATCHING
             self._set_entry_icon(entry, icon, _(msg))
             self._save_button.set_sensitive(False)
         else:
-            self._save_button.grab_focus()
-            self._save_button.grab_default()
+            self._set_entry_icon(entry, "", "")
 
     def on_save_clicked(self, button):
         self.passphrase = self._passphrase_entry.get_text()
 
+    def on_entry_activated(self, entry):
+        if self._save_button.get_sensitive() and \
+           entry.get_text() == self._passphrase_entry.get_text():
+            self._save_button.emit("clicked")

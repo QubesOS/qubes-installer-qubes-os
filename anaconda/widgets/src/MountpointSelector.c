@@ -21,6 +21,7 @@
 #include <gdk/gdk.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <gettext.h>
 
 #include "MountpointSelector.h"
 #include "intl.h"
@@ -31,7 +32,7 @@
  * @short_description: A graphical way to select a mount point.
  *
  * A #AnacondaMountpointSelector is a widget that appears on the custom partitioning
- * Mountpoint and allows the user to select a single mount point to do additional
+ * spoke and allows the user to select a single mount point to do additional
  * configuration.
  *
  * As a #AnacondaMountpointSelector is a subclass of a #GtkEventBox, any signals
@@ -45,7 +46,7 @@ enum {
     PROP_MOUNTPOINT
 };
 
-#define DEFAULT_NAME        N_("Root")
+#define DEFAULT_NAME        ""
 #define DEFAULT_SIZE        N_("0 GB")
 #define DEFAULT_MOUNTPOINT  ""
 
@@ -80,7 +81,9 @@ static void anaconda_mountpoint_selector_class_init(AnacondaMountpointSelectorCl
     /**
      * AnacondaMountpointSelector:name:
      *
-     * The :name string is the primary text displayed for a given mountpoint.
+     * The :name string is the secondary text displayed for this widget.  It is
+     * commonly going to be the name of the device node containing this
+     * mountpoint.
      *
      * Since: 1.0
      */
@@ -111,7 +114,8 @@ static void anaconda_mountpoint_selector_class_init(AnacondaMountpointSelectorCl
     /**
      * AnacondaMountpointSelector:mountpoint:
      *
-     * The :mountpoint string is where on the filesystem this is mounted.
+     * The :mountpoint string is the primary text displayed for this widget.
+     * It shows where on the filesystem this device is mounted.
      *
      * Since: 1.0
      */
@@ -139,35 +143,40 @@ GtkWidget *anaconda_mountpoint_selector_new() {
     return g_object_new(ANACONDA_TYPE_MOUNTPOINT_SELECTOR, NULL);
 }
 
-static gchar *find_pixmap(const gchar *file) {
-    const gchar *envvar;
-    gchar **paths, **iterator = NULL;
+static void format_mountpoint_label(AnacondaMountpointSelector *widget, const char *value) {
+    char *markup;
 
-    envvar = g_getenv("PIXMAPPATH");
-    if (!envvar)
-       envvar = g_strdup("/usr/share/anaconda/pixmaps");
+    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", value);
+    gtk_label_set_markup(GTK_LABEL(widget->priv->mountpoint_label), markup);
+    g_free(markup);
+}
 
-    paths = g_strsplit(envvar, ":", 0);
-    iterator = paths;
+static void format_size_label(AnacondaMountpointSelector *widget, const char *value) {
+    char *markup;
 
-    while (*iterator != NULL) {
-        gchar *path = g_strjoin("/", *iterator, file, NULL);
+    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", value);
+    gtk_label_set_markup(GTK_LABEL(widget->priv->size_label), markup);
+    g_free(markup);
+}
 
-        if (!g_access(path, R_OK))
-           return path;
+static void format_name_label(AnacondaMountpointSelector *widget, const char *value) {
+    char *markup;
 
-        g_free(path);
-        iterator++;
-    }
+    markup = g_markup_printf_escaped("<span fgcolor='black' size='small'>%s</span>", value);
+    gtk_label_set_markup(GTK_LABEL(widget->priv->name_label), markup);
+    g_free(markup);
+}
 
-    g_strfreev(paths);
-    return NULL;
+/* XXX: this should be provided by the Gtk itself (#1008821) */
+static GtkTextDirection get_default_widget_direction() {
+    const char *xlated = g_dgettext("gtk30", "default:LTR");
+    if (strcmp (xlated, "default:RTL") == 0)
+        return GTK_TEXT_DIR_RTL;
+    else
+        return GTK_TEXT_DIR_LTR;
 }
 
 static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountpoint) {
-    gchar *pixmap_path;
-    char *markup;
-
     mountpoint->priv = G_TYPE_INSTANCE_GET_PRIVATE(mountpoint,
                                                    ANACONDA_TYPE_MOUNTPOINT_SELECTOR,
                                                    AnacondaMountpointSelectorPrivate);
@@ -189,46 +198,41 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     gtk_grid_set_column_spacing(GTK_GRID(mountpoint->priv->grid), 12);
     gtk_widget_set_margin_left(GTK_WIDGET(mountpoint->priv->grid), 30);
 
-    /* Create the icon.  We don't need to check if find_pixmap returned NULL
-     * since gtk_image_new_from_file will just display a broken image icon in
-     * that case.  That's good enough error notification.
+    /* Create the icon.  We don't need to check if it returned NULL since
+     * gtk_image_new_from_file will just display a broken image icon in that
+     * case.  That's good enough error notification.
      */
-    pixmap_path = find_pixmap("right-arrow-icon.png");
-    mountpoint->priv->arrow = gtk_image_new_from_file(pixmap_path);
+    if (get_default_widget_direction() == GTK_TEXT_DIR_LTR)
+        mountpoint->priv->arrow = gtk_image_new_from_file("/usr/share/anaconda/pixmaps/right-arrow-icon.png");
+    else
+        mountpoint->priv->arrow = gtk_image_new_from_file("/usr/share/anaconda/pixmaps/left-arrow-icon.png");
     gtk_widget_set_no_show_all(GTK_WIDGET(mountpoint->priv->arrow), TRUE);
-    g_free(pixmap_path);
 
     /* Set some properties. */
     mountpoint->priv->chosen = FALSE;
 
     /* Create the name label. */
     mountpoint->priv->name_label = gtk_label_new(NULL);
-    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", _(DEFAULT_NAME));
-    gtk_label_set_markup(GTK_LABEL(mountpoint->priv->name_label), markup);
+    format_name_label(mountpoint, _(DEFAULT_NAME));
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->name_label), 0, 0);
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->name_label), TRUE);
-    g_free(markup);
 
     /* Create the size label. */
     mountpoint->priv->size_label = gtk_label_new(NULL);
-    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", _(DEFAULT_SIZE));
-    gtk_label_set_markup(GTK_LABEL(mountpoint->priv->size_label), markup);
+    format_size_label(mountpoint, _(DEFAULT_SIZE));
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->size_label), 0, 0.5);
-    g_free(markup);
 
     /* Create the mountpoint label. */
     mountpoint->priv->mountpoint_label = gtk_label_new(NULL);
-    markup = g_markup_printf_escaped("<span fgcolor='grey' size='small'>%s</span>", DEFAULT_MOUNTPOINT);
-    gtk_label_set_markup(GTK_LABEL(mountpoint->priv->mountpoint_label), markup);
+    format_mountpoint_label(mountpoint, DEFAULT_MOUNTPOINT);
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->mountpoint_label), 0, 0);
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->mountpoint_label), TRUE);
-    g_free(markup);
 
     /* Add everything to the grid, add the grid to the widget. */
-    gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->name_label, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->mountpoint_label, 0, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->size_label, 1, 0, 1, 2);
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->arrow, 2, 0, 1, 2);
-    gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->mountpoint_label, 0, 1, 1, 2);
+    gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->name_label, 0, 1, 1, 2);
     gtk_widget_set_margin_right(GTK_WIDGET(mountpoint->priv->grid), 12);
 
     gtk_container_add(GTK_CONTAINER(mountpoint), mountpoint->priv->grid);
@@ -265,27 +269,20 @@ static void anaconda_mountpoint_selector_get_property(GObject *object, guint pro
 
 static void anaconda_mountpoint_selector_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec) {
     AnacondaMountpointSelector *widget = ANACONDA_MOUNTPOINT_SELECTOR(object);
-    AnacondaMountpointSelectorPrivate *priv = widget->priv;
 
     switch(prop_id) {
         case PROP_NAME: {
-            char *markup = g_markup_printf_escaped("<span size='large' weight='bold'>%s</span>", g_value_get_string(value)); 
-            gtk_label_set_markup(GTK_LABEL(priv->name_label), markup);
-            g_free(markup);
+            format_name_label(widget, g_value_get_string(value));
             break;
         }
 
         case PROP_SIZE: {
-            char *markup = g_markup_printf_escaped("<span size='large' weight='bold'>%s</span>", g_value_get_string(value)); 
-            gtk_label_set_markup(GTK_LABEL(priv->size_label), markup);
-            g_free(markup);
+            format_size_label(widget, g_value_get_string(value));
             break;
         }
 
         case PROP_MOUNTPOINT: {
-            char *markup = g_markup_printf_escaped("<span size='small'>%s</span>", g_value_get_string(value));
-            gtk_label_set_markup(GTK_LABEL(priv->mountpoint_label), markup);
-            g_free(markup);
+            format_mountpoint_label(widget, g_value_get_string(value));
             break;
         }
     }

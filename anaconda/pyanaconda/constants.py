@@ -19,30 +19,19 @@
 # Author(s): Erik Troan <ewt@redhat.com>
 #
 
-import re
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
+from pyanaconda.i18n import N_
 
 SELINUX_DEFAULT = 1
 
-DISPATCH_BACK = -1
-DISPATCH_FORWARD = 1
-DISPATCH_DEFAULT = None
-DISPATCH_WAITING = 2
-
-# XXX this is made up and used by the size spinner; should just be set with
-# a callback
-MAX_PART_SIZE = 1024*1024*1024
-
-# install key related constants
-SKIP_KEY = -50
+# where to look for 3rd party addons
+ADDON_PATHS = ["/usr/share/anaconda/addons"]
 
 # pull in kickstart constants as well
+# pylint: disable-msg=W0401
 from pykickstart.constants import *
 
 # common string needs to be easy to change
-import product
+from pyanaconda import product
 productName = product.productName
 productVersion = product.productVersion
 productArch = product.productArch
@@ -54,21 +43,8 @@ shortProductName = productName.lower()
 if productName.count(" "):
     shortProductName = ''.join(s[0] for s in shortProductName.split())
 
-exceptionText = _("An unhandled exception has occurred.  This "
-                  "is most likely a bug.  Please save a copy of "
-                  "the detailed exception and file a bug report")
-if not bugzillaUrl:
-    # this string will be combined with "An unhandled exception"...
-    # the leading space is not a typo.
-    exceptionText += _(" with the provider of this software.")
-else:
-    # this string will be combined with "An unhandled exception"...
-    # the leading space is not a typo.
-    exceptionText += _(" against anaconda at %s") %(bugzillaUrl,)
-
 # DriverDisc Paths
 DD_ALL = "/tmp/DD"
-DD_EXTRACTED = re.compile("/lib/modules/[^/]+/updates/DD/(?P<moduledir>.*/)?(?P<modulename>[^/.]+).ko.*")
 DD_FIRMWARE = "/tmp/DD/lib/firmware"
 DD_RPMS = "/tmp/DD-*"
 
@@ -80,20 +56,89 @@ MOUNT_DIR = "/mnt/install"
 DRACUT_REPODIR = "/run/install/repo"
 DRACUT_ISODIR = "/run/install/source"
 ISO_DIR = MOUNT_DIR + "/isodir"
+IMAGE_DIR = MOUNT_DIR + "/image"
 INSTALL_TREE = MOUNT_DIR + "/source"
 BASE_REPO_NAME = "anaconda"
 
-# NOTE: this should be LANG.CODESET, e.g. en_US.UTF-8
+# NOTE: this should be LANG_TERRITORY.CODESET, e.g. en_US.UTF-8
 DEFAULT_LANG = "en_US.UTF-8"
+
+DEFAULT_VC_FONT = "latarcyrheb-sun16"
+
+DEFAULT_KEYBOARD = "us"
 
 DRACUT_SHUTDOWN_EJECT = "/run/initramfs/usr/lib/dracut/hooks/shutdown/99anaconda-eject.sh"
 
-# DMI information paths
-DMI_CHASSIS_VENDOR = "/sys/class/dmi/id/chassis_vendor"
-
 # VNC questions
-USEVNC = _("Start VNC")
-USETEXT = _("Use text mode")
+USEVNC = N_("Start VNC")
+USETEXT = N_("Use text mode")
 
 # Runlevel files
 RUNLEVELS = {3: 'multi-user.target', 5: 'graphical.target'}
+
+# Network
+NETWORK_CONNECTION_TIMEOUT = 45  # in seconds
+NETWORK_CONNECTED_CHECK_INTERVAL = 0.1  # in seconds
+
+# DBus
+DEFAULT_DBUS_TIMEOUT = -1       # use default
+
+# Thread names
+THREAD_EXECUTE_STORAGE = "AnaExecuteStorageThread"
+THREAD_STORAGE = "AnaStorageThread"
+THREAD_STORAGE_WATCHER = "AnaStorageWatcher"
+THREAD_CHECK_STORAGE = "AnaCheckStorageThread"
+THREAD_CUSTOM_STORAGE_INIT = "AnaCustomStorageInit"
+THREAD_WAIT_FOR_CONNECTING_NM = "AnaWaitForConnectingNMThread"
+THREAD_PAYLOAD = "AnaPayloadThread"
+THREAD_PAYLOAD_MD = "AnaPayloadMDThread"
+THREAD_INPUT_BASENAME = "AnaInputThread"
+THREAD_SYNC_TIME_BASENAME = "AnaSyncTime"
+THREAD_EXCEPTION_HANDLING_TEST = "AnaExceptionHandlingTest"
+THREAD_LIVE_PROGRESS = "AnaLiveProgressThread"
+THREAD_SOFTWARE_WATCHER = "AnaSoftwareWatcher"
+THREAD_CHECK_SOFTWARE = "AnaCheckSoftwareThread"
+THREAD_SOURCE_WATCHER = "AnaSourceWatcher"
+THREAD_INSTALL = "AnaInstallThread"
+THREAD_CONFIGURATION = "AnaConfigurationThread"
+THREAD_FCOE = "AnaFCOEThread"
+THREAD_ISCSI_DISCOVER = "AnaIscsiDiscoverThread"
+THREAD_ISCSI_LOGIN = "AnaIscsiLoginThread"
+THREAD_GEOLOCATION_REFRESH = "AnaGeolocationRefreshThread"
+THREAD_DATE_TIME = "AnaDateTimeThread"
+THREAD_TIME_INIT = "AnaTimeInitThread"
+THREAD_XKL_WRAPPER_INIT = "AnaXklWrapperInitThread"
+
+# Geolocation constants
+
+# geolocation providers
+# - values are used by the geoloc CLI/boot option
+GEOLOC_PROVIDER_FEDORA_GEOIP = "provider_fedora_geoip"
+GEOLOC_PROVIDER_HOSTIP = "provider_hostip"
+GEOLOC_PROVIDER_GOOGLE_WIFI = "provider_google_wifi"
+# geocoding provider
+GEOLOC_GEOCODER_NOMINATIM = "geocoder_nominatim"
+# default providers
+GEOLOC_DEFAULT_PROVIDER = GEOLOC_PROVIDER_FEDORA_GEOIP
+GEOLOC_DEFAULT_GEOCODER = GEOLOC_GEOCODER_NOMINATIM
+# timeout (in seconds)
+GEOLOC_TIMEOUT = 3
+
+
+ANACONDA_ENVIRON = "anaconda"
+FIRSTBOOT_ENVIRON = "firstboot"
+
+# Tainted hardware
+UNSUPPORTED_HW = 1 << 28
+
+# Password validation
+PASSWORD_MIN_LEN = 6
+PASSWORD_EMPTY_ERROR = N_("The password is empty.")
+PASSWORD_CONFIRM_ERROR_GUI = N_("The passwords do not match.")
+PASSWORD_CONFIRM_ERROR_TUI = N_("The passwords you entered were different.  Please try again.")
+PASSWORD_WEAK = N_("The password you have provided is weak. You will have to press Done twice to confirm it.")
+PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s. You will have to press Done twice to confirm it.")
+PASSWORD_WEAK_CONFIRM = N_("You have provided a weak password. Press Done again to use anyway.")
+PASSWORD_WEAK_CONFIRM_WITH_ERROR = N_("You have provided a weak password: %s. Press Done again to use anyway.")
+
+PASSWORD_STRENGTH_DESC = [N_("Empty"), N_("Weak"), N_("Fair"), N_("Good"), N_("Strong")]

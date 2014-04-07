@@ -22,54 +22,43 @@
 #
 
 from distutils.sysconfig import get_python_lib
-import os, sys, iutil
-import isys
-import string
+import os, sys
 import imputil
-import types
 
-from constants import *
-from product import *
-from storage.partspec import *
-from storage.devicelibs import swap
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from blivet.partspec import PartSpec
+from blivet.devicelibs import swap
+from blivet.platform import platform
 
 import logging
 log = logging.getLogger("anaconda")
 
-from flags import flags
+from pyanaconda.kickstart import getAvailableDiskSpace
 
 class BaseInstallClass(object):
     # default to not being hidden
     hidden = 0
-    pixmap = None
-    showMinimal = 1
-    showLoginChoice = 0
-    _description = ""
-    _descriptionFields = ()
     name = "base"
-    pkgstext = ""
-    # default to showing the upgrade option
-    showUpgrade = True
     bootloaderTimeoutDefault = None
     bootloaderExtraArgs = []
+
+    # Anaconda flags several packages to be installed based on the configuration
+    # of the system -- things like fs utilities, bootloader, &c. This is a list
+    # of packages that we should not try to install using the aforementioned
+    # mechanism.
+    ignoredPackages = []
+
+    # This flag controls whether or not Anaconda should provide an option to
+    # install the latest updates during installation source selection.
+    installUpdates = True
+
     _l10n_domain = None
 
-    # list of of (txt, grplist) tuples for task selection screen
-    tasks = []
+    # The default filesystem type to use.  If None, we will use whatever
+    # Blivet uses by default.
+    defaultFS = None
 
     # don't select this class by default
     default = 0
-
-    # by default, place this under the "install" category; it gets it's
-    # own toplevel category otherwise
-    parentClass = ( _("Install on System"), "install.png" )
-
-    def _get_description(self):
-        return _(self._description) % self._descriptionFields
-    description = property(_get_description)
 
     @property
     def l10n_domain(self):
@@ -78,25 +67,8 @@ class BaseInstallClass(object):
                                self.name)
         return self._l10n_domain
 
-    def postAction(self, anaconda):
-        anaconda.backend.postAction(anaconda)
-
-    # modifies the uri from installmethod.getMethodUri() to take into
-    # account any installclass specific things including multiple base
-    # repositories.  takes a string or list of strings, returns a dict
-    # with string keys and list values {%repo: %uri_list}
-    def getPackagePaths(self, uri):
-        if not type(uri) == types.ListType:
-            uri = [uri,]
-
-        return {'base': uri}
-
     def setPackageSelection(self, anaconda):
-	pass
-
-    def setGroupSelection(self, anaconda):
-        grps = anaconda.backend.getDefaultGroups(anaconda)
-        map(lambda x: anaconda.backend.selectGroup(x), grps)
+        pass
 
     def getBackend(self):
         # The default is to return None here, which means anaconda should
@@ -107,16 +79,18 @@ class BaseInstallClass(object):
     def setDefaultPartitioning(self, storage):
         autorequests = [PartSpec(mountpoint="/", fstype=storage.defaultFSType,
                                  size=1024, maxSize=50*1024, grow=True,
-                                 btr=True, lv=True, encrypted=True),
+                                 btr=True, lv=True, thin=True, encrypted=True),
                         PartSpec(mountpoint="/home", fstype=storage.defaultFSType,
                                  size=500, grow=True, requiredSpace=50*1024,
-                                 btr=True, lv=True, encrypted=True)]
+                                 btr=True, lv=True, thin=True, encrypted=True)]
 
-        bootreqs = storage.platform.setDefaultPartitioning()
+        bootreqs = platform.setDefaultPartitioning()
         if bootreqs:
             autorequests.extend(bootreqs)
 
-        swp = swap.swapSuggestion()
+
+        disk_space = getAvailableDiskSpace(storage)
+        swp = swap.swapSuggestion(disk_space=disk_space)
         autorequests.append(PartSpec(fstype="swap", size=swp, grow=False,
                                      lv=True, encrypted=True))
 
@@ -133,39 +107,12 @@ class BaseInstallClass(object):
         anaconda.bootloader.timeout = self.bootloaderTimeoutDefault
         anaconda.bootloader.boot_args.update(self.bootloaderExtraArgs)
 
-    def versionMatches(self, oldver):
-        pass
-
-    def productMatches(self, oldprod):
-        pass
-
-    def productUpgradable(self, arch, oldprod, oldver):
-        """ Return a tuple with:
-            (Upgradable True|False, dict of tests and status)
-
-            The dict has True|False for: product, version, arch tests.
-        """
-        def archesEq(a, b):
-            import re
-
-            if re.match("i.86", a) and re.match("i.86", b):
-                return True
-            else:
-                return a == b
-
-        result = { "product" : self.productMatches(oldprod),
-                   "version"  : self.versionMatches(oldver),
-                   "arch"     : archesEq(arch, productArch)
-                 }
-
-        return (all(result.values()), result)
-
     # sets default ONBOOT values and updates ksdata accordingly
     def setNetworkOnbootDefault(self, ksdata):
         pass
 
     def __init__(self):
-	pass
+        pass
 
 allClasses = []
 allClasses_hidden = []
@@ -176,8 +123,8 @@ def availableClasses(showHidden=0):
     global allClasses_hidden
 
     def _ordering(first, second):
-        ((name1, obj, logo), priority1) = first
-        ((name2, obj, logo), priority2) = second
+        ((name1, _), priority1) = first
+        ((name2, _), priority2) = second
 
         if priority1 < priority2:
             return -1
@@ -192,9 +139,11 @@ def availableClasses(showHidden=0):
         return 0
 
     if not showHidden:
-        if allClasses: return allClasses
+        if allClasses:
+            return allClasses
     else:
-        if allClasses_hidden: return allClasses_hidden
+        if allClasses_hidden:
+            return allClasses_hidden
 
     path = []
 
@@ -202,12 +151,12 @@ def availableClasses(showHidden=0):
     if "ANACONDA_INSTALL_CLASSES" in os.environ:
         env_path += os.environ["ANACONDA_INSTALL_CLASSES"].split(":")
 
-    for dir in env_path + ["installclasses",
-                "/tmp/updates/pyanaconda/installclasses",
-                "/tmp/product/pyanaconda/installclasses",
-                "%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1) ]:
-        if os.access(dir, os.R_OK):
-            path.append(dir)
+    for d in env_path + ["installclasses",
+              "/tmp/updates/pyanaconda/installclasses",
+              "/tmp/product/pyanaconda/installclasses",
+              "%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1) ]:
+        if os.access(d, os.R_OK):
+            path.append(d)
 
     # append the location of installclasses to the python path so we
     # can import them
@@ -218,22 +167,24 @@ def availableClasses(showHidden=0):
         files += os.listdir(p)
 
     done = {}
-    list = []
-    for file in files:
-	if file[0] == '.': continue
-        if len (file) < 4:
-	    continue
-	if file[-3:] != ".py" and file[-4:-1] != ".py":
-	    continue
-	mainName = string.split(file, ".")[0]
-	if done.has_key(mainName): continue
-	done[mainName] = 1
+    lst = []
+    for fileName in files:
+        if fileName[0] == '.':
+            continue
+        if len (fileName) < 4:
+            continue
+        if fileName[-3:] != ".py" and fileName[-4:-1] != ".py":
+            continue
+        mainName = fileName.split(".")[0]
+        if done.has_key(mainName):
+            continue
+        done[mainName] = 1
 
 
         try:
             found = imputil.imp.find_module(mainName)
-        except ImportError as e:
-            log.warning ("module import of %s failed: %s" % (mainName, sys.exc_type))
+        except ImportError:
+            log.warning ("module import of %s failed: %s", mainName, sys.exc_type)
             continue
 
         try:
@@ -241,28 +192,22 @@ def availableClasses(showHidden=0):
 
             obj = loaded.InstallClass
 
-	    if obj.__dict__.has_key('sortPriority'):
-		sortOrder = obj.sortPriority
-	    else:
-		sortOrder = 0
-
-	    if obj.__dict__.has_key('arch'):
-                if obj.arch != iutil.getArch():
-                    obj.hidden = 1
+            if obj.__dict__.has_key('sortPriority'):
+                sortOrder = obj.sortPriority
+            else:
+                sortOrder = 0
 
             if obj.hidden == 0 or showHidden == 1:
-                list.append(((obj.name, obj, obj.pixmap), sortOrder))
-        except ImportError as e:
-            log.warning ("module import of %s failed: %s" % (mainName, sys.exc_type))
-            if flags.debug: raise
-            else: continue
+                lst.append(((obj.name, obj), sortOrder))
+        except (ImportError, AttributeError):
+            log.warning ("module import of %s failed: %s", mainName, sys.exc_type)
 
-    list.sort(_ordering)
-    for (item, priority) in list:
+    lst.sort(_ordering)
+    for (item, _) in lst:
         if showHidden:
-            allClasses_hidden.append(item)
+            allClasses_hidden += [item]
         else:
-            allClasses.append(item)
+            allClasses += [item]
 
     if showHidden:
         return allClasses_hidden
@@ -275,23 +220,23 @@ def getBaseInstallClass():
     avail = availableClasses(showHidden = 0)
 
     if len(avail) == 1:
-        (cname, cobject, clogo) = avail[0]
-        log.info("using only installclass %s" %(cname,))
+        (cname, cobject) = avail[0]
+        log.info("using only installclass %s", cname)
     elif len(allavail) == 1:
-        (cname, cobject, clogo) = allavail[0]
-        log.info("using only installclass %s" %(cname,))
+        (cname, cobject) = allavail[0]
+        log.info("using only installclass %s", cname)
 
     # Use the highest priority install class if more than one found.
     elif len(avail) > 1:
-        (cname, cobject, clogo) = avail.pop()
-        log.info('%s is the highest priority installclass, using it' % cname)
+        (cname, cobject) = avail.pop()
+        log.info('%s is the highest priority installclass, using it', cname)
     elif len(allavail) > 1:
-        (cname, cobject, clogo) = allavail.pop()
-        log.info('%s is the highest priority installclass, using it' % cname)
+        (cname, cobject) = allavail.pop()
+        log.info('%s is the highest priority installclass, using it', cname)
 
     # Default to the base installclass if nothing else is found.
     else:
-        raise RuntimeError, "Unable to find an install class to use!!!"
+        raise RuntimeError("Unable to find an install class to use!!!")
 
     return cobject
 

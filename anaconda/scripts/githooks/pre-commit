@@ -1,0 +1,67 @@
+#!/usr/bin/python
+""" Run the Anaconda pylint tests on the files changed in this commit
+
+    Set NOPYLINT env variable to skip this. eg. NOPYLINT= git commit
+
+
+"""
+import os
+import sys
+from subprocess import check_output, CalledProcessError
+
+def is_python(filename):
+    if filename.endswith(".py"):
+        return True
+
+    try:
+        with open(filename) as testfile:
+            if testfile.readline().startswith("#!/usr/bin/python"):
+                return True
+    except IOError:
+        pass
+
+    return False
+
+OTHER_MODULES_PATH = ".:../blivet/:../pykickstart/"
+
+if "NOPYLINT" in os.environ:
+    print "Skipping pre-commit pylint run"
+    sys.exit(0)
+
+# run pylint on all the python files changed by this commit
+try:
+    git_files = check_output("git status --porcelain", shell=True)
+except CalledProcessError:
+    sys.exit(1)
+
+pylint_files = []
+# Lines look like: MM tests/pylint/runpylint.sh
+# The first character is the status in the index (or our side of a merge),
+# the second character is the status in the tree (or their side of a merge).
+for gf in git_files.splitlines():
+    # If the file is being removed or is not in git, ignore it
+    if gf[0] in ('D', '?'):
+        continue
+    elif is_python(gf[3:]):
+        # If the file is unmerged or changed locally, raise an error
+        if gf[0] == 'U' or gf[1] in ('U', 'M'):
+            print("ERROR: %s in commit does not match tree" % gf[3:])
+            sys.exit(1)
+        pylint_files.append(gf[3:])
+
+if not pylint_files:
+    sys.exit(0)
+
+# Make sure pykickstart and blivet can be found
+# Note that if the checked out versions are too far off pylint may fail
+env = os.environ.copy()
+env["PYTHONPATH"] = OTHER_MODULES_PATH
+
+print "Running pylint on %s" % " ".join(pylint_files)
+try:
+    check_output(["./tests/pylint/runpylint.sh"] + pylint_files, env=env)
+except CalledProcessError as e:
+    print e.output
+    sys.exit(1)
+
+sys.exit(0)

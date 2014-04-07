@@ -24,7 +24,7 @@
 #
 import os
 import sys
-from pykickstart.parser import *
+from pykickstart.parser import KickstartParser
 from pykickstart.version import makeVersion
 import pyanaconda.users as users
 
@@ -34,7 +34,7 @@ ksfile = '/run/install/ks.cfg'
 if not os.path.exists(ksfile):
     sys.exit()
 
-ksparser = KickstartParser(makeVersion())
+ksparser = KickstartParser(makeVersion(), missingIncludeIsFatal=False)
 ksparser.readKickstart(ksfile)
 
 # we need to have a libuser.conf that points to the installer root for

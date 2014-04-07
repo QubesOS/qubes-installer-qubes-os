@@ -27,7 +27,10 @@ import threading
 class ThreadManager(object):
     """A singleton class for managing threads and processes.
 
-       Note:  This manager makes one assumption that contradicts python's
+       Notes:
+       THE INSTANCE HAS TO BE CREATED IN THE MAIN THREAD!
+
+       This manager makes one assumption that contradicts python's
        threading module documentation.  In this class, we assume that thread
        names are unique and meaningful.  This is an okay assumption for us
        to make given that anaconda is only ever going to have a handful of
@@ -35,6 +38,9 @@ class ThreadManager(object):
     """
     def __init__(self):
         self._objs = {}
+        self._objs_lock = threading.RLock()
+        self._errors = {}
+        self._main_thread = threading.current_thread()
 
     def __call__(self):
         return self
@@ -43,28 +49,123 @@ class ThreadManager(object):
         """Given a Thread or Process object, add it to the list of known objects
            and start it.  It is assumed that obj.name is unique and descriptive.
         """
-        if obj.name in self._objs:
-            raise KeyError
 
-        self._objs[obj.name] = obj
-        obj.start()
+        # we need to lock the thread dictionary when adding a new thread,
+        # so that callers can't get & join threads that are not yet started
+        with self._objs_lock:
+            if obj.name in self._objs:
+                raise KeyError("Cannot add thread '%s', a thread with the same name already running" % obj.name)
+
+            self._objs[obj.name] = obj
+            self._errors[obj.name] = None
+            obj.start()
 
     def remove(self, name):
         """Removes a thread from the list of known objects.  This should only
            be called when a thread exits, or there will be no way to get a
            handle on it.
         """
-        self._objs.pop(name)
+        with self._objs_lock:
+            self._objs.pop(name)
 
     def exists(self, name):
         """Determine if a thread or process exists with the given name."""
-        return name in self._objs
+
+        # thread in the ThreadManager only officially exists once started
+        with self._objs_lock:
+            return name in self._objs
 
     def get(self, name):
         """Given an object name, see if it exists and return the object.
-           Return None if no such object exists.
+           Return None if no such object exists.  Additionally, this method
+           will re-raise any uncaught exception in the thread.
         """
-        return self._objs.get(name)
+
+        # without the lock it would be possible to get & join
+        # a thread that was not yet started
+        with self._objs_lock:
+            obj = self._objs.get(name)
+            if obj:
+                self.raise_if_error(name)
+
+            return obj
+
+    def wait(self, name):
+        """Wait for the thread to exit and if the thread exited with an error
+           re-raise it here.
+        """
+        # we don't need a lock here,
+        # because get() acquires it itself
+        try:
+            self.get(name).join()
+        except AttributeError:
+            pass
+        # - if there is a thread object for the given name,
+        #   we join it
+        # - if there is not a thread object for the given name,
+        #   we get None, try to join it, suppress the AttributeError
+        #   and return immediately
+
+        self.raise_if_error(name)
+
+    def wait_all(self):
+        """Wait for all threads to exit and if there was an error re-raise it.
+        """
+        for name in self._objs.keys():
+            if self.get(name) == threading.current_thread():
+                continue
+            log.debug("Waiting for thread %s to exit", name)
+            self.wait(name)
+
+    def set_error(self, name, *exc_info):
+        """Set the error data for a thread
+
+           The exception data is expected to be the tuple from sys.exc_info()
+        """
+        self._errors[name] = exc_info
+
+    def get_error(self, name):
+        """Get the error data for a thread using its name
+        """
+        return self._errors.get(name)
+
+    def any_errors(self):
+        """Return True of there have been any errors in any threads
+        """
+        return any(self._errors.values())
+
+    def raise_if_error(self, name):
+        """If a thread has failed due to an exception, raise it into the main
+           thread.
+        """
+        if self._errors.get(name):
+            raise self._errors[name][0], self._errors[name][1], self._errors[name][2]
+
+    def in_main_thread(self):
+        """Return True if it is run in the main thread."""
+
+        cur_thread = threading.current_thread()
+        return cur_thread is self._main_thread
+
+    @property
+    def running(self):
+        """ Return the number of running threads.
+
+            :returns: number of running threads
+            :rtype:   int
+        """
+        with self._objs_lock:
+            return len(self._objs)
+
+    @property
+    def names(self):
+        """ Return the names of the running threads.
+
+            :returns: list of thread names
+            :rtype:   list of strings
+        """
+        with self._objs_lock:
+            return self._objs.keys()
 
 class AnacondaThread(threading.Thread):
     """A threading.Thread subclass that exists only for a couple purposes:
@@ -86,23 +187,24 @@ class AnacondaThread(threading.Thread):
         # http://bugs.python.org/issue1230540#msg25696
         import sys
 
-        log.info("Running Thread: %s (%s)" % (self.name, self.ident))
+        log.info("Running Thread: %s (%s)", self.name, self.ident)
         try:
             threading.Thread.run(self, *args, **kwargs)
-        except KeyboardInterrupt:
-            raise
+        # pylint: disable-msg=W0702
         except:
+            threadMgr.set_error(self.name, *sys.exc_info())
             sys.excepthook(*sys.exc_info())
         finally:
             threadMgr.remove(self.name)
-            log.info("Thread Done: %s (%s)" % (self.name, self.ident))
+            log.info("Thread Done: %s (%s)", self.name, self.ident)
 
 def initThreading():
-    """Set up threading for anaconda's use.  This method must be called before
+    """Set up threading for anaconda's use. This method must be called before
        any GTK or threading code is called, or else threads will only run when
-       an event is triggered in the GTK main loop.
+       an event is triggered in the GTK main loop. And IT HAS TO BE CALLED IN
+       THE MAIN THREAD.
     """
-    from gi.repository import GObject
-    GObject.threads_init()
+    global threadMgr
+    threadMgr = ThreadManager()
 
-threadMgr = ThreadManager()
+threadMgr = None

@@ -18,8 +18,7 @@
 #
 # Author(s): Chris Lumens <clumens@redhat.com>
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from pyanaconda.i18n import _
 
 __all__ = ["ERROR_RAISE", "ERROR_CONTINUE", "ERROR_RETRY",
            "ErrorHandler",
@@ -42,21 +41,23 @@ class MediaUnmountError(Exception):
 class ScriptError(Exception):
     pass
 
-"""These constants are returned by the callback in the ErrorHandler class.
-   Each represents a different kind of action the caller can take:
+class RemovedModuleError(ImportError):
+    pass
 
-   ERROR_RAISE - This is a fatal error, and anaconda can do nothing but quit
-                 or raise an exception.  This then feeds into the exception
-                 handling framework.
-
-   ERROR_CONTINUE - anaconda should continue with whatever it was going to do.
-                    This result comes from non-fatal errors, asking yes/no
-                    questions, and the like.
-
-   ERROR_RETRY - This is a serious problem, but anaconda should attempt to
-                 try again.  Continued failures may eventually result in an
-                 ERROR_RAISE.
-"""
+# These constants are returned by the callback in the ErrorHandler class.
+# Each represents a different kind of action the caller can take:
+#
+# ERROR_RAISE - This is a fatal error, and anaconda can do nothing but quit
+#               or raise an exception.  This then feeds into the exception
+#               handling framework.
+#
+# ERROR_CONTINUE - anaconda should continue with whatever it was going to do.
+#                  This result comes from non-fatal errors, asking yes/no
+#                  questions, and the like.
+#
+# ERROR_RETRY - This is a serious problem, but anaconda should attempt to
+#               try again.  Continued failures may eventually result in an
+#               ERROR_RAISE.
 ERROR_RAISE = 0
 ERROR_CONTINUE = 1
 ERROR_RETRY = 2
@@ -106,12 +107,6 @@ class ErrorHandler(object):
         self.ui.showError(message)
         return ERROR_RAISE
 
-    def _fsMigrateHandler(self, *args, **kwargs):
-        message = _("An error occurred while migrating the filesystem on device %s.") % args[0]
-        message += "\n\n%s" % args[1]
-        self.ui.showError(message)
-        return ERROR_RAISE
-
     def _noDisksHandler(self, *args, **kwargs):
         message = _("An error has occurred - no valid devices were found on "
                     "which to create new file systems.  Please check your "
@@ -120,8 +115,6 @@ class ErrorHandler(object):
         return ERROR_RAISE
 
     def _dirtyFSHandler(self, *args, **kwargs):
-        # FIXME: for rescue it must be possible to continue, but for upgrade
-        #        it must be fatal
         devs = kwargs.pop("devices")
         message = _("The following file systems for your Linux system were "
                     "not unmounted cleanly.  Would you like to mount them "
@@ -222,7 +215,7 @@ class ErrorHandler(object):
         else:
             message = _("The following error occurred while installing.  This is "
                         "a fatal error and installation will be aborted.")
-            message += "\n\n" + str(kwargs["exception"])
+        message += "\n\n" + str(kwargs["exception"])
 
         self.ui.showError(message)
         return ERROR_RAISE
@@ -256,7 +249,6 @@ class ErrorHandler(object):
         _map = {"KickstartError": self._kickstartErrorHandler,
                 "PartitioningError": self._partitionErrorHandler,
                 "FSResizeError": self._fsResizeHandler,
-                "FSMigrateError": self._fsMigrateHandler,
                 "NoDisksError": self._noDisksHandler,
                 "DirtyFSError": self._dirtyFSHandler,
                 "FSTabTypeMismatchError": self._fstabTypeMismatchHandler,

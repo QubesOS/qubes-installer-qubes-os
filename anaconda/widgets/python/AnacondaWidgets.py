@@ -1,5 +1,31 @@
-from ..importer import modules
-from ..overrides import override
+#
+# Copyright (C) 2011-2013  Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author: Chris Lumens <clumens@redhat.com>
+#
+
+"""
+These classes and methods wrap the bindings automatically created by
+gobject-introspection.  They allow for creating more pythonic bindings
+where necessary.  For instance instead of creating a class and then
+setting a bunch of properties, these classes allow passing the properties
+at creation time.
+"""
+from gi.importer import modules
+from gi.overrides import override
 
 Anaconda = modules['AnacondaWidgets']._introspection_module
 __all__ = []
@@ -16,6 +42,16 @@ class MountpointSelector(Anaconda.MountpointSelector):
 
         if mountpoint:
             self.set_property("mountpoint", mountpoint)
+
+    @property
+    def size(self):
+        # using get_property causes problems with pylint for some reason
+        # pylint: disable-msg=E1101
+        return self.get_property("size")
+
+    @size.setter
+    def size(self, size):
+        self.set_property("size", size)
 
 MountpointSelector = override(MountpointSelector)
 __all__.append('MountpointSelector')
@@ -37,17 +73,24 @@ SpokeSelector = override(SpokeSelector)
 __all__.append('SpokeSelector')
 
 class DiskOverview(Anaconda.DiskOverview):
-    def __init__(self, description, kind, capacity, os=None, popup=None):
+    def __init__(self, description, kind, capacity, free, name, popup=None):
         Anaconda.DiskOverview.__init__(self)
         self.set_property("description", description)
         self.set_property("kind", kind)
+        self.set_property("free", free)
         self.set_property("capacity", capacity)
-
-        if os:
-            self.set_property("os", os)
+        self.set_property("name", name)
 
         if popup:
             self.set_property("popup-info", popup)
 
 DiskOverview = override(DiskOverview)
 __all__.append('DiskOverview')
+
+# pylint: disable-msg=W0232
+class TimezoneMap(Anaconda.TimezoneMap):
+    def set_timezone(self, timezone, no_signal=False):
+        Anaconda.TimezoneMap.set_timezone(self, timezone, no_signal)
+
+TimezoneMap = override(TimezoneMap)
+__all__.append('TimezoneMap')

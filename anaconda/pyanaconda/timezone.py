@@ -26,10 +26,14 @@ configuration, valid timezones recognition etc.
 
 import os
 import pytz
+import langtable
 from collections import OrderedDict
 
-from pyanaconda import localization
 from pyanaconda import iutil
+from pyanaconda.constants import THREAD_STORAGE
+from pyanaconda.flags import flags
+from pyanaconda.threads import threadMgr
+from blivet import arch
 
 import logging
 log = logging.getLogger("anaconda")
@@ -43,17 +47,53 @@ ETC_ZONES = ['GMT+1', 'GMT+2', 'GMT+3', 'GMT+4', 'GMT+5', 'GMT+6', 'GMT+7',
              'GMT-8', 'GMT-9', 'GMT-10', 'GMT-11', 'GMT-12', 'GMT-13',
              'GMT-14', 'UTC', 'GMT']
 
+NTP_PACKAGE = "chrony"
+NTP_SERVICE = "chronyd"
+
 class TimezoneConfigError(Exception):
     """Exception class for timezone configuration related problems"""
     pass
+
+def time_initialize(timezone, storage, bootloader):
+    """
+    Try to guess if RTC uses UTC time or not, set timezone.isUtc properly and
+    set system time from RTC using the UTC guess.
+    Guess is done by searching for bootable ntfs devices.
+
+    :param timezone: ksdata.timezone object
+    :param storage: blivet.Blivet instance
+    :param bootloader: bootloader.Bootloader instance
+
+    """
+
+    if arch.isS390():
+        # nothing to do on s390 where hwclock doesn't exist
+        return
+
+    if not timezone.isUtc and not flags.automatedInstall:
+        # if set in the kickstart, no magic needed here
+        threadMgr.wait(THREAD_STORAGE)
+        ntfs_devs = filter(lambda dev: dev.format.name == "ntfs",
+                           storage.devices)
+
+        timezone.isUtc = not bootloader.has_windows(ntfs_devs)
+
+    cmd = "hwclock"
+    args = ["--hctosys"]
+    if timezone.isUtc:
+        args.append("--utc")
+    else:
+        args.append("--localtime")
+
+    iutil.execWithRedirect(cmd, args)
 
 def write_timezone_config(timezone, root):
     """
     Write timezone configuration for the system specified by root.
 
-    @param timezone: ksdata.timezone object
-    @param root: path to the root
-    @raise: TimezoneConfigError
+    :param timezone: ksdata.timezone object
+    :param root: path to the root
+    :raise: TimezoneConfigError
 
     """
 
@@ -64,7 +104,7 @@ def write_timezone_config(timezone, root):
     link_path = os.path.normpath(root + "/etc/localtime")
 
     if not os.access(rooted_tz_file, os.R_OK):
-        log.error("Timezone to be linked (%s) doesn't exist" % rooted_tz_file)
+        log.error("Timezone to be linked (%s) doesn't exist", rooted_tz_file)
     else:
         try:
             # os.symlink fails if link_path exists, so try to remove it first
@@ -75,8 +115,8 @@ def write_timezone_config(timezone, root):
         try:
             os.symlink(relative_path, link_path)
         except OSError as oserr:
-            log.error("Error when symlinking timezone (from %s): %s" % \
-                      (rooted_tz_file, oserr.strerror))
+            log.error("Error when symlinking timezone (from %s): %s",
+                      rooted_tz_file, oserr.strerror)
 
     try:
         fobj = open(os.path.normpath(root + "/etc/adjtime"), "r")
@@ -101,11 +141,11 @@ def save_hw_clock(timezone):
     """
     Save system time to HW clock.
 
-    @param timezone: ksdata.timezone object
+    :param timezone: ksdata.timezone object
 
     """
 
-    if iutil.isS390():
+    if arch.isS390():
         return
 
     cmd = "hwclock"
@@ -115,27 +155,7 @@ def save_hw_clock(timezone):
     else:
         args.append("--local")
 
-    iutil.execWithRedirect(cmd, args, stdout="/dev/tty5", stderr="/dev/tty5")
-
-
-def get_all_territory_timezones(territory):
-    """
-    Return the list of timezones for a given territory.
-
-    @param territory: either localization.LocaleInfo or territory
-
-    """
-
-    if isinstance(territory, localization.LocaleInfo):
-        territory = territory.territory
-
-    try:
-        timezones = pytz.country_timezones(territory)
-    except KeyError:
-        timezones = list()
-
-    timezones = [zone.encode("utf-8") for zone in timezones]
-    return timezones
+    iutil.execWithRedirect(cmd, args)
 
 
 def get_preferred_timezone(territory):
@@ -144,22 +164,24 @@ def get_preferred_timezone(territory):
     simply returns the first timezone in the list of timezones for a given
     territory.
 
-    @param territory: either localization.LocaleInfo or territory
+    :param territory: territory to get preferred timezone for
+    :type territory: str
+    :return: preferred timezone for the given territory or None if no found
+    :rtype: str or None
 
     """
 
-    try:
-        timezone = get_all_territory_timezones(territory)[0]
-    except IndexError:
-        timezone = None
+    timezones = langtable.list_timezones(territoryId=territory)
+    if not timezones:
+        return None
 
-    return timezone
+    return timezones[0]
 
 def get_all_regions_and_timezones():
     """
     Get a dictionary mapping the regions to the list of their timezones.
 
-    @rtype: dict
+    :rtype: dict
 
     """
 
@@ -180,8 +202,8 @@ def is_valid_timezone(timezone):
     """
     Check if a given string is an existing timezone.
 
-    @type timezone: str
-    @rtype: bool
+    :type timezone: str
+    :rtype: bool
 
     """
 

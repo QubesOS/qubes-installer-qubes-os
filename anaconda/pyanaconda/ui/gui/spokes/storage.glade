@@ -2,11 +2,17 @@
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
   <!-- interface-requires AnacondaWidgets 1.0 -->
+  <object class="GtkImage" id="addSpecializedImage">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">drive-harddisk</property>
+    <property name="icon-size">6</property>
+  </object>
   <object class="GtkDialog" id="options1_dialog">
     <property name="width_request">500</property>
     <property name="height_request">200</property>
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="border_width">6</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
@@ -21,6 +27,7 @@
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="dialog-action_area2">
             <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="options1_cancel_button">
                 <property name="label" translatable="yes">Cancel &amp; _add more disks</property>
@@ -30,12 +37,12 @@
                 <property name="halign">start</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_cancel_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
+                <property name="secondary">True</property>
               </packing>
             </child>
             <child>
@@ -45,16 +52,14 @@
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_continue_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
                 <property name="position">1</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
           </object>
@@ -93,7 +98,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="xalign">0</property>
-                <property name="label" translatable="yes">Here we'll describe what your options are.</property>
+                <property name="label">Here we'll describe what your options are.</property>
                 <property name="wrap">True</property>
                 <attributes>
                   <attribute name="font-desc" value="Cantarell 11"/>
@@ -106,58 +111,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkExpander" id="options1_expander">
+              <object class="GtkRadioButton" id="options1_autopart_radio">
+                <property name="label">Here's the autopart label.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <child>
-                  <object class="GtkBox" id="box1">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin_left">30</property>
-                    <property name="spacing">6</property>
-                    <child>
-                      <object class="GtkLabel" id="label3">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">&lt;b&gt;Partition type:&lt;/b&gt;</property>
-                        <property name="use_markup">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="options1_combo">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="active">2</property>
-                        <items>
-                          <item translatable="yes">Standard Partition</item>
-                          <item translatable="yes">BTRFS</item>
-                          <item translatable="yes">LVM</item>
-                        </items>
-                        <signal name="changed" handler="on_type_changed" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                </child>
-                <child type="label">
-                  <object class="GtkLabel" id="label2">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Partition scheme configuration</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell 11"/>
-                    </attributes>
-                  </object>
-                </child>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -166,21 +128,102 @@
               </packing>
             </child>
             <child>
-              <object class="GtkCheckButton" id="options1_custom_check">
-                <property name="label" translatable="yes">Let me customize the _partitioning of the disks instead.</property>
+              <object class="GtkRadioButton" id="options1_reclaim_radio">
+                <property name="label">Here's the reclaim label.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
                 <property name="use_underline">True</property>
                 <property name="xalign">0</property>
+                <property name="active">True</property>
                 <property name="draw_indicator">True</property>
-                <signal name="toggled" handler="on_custom_toggled" swapped="no"/>
+                <property name="group">options1_autopart_radio</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
                 <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkRadioButton" id="options1_custom_radio">
+                <property name="label">Here's the custom label.</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+                <property name="group">options1_autopart_radio</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox" id="box1">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_top">12</property>
+                <property name="spacing">6</property>
+                <child>
+                  <object class="GtkLabel" id="label3">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">&lt;b&gt;Partition scheme:&lt;/b&gt;</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBoxText" id="options1_combo">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="active">3</property>
+                    <items>
+                      <item translatable="yes">Standard Partition</item>
+                      <item translatable="yes">BTRFS</item>
+                      <item translatable="yes">LVM</item>
+                      <item translatable="yes">LVM Thin Provisioning</item>
+                    </items>
+                    <signal name="changed" handler="on_type_changed" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="encryption1_checkbutton">
+                <property name="label" translatable="yes">_Encrypt my data. I'll set a passphrase later.</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="hexpand">True</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+                <signal name="toggled" handler="on_encrypt_toggled" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">6</property>
               </packing>
             </child>
           </object>
@@ -201,7 +244,7 @@
     <property name="width_request">600</property>
     <property name="height_request">400</property>
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="border_width">6</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
@@ -216,58 +259,54 @@
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="dialog-action_area5">
             <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="options2_cancel_button">
                 <property name="label" translatable="yes">Cancel &amp; _add more disks</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">start</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_cancel_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
+                <property name="secondary">True</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="options2_modify_sw_button">
-                <property name="label" translatable="yes">_Modify software selection</property>
+              <object class="GtkButton" id="options2_custom_button">
+                <property name="label" translatable="yes">_Custom partitioning</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Please wait... software metadata still loading.</property>
-                <property name="halign">center</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_modify_sw_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
                 <property name="position">1</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
             <child>
               <object class="GtkButton" id="options2_reclaim_button">
-                <property name="label" translatable="yes">Reclaim _space</property>
+                <property name="label" translatable="yes">_Reclaim space</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_reclaim_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">2</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
           </object>
@@ -317,23 +356,6 @@
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="options2_label2">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Here we'll describe what your options are.</property>
-                <property name="wrap">True</property>
-                <attributes>
-                  <attribute name="font-desc" value="Cantarell 11"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -417,42 +439,23 @@
                     <property name="height">1</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkLabel" id="options2_disks_size_label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="xalign">1</property>
-                    <property name="label" translatable="yes">disks size</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell Bold 11"/>
-                      <attribute name="weight" value="bold"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="options2_disks_size_desc_label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Space in selected disks reclaimable by deleting existing partitions.</property>
-                    <property name="wrap">True</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell 11"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="options2_label2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="xalign">0</property>
+                <property name="label" translatable="yes">Here we'll describe what your options are.</property>
+                <property name="wrap">True</property>
+                <attributes>
+                  <attribute name="font-desc" value="Cantarell 11"/>
+                </attributes>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -461,57 +464,42 @@
               </packing>
             </child>
             <child>
-              <object class="GtkExpander" id="options2_expander">
+              <object class="GtkBox" id="box2">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="can_focus">False</property>
+                <property name="margin_top">12</property>
+                <property name="spacing">6</property>
                 <child>
-                  <object class="GtkBox" id="box2">
+                  <object class="GtkLabel" id="label4">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">30</property>
-                    <property name="spacing">6</property>
-                    <child>
-                      <object class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">&lt;b&gt;Partition type:&lt;/b&gt;</property>
-                        <property name="use_markup">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBoxText" id="options2_combo">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="active">2</property>
-                        <items>
-                          <item translatable="yes">Standard Partition</item>
-                          <item translatable="yes">BTRFS</item>
-                          <item translatable="yes">LVM</item>
-                        </items>
-                        <signal name="changed" handler="on_type_changed" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
+                    <property name="label" translatable="yes">&lt;b&gt;Partition scheme:&lt;/b&gt;</property>
+                    <property name="use_markup">True</property>
                   </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
                 </child>
-                <child type="label">
-                  <object class="GtkLabel" id="label5">
+                <child>
+                  <object class="GtkComboBoxText" id="options2_combo">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Partition scheme configuration</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell 11"/>
-                    </attributes>
+                    <property name="active">3</property>
+                    <items>
+                      <item translatable="yes">Standard Partition</item>
+                      <item translatable="yes">BTRFS</item>
+                      <item translatable="yes">LVM</item>
+                      <item translatable="yes">LVM Thin Provisioning</item>
+                    </items>
+                    <signal name="changed" handler="on_type_changed" swapped="no"/>
                   </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -521,20 +509,20 @@
               </packing>
             </child>
             <child>
-              <object class="GtkCheckButton" id="options2_custom_check">
-                <property name="label" translatable="yes">I don't need help; let me customize disk _partitioning.</property>
+              <object class="GtkCheckButton" id="encryption2_checkbutton">
+                <property name="label" translatable="yes">_Encrypt my data. I'll set a passphrase later.</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
+                <property name="hexpand">True</property>
                 <property name="use_underline">True</property>
                 <property name="xalign">0</property>
                 <property name="draw_indicator">True</property>
-                <signal name="toggled" handler="on_custom_toggled" swapped="no"/>
+                <signal name="toggled" handler="on_encrypt_toggled" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
                 <property name="position">5</property>
               </packing>
             </child>
@@ -549,7 +537,7 @@
     </child>
     <action-widgets>
       <action-widget response="0">options2_cancel_button</action-widget>
-      <action-widget response="2">options2_modify_sw_button</action-widget>
+      <action-widget response="5">options2_custom_button</action-widget>
       <action-widget response="3">options2_reclaim_button</action-widget>
     </action-widgets>
   </object>
@@ -557,7 +545,7 @@
     <property name="width_request">400</property>
     <property name="height_request">300</property>
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="border_width">6</property>
     <property name="modal">True</property>
     <property name="window_position">center-on-parent</property>
     <property name="destroy_with_parent">True</property>
@@ -572,40 +560,21 @@
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="dialog-action_area7">
             <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="options3_quit_button">
                 <property name="label" translatable="yes">_Quit installer</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">start</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_quit_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="options3_modify_sw_button">
-                <property name="label" translatable="yes">_Modify software selection</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="tooltip_text" translatable="yes">Please wait... software metadata still loading.</property>
-                <property name="halign">center</property>
-                <property name="border_width">6</property>
-                <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_modify_sw_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="pack_type">end</property>
-                <property name="position">1</property>
+                <property name="secondary">True</property>
               </packing>
             </child>
             <child>
@@ -615,16 +584,14 @@
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
                 <property name="border_width">6</property>
                 <property name="use_underline">True</property>
-                <signal name="clicked" handler="on_cancel_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
                 <property name="position">2</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
           </object>
@@ -755,42 +722,6 @@
                     <property name="height">1</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkLabel" id="options3_disks_size_label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="xalign">1</property>
-                    <property name="label" translatable="yes">disks size</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell Bold 11"/>
-                      <attribute name="weight" value="bold"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="options3_disks_size_desc_label">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Space in selected disks reclaimable by deleting existing partitions.</property>
-                    <property name="wrap">True</property>
-                    <attributes>
-                      <attribute name="font-desc" value="Cantarell 11"/>
-                    </attributes>
-                  </object>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="top_attach">2</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -826,7 +757,6 @@
     </child>
     <action-widgets>
       <action-widget response="4">options3_quit_button</action-widget>
-      <action-widget response="2">options3_modify_sw_button</action-widget>
       <action-widget response="0">options3_cancel_button</action-widget>
     </action-widgets>
   </object>
@@ -853,6 +783,7 @@
         <property name="spacing">6</property>
         <child internal-child="nav_box">
           <object class="GtkEventBox" id="AnacondaSpokeWindow-nav_box1">
+            <property name="can_focus">False</property>
             <child internal-child="nav_area">
               <object class="GtkGrid" id="AnacondaSpokeWindow-nav_area1">
                 <property name="can_focus">False</property>
@@ -877,22 +808,23 @@
             <child internal-child="action_area">
               <object class="GtkBox" id="storageWindow-action_area1">
                 <property name="can_focus">False</property>
+                <property name="margin_bottom">6</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">6</property>
                 <child>
-                  <object class="GtkLabel" id="label1">
+                  <object class="GtkLabel" id="label7">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_left">24</property>
-                    <property name="margin_right">24</property>
+                    <property name="margin_left">18</property>
+                    <property name="margin_top">6</property>
+                    <property name="margin_bottom">6</property>
                     <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Local Standard Disks</property>
-                    <property name="track_visited_links">False</property>
+                    <property name="label" translatable="yes">Select the device(s) you'd like to install to.  They will be left untouched until you click on the main menu's "Begin Installation" button.</property>
+                    <property name="wrap">True</property>
                     <attributes>
-                      <attribute name="font-desc" value="Cantarell Bold 10"/>
-                      <attribute name="weight" value="bold"/>
+                      <attribute name="font-desc" value="Cantarell 12"/>
                     </attributes>
                   </object>
                   <packing>
@@ -902,29 +834,180 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow" id="localScrolledWindow">
+                  <object class="GtkScrolledWindow" id="scrolledwindow1">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="margin_left">24</property>
-                    <property name="margin_right">24</property>
-                    <property name="hexpand">True</property>
-                    <property name="vscrollbar_policy">never</property>
-                    <property name="shadow_type">in</property>
+                    <property name="hscrollbar_policy">never</property>
                     <child>
-                      <object class="GtkViewport" id="localViewport">
+                      <object class="GtkViewport" id="viewport1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="hexpand">True</property>
+                        <property name="shadow_type">none</property>
                         <child>
-                          <object class="GtkBox" id="local_disks_box">
+                          <object class="GtkBox" id="box3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="margin_left">6</property>
-                            <property name="margin_right">6</property>
-                            <property name="hexpand">True</property>
-                            <property name="spacing">30</property>
+                            <property name="margin_left">24</property>
+                            <property name="margin_right">24</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">6</property>
                             <child>
-                              <placeholder/>
+                              <object class="GtkLabel" id="localLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Local Standard Disks</property>
+                                <property name="track_visited_links">False</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Cantarell Bold 10"/>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScrolledWindow" id="localScrolledWindow">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vscrollbar_policy">never</property>
+                                <property name="shadow_type">in</property>
+                                <child>
+                                  <object class="GtkViewport" id="localViewport">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="hexpand">True</property>
+                                    <child>
+                                      <object class="GtkBox" id="local_disks_box">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="events">GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+                                        <property name="margin_left">6</property>
+                                        <property name="margin_right">6</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="spacing">30</property>
+                                        <signal name="key-release-event" handler="on_disks_key_released" swapped="no"/>
+                                        <child>
+                                          <placeholder/>
+                                        </child>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label6">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="xalign">1</property>
+                                <property name="label" translatable="yes">Disks left unselected here will not be touched.</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Cantarell Italic 10"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="specializedLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="margin_right">24</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Specialized &amp; Network Disks</property>
+                                <property name="track_visited_links">False</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Cantarell Bold 10"/>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScrolledWindow" id="specializedScrolledWindow">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="vscrollbar_policy">never</property>
+                                <property name="shadow_type">in</property>
+                                <child>
+                                  <object class="GtkViewport" id="specializedViewport">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="hexpand">True</property>
+                                    <child>
+                                      <object class="GtkBox" id="specialized_disks_box">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">False</property>
+                                        <property name="events">GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+                                        <property name="margin_left">6</property>
+                                        <property name="margin_right">6</property>
+                                        <property name="margin_top">6</property>
+                                        <property name="margin_bottom">6</property>
+                                        <property name="hexpand">True</property>
+                                        <property name="spacing">30</property>
+                                        <signal name="key-release-event" handler="on_disks_key_released" swapped="no"/>
+                                        <child>
+                                          <object class="GtkButton" id="addSpecializedButton">
+                                            <property name="label" translatable="yes">_Add a disk...</property>
+                                            <property name="visible">True</property>
+                                            <property name="can_focus">True</property>
+                                            <property name="receives_default">True</property>
+                                            <property name="valign">center</property>
+                                            <property name="image">addSpecializedImage</property>
+                                            <property name="use_underline">True</property>
+                                            <property name="image_position">top</property>
+                                            <signal name="clicked" handler="on_specialized_clicked" swapped="no"/>
+                                          </object>
+                                          <packing>
+                                            <property name="expand">False</property>
+                                            <property name="fill">False</property>
+                                            <property name="position">0</property>
+                                          </packing>
+                                        </child>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label1">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="xalign">1</property>
+                                <property name="label" translatable="yes">Disks left unselected here will not be touched.</property>
+                                <attributes>
+                                  <attribute name="font-desc" value="Cantarell Italic 10"/>
+                                </attributes>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">5</property>
+                              </packing>
                             </child>
                           </object>
                         </child>
@@ -932,106 +1015,47 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkGrid" id="grid3">
+                  <object class="GtkButton" id="summary_button">
+                    <property name="label" translatable="yes">_Full disk summary and bootloader...</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin_left">6</property>
-                    <property name="margin_right">6</property>
-                    <property name="margin_bottom">6</property>
-                    <property name="hexpand">True</property>
-                    <property name="row_spacing">6</property>
-                    <property name="column_spacing">6</property>
-                    <child>
-                      <object class="GtkButton" id="continue_button">
-                        <property name="label" translatable="yes">_Continue</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="halign">end</property>
-                        <property name="valign">end</property>
-                        <property name="hexpand">True</property>
-                        <property name="use_underline">True</property>
-                        <property name="xalign">1</property>
-                        <signal name="clicked" handler="on_continue_clicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="summary_button">
-                        <property name="label" translatable="yes">Full disk summary and options...</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="halign">start</property>
-                        <property name="margin_left">18</property>
-                        <property name="relief">none</property>
-                        <property name="use_underline">True</property>
-                        <property name="focus_on_click">False</property>
-                        <property name="xalign">0</property>
-                        <signal name="clicked" handler="on_summary_clicked" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">2</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="summary_label">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="margin_left">18</property>
-                        <property name="label" translatable="yes">summary</property>
-                        <attributes>
-                          <attribute name="font-desc" value="Cantarell 10"/>
-                        </attributes>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="encryption_checkbutton">
-                        <property name="label" translatable="yes">Encrypt my data. I'll set a passphrase later.</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="halign">end</property>
-                        <property name="xalign">0</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="no_show_all">True</property>
+                    <property name="halign">start</property>
+                    <property name="margin_left">18</property>
+                    <property name="relief">none</property>
+                    <property name="use_underline">True</property>
+                    <property name="focus_on_click">False</property>
+                    <property name="xalign">0</property>
+                    <signal name="clicked" handler="on_summary_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="pack_type">end</property>
                     <property name="position">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="summary_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="margin_left">18</property>
+                    <property name="label" translatable="yes">summary</property>
+                    <attributes>
+                      <attribute name="font-desc" value="Cantarell 10"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">4</property>
                   </packing>
                 </child>
               </object>

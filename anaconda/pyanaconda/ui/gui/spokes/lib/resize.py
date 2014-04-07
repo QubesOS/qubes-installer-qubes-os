@@ -1,6 +1,6 @@
 # Disk resizing dialog
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2013  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -20,17 +20,16 @@
 #
 
 from __future__ import division
+from collections import namedtuple
+from math import ceil
 
-from gi.repository import Gtk
+from gi.repository import Gdk, Gtk
 
+from pyanaconda.i18n import _, N_, P_
+from pyanaconda.ui.lib.disks import size_str
 from pyanaconda.ui.gui import GUIObject
-from pyanaconda.storage.size import Size
-
-import gettext
-
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
-P_ = lambda x, y, z: gettext.ldngettext("anaconda", x, y, z)
+from pyanaconda.ui.gui.utils import timed_action
+from blivet.size import Size
 
 __all__ = ["ResizeDialog"]
 
@@ -38,25 +37,22 @@ DEVICE_ID_COL = 0
 DESCRIPTION_COL = 1
 FILESYSTEM_COL = 2
 RECLAIMABLE_COL = 3
-PERCENT_COL = 4
-ACTION_COL = 5
-EDITABLE_COL = 6
-TOOLTIP_COL = 7
+ACTION_COL = 4
+EDITABLE_COL = 5
+TOOLTIP_COL = 6
+RESIZE_TARGET_COL = 7
+NAME_COL = 8
+
+PartStoreRow = namedtuple("PartStoreRow", ["id", "desc", "fs", "reclaimable",
+                                           "action", "editable", "tooltip",
+                                           "target", "name"])
 
 PRESERVE = N_("Preserve")
 SHRINK = N_("Shrink")
 DELETE = N_("Delete")
 
-def size_str(mb):
-    if isinstance(mb, Size):
-        spec = str(mb)
-    else:
-        spec = "%s mb" % mb
-
-    return str(Size(spec=spec)).upper()
-
 class ResizeDialog(GUIObject):
-    builderObjects = ["actionStore", "diskStore", "resizeDialog"]
+    builderObjects = ["actionStore", "diskStore", "resizeDialog", "resizeAdjustment"]
     mainWidgetName = "resizeDialog"
     uiFile = "spokes/lib/resize.glade"
 
@@ -65,8 +61,13 @@ class ResizeDialog(GUIObject):
         self.storage = storage
         self.payload = payload
 
+        self._initialFreeSpace = Size(0)
+        self._selectedReclaimableSpace = 0
+
         self._actionStore = self.builder.get_object("actionStore")
         self._diskStore = self.builder.get_object("diskStore")
+
+        self._selection = self.builder.get_object("diskView-selection")
 
         self._view = self.builder.get_object("diskView")
         self._diskStore = self.builder.get_object("diskStore")
@@ -82,8 +83,9 @@ class ResizeDialog(GUIObject):
         self._resizeButton = self.builder.get_object("resizeButton")
 
         self._preserveButton = self.builder.get_object("preserveButton")
-#        self._shrinkButton = self.builder.get_object("shrinkButton")
+        self._shrinkButton = self.builder.get_object("shrinkButton")
         self._deleteButton = self.builder.get_object("deleteButton")
+        self._resizeSlider = self.builder.get_object("resizeSlider")
 
     def _description(self, part):
         # First, try to find the partition in some known Root.  If we find
@@ -103,35 +105,43 @@ class ResizeDialog(GUIObject):
         else:
             return ""
 
+    def _get_tooltip(self, device):
+        if device.protected:
+            return _("This device contains the installation source.")
+        else:
+            return None
+
     def populate(self, disks):
         totalDisks = 0
         totalReclaimableSpace = 0
 
+        self._initialFreeSpace = Size(0)
         self._selectedReclaimableSpace = 0
 
         canShrinkSomething = False
 
+        free_space = self.storage.getFreeSpace(disks=disks)
+
         for disk in disks:
             # First add the disk itself.
+            editable = not disk.protected
+
             if disk.partitioned:
-                editable = False
-                percent = 0
                 fstype = ""
                 diskReclaimableSpace = 0
             else:
-                editable = not disk.protected
-                percent = 100
                 fstype = disk.format.type
                 diskReclaimableSpace = disk.size
 
             itr = self._diskStore.append(None, [disk.id,
-                                                "%s %s" % (size_str(disk.size), disk.description),
+                                                "%s %s" % (size_str(int(disk.size)), disk.description),
                                                 fstype,
                                                 "<span foreground='grey' style='italic'>%s total</span>",
-                                                percent,
                                                 _(PRESERVE),
                                                 editable,
-                                                _("Whole disks are not editable.")])
+                                                self._get_tooltip(disk),
+                                                int(disk.size),
+                                                disk.name])
 
             if disk.partitioned:
                 # Then add all its partitions.
@@ -142,85 +152,146 @@ class ResizeDialog(GUIObject):
                     # Devices that are not resizable are still deletable.
                     if dev.resizable:
                         freeSize = dev.size - dev.minSize
+                        resizeString = _("%(freeSize)s of %(devSize)s") \
+                                       % {"freeSize": size_str(int(freeSize)), "devSize": size_str(int(dev.size))}
                         if not dev.protected:
                             canShrinkSomething = True
                     else:
                         freeSize = dev.size
-
-                    if dev.protected:
-                        tooltip = _("This device contains the installation source.")
-                    else:
-                        tooltip = None
+                        resizeString = "<span foreground='grey'>%s</span>" % _("Not resizeable")
 
                     self._diskStore.append(itr, [dev.id,
                                                  self._description(dev),
                                                  dev.format.type,
-                                                 _("%s of %s") % (size_str(freeSize), size_str(dev.size)),
-                                                 int((freeSize/dev.size) * 100),
+                                                 resizeString,
                                                  _(PRESERVE),
                                                  not dev.protected,
-                                                 tooltip])
+                                                 self._get_tooltip(dev),
+                                                 int(dev.size),
+                                                 dev.name])
                     diskReclaimableSpace += freeSize
+
+            # And then add another uneditable line that lists how much space is
+            # already free in the disk.
+            diskFree = free_space[disk.name][0]
+            converted = diskFree.convertTo(en_spec="mb")
+            if int(converted):
+                self._diskStore.append(itr, [disk.id,
+                                             _("""<span foreground='grey' style='italic'>Free space</span>"""),
+                                             "",
+                                             "<span foreground='grey' style='italic'>%s</span>" % size_str(int(diskFree)),
+                                             _(PRESERVE),
+                                             False,
+                                             self._get_tooltip(disk),
+                                             int(converted),
+                                             ""])
+                self._initialFreeSpace += diskFree
 
             # And then go back and fill in the total reclaimable space for the
             # disk, now that we know what each partition has reclaimable.
-            self._diskStore[itr][RECLAIMABLE_COL] = self._diskStore[itr][RECLAIMABLE_COL] % size_str(diskReclaimableSpace)
-            self._diskStore[itr][PERCENT_COL] = int((diskReclaimableSpace/disk.size)*100)
+            self._diskStore[itr][RECLAIMABLE_COL] = self._diskStore[itr][RECLAIMABLE_COL] % size_str(int(diskReclaimableSpace))
 
             totalDisks += 1
             totalReclaimableSpace += diskReclaimableSpace
 
         self._update_labels(totalDisks, totalReclaimableSpace, 0)
 
-        description = _("You don't have enough free space available for this installation.\n\n"
-                        "You can remove existing filesystems you no longer need to free up space "
+        description = _("You can remove existing filesystems you no longer need to free up space "
                         "for this installation.  Removing a filesystem will permanently delete all "
                         "of the data it contains.")
 
-#        if canShrinkSomething:
-#            description += "\n\n"
-#            description += _("There is also free space available in pre-existing filesystems.  "
-#                             "While it's risky and we recommend you back up your data first, you "
-#                             "can recover that free disk space and make it available for this "
-#                             "installation below.")
+        if canShrinkSomething:
+            description += "\n\n"
+            description += _("There is also free space available in pre-existing filesystems.  "
+                             "While it's risky and we recommend you back up your data first, you "
+                             "can recover that free disk space and make it available for this "
+                             "installation below.")
 
         self._reclaimDescLabel.set_text(description)
 
     def _update_labels(self, nDisks=None, totalReclaimable=None, selectedReclaimable=None):
         if nDisks is not None and totalReclaimable is not None:
-            text = P_("<b>%s disk; %s reclaimable space</b> (in filesystems)",
-                      "<b>%s disks; %s reclaimable space</b> (in filesystems)",
-                      nDisks) % (nDisks, size_str(totalReclaimable))
+            text = P_("<b>%(count)s disk; %(size)s reclaimable space</b> (in filesystems)",
+                      "<b>%(count)s disks; %(size)s reclaimable space</b> (in filesystems)",
+                      nDisks) % {"count" : nDisks, "size" : size_str(totalReclaimable)}
             self._reclaimable_label.set_markup(text)
 
         if selectedReclaimable is not None:
             text = _("Total selected space to reclaim: <b>%s</b>") % size_str(selectedReclaimable)
             self._selected_label.set_markup(text)
 
-    def _update_buttons(self, row):
-        # If this is a disk header, it's not editable, so make all the
-        # buttons insensitive.
-        self._preserveButton.set_sensitive(row[EDITABLE_COL])
-#        self._shrinkButton.set_sensitive(row[EDITABLE_COL])
-        self._deleteButton.set_sensitive(row[EDITABLE_COL])
+    def _setup_slider(self, device, value):
+        """Set up the slider for this device, pulling out any previously given
+           shrink value as the default.  This also sets up the ticks on the
+           slider and keyboard support.  Any devices that are not resizable
+           will not have a slider displayed, so they do not need to be worried
+           with here.
+        """
+        self._resizeSlider.handler_block_by_func(self.on_resize_value_changed)
+        self._resizeSlider.set_range(int(ceil(device.minSize)), int(device.size))
+        self._resizeSlider.handler_unblock_by_func(self.on_resize_value_changed)
+        self._resizeSlider.set_value(value)
 
-        if not row[EDITABLE_COL]:
+        # The slider needs to be keyboard-accessible.  We'll make small movements change in
+        # 1% increments, and large movements in 5% increments.
+        distance = int(device.size) - int(ceil(device.minSize))
+        onePercent = distance*0.01
+        fivePercent = distance*0.05
+        twentyPercent = distance*0.2
+
+        adjustment = self.builder.get_object("resizeAdjustment")
+        adjustment.configure(value, int(ceil(device.minSize)), int(device.size), onePercent, fivePercent, 0)
+
+        # And then the slider needs a couple tick marks for easier navigation.
+        self._resizeSlider.clear_marks()
+        for i in range(1, 5):
+            self._resizeSlider.add_mark(int(ceil(device.minSize)) + i*twentyPercent, Gtk.PositionType.BOTTOM, None)
+
+        # Finally, add tick marks for the ends.
+        self._resizeSlider.add_mark(int(ceil(device.minSize)), Gtk.PositionType.BOTTOM, size_str(int(ceil(device.minSize))))
+        self._resizeSlider.add_mark(int(device.size), Gtk.PositionType.BOTTOM, size_str(int(device.size)))
+
+    def _update_action_buttons(self, row):
+        obj = PartStoreRow(*row)
+        device = self.storage.devicetree.getDeviceByID(obj.id)
+
+        # Disks themselves may be editable in certain ways, but they are never
+        # shrinkable.
+        self._preserveButton.set_sensitive(obj.editable)
+        self._shrinkButton.set_sensitive(obj.editable and not device.isDisk)
+        self._deleteButton.set_sensitive(obj.editable)
+        self._resizeSlider.set_visible(False)
+
+        if not obj.editable:
             return
 
         # If the selected filesystem does not support shrinking, make that
         # button insensitive.
-        device = self.storage.devicetree.getDeviceByID(row[DEVICE_ID_COL])
-#        self._shrinkButton.set_sensitive(device.resizable)
+        self._shrinkButton.set_sensitive(device.resizable)
+
+        if device.resizable:
+            self._setup_slider(device, obj.target)
 
         # Then, disable the button for whatever action is currently selected.
         # It doesn't make a lot of sense to allow clicking that.
-        if row[ACTION_COL] == _(PRESERVE):
+        if obj.action == _(PRESERVE):
             self._preserveButton.set_sensitive(False)
-#        elif row[ACTION_COL] == _(SHRINK):
-#            self._shrinkButton.set_sensitive(False)
-        elif row[ACTION_COL] == _(DELETE):
+        elif obj.action == _(SHRINK):
+            self._shrinkButton.set_sensitive(False)
+            self._resizeSlider.set_visible(True)
+        elif obj.action == _(DELETE):
             self._deleteButton.set_sensitive(False)
 
+    def _update_reclaim_button(self, got):
+        # The reclaim button is sensitive if two conditions are met:
+        # (1) There's enough available space (existing free/unpartitioned space,
+        #     shrink space, etc.) on all disks.
+        # (2) At least one destructive action has been chosen.  We can detect
+        #     this by checking whether got is non-zero.
+        need = self.payload.spaceRequired
+        self._resizeButton.set_sensitive(got+self._initialFreeSpace >= need and got > Size(0))
+
+    # pylint: disable-msg=W0221
     def refresh(self, disks):
         super(ResizeDialog, self).refresh()
 
@@ -236,45 +307,68 @@ class ResizeDialog(GUIObject):
         return rc
 
     # Signal handlers.
+    def on_key_pressed(self, window, event, *args):
+        # Handle any keyboard events.  Right now this is just delete for
+        # removing a partition, but it could include more later.
+        if not event or event and event.type != Gdk.EventType.KEY_RELEASE:
+            return
+
+        if event.keyval == Gdk.KEY_Delete and self._deleteButton.get_sensitive():
+            self._deleteButton.emit("clicked")
+
     def _sumReclaimableSpace(self, model, path, itr, *args):
-        (editable, action, ident) = model.get(itr, EDITABLE_COL, ACTION_COL, DEVICE_ID_COL)
+        obj = PartStoreRow(*model[itr])
 
-        if not editable:
+        if not obj.editable:
             return False
 
-        device = self.storage.devicetree.getDeviceByID(ident)
-        if action == _(PRESERVE):
+        device = self.storage.devicetree.getDeviceByID(obj.id)
+        if obj.action == _(PRESERVE):
             return False
-        if action == _(SHRINK):
-            if device.resizable:
-                self._selectedReclaimableSpace += (device.size - device.minSize)
-            else:
-                self._selectedReclaimableSpace += device.size
-        elif action == _(DELETE):
-            self._selectedReclaimableSpace += device.size
+        if obj.action == _(SHRINK):
+            self._selectedReclaimableSpace += int(device.size) - obj.target
+        elif obj.action == _(DELETE):
+            self._selectedReclaimableSpace += int(device.size)
 
         return False
 
     def on_preserve_clicked(self, button):
-        self._actionChanged(PRESERVE)
+        itr = self._selection.get_selected()[1]
+        self._actionChanged(itr, PRESERVE)
 
     def on_shrink_clicked(self, button):
-        self._actionChanged(SHRINK)
+        itr = self._selection.get_selected()[1]
+        self._actionChanged(itr, SHRINK)
 
     def on_delete_clicked(self, button):
-        self._actionChanged(DELETE)
+        itr = self._selection.get_selected()[1]
+        self._actionChanged(itr, DELETE)
 
-    def _actionChanged(self, newAction):
-        selection = self.builder.get_object("diskView-selection")
-        (model, itr) = selection.get_selected()
-
+    def _actionChanged(self, itr, newAction):
         if not itr:
             return
 
+        # Handle the row selected when a button was pressed.
         selectedRow = self._diskStore[itr]
-
-        # Put the selected action into the store as well.
         selectedRow[ACTION_COL] = _(newAction)
+
+        # If that row is a disk header, we need to process all the partitions
+        # it contains.
+        device = self.storage.devicetree.getDeviceByID(selectedRow[DEVICE_ID_COL])
+        if device.isDisk and device.partitioned:
+            partItr = self._diskStore.iter_children(itr)
+            while partItr:
+                self._diskStore[partItr][ACTION_COL] = _(newAction)
+
+                # If the user marked a whole disk for deletion, they can't go in and
+                # un-delete partitions under it.
+                if newAction == DELETE:
+                    self._diskStore[partItr][EDITABLE_COL] = False
+                elif newAction == PRESERVE:
+                    part = self.storage.devicetree.getDeviceByID(self._diskStore[partItr][DEVICE_ID_COL])
+                    self._diskStore[partItr][EDITABLE_COL] = not part.protected
+
+                partItr = self._diskStore.iter_next(partItr)
 
         # And then we're keeping a running tally of how much space the user
         # has selected to reclaim, so reflect that in the UI.
@@ -282,34 +376,51 @@ class ResizeDialog(GUIObject):
         self._diskStore.foreach(self._sumReclaimableSpace, None)
         self._update_labels(selectedReclaimable=self._selectedReclaimableSpace)
 
-        got = Size(spec="%s MB" % self._selectedReclaimableSpace)
-        need = self.payload.spaceRequired
-        self._resizeButton.set_sensitive(got >= need)
-
-        self._update_buttons(selectedRow)
+        self._update_reclaim_button(Size(en_spec="%f MB" % self._selectedReclaimableSpace))
+        self._update_action_buttons(selectedRow)
 
     def _scheduleActions(self, model, path, itr, *args):
-        (editable, action, ident) = model.get(itr, EDITABLE_COL, ACTION_COL, DEVICE_ID_COL)
+        obj = PartStoreRow(*model[itr])
+        device = self.storage.devicetree.getDeviceByID(obj.id)
 
-        device = self.storage.devicetree.getDeviceByID(ident)
-
-        if not editable:
+        if not obj.editable:
             return False
 
-        if action == _(PRESERVE):
+        if obj.action == _(PRESERVE):
             return False
-        elif action == _(SHRINK):
+        elif obj.action == _(SHRINK) and int(device.size) != int(obj.target):
             if device.resizable:
-                self.storage.resizeDevice(device, device.minSize)
+                self.storage.resizeDevice(device, obj.target)
             else:
                 self.storage.recursiveRemove(device)
-        elif action == _(DELETE):
+        elif obj.action == _(DELETE):
             self.storage.recursiveRemove(device)
 
         return False
 
     def on_resize_clicked(self, *args):
         self._diskStore.foreach(self._scheduleActions, None)
+
+    def on_delete_all_clicked(self, button, *args):
+        if button.get_label() == _("Delete _all"):
+            action = DELETE
+            button.set_label(_("Preserve _all"))
+        else:
+            action = PRESERVE
+            button.set_label(_("Delete _all"))
+
+        itr = self._diskStore.get_iter_first()
+        while itr:
+            obj = PartStoreRow(*self._diskStore[itr])
+            if not obj.editable:
+                itr = self._diskStore.iter_next(itr)
+                continue
+
+            device = self.storage.devicetree.getDeviceByID(obj.id)
+            if device.isDisk:
+                self._actionChanged(itr, action)
+
+            itr = self._diskStore.iter_next(itr)
 
     def on_row_clicked(self, view, path, column):
         # This handles when the user clicks on a row in the view.  We use it
@@ -325,9 +436,32 @@ class ResizeDialog(GUIObject):
         # selection.  Thus, clicking on a disk header to collapse it and then
         # immediately clicking on it again to expand it would not work when
         # dealt with here.
-        (model, itr) = selection.get_selected()
+        itr = selection.get_selected()[1]
 
         if not itr:
             return
 
-        self._update_buttons(self._diskStore[itr])
+        self._update_action_buttons(self._diskStore[itr])
+
+    @timed_action(delay=200, threshold=500, busy_cursor=False)
+    def on_resize_value_changed(self, rng):
+        (model, itr) = self._selection.get_selected()
+
+        old_delta = int(rng.get_adjustment().get_upper())- model[itr][RESIZE_TARGET_COL]
+        self._selectedReclaimableSpace -= old_delta
+
+        # Update the target size in the store.
+        model[itr][RESIZE_TARGET_COL] = int(rng.get_value())
+
+        # Update the "Total selected space" label.
+        delta = int(rng.get_adjustment().get_upper()) - int(rng.get_value())
+        self._selectedReclaimableSpace += delta
+        self._update_labels(selectedReclaimable=self._selectedReclaimableSpace)
+
+        # And then the reclaim button, in case they've made enough space.
+        self._update_reclaim_button(Size(en_spec="%f MB" % self._selectedReclaimableSpace))
+
+    def resize_slider_format(self, scale, value):
+        # This makes the value displayed under the slider prettier than just a
+        # single number.
+        return size_str(value)

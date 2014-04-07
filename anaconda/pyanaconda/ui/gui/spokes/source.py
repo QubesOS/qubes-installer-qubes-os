@@ -20,29 +20,30 @@
 #                    Martin Sivak <msivak@redhat.com>
 #
 
-import gettext
 import time
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
 
 import logging
 log = logging.getLogger("anaconda")
 
-import os.path
+import os, signal, string
 
-from gi.repository import AnacondaWidgets, GLib, Gtk
+from gi.repository import GLib
 
 from pyanaconda.flags import flags
+from pyanaconda.i18n import _, N_
 from pyanaconda.image import opticalInstallMedia, potentialHdisoSources
-from pyanaconda.ui.gui import GUIObject, communication
+from pyanaconda.ui.communication import hubQ
+from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.gui.categories.software import SoftwareCategory
-from pyanaconda.ui.gui.utils import enlightbox, gtk_thread_wait
-from pyanaconda.iutil import ProxyString, ProxyStringError
-from pyanaconda.ui.gui.utils import gtk_call_once
+from pyanaconda.ui.gui.utils import enlightbox, gtk_action_wait
+from pyanaconda.iutil import ProxyString, ProxyStringError, cmp_obj_attrs
+from pyanaconda.ui.gui.utils import gtk_call_once, really_hide, really_show
 from pyanaconda.threads import threadMgr, AnacondaThread
-from pyanaconda.packaging import PayloadError, get_mount_paths, MetadataError
-from pyanaconda.constants import DRACUT_ISODIR, ISO_DIR
+from pyanaconda.packaging import PayloadError, MetadataError
+from pyanaconda import constants
+
+from blivet.util import get_mount_paths
 
 __all__ = ["SourceSpoke"]
 
@@ -50,10 +51,37 @@ BASEREPO_SETUP_MESSAGE = N_("Setting up installation source...")
 METADATA_DOWNLOAD_MESSAGE = N_("Downloading package metadata...")
 METADATA_ERROR_MESSAGE = N_("Error downloading package metadata...")
 
+# These need to be in the same order as the items in protocolComboBox in source.glade.
+PROTOCOL_HTTP = 0
+PROTOCOL_HTTPS = 1
+PROTOCOL_FTP = 2
+PROTOCOL_NFS = 3
+PROTOCOL_MIRROR = 4
+
+# Repo Store Columns
+REPO_ENABLED_COL = 0
+REPO_NAME_COL = 1
+REPO_OBJ = 2
+
+REPO_PROTO = [(0, "http://"), (1, "https://"), (2, "ftp://")]
+
 class ProxyDialog(GUIObject):
     builderObjects = ["proxyDialog"]
     mainWidgetName = "proxyDialog"
     uiFile = "spokes/source.glade"
+
+    def __init__(self, data, proxy_url):
+        GUIObject.__init__(self, data)
+        self.proxyUrl = proxy_url
+
+        self._proxyCheck = self.builder.get_object("enableProxyCheck")
+        self._proxyInfoBox = self.builder.get_object("proxyInfoBox")
+        self._authCheck = self.builder.get_object("enableAuthCheck")
+        self._proxyAuthBox = self.builder.get_object("proxyAuthBox")
+
+        self._proxyURLEntry = self.builder.get_object("proxyURLEntry")
+        self._proxyUsernameEntry = self.builder.get_object("proxyUsernameEntry")
+        self._proxyPasswordEntry = self.builder.get_object("proxyPasswordEntry")
 
     def on_proxy_cancel_clicked(self, *args):
         self.window.destroy()
@@ -62,7 +90,7 @@ class ProxyDialog(GUIObject):
         # If the user unchecked the proxy entirely, that means they want it
         # disabled.
         if not self._proxyCheck.get_active():
-            self.data.method.proxy = ""
+            self.proxyUrl = ""
             self.window.destroy()
             return
 
@@ -76,12 +104,11 @@ class ProxyDialog(GUIObject):
 
         try:
             proxy = ProxyString(url=url, username=username, password=password)
-            self.data.method.proxy = proxy.url
+            self.proxyUrl = proxy.url
         except ProxyStringError as e:
-            log.error("Failed to parse proxy for ProxyDialog Add - %s:%s@%s: %s" \
-                      % (username, password, url, e))
+            log.error("Failed to parse proxy for ProxyDialog Add - %s:%s@%s: %s", username, password, url, e)
             # TODO - tell the user they entered an invalid proxy and let them retry
-            self.data.method.proxy = ""
+            self.proxyUrl = ""
 
         self.window.destroy()
 
@@ -92,20 +119,9 @@ class ProxyDialog(GUIObject):
         self._proxyAuthBox.set_sensitive(button.get_active())
 
     def refresh(self):
-        import re
-
         GUIObject.refresh(self)
 
-        self._proxyCheck = self.builder.get_object("enableProxyCheck")
-        self._proxyInfoBox = self.builder.get_object("proxyInfoBox")
-        self._authCheck = self.builder.get_object("enableAuthCheck")
-        self._proxyAuthBox = self.builder.get_object("proxyAuthBox")
-
-        self._proxyURLEntry = self.builder.get_object("proxyURLEntry")
-        self._proxyUsernameEntry = self.builder.get_object("proxyUsernameEntry")
-        self._proxyPasswordEntry = self.builder.get_object("proxyPasswordEntry")
-
-        if not self.data.method.proxy:
+        if not self.proxyUrl:
             self._proxyCheck.set_active(False)
             self.on_proxy_enable_toggled(self._proxyCheck)
             self._authCheck.set_active(False)
@@ -113,14 +129,14 @@ class ProxyDialog(GUIObject):
             return
 
         try:
-            proxy = ProxyString(self.data.method.proxy)
+            proxy = ProxyString(self.proxyUrl)
             if proxy.username:
                 self._proxyUsernameEntry.set_text(proxy.username)
             if proxy.password:
                 self._proxyPasswordEntry.set_text(proxy.password)
             self._proxyURLEntry.set_text(proxy.noauth_url)
         except ProxyStringError as e:
-            log.error("Failed to parse proxy for ProxyDialog.refresh %s: %s" % (self.data.method.proxy, e))
+            log.error("Failed to parse proxy for ProxyDialog.refresh %s: %s", self.proxyUrl, e)
             return
 
         self._proxyCheck.set_active(True)
@@ -136,11 +152,18 @@ class MediaCheckDialog(GUIObject):
     mainWidgetName = "mediaCheckDialog"
     uiFile = "spokes/source.glade"
 
+    def __init__(self, data):
+        GUIObject.__init__(self, data)
+        self.progressBar = self.builder.get_object("mediaCheck-progressBar")
+        self._pid = None
+
     def _checkisoEndsCB(self, pid, status):
         doneButton = self.builder.get_object("doneButton")
         verifyLabel = self.builder.get_object("verifyLabel")
 
-        if status == 0:
+        if os.WIFSIGNALED(status):
+            pass
+        elif status == 0:
             verifyLabel.set_text(_("This media is good to install from."))
         else:
             verifyLabel.set_text(_("This media is not good to install from."))
@@ -148,6 +171,7 @@ class MediaCheckDialog(GUIObject):
         self.progressBar.set_fraction(1.0)
         doneButton.set_sensitive(True)
         GLib.spawn_close_pid(pid)
+        self._pid = None
 
     def _checkisoStdoutWatcher(self, fd, condition):
         if condition == GLib.IOCondition.HUP:
@@ -167,9 +191,7 @@ class MediaCheckDialog(GUIObject):
         return True
 
     def run(self, devicePath):
-        self.progressBar = self.builder.get_object("mediaCheck-progressBar")
-
-        (retval, pid, stdin, stdout, stderr) = \
+        (retval, self._pid, _stdin, stdout, _stderr) = \
             GLib.spawn_async_with_pipes(None, ["checkisomd5", "--gauge", devicePath], [],
                                         GLib.SpawnFlags.DO_NOT_REAP_CHILD|GLib.SpawnFlags.SEARCH_PATH,
                                         None, None)
@@ -177,12 +199,18 @@ class MediaCheckDialog(GUIObject):
             return
 
         # This function waits for checkisomd5 to end and then cleans up after it.
-        GLib.child_watch_add(pid, self._checkisoEndsCB)
+        GLib.child_watch_add(self._pid, self._checkisoEndsCB)
 
         # This function watches the process's stdout.
         GLib.io_add_watch(stdout, GLib.IOCondition.IN|GLib.IOCondition.HUP, self._checkisoStdoutWatcher)
 
         self.window.run()
+
+    def on_close(self, *args):
+        if self._pid:
+            os.kill(self._pid, signal.SIGKILL)
+
+        self.window.destroy()
 
     def on_done_clicked(self, *args):
         self.window.destroy()
@@ -203,11 +231,15 @@ class IsoChooser(GUIObject):
     mainWidgetName = "isoChooserDialog"
     uiFile = "spokes/source.glade"
 
+    def __init__(self, data):
+        GUIObject.__init__(self, data)
+        self._chooser = self.builder.get_object("isoChooser")
+
+    # pylint: disable-msg=W0221
     def refresh(self, currentFile=""):
         GUIObject.refresh(self)
-        self._chooser = self.builder.get_object("isoChooser")
         self._chooser.connect("current-folder-changed", self.on_folder_changed)
-        self._chooser.set_filename(ISO_DIR + "/" + currentFile)
+        self._chooser.set_filename(constants.ISO_DIR + "/" + currentFile)
 
     def run(self, dev):
         retval = None
@@ -217,16 +249,16 @@ class IsoChooser(GUIObject):
         # We have to check both ISO_DIR and the DRACUT_ISODIR because we
         # still reference both, even though /mnt/install is a symlink to
         # /run/install.  Finding mount points doesn't handle the symlink
-        if ISO_DIR not in mounts and DRACUT_ISODIR not in mounts:
+        if constants.ISO_DIR not in mounts and constants.DRACUT_ISODIR not in mounts:
             # We're not mounted to either location, so do the mount
-            dev.format.mount(mountpoint=ISO_DIR)
+            dev.format.mount(mountpoint=constants.ISO_DIR)
 
         # If any directory was chosen, return that.  Otherwise, return None.
         rc = self.window.run()
         if rc:
             f = self._chooser.get_filename()
             if f:
-                retval = f.replace(ISO_DIR, "")
+                retval = f.replace(constants.ISO_DIR, "")
 
         if unmount:
             dev.format.unmount()
@@ -243,219 +275,64 @@ class IsoChooser(GUIObject):
         if not d:
             return
 
-        if not d.startswith(ISO_DIR):
-            chooser.set_current_folder(ISO_DIR)
-
-class AdditionalReposDialog(GUIObject):
-    builderObjects = ["additionalReposDialog", "peopleRepositories", "peopleRepositoriesFilter"]
-    mainWidgetName = "additionalReposDialog"
-    uiFile = "spokes/source.glade"
-
-    typingTimeout = 1
-
-    def __init__(self, *args, **kwargs):
-        GUIObject.__init__(self, *args, **kwargs)
-
-        self._filterTimer = None
-        self._urlTimer = None
-        self._timeoutAdd = GLib.timeout_add_seconds
-        self._timeoutRemove = GLib.source_remove
-
-        # count the number of times the repository check was started
-        # so we allow only the last thread to update the validity and
-        # description of the entered repository url
-        self._epoch = 0
-
-        # Repository url
-        self._repositoryUrl = self.builder.get_object("addRepositoryUrl")
-        self._repositoryDesc = self.builder.get_object("addRepositoryDesc")
-        self._repositoryIcon = self.builder.get_object("addRepositoryIcon")
-        self._repositorySpinner = self.builder.get_object("addRepositorySpinner")
-        self._urlGrid = self.builder.get_object("urlGrid")
-
-        # Repository list
-        self._peopleRepositories = self.builder.get_object("peopleRepositories")
-        self._peopleRepositoriesGrid = self.builder.get_object("peopleRepositoriesGrid")
-        self._peopleRepositoriesView = self.builder.get_object("addRepositoryList")
-        self._peopleRepositoriesFilter = self.builder.get_object("peopleRepositoriesFilter")
-        self._peopleRepositoriesFilterEntry = self.builder.get_object("addRepositoryFilter")
-        self._peopleRepositoriesFilterValue = ""
-
-        self._peopleRepositoriesFilter.set_visible_func(self.repoVisible, self)
-
-        # Radio button
-        self._sourceSelectionListLabel = self.builder.get_object("listGridLabel")
-        self._sourceSelectionList = self.builder.get_object("addRepositorySelectList")
-        self._sourceSelectionUrlLabel = self.builder.get_object("urlGridLabel")
-        self._sourceSelectionUrl = self.builder.get_object("addRepositorySelectUrl")
-
-    def refresh(self, currentFile=""):
-        GUIObject.refresh(self)
-
-    def run(self):
-        retval = None
-
-        self._peopleRepositoriesFilter.refilter()
-        self._peopleRepositoriesFilterValue = self._peopleRepositoriesFilterEntry.get_text()
-        self.on_source_changed()
-
-        self.window.show()
-        rc = self.window.run()
-        if rc:
-            retval = "some value"
-        self.window.hide()
-
-        return retval
-
-    def repoVisible(self, model, iter, oself):
-        """This method is responsible for people repositories list filtering,
-           it returns True only for fields which cointain filterString as a substring"""
-        return oself._peopleRepositoriesFilterValue in model[iter][0]
-
-    def on_source_changed(self, w = None):
-        """Callbacks which gets called when the radio buttons change.
-           It makes proper areas (in)sensitive."""
-        sourceArea = self._sourceSelectionList.get_active()
-
-        self._peopleRepositoriesGrid.foreach(lambda w, v: w.set_sensitive(v), sourceArea)
-        self._urlGrid.foreach(lambda w, v: w.set_sensitive(v), not sourceArea)
-
-        self._sourceSelectionList.set_sensitive(True)
-        self._sourceSelectionListLabel.set_sensitive(True)
-        self._sourceSelectionUrl.set_sensitive(True)
-        self._sourceSelectionUrlLabel.set_sensitive(True)
-
-    def on_list_title_clicked(self, w, d):
-        """Callback that handles clicking on the EventBox around people
-           repositories label to mimick the standard radio button label
-           behaviour which we had to give up for the sake of design."""
-        self._sourceSelectionList.set_active(True)
-
-    def on_url_title_clicked(self, w, d):
-        """Callback that handles clicking on the EventBox around repo
-           url label to mimick the standard radio button label
-           behaviour which we had to give up for the sake of design."""
-        self._sourceSelectionUrl.set_active(True)
-
-    def on_url_timeout(self, w):
-        """This method starts url checker thread and updates the GUI
-           elements like spinner and description to notify the user
-           about it."""
-        # start resolve thread with epoch info
-
-        self._repositorySpinner.start()
-        self._repositoryDesc.set_text(_("Getting info about requested repository"))
-        self._repositoryIcon.set_from_stock("XXX_RESOLVING", Gtk.IconSize.MENU)
-
-        return False
-
-    def on_url_changed(self, w):
-        """This callback is called when the user changes anything in the url
-           text entry field. It resets the typing timer so that url checks
-           are not started for every character typed and it also increments
-           self._epoch counter to prevent older running url checks from
-           updating the dialog with now outdated data."""
-        if self._urlTimer:
-            # optimistic locking, prevent old, but possibly running threads from updating status
-            self._epoch += 1
-            self._timeoutRemove(self._urlTimer)
-
-        if self._repositoryUrl.get_text():
-            self._urlTimer = self._timeoutAdd(self.typingTimeout, self.on_url_timeout, w)
-
-    def on_url_icon_press(self, w, pos, event):
-        """Callback for the delete all icon in url text field."""
-        self._repositoryUrl.set_text("")
-        self.on_url_changed(w)
-        self.repository_status(None, _("enter URL of your desired repository"))
-
-    def repository_status(self, valid, description, epoch = None, still_spinning = False):
-        """Helper method to update the icon, spinner and decription text
-           around the url text entry."""
-        # if an older thread want to update status, do not let him
-        if epoch is not None and epoch != self._epoch:
-            return
-
-        self._repositoryDesc.set_text(description)
-
-        if valid is None:
-            self._repositoryIcon.set_from_stock("XXX_NONE", Gtk.IconSize.MENU)
-        elif valid:
-            self._repositoryIcon.set_from_stock("gtk-apply", Gtk.IconSize.MENU)
-        else:
-            self._repositoryIcon.set_from_stock("gtk-error", Gtk.IconSize.MENU)
-
-        if not still_spinning:
-            self._repositorySpinner.stop()
-
-    def on_filter_timeout(self, w):
-        """Timer callback for delayed filtering of people repositories list."""
-        self._peopleRepositoriesFilterValue = w.get_text()
-        self._peopleRepositoriesFilter.refilter()
-        return False
-
-    def on_filter_changed(self, w):
-        """This method is called when user changes something in the people
-           repositories field. It resets a timer so the update is not done
-           until the user stopped typing for a while."""
-        if self._filterTimer:
-            self._timeoutRemove(self._filterTimer)
-
-        self._filterTimer = self._timeoutAdd(self.typingTimeout,
-                                             self.on_filter_timeout,
-                                             self._peopleRepositoriesFilterEntry)
-
-    def on_selection_changed(self, selection):
-        """Callback called when user selects something in the people
-           repositories list."""
-        pass
-
-    def on_filter_icon_press(self, w, pos, event):
-        """Callback for delete all icon in the people repositories filter
-           text entry."""
-        self._peopleRepositoriesFilterEntry.set_text("")
-        self.on_filter_timeout(w)
-
+        if not d.startswith(constants.ISO_DIR):
+            chooser.set_current_folder(constants.ISO_DIR)
 
 class SourceSpoke(NormalSpoke):
-    builderObjects = ["isoChooser", "isoFilter", "partitionStore", "sourceWindow", "dirImage"]
+    builderObjects = ["isoChooser", "isoFilter", "partitionStore", "sourceWindow", "dirImage", "repoStore"]
     mainWidgetName = "sourceWindow"
     uiFile = "spokes/source.glade"
 
     category = SoftwareCategory
 
     icon = "media-optical-symbolic"
-    title = N_("INSTALLATION SOURCE")
+    title = N_("_INSTALLATION SOURCE")
 
     def __init__(self, *args, **kwargs):
         NormalSpoke.__init__(self, *args, **kwargs)
         self._currentIsoFile = None
         self._ready = False
         self._error = False
+        self._proxyUrl = ""
+        self._proxyChange = False
+        self._cdrom = None
 
     def apply(self):
+        # If askmethod was provided on the command line, entering the source
+        # spoke wipes that out.
+        if flags.askmethod:
+            flags.askmethod = False
+
+        threadMgr.add(AnacondaThread(name=constants.THREAD_PAYLOAD_MD, target=self.getRepoMetadata))
+        self.clear_info()
+
+    def _method_changed(self):
+        """ Check to see if the install method has changed.
+
+            :returns: True if it changed, False if not
+            :rtype: bool
+        """
         import copy
 
-        old_source = copy.copy(self.data.method)
+        old_source = copy.deepcopy(self.data.method)
 
         if self._autodetectButton.get_active():
-            dev = self._get_selected_media()
-            if not dev:
-                return
+            if not self._cdrom:
+                return False
 
             self.data.method.method = "cdrom"
-            self.payload.install_device = dev
+            self.payload.install_device = self._cdrom
             if old_source.method == "cdrom":
                 # XXX maybe we should always redo it for cdrom in case they
                 #     switched disks
-                return
+                return False
         elif self._isoButton.get_active():
             # If the user didn't select a partition (not sure how that would
             # happen) or didn't choose a directory (more likely), then return
             # as if they never did anything.
             part = self._get_selected_partition()
             if not part or not self._currentIsoFile:
-                return
+                return False
 
             self.data.method.method = "harddrive"
             self.data.method.partition = part.name
@@ -464,7 +341,7 @@ class SourceSpoke(NormalSpoke):
             if (old_source.method == "harddrive" and
                 old_source.partition == self.data.method.partition and
                 old_source.dir == self.data.method.dir):
-                return
+                return False
 
             # Make sure anaconda doesn't touch this device.
             part.protected = True
@@ -472,8 +349,10 @@ class SourceSpoke(NormalSpoke):
         elif self._mirror_active():
             # this preserves the url for later editing
             self.data.method.method = None
-            if not old_source.method:
-                return
+            self.data.method.proxy = self._proxyUrl
+            if not old_source.method and self.payload.baseRepo and \
+               not self._proxyChange:
+                return False
         elif self._http_active() or self._ftp_active():
             url = self._urlEntry.get_text().strip()
             mirrorlist = False
@@ -481,7 +360,7 @@ class SourceSpoke(NormalSpoke):
             # If the user didn't fill in the URL entry, just return as if they
             # selected nothing.
             if url == "":
-                return
+                return False
 
             # Make sure the URL starts with the protocol.  yum will want that
             # to know how to fetch, and the refresh method needs that to know
@@ -489,19 +368,20 @@ class SourceSpoke(NormalSpoke):
             # revisited.
             if self._ftp_active() and not url.startswith("ftp://"):
                 url = "ftp://" + url
-            elif self._protocolComboBox.get_active() == 1 and not url.startswith("http://"):
+            elif self._protocolComboBox.get_active() == PROTOCOL_HTTP and not url.startswith("http://"):
                 url = "http://" + url
                 mirrorlist = self._mirrorlistCheckbox.get_active()
-            elif self._protocolComboBox.get_active() == 2 and not url.startswith("https://"):
+            elif self._protocolComboBox.get_active() == PROTOCOL_HTTPS and not url.startswith("https://"):
                 url = "https://" + url
                 mirrorlist = self._mirrorlistCheckbox.get_active()
 
-            if old_source.method == "url" and \
+            if old_source.method == "url" and not self._proxyChange and \
                ((not mirrorlist and old_source.url == url) or \
                 (mirrorlist and old_source.mirrorlist == url)):
-                return
+                return False
 
             self.data.method.method = "url"
+            self.data.method.proxy = self._proxyUrl
             if mirrorlist:
                 self.data.method.mirrorlist = url
                 self.data.method.url = ""
@@ -515,21 +395,32 @@ class SourceSpoke(NormalSpoke):
             # a ':' (so, no host/directory split), just return as if they
             # selected nothing.
             if url == "" or not ':' in url:
-                return
+                return False
 
             self.data.method.method = "nfs"
-            (self.data.method.server, self.data.method.dir) = url.split(":", 2)
+            try:
+                (self.data.method.server, self.data.method.dir) = url.split(":", 2)
+            except ValueError as e:
+                log.error("ValueError: %s", e)
+                gtk_call_once(self.set_warning, _("Failed to set up installation source; check the repo url"))
+                self._error = True
+                return
+
             self.data.method.opts = self.builder.get_object("nfsOptsEntry").get_text() or ""
 
             if (old_source.method == "nfs" and
                 old_source.server == self.data.method.server and
                 old_source.dir == self.data.method.dir and
                 old_source.opts == self.data.method.opts):
-                return
+                return False
 
         # If the user moved from an HDISO method to some other, we need to
         # clear the protected bit on that device.
         if old_source.method == "harddrive" and old_source.partition:
+            self._currentIsoFile = None
+            self._isoChooserButton.set_label(self._origIsoChooserButton)
+            self._isoChooserButton.set_use_underline(True)
+
             if old_source.partition in self.storage.config.protectedDevSpecs:
                 self.storage.config.protectedDevSpecs.remove(old_source.partition)
 
@@ -537,15 +428,14 @@ class SourceSpoke(NormalSpoke):
             if dev:
                 dev.protected = False
 
-        threadMgr.add(AnacondaThread(name="AnaPayloadMDThread",
-                                     target=self.getRepoMetadata))
-        self.clear_info()
+        self._proxyChange = False
+
+        return True
 
     def getRepoMetadata(self):
-        communication.send_not_ready("SoftwareSelectionSpoke")
-        communication.send_not_ready(self.__class__.__name__)
-        communication.send_message(self.__class__.__name__,
-                                   _(BASEREPO_SETUP_MESSAGE))
+        hubQ.send_not_ready("SoftwareSelectionSpoke")
+        hubQ.send_not_ready(self.__class__.__name__)
+        hubQ.send_message(self.__class__.__name__, _(BASEREPO_SETUP_MESSAGE))
         # this sleep is lame, but without it the message above doesn't seem
         # to get processed by the hub in time, and is never shown.
         # FIXME this should get removed when we figure out how to ensure
@@ -554,27 +444,24 @@ class SourceSpoke(NormalSpoke):
         time.sleep(1)
         try:
             self.payload.updateBaseRepo(fallback=False, checkmount=False)
-        except PayloadError as e:
-            log.error("PayloadError: %s" % (e,))
+        except (OSError, PayloadError) as e:
+            log.error("PayloadError: %s", e)
             self._error = True
-            communication.send_message(self.__class__.__name__,
-                                       _("Failed to set up install source"))
-            if not self.data.method.proxy:
-                gtk_call_once(self.set_warning, _("Failed to set up install source, check the repo url"))
+            hubQ.send_message(self.__class__.__name__, _("Failed to set up installation source"))
+            if not (hasattr(self.data.method, "proxy") and self.data.method.proxy):
+                gtk_call_once(self.set_warning, _("Failed to set up installation source; check the repo url"))
             else:
-                gtk_call_once(self.set_warning, _("Failed to set up install source, check the repo url and proxy settings"))
+                gtk_call_once(self.set_warning, _("Failed to set up installation source; check the repo url and proxy settings"))
         else:
             self._error = False
-            communication.send_message(self.__class__.__name__,
-                                       _(METADATA_DOWNLOAD_MESSAGE))
+            hubQ.send_message(self.__class__.__name__, _(METADATA_DOWNLOAD_MESSAGE))
             self.payload.gatherRepoMetadata()
             self.payload.release()
             if not self.payload.baseRepo:
-                communication.send_message(self.__class__.__name__,
-                                           _(METADATA_ERROR_MESSAGE))
-                communication.send_ready(self.__class__.__name__)
+                hubQ.send_message(self.__class__.__name__, _(METADATA_ERROR_MESSAGE))
+                hubQ.send_ready(self.__class__.__name__, False)
                 self._error = True
-                gtk_call_once(self.set_warning, _("Failed to set up install source, check the repo url"))
+                gtk_call_once(self.set_warning, _("Failed to set up installation source; check the repo url"))
             else:
                 try:
                     # Grabbing the list of groups could potentially take a long time the
@@ -582,36 +469,50 @@ class SourceSpoke(NormalSpoke):
                     # involves side effects like network access) so go ahead and grab
                     # them now. These are properties with side-effects, just accessing
                     # them will trigger yum.
-                    e = self.payload.environments
-                    g = self.payload.groups
+                    # pylint: disable-msg=W0104
+                    self.payload.environments
+                    # pylint: disable-msg=W0104
+                    self.payload.groups
                 except MetadataError:
-                    communication.send_message("SoftwareSelectionSpoke",
-                                               _("No installation source available"))
+                    hubQ.send_message("SoftwareSelectionSpoke",
+                                      _("No installation source available"))
                 else:
-                    communication.send_ready("SoftwareSelectionSpoke")
+                    hubQ.send_ready("SoftwareSelectionSpoke", False)
         finally:
-            communication.send_ready(self.__class__.__name__)
+            hubQ.send_ready(self.__class__.__name__, False)
+
+    @property
+    def changed(self):
+        method_changed = self._method_changed()
+        update_payload_repos = self._update_payload_repos()
+        return method_changed or update_payload_repos or self._error
 
     @property
     def completed(self):
-        return not self._error and self.status and self.status != _("Nothing selected")
+        if flags.automatedInstall and (not self.data.method.method or not self.payload.baseRepo):
+            return False
+        else:
+            return not self._error and self.ready and (self.data.method.method or self.payload.baseRepo)
+
+    @property
+    def mandatory(self):
+        return True
 
     @property
     def ready(self):
-        from pyanaconda.threads import threadMgr
-        # By default, the source spoke is not ready.  We have to wait until
-        # storageInitialize is done to know whether or not there's local
-        # devices potentially holding install media.
-        return (self._ready and not threadMgr.get("AnaPayloadMDThread") and
-                not threadMgr.get("AnaCheckSoftwareThread"))
+        return (self._ready and
+                not threadMgr.get(constants.THREAD_PAYLOAD_MD) and
+                not threadMgr.get(constants.THREAD_SOFTWARE_WATCHER) and
+                not threadMgr.get(constants.THREAD_CHECK_SOFTWARE))
 
     @property
     def status(self):
-        from pyanaconda.threads import threadMgr
-        if threadMgr.get("AnaCheckSoftwareThread"):
+        if threadMgr.get(constants.THREAD_CHECK_SOFTWARE):
             return _("Checking software dependencies...")
         elif not self.ready:
-            return _("Not ready")
+            return _(BASEREPO_SETUP_MESSAGE)
+        elif not self.payload.baseRepo:
+            return _("Error setting up base repository")
         elif self._error:
             return _("Error setting up software source")
         elif self.data.method.method == "url":
@@ -619,10 +520,10 @@ class SourceSpoke(NormalSpoke):
         elif self.data.method.method == "nfs":
             return _("NFS server %s") % self.data.method.server
         elif self.data.method.method == "cdrom":
-            return _("CD/DVD drive")
+            return _("Local media")
         elif self.data.method.method == "harddrive":
             if not self._currentIsoFile:
-                return _("Error setting up software source")
+                return _("Error setting up ISO file")
             return os.path.basename(self._currentIsoFile)
         elif self.payload.baseRepo:
             return _("Closest mirror")
@@ -632,7 +533,8 @@ class SourceSpoke(NormalSpoke):
     def _grabObjects(self):
         self._autodetectButton = self.builder.get_object("autodetectRadioButton")
         self._autodetectBox = self.builder.get_object("autodetectBox")
-        self._autodetectMediaBox = self.builder.get_object("autodetectMediaBox")
+        self._autodetectDeviceLabel = self.builder.get_object("autodetectDeviceLabel")
+        self._autodetectLabel = self.builder.get_object("autodetectLabel")
         self._isoButton = self.builder.get_object("isoRadioButton")
         self._isoBox = self.builder.get_object("isoBox")
         self._networkButton = self.builder.get_object("networkRadioButton")
@@ -641,15 +543,34 @@ class SourceSpoke(NormalSpoke):
         self._urlEntry = self.builder.get_object("urlEntry")
         self._protocolComboBox = self.builder.get_object("protocolComboBox")
         self._isoChooserButton = self.builder.get_object("isoChooserButton")
+        self._origIsoChooserButton = self._isoChooserButton.get_label()
 
         self._mirrorlistCheckbox = self.builder.get_object("mirrorlistCheckbox")
 
+        self._noUpdatesCheckbox = self.builder.get_object("noUpdatesCheckbox")
+        self._noUpdatesCheckbox.get_children()[0].set_line_wrap(True)
+
         self._verifyIsoButton = self.builder.get_object("verifyIsoButton")
 
-    def initialize(self):
-        from pyanaconda.threads import threadMgr, AnacondaThread
-        from pyanaconda.ui.gui.utils import setViewportBackground
+        # addon repo objects
+        self._repoEntryBox = self.builder.get_object("repoEntryBox")
+        self._repoStore = self.builder.get_object("repoStore")
+        self._repoSelection = self.builder.get_object("repoSelection")
+        self._repoNameEntry = self.builder.get_object("repoNameEntry")
+        self._repoProtocolComboBox = self.builder.get_object("repoProtocolComboBox")
+        self._repoUrlEntry = self.builder.get_object("repoUrlEntry")
+        self._repoMirrorlistCheckbox = self.builder.get_object("repoMirrorlistCheckbox")
+        self._repoProxyUrlEntry = self.builder.get_object("repoProxyUrlEntry")
+        self._repoProxyUsernameEntry = self.builder.get_object("repoProxyUsernameEntry")
+        self._repoProxyPasswordEntry = self.builder.get_object("repoProxyPasswordEntry")
 
+        # updates option container
+        self._updatesBox = self.builder.get_object("updatesBox")
+
+        self._proxyButton = self.builder.get_object("proxyButton")
+        self._nfsOptsBox = self.builder.get_object("nfsOptsBox")
+
+    def initialize(self):
         NormalSpoke.initialize(self)
 
         self._grabObjects()
@@ -660,47 +581,50 @@ class SourceSpoke(NormalSpoke):
         self._isoButton.connect("toggled", self.on_source_toggled, self._isoBox)
         self._networkButton.connect("toggled", self.on_source_toggled, self._networkBox)
 
-        viewport = self.builder.get_object("autodetectViewport")
-        setViewportBackground(viewport)
+        # Show or hide the updates option based on the installclass
+        if self.instclass.installUpdates:
+            really_show(self._updatesBox)
+        else:
+            really_hide(self._updatesBox)
 
-        threadMgr.add(AnacondaThread(name="AnaSourceWatcher", target=self._initialize))
+        self._repoNameWarningBox = self.builder.get_object("repoNameWarningBox")
+        self._repoNameWarningLabel = self.builder.get_object("repoNameWarningLabel")
+
+        self._repoNamesWarningBox = self.builder.get_object("repoNamesWarningBox")
+        self._repoNamesWarningLabel = self.builder.get_object("repoNamesWarningLabel")
+
+        threadMgr.add(AnacondaThread(name=constants.THREAD_SOURCE_WATCHER, target=self._initialize))
 
     def _initialize(self):
-        from pyanaconda.threads import threadMgr
+        hubQ.send_message(self.__class__.__name__, _("Probing storage..."))
 
-        communication.send_message(self.__class__.__name__, _("Probing storage..."))
+        threadMgr.wait(constants.THREAD_STORAGE)
 
-        storageThread = threadMgr.get("AnaStorageThread")
-        if storageThread:
-            storageThread.join()
+        hubQ.send_message(self.__class__.__name__, _(METADATA_DOWNLOAD_MESSAGE))
 
-        communication.send_message(self.__class__.__name__, _(METADATA_DOWNLOAD_MESSAGE))
-
-        payloadThread = threadMgr.get("AnaPayloadThread")
-        if payloadThread:
-            payloadThread.join()
+        threadMgr.wait(constants.THREAD_PAYLOAD)
 
         added = False
-        cdrom = None
-        chosen = False
+
+        # If there's no fallback mirror to use, we should just disable that option
+        # in the UI.
+        if not self.payload.mirrorEnabled:
+            self._protocolComboBox.remove(PROTOCOL_MIRROR)
 
         # If we've previously set up to use a CD/DVD method, the media has
         # already been mounted by payload.setup.  We can't try to mount it
         # again.  So just use what we already know to create the selector.
         # Otherwise, check to see if there's anything available.
         if self.data.method.method == "cdrom":
-            cdrom = self.payload.install_device
-            chosen = True
-        else:
-            cdrom = opticalInstallMedia(self.storage.devicetree)
+            self._cdrom = self.payload.install_device
+        elif not flags.automatedInstall:
+            self._cdrom = opticalInstallMedia(self.storage.devicetree)
 
-        if cdrom:
-            @gtk_thread_wait
+        if self._cdrom:
+            @gtk_action_wait
             def gtk_action_1():
-                selector = AnacondaWidgets.DiskOverview(cdrom.format.label or "", "drive-removable-media", "")
-                selector.path = cdrom.path
-                selector.set_chosen(chosen)
-                self._autodetectMediaBox.pack_start(selector, False, False, 0)
+                self._autodetectDeviceLabel.set_text(_("Device: %s") % self._cdrom.name)
+                self._autodetectLabel.set_text(_("Label: %s") % (getattr(self._cdrom.format, "label", "") or ""))
 
             gtk_action_1()
             added = True
@@ -719,8 +643,10 @@ class SourceSpoke(NormalSpoke):
         # provided a URL.
         # FIXME
 
+        self._reset_repoStore()
+
         self._ready = True
-        communication.send_ready(self.__class__.__name__)
+        hubQ.send_ready(self.__class__.__name__, False)
 
     def refresh(self):
         NormalSpoke.refresh(self)
@@ -736,8 +662,15 @@ class SourceSpoke(NormalSpoke):
         active = 0
         idx = 0
         for dev in potentialHdisoSources(self.storage.devicetree):
-            store.append([dev, "%s (%s MB)" % (self._sanitize_model(dev.disk.model), int(dev.size))])
-            if dev.name == self.data.method.partition:
+            # path model size format type uuid of format
+            dev_info = { "model" : self._sanitize_model(dev.disk.model),
+                         "path"  : dev.path,
+                         "size"  : dev.size,
+                         "format": dev.format.name or "",
+                         "label" : dev.format.label or dev.format.uuid or ""
+                       }
+            store.append([dev, "%(model)s %(path)s (%(size)s MB) %(format)s %(label)s" % dev_info])
+            if self.data.method.method == "harddrive" and self.data.method.partition in [dev.path, dev.name]:
                 active = idx
             added = True
             idx += 1
@@ -754,7 +687,7 @@ class SourceSpoke(NormalSpoke):
 
         # We default to the mirror list, and then if the method tells us
         # something different later, we can change it.
-        self._protocolComboBox.set_active(0)
+        self._protocolComboBox.set_active(PROTOCOL_MIRROR)
         self._urlEntry.set_sensitive(False)
 
         # Set up the default state of UI elements.
@@ -763,21 +696,25 @@ class SourceSpoke(NormalSpoke):
 
             proto = self.data.method.url or self.data.method.mirrorlist
             if proto.startswith("http:"):
-                self._protocolComboBox.set_active(1)
+                self._protocolComboBox.set_active(PROTOCOL_HTTP)
                 l = 7
             elif proto.startswith("https:"):
-                self._protocolComboBox.set_active(2)
+                self._protocolComboBox.set_active(PROTOCOL_HTTPS)
                 l = 8
             elif proto.startswith("ftp:"):
-                self._protocolComboBox.set_active(3)
+                self._protocolComboBox.set_active(PROTOCOL_FTP)
                 l = 6
+            else:
+                self._protocolComboBox.set_active(PROTOCOL_HTTP)
+                l = 0
 
             self._urlEntry.set_sensitive(True)
             self._urlEntry.set_text(proto[l:])
             self._mirrorlistCheckbox.set_active(bool(self.data.method.mirrorlist))
+            self._proxyUrl = self.data.method.proxy
         elif self.data.method.method == "nfs":
             self._networkButton.set_active(True)
-            self._protocolComboBox.set_active(4)
+            self._protocolComboBox.set_active(PROTOCOL_NFS)
 
             self._urlEntry.set_text("%s:%s" % (self.data.method.server, self.data.method.dir))
             self._urlEntry.set_sensitive(True)
@@ -795,43 +732,51 @@ class SourceSpoke(NormalSpoke):
         else:
             # No method was given in advance, so now we need to make a sensible
             # guess.  Go with autodetected media if that was provided, and then
-            # fall back to a URL.
+            # fall back to closest mirror.
             if not self._autodetectButton.get_no_show_all():
                 self._autodetectButton.set_active(True)
+                self.data.method.method = "cdrom"
             else:
                 self._networkButton.set_active(True)
+                self.data.method.method = None
+                self._proxyUrl = self.data.method.proxy
 
-        # TODO: handle noUpdatesCheckbox
+        self._setup_no_updates()
+
+        # Setup the addon repos
+        self._reset_repoStore()
 
         # Then, some widgets get enabled/disabled/greyed out depending on
         # how others are set up.  We can use the signal handlers to handle
         # that condition here too.
         self.on_protocol_changed(self._protocolComboBox)
 
+    def _setup_no_updates(self):
+        """ Setup the state of the No Updates checkbox.
+
+            If closest mirror is not selected, check it.
+            If closest mirror is selected, and "updates" repo is enabled,
+            uncheck it.
+        """
+        self._updatesBox.set_sensitive(self._mirror_active())
+        active = not self._mirror_active() or not self.payload.isRepoEnabled("updates")
+        self._noUpdatesCheckbox.set_active(active)
+
     @property
     def showable(self):
-        return not flags.livecdInstall
+        return not flags.livecdInstall and not self.data.method.method == "liveimg"
 
     def _mirror_active(self):
-        return self._protocolComboBox.get_active() == 0
+        return self._protocolComboBox.get_active() == PROTOCOL_MIRROR
 
     def _http_active(self):
-        return self._protocolComboBox.get_active() in [1, 2]
+        return self._protocolComboBox.get_active() in [PROTOCOL_HTTP, PROTOCOL_HTTPS]
 
     def _ftp_active(self):
-        return self._protocolComboBox.get_active() == 3
+        return self._protocolComboBox.get_active() == PROTOCOL_FTP
 
     def _nfs_active(self):
-        return self._protocolComboBox.get_active() == 4
-
-    def _get_selected_media(self):
-        dev = None
-        for child in self._autodetectMediaBox.get_children():
-            if child.get_chosen():
-                dev = child
-                break
-
-        return dev
+        return self._protocolComboBox.get_active() == PROTOCOL_NFS
 
     def _get_selected_partition(self):
         store = self.builder.get_object("partitionStore")
@@ -853,6 +798,17 @@ class SourceSpoke(NormalSpoke):
         # disabled) button.
         enabled = button.get_active()
         relatedBox.set_sensitive(enabled)
+        self._setup_no_updates()
+
+    def on_back_clicked(self, button):
+        """If the user entered duplicate repo names, keep them on the screen.
+           Otherwise, do the usual thing."""
+        ui_repo_names = [r[REPO_OBJ].name for r in self._repoStore]
+
+        if len(ui_repo_names) != len(frozenset(ui_repo_names)):
+            return
+        else:
+            NormalSpoke.on_back_clicked(self, button)
 
     def on_chooser_clicked(self, button):
         dialog = IsoChooser(self.data)
@@ -874,10 +830,14 @@ class SourceSpoke(NormalSpoke):
                 self._verifyIsoButton.set_sensitive(True)
 
     def on_proxy_clicked(self, button):
-        dialog = ProxyDialog(self.data)
+        dialog = ProxyDialog(self.data, self._proxyUrl)
         with enlightbox(self.window, dialog.window):
             dialog.refresh()
             dialog.run()
+
+        if self._proxyUrl != dialog.proxyUrl:
+            self._proxyChange = True
+            self._proxyUrl = dialog.proxyUrl
 
     def on_verify_iso_clicked(self, button):
         p = self._get_selected_partition()
@@ -893,33 +853,346 @@ class SourceSpoke(NormalSpoke):
             # We have to check both ISO_DIR and the DRACUT_ISODIR because we
             # still reference both, even though /mnt/install is a symlink to
             # /run/install.  Finding mount points doesn't handle the symlink
-            if ISO_DIR not in mounts and DRACUT_ISODIR not in mounts:
+            if constants.ISO_DIR not in mounts and constants.DRACUT_ISODIR not in mounts:
                 # We're not mounted to either location, so do the mount
-                p.format.mount(mountpoint=ISO_DIR)
-            dialog.run(ISO_DIR + "/" + f)
+                p.format.mount(mountpoint=constants.ISO_DIR)
+            dialog.run(constants.ISO_DIR + "/" + f)
             if unmount:
                 p.format.unmount()
 
     def on_verify_media_clicked(self, button):
-        dev = self._get_selected_media()
-
-        if not dev:
+        if not self._cdrom:
             return
 
         dialog = MediaCheckDialog(self.data)
         with enlightbox(self.window, dialog.window):
-            dialog.run(dev.path)
+            dialog.run("/dev/" + self._cdrom.name)
 
     def on_protocol_changed(self, combo):
-        proxyButton = self.builder.get_object("proxyButton")
-        nfsOptsBox = self.builder.get_object("nfsOptsBox")
-
         # Only allow the URL entry to be used if we're using an HTTP/FTP
         # method that's not the mirror list, or an NFS method.
         self._urlEntry.set_sensitive(self._http_active() or self._ftp_active() or self._nfs_active())
 
         # Only allow thse widgets to be shown if it makes sense for the
         # the currently selected protocol.
-        proxyButton.set_sensitive(self._http_active() or self._mirror_active())
-        nfsOptsBox.set_visible(self._nfs_active())
+        self._proxyButton.set_sensitive(self._http_active() or self._mirror_active())
+        self._nfsOptsBox.set_visible(self._nfs_active())
         self._mirrorlistCheckbox.set_visible(self._http_active())
+        self._setup_no_updates()
+
+    def _update_payload_repos(self):
+        """ Change the packaging repos to match the new edits
+
+            This will add new repos to the addon repo list, remove
+            ones that were removed and update any changes made to
+            existing ones.
+
+            :returns: True if any repo was changed, added or removed
+            :rtype: bool
+        """
+        REPO_ATTRS=("name", "baseurl", "mirrorlist", "proxy", "enabled")
+        changed = False
+
+        ui_orig_names = [r[REPO_OBJ].orig_name for r in self._repoStore]
+
+        # Remove repos from payload that were removed in the UI
+        for repo_name in [r for r in self.payload.addOns if r not in ui_orig_names]:
+            repo = self.payload.getAddOnRepo(repo_name)
+            # TODO: Need an API to do this w/o touching yum (not addRepo)
+            self.payload.data.repo.dataList().remove(repo)
+            changed = True
+
+        for repo, orig_repo in [(r[REPO_OBJ],self.payload.getAddOnRepo(r[REPO_OBJ].orig_name)) for r in self._repoStore]:
+            if not orig_repo:
+                # TODO: Need an API to do this w/o touching yum (not addRepo)
+                self.payload.data.repo.dataList().append(repo)
+                changed = True
+            elif not cmp_obj_attrs(orig_repo, repo, REPO_ATTRS):
+                for attr in REPO_ATTRS:
+                    setattr(orig_repo, attr, getattr(repo, attr))
+                changed = True
+
+        return changed
+
+    def _reset_repoStore(self):
+        """ Reset the list of repos.
+
+            Populate the list with all the addon repos from payload.addOns.
+
+            If the list has no element, clear the repo entry fields.
+        """
+        self._repoStore.clear()
+        repos = self.payload.addOns
+        log.debug("Setting up repos: %s", repos)
+        for name in repos:
+            repo = self.payload.getAddOnRepo(name)
+            ks_repo = self.data.RepoData(name=repo.name,
+                                         baseurl=repo.baseurl,
+                                         mirrorlist=repo.mirrorlist,
+                                         proxy=repo.proxy,
+                                         enabled=repo.enabled)
+            # Track the original name, user may change .name
+            ks_repo.orig_name = name
+            self._repoStore.append([self.payload.isRepoEnabled(name),
+                                    ks_repo.name,
+                                    ks_repo])
+
+        if len(self._repoStore) > 0:
+            self._repoSelection.select_path(0)
+        else:
+            self._clear_repo_info()
+            self._repoEntryBox.set_sensitive(False)
+
+
+    def on_repoSelection_changed(self, *args):
+        """ Called when the selection changed.
+
+            Update the repo text boxes with the current information
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        self._update_repo_info(self._repoStore[itr][REPO_OBJ])
+
+    def on_repoEnable_toggled(self, renderer, path):
+        """ Called when the repo Enable checkbox is clicked
+        """
+        enabled = not self._repoStore[path][REPO_ENABLED_COL]
+        self._repoStore[path][REPO_ENABLED_COL] = enabled
+        self._repoStore[path][REPO_OBJ].enabled = enabled
+
+    def _clear_repo_info(self):
+        """ Clear the text from the repo entry fields
+
+            and reset the checkbox and combobox.
+        """
+        self._repoNameEntry.set_text("")
+        self._repoMirrorlistCheckbox.handler_block_by_func(self.on_repoMirrorlistCheckbox_toggled)
+        self._repoMirrorlistCheckbox.set_active(False)
+        self._repoMirrorlistCheckbox.handler_unblock_by_func(self.on_repoMirrorlistCheckbox_toggled)
+        self._repoUrlEntry.set_text("")
+        self._repoProtocolComboBox.set_active(0)
+        self._repoProxyUrlEntry.set_text("")
+        self._repoProxyUsernameEntry.set_text("")
+        self._repoProxyPasswordEntry.set_text("")
+
+    def _update_repo_info(self, repo):
+        """ Update the text boxes with data from repo
+
+            :param repo: kickstart repository object
+            :type repo: RepoData
+        """
+        self._repoNameEntry.set_text(repo.name)
+
+        self._display_repo_name_message(repo, repo.name)
+
+        self._repoMirrorlistCheckbox.handler_block_by_func(self.on_repoMirrorlistCheckbox_toggled)
+        if repo.mirrorlist:
+            url = repo.mirrorlist
+            self._repoMirrorlistCheckbox.set_active(True)
+        else:
+            url = repo.baseurl
+            self._repoMirrorlistCheckbox.set_active(False)
+        self._repoMirrorlistCheckbox.handler_unblock_by_func(self.on_repoMirrorlistCheckbox_toggled)
+
+        if url:
+            for idx, proto in REPO_PROTO:
+                if url.startswith(proto):
+                    self._repoProtocolComboBox.set_active(idx)
+                    self._repoUrlEntry.set_text(url[len(proto):])
+                    break
+            else:
+                # Unknown protocol, just set the url then
+                self._repoUrlEntry.set_text(url)
+        else:
+            self._repoUrlEntry.set_text("")
+
+        if not repo.proxy:
+            self._repoProxyUrlEntry.set_text("")
+            self._repoProxyUsernameEntry.set_text("")
+            self._repoProxyPasswordEntry.set_text("")
+        else:
+            try:
+                proxy = ProxyString(repo.proxy)
+                if proxy.username:
+                    self._repoProxyUsernameEntry.set_text(proxy.username)
+                if proxy.password:
+                    self._repoProxyPasswordEntry.set_text(proxy.password)
+                self._repoProxyUrlEntry.set_text(proxy.noauth_url)
+            except ProxyStringError as e:
+                log.error("Failed to parse proxy for repo %s: %s", repo.name, e)
+                return
+
+    def _verify_repo_names(self):
+        """ Returns an appropriate error message if the list of repo names
+            contains duplicates.
+        """
+        repo_names = [r[REPO_OBJ].name for r in self._repoStore]
+        if len(repo_names) != len(frozenset(repo_names)):
+            return N_("Duplicate repository names.")
+        return None
+
+    def _display_repo_names_message(self):
+        """ Displays a warning if the list of repo names is not valid.
+            Returns the warning message displayed, if any.
+        """
+        warning_msg = self._verify_repo_names()
+        if warning_msg:
+            self._repoNamesWarningLabel.set_text(_(warning_msg))
+            really_show(self._repoNamesWarningBox)
+            self.set_warning(_("Duplicate repository names not allowed; choose a unique name for each repository."))
+            self.window.show_all()
+        else:
+            self._repoNamesWarningLabel.set_text("")
+            really_hide(self._repoNamesWarningBox)
+            self.clear_info()
+        return warning_msg
+
+    def _verify_repo_name(self, repo, name):
+        """ Returns an appropriate error message if the given name
+            is not valid for this repo.
+            Performs these checks:
+            *) Checks if the string is empty
+            *) Checks if the format is accepted by yum.
+            *) Checks if the repository name coincides with any of the
+               non-additional repositories.
+            :param repo: kickstart repository object
+            :type repo: RepoData
+            :param name: the designated name for the repo
+            :type name: string
+        """
+        if name == "":
+            return N_("Empty repository name.")
+
+        allowed_chars = string.ascii_letters + string.digits + '-_.:'
+        if [c for c in name if c not in allowed_chars]:
+            return N_("Invalid repository name.")
+
+        if name in [r for r in self.payload.repos if r not in self.payload.addOns] + [constants.BASE_REPO_NAME] + self.payload.default_repos:
+            return N_("Repository name conflicts with internal repository name.")
+        return None
+
+    def _display_repo_name_message(self, repo, name):
+        """ Displays a warning if the repo name is not valid.
+            Returns the warning message displayed, if any.
+            :param repo: kickstart repository object
+            :type repo: RepoData
+            :param name: the designated name for the repo
+            :type name: string
+        """
+        warning_msg = self._verify_repo_name(repo, name)
+        if warning_msg:
+            self._repoNameWarningLabel.set_text(_(warning_msg))
+            really_show(self._repoNameWarningBox)
+        else:
+            self._repoNameWarningLabel.set_text("")
+            really_hide(self._repoNameWarningBox)
+        return warning_msg
+
+    def on_noUpdatesCheckbox_toggled(self, *args):
+        """ Toggle the enable state of the updates repo
+
+            Before final release this will also toggle the updates-testing repo
+        """
+        if self._noUpdatesCheckbox.get_active():
+            self.payload.disableRepo("updates")
+            if not constants.isFinal:
+                self.payload.disableRepo("updates-testing")
+        else:
+            self.payload.enableRepo("updates")
+            if not constants.isFinal:
+                self.payload.enableRepo("updates-testing")
+
+    def on_addRepo_clicked(self, button):
+        """ Add a new repository
+        """
+        repo = self.data.RepoData(name="New_Repository")
+        repo.ks_repo = True
+        repo.orig_name = ""
+
+        itr = self._repoStore.append([True, repo.name, repo])
+        self._repoSelection.select_iter(itr)
+        self._repoEntryBox.set_sensitive(True)
+        self._display_repo_name_message(repo, repo.name)
+        self._display_repo_names_message()
+
+    def on_removeRepo_clicked(self, button):
+        """ Remove the selected repository
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        self._repoStore.remove(itr)
+        if len(self._repoStore) == 0:
+            self._clear_repo_info()
+            self._repoEntryBox.set_sensitive(False)
+        self._display_repo_names_message()
+
+    def on_resetRepos_clicked(self, button):
+        """ Revert to the default list of repositories
+        """
+        self._reset_repoStore()
+
+    def on_repoNameEntry_changed(self, entry):
+        """ repo name changed
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        repo = self._repoStore[itr][REPO_OBJ]
+        name = self._repoNameEntry.get_text().strip()
+
+        if not self._display_repo_name_message(repo, name):
+            self._repoStore.set_value(itr, REPO_NAME_COL, name)
+            repo.name = name
+        self._display_repo_names_message()
+
+    def on_repoUrl_changed(self, *args):
+        """ proxy url or protocol changed
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        repo = self._repoStore[itr][REPO_OBJ]
+        idx = self._repoProtocolComboBox.get_active()
+        proto = REPO_PROTO[idx][1]
+        url = self._repoUrlEntry.get_text().strip()
+        if self._repoMirrorlistCheckbox.get_active():
+            repo.mirorlist = proto + url
+        else:
+            repo.baseurl = proto + url
+
+    def on_repoMirrorlistCheckbox_toggled(self, *args):
+        """ mirror state changed
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        repo = self._repoStore[itr][REPO_OBJ]
+
+        # This is called by set_active so only swap if there is something
+        # in the variable.
+        if self._repoMirrorlistCheckbox.get_active() and repo.baseurl:
+            repo.mirrorlist = repo.baseurl
+            repo.baseurl = ""
+        elif repo.mirrorlist:
+            repo.baseurl = repo.mirrorlist
+            repo.mirrorlist = ""
+
+    def on_repoProxy_changed(self, *args):
+        """ Update the selected repo's proxy settings
+        """
+        itr = self._repoSelection.get_selected()[1]
+        if not itr:
+            return
+        repo = self._repoStore[itr][REPO_OBJ]
+
+        url = self._repoProxyUrlEntry.get_text().strip()
+        username = self._repoProxyUsernameEntry.get_text().strip() or None
+        password = self._repoProxyPasswordEntry.get_text().strip() or None
+
+        try:
+            proxy = ProxyString(url=url, username=username, password=password)
+            repo.proxy = proxy.url
+        except ProxyStringError as e:
+            log.error("Failed to parse proxy - %s:%s@%s: %s", username, password, url, e)

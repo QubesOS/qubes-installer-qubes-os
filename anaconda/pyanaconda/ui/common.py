@@ -21,8 +21,30 @@
 #
 
 import os
-import importlib
+import imp
 import inspect
+import copy
+import sys
+import types
+
+from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON
+from pyanaconda.errors import RemovedModuleError
+from pykickstart.constants import FIRSTBOOT_RECONFIG
+
+import logging
+log = logging.getLogger("anaconda")
+
+class PathDict(dict):
+    """Dictionary class supporting + operator"""
+    def __add__(self, ext):
+        new_dict = copy.copy(self)
+        for key, value in ext.iteritems():
+            try:
+                new_dict[key].extend(value)
+            except KeyError:
+                new_dict[key] = value[:]
+
+        return new_dict
 
 class UIObject(object):
     """This is the base class from which all other UI classes are derived.  It
@@ -101,6 +123,60 @@ class UIObject(object):
     def data(self):
         return self._data
 
+class FirstbootSpokeMixIn(object):
+    """This MixIn class marks Spokes as usable for Firstboot
+       and Anaconda.
+    """
+    @classmethod
+    def should_run(cls, environment, data):
+        """This method is responsible for beginning Spoke initialization
+           in the firstboot environment (even before __init__).
+
+           It should return True if the spoke is to be shown
+           and False if it should be skipped.
+
+           It might be called multiple times, with or without (None)
+           the data argument.
+        """
+
+        if environment == ANACONDA_ENVIRON:
+            return True
+        elif environment == FIRSTBOOT_ENVIRON and data is None:
+            # cannot decide, stay in the game and let another call with data
+            # available (will come) decide
+            return True
+        elif environment == FIRSTBOOT_ENVIRON and \
+                data and data.firstboot.firstboot == FIRSTBOOT_RECONFIG:
+            # generally run spokes in firstboot only if doing reconfig, spokes
+            # that should run even if not doing reconfig should override this
+            # method
+            return True
+        else:
+            return False
+
+
+class FirstbootOnlySpokeMixIn(object):
+    """This MixIn class marks Spokes as usable for Firstboot."""
+    @classmethod
+    def should_run(cls, environment, data):
+        """This method is responsible for beginning Spoke initialization
+           in the firstboot environment (even before __init__).
+
+           It should return True if the spoke is to be shown and False
+           if it should be skipped.
+
+           It might be called multiple times, with or without (None)
+           the data argument.
+        """
+
+        if environment == FIRSTBOOT_ENVIRON:
+            # firstboot only spokes should run in firstboot by default, spokes
+            # that should run even if not doing reconfig should override this
+            # method
+            return True
+        else:
+            return False
+
 class Spoke(UIObject):
     """A Spoke is a single configuration screen.  There are several different
        places where a Spoke can be displayed, each of which will have its own
@@ -163,6 +239,20 @@ class Spoke(UIObject):
         self.instclass = instclass
         self.applyOnSkip = False
 
+        self._visitedSinceApplied = True
+
+    @classmethod
+    def should_run(cls, environment, data):
+        """This method is responsible for beginning Spoke initialization.
+
+           It should return True if the spoke is to be shown while in
+           <environment> and False if it should be skipped.
+
+           It might be called multiple times, with or without (None)
+           the data argument.
+        """
+        return environment == ANACONDA_ENVIRON
+
     def apply(self):
         """Apply the selections made on this Spoke to the object's preset
            data object.  This method must be provided by every subclass.
@@ -170,13 +260,40 @@ class Spoke(UIObject):
         raise NotImplementedError
 
     @property
+    def changed(self):
+        """Have the values on the spoke changed since the last time it was
+           run?  If not, the apply and execute methods will be skipped.  This
+           is to avoid the spoke doing potentially long-lived and destructive
+           actions that are completely unnecessary.
+        """
+        return True
+
+    @property
+    def configured(self):
+        """This method returns a list of textual ids that should
+           be written into the after-install customization status
+           file for the firstboot and GIE to know that the spoke was
+           configured and what value groups were provided."""
+        return ["%s.%s" % (self.__class__.__module__, self.__class__.__name__)]
+
+    @property
     def completed(self):
-        """Has this spoke been visited and completed?  If not, a special warning
-           icon will be shown on the Hub beside the spoke, and a highlighted
-           message will be shown at the bottom of the Hub.  Installation will not
-           be allowed to proceed until all spokes are complete.
+        """Has this spoke been visited and completed?  If not and the spoke is
+           mandatory, a special warning icon will be shown on the Hub beside the
+           spoke, and a highlighted message will be shown at the bottom of the
+           Hub.  Installation will not be allowed to proceed until all mandatory
+           spokes are complete.
         """
         return False
+
+    @property
+    def mandatory(self):
+        """Mark this spoke as mandatory. Installation will not be allowed
+           to proceed until all mandatory spokes are complete.
+
+           Spokes are mandatory unless marked as not being so.
+        """
+        return True
 
     def execute(self):
         """Cause the data object to take effect on the target system.  This will
@@ -203,7 +320,7 @@ class Spoke(UIObject):
            A spoke's status line on the Hub can also be overloaded to provide
            information about why a Spoke is not yet ready, or if an error has
            occurred when setting it up.  This can be done by calling
-           send_message from pyanaconda.ui.gui.communication with the target
+           send_message from pyanaconda.ui.communication with the target
            Spoke's class name and the message to be displayed.
 
            If the Spoke was not yet ready when send_message was called, the
@@ -213,8 +330,6 @@ class Spoke(UIObject):
         raise NotImplementedError
 
 class NormalSpoke(Spoke):
-    priority = 100
-
     """A NormalSpoke is a Spoke subclass that is displayed when the user
        selects something on a Hub.  This is what most Spokes in anaconda will
        be based on.
@@ -224,6 +339,7 @@ class NormalSpoke(Spoke):
        provides some basic navigation information (where you are, what you're
        installing, how to get back to the Hub) at the top of the screen.
     """
+
     def __init__(self, data, storage, payload, instclass):
         """Create a NormalSpoke instance."""
         if self.__class__ is NormalSpoke:
@@ -254,7 +370,7 @@ class NormalSpoke(Spoke):
            long-lived process (like storage probing) before it's ready.
 
            A Spoke may be marked as ready or not by calling send_ready or
-           send_not_ready from pyanaconda.ui.gui.communication with the
+           send_not_ready from pyanaconda.ui.communication with the
            target Spoke's class name.
 
            While a Spoke is not ready, a progress message may be shown to
@@ -296,9 +412,7 @@ class StandaloneSpoke(NormalSpoke):
         if self.preForHub and self.postForHub:
             raise AttributeError("StandaloneSpoke instance %s may not have both preForHub and postForHub set" % self)
 
-        Spoke.__init__(self, data, storage, payload, instclass)
-
-
+        NormalSpoke.__init__(self, data, storage, payload, instclass)
 
 class PersonalizationSpoke(Spoke):
     """A PersonalizationSpoke is a Spoke subclass that is displayed when the
@@ -363,42 +477,154 @@ class Hub(UIObject):
         """
         UIObject.__init__(self, data)
 
-        self._spokes = {}
         self.storage = storage
         self.payload = payload
         self.instclass = instclass
 
+        self.paths = {}
+        self._spokes = {}
+
+        # spokes for which environments this hub should collect?
+        self._environs = [ANACONDA_ENVIRON]
+
+    def set_path(self, path_id, paths):
+        """Update the paths attribute with list of tuples in the form (module
+           name format string, directory name)"""
+        self.paths[path_id] = paths
+        
 def collect(module_pattern, path, pred):
     """Traverse the directory (given by path), import all files as a module
-       module_pattern % filename and find all classes withing that match
+       module_pattern % filename and find all classes within that match
        the given predicate.  This is then returned as a list of classes.
 
        It is suggested you use collect_categories or collect_spokes instead of
        this lower-level method.
 
        :param module_pattern: the full name pattern (pyanaconda.ui.gui.spokes.%s)
-                              of modules we about to import from path
+                              we want to assign to imported modules
        :type module_pattern: string
 
        :param path: the directory we are picking up modules from
        :type path: string
-
 
        :param pred: function which marks classes as good to import
        :type pred: function with one argument returning True or False
     """
 
     retval = []
-    for module_file in os.listdir(path):
-        if not module_file.endswith(".py") or module_file == "__init__.py":
+    try:
+        contents = os.listdir(path)
+    # when the directory "path" does not exist
+    except OSError:
+        return []
+    
+    for module_file in contents:
+        if (not module_file.endswith(".py")) and \
+           (not module_file.endswith(".so")):
             continue
 
-        mod_name = module_file[:-3]
-        module = importlib.import_module(module_pattern % mod_name)
+        if module_file == "__init__.py":
+            continue
+
+        try:
+            mod_name = module_file[:module_file.rindex(".")]
+        except ValueError:
+            mod_name = module_file
+
+        mod_info = None
+        module = None
+
+        try:
+            imp.acquire_lock()
+            (fo, module_path, module_flags) = imp.find_module(mod_name, [path])
+            module = sys.modules.get(module_pattern % mod_name)
+
+            # do not load module if any module with the same name
+            # is already imported
+            if not module:
+                # try importing the module the standard way first
+                # uses sys.path and the module's full name!
+                try:
+                    __import__(module_pattern % mod_name)
+                    module = sys.modules[module_pattern % mod_name]
+
+                # if it fails (package-less addon?) try importing single file
+                # and filling up the package structure voids
+                except ImportError:
+                    # prepare dummy modules to prevent RuntimeWarnings
+                    module_parts = (module_pattern % mod_name).split(".")
+
+                    # remove the last name as it will be inserted by the import
+                    module_parts.pop()
+
+                    # make sure all "parent" modules are in sys.modules
+                    for l in range(len(module_parts)):
+                        module_part_name = ".".join(module_parts[:l+1])
+                        if module_part_name not in sys.modules:
+                            module_part = types.ModuleType(module_part_name)
+                            module_part.__path__ = [path]
+                            sys.modules[module_part_name] = module_part
+
+                    # load the collected module
+                    module = imp.load_module(module_pattern % mod_name,
+                                             fo, module_path, module_flags)
+
+
+            # get the filenames without the extensions so we can compare those
+            # with the .py[co]? equivalence in mind
+            # - we do not have to care about files without extension as the
+            #   condition at the beginning of the for loop filters out those
+            # - module_flags[0] contains the extension of the module imp found
+            candidate_name = module_path[:module_path.rindex(module_flags[0])]
+            loaded_name, loaded_ext = module.__file__.rsplit(".", 1)
+
+            # restore the extension dot eaten by split
+            loaded_ext = "." + loaded_ext
+            
+            # do not collect classes when the module is already imported
+            # from different path than we are traversing
+            # this condition checks the module name without file extension
+            if candidate_name != loaded_name:
+                continue
+
+            # if the candidate file is .py[co]? and the loaded is not (.so)
+            # skip the file as well
+            if module_flags[0].startswith(".py") and not loaded_ext.startswith(".py"):
+                continue
+
+            # if the candidate file is not .py[co]? and the loaded is
+            # skip the file as well
+            if not module_flags[0].startswith(".py") and loaded_ext.startswith(".py"):
+                continue
+
+        except RemovedModuleError:
+            # collected some removed module
+            continue
+
+        except ImportError as imperr:
+            if "pyanaconda" in module_path:
+                # failure when importing our own module:
+                raise
+            log.error("Failed to import module in collect: %s", imperr)
+            continue
+        finally:
+            imp.release_lock()
+
+            if mod_info and mod_info[0]:
+                mod_info[0].close()
 
         p = lambda obj: inspect.isclass(obj) and pred(obj)
 
-        for (name, val) in inspect.getmembers(module, p):
+        # if __all__ is defined in the module, use it
+        if not hasattr(module, "__all__"):
+            members = inspect.getmembers(module, p)
+        else:
+            members = [(name, getattr(module, name))
+                       for name in module.__all__
+                       if p(getattr(module, name))]
+        
+        for (name, val) in members:
             retval.append(val)
 
     return retval
+

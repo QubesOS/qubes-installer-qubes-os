@@ -1,6 +1,6 @@
 # Miscellaneous UI functions
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012, 2013 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -17,29 +17,34 @@
 # Red Hat, Inc.
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
+#                    Martin Sivak <msivak@redhat.com>
+#                    Vratislav Podzimek <vpodzime@redhat.com>
 #
+
+from pyanaconda.threads import threadMgr
+
 from contextlib import contextmanager
-from gi.repository import Gdk, Gtk, GLib
+from gi.repository import Gdk, Gtk, GLib, AnacondaWidgets
 import Queue
+import gettext
+import time
 
 def gtk_call_once(func, *args):
     """Wrapper for GLib.idle_add call that ensures the func is called
        only once.
-    """ 
+    """
     def wrap(args):
         func(*args)
         return False
-    
+
     GLib.idle_add(wrap, args)
 
-def gtk_thread_wait(func):
-    """Decorator method which causes every call of the decorated function
-       to be executed in the context of Gtk main loop and returns the ret
-       value after the decorated method finishes.
-
-       Method decorated by this decorator must not be called from inside
-       of the Gtk main loop. It will cause a hang.
+def gtk_action_wait(func):
+    """Decorator method which ensures every call of the decorated function to be
+       executed in the context of Gtk main loop even if called from a non-main
+       thread and returns the ret value after the decorated method finishes.
     """
+
     queue = Queue.Queue()
 
     def _idle_method(q_args):
@@ -51,42 +56,158 @@ def gtk_thread_wait(func):
         return False
 
     def _call_method(*args):
-        """The new body for the decorated method. It uses closure bound
-           queue variable which is valid until the reference to this method
-           is destroyed."""
+        """The new body for the decorated method. If needed, it uses closure
+           bound queue variable which is valid until the reference to this
+           method is destroyed."""
+        if threadMgr.in_main_thread():
+            # nothing special has to be done in the main thread
+            return func(*args)
+
         GLib.idle_add(_idle_method, (queue, args))
         return queue.get()
 
     return _call_method
 
 
-def gtk_thread_nowait(func):
-    """Decorator method which causes every call of the decorated function
-       to be executed in the context of Gtk main loop. The new method does
-       not wait for the callback to finish.
+def gtk_action_nowait(func):
+    """Decorator method which ensures every call of the decorated function to be
+       executed in the context of Gtk main loop even if called from a non-main
+       thread. The new method does not wait for the callback to finish.
     """
 
     def _idle_method(args):
         """This method contains the code for the main loop to execute.
         """
-        ret = func(*args)
+        func(*args)
         return False
 
     def _call_method(*args):
         """The new body for the decorated method.
         """
+        if threadMgr.in_main_thread():
+            # nothing special has to be done in the main thread
+            func(*args)
+            return
+
         GLib.idle_add(_idle_method, args)
 
     return _call_method
 
 
+def timed_action(delay=300, threshold=750, busy_cursor=True):
+    """
+    Function returning decorator for decorating often repeated actions that need
+    to happen in the main loop (entry/slider change callbacks, typically), but
+    that may take a long time causing the GUI freeze for a noticeable time.
+
+    :param delay: number of milliseconds to wait for another invocation of the
+                  decorated function before it is actually called
+    :type delay: int
+    :param threshold: upper bound (in milliseconds) to wait for the decorated
+                      function to be called from the first/last time
+    :type threshold: int
+    :param busy_cursor: whether the cursor should be made busy or not in the
+                        meantime of the decorated function being invocated from
+                        outside and it actually being called
+    :type busy_cursor: bool
+
+    """
+
+    class TimedAction(object):
+        """Class making the timing work."""
+
+        def __init__(self, func):
+            self._func = func
+            self._last_start = None
+            self._timer_id = None
+
+        def _run_once_one_arg(self, (args, kwargs)):
+            # run the function and clear stored values
+            self._func(*args, **kwargs)
+            self._last_start = None
+            self._timer_id = None
+            if busy_cursor:
+                unbusyCursor()
+
+            # function run, no need to schedule it again (return True would do)
+            return False
+
+        def run_func(self, *args, **kwargs):
+            # get timestamps from the first or/and current run
+            self._last_start = self._last_start or time.time()
+            tstamp = time.time()
+
+            if self._timer_id:
+                # remove the old timer scheduling the function
+                GLib.source_remove(self._timer_id)
+                self._timer_id = None
+
+            # are we over the threshold?
+            if (tstamp - self._last_start) * 1000 > threshold:
+                # over threshold, run the function right now and clear the
+                # timestamp
+                self._func(*args, **kwargs)
+                self._last_start = None
+
+            # schedule the function to be run later to allow additional changes
+            # in the meantime
+            if busy_cursor:
+                busyCursor()
+            self._timer_id = GLib.timeout_add(delay, self._run_once_one_arg,
+                                              (args, kwargs))
+
+    def decorator(func):
+        """
+        Decorator replacing the function with its timed version using an
+        instance of the TimedAction class.
+
+        :param func: the decorated function
+
+        """
+
+        ta = TimedAction(func)
+
+        def inner_func(*args, **kwargs):
+            ta.run_func(*args, **kwargs)
+
+        return inner_func
+
+    return decorator
+
+def busyCursor():
+    window = Gdk.get_default_root_window()
+    window.set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+
+def unbusyCursor():
+    window = Gdk.get_default_root_window()
+    window.set_cursor(Gdk.Cursor(Gdk.CursorType.ARROW))
+
 @contextmanager
 def enlightbox(mainWindow, dialog):
-    from gi.repository import AnacondaWidgets
-    lightbox = AnacondaWidgets.lb_show_over(mainWindow)
+    # importing globally would cause a circular dependency
+    from pyanaconda.ui.gui import ANACONDA_WINDOW_GROUP
+
+    lightbox = AnacondaWidgets.Lightbox(parent_window=mainWindow)
+    ANACONDA_WINDOW_GROUP.add_window(lightbox)
+    dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     dialog.set_transient_for(lightbox)
     yield
     lightbox.destroy()
+
+def ignoreEscape(dlg):
+    """Prevent a dialog from accepting the escape keybinding, which emits a
+       close signal and will cause the dialog to close with some return value
+       we are likely not expecting.  Instead, this method will cause the
+       escape key to do nothing for the given GtkDialog.
+    """
+    provider = Gtk.CssProvider()
+    provider.load_from_data("@binding-set IgnoreEscape {"
+                            "   unbind 'Escape';"
+                            "}"
+                            "GtkDialog { gtk-key-bindings: IgnoreEscape }")
+
+    context = dlg.get_style_context()
+    context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 def setViewportBackground(vp, color="@theme_bg_color"):
     """Set the background color of the GtkViewport vp to be the same as the
@@ -98,3 +219,97 @@ def setViewportBackground(vp, color="@theme_bg_color"):
     provider.load_from_data("GtkViewport { background-color: %s }" % color)
     context = vp.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+def fancy_set_sensitive(widget, value):
+    """Set the sensitivity of a widget, and then set the sensitivity of
+       all widgets it is a mnemonic widget for.  This has the effect of
+       marking both an entry and its label as sensitive/insensitive, for
+       instance.
+    """
+    widget.set_sensitive(value)
+    for w in widget.list_mnemonic_labels():
+        w.set_sensitive(value)
+
+def really_hide(widget):
+    """Some widgets need to be both hidden, and have no_show_all set on them
+       to prevent them from being shown later when the screen is redrawn.
+       This method takes care of that.
+    """
+    widget.set_no_show_all(True)
+    widget.hide()
+
+def really_show(widget):
+    """Some widgets need to have no_show_all unset before they can also be
+       shown, so they are displayed later when the screen is redrawn.  This
+       method takes care of that.
+    """
+    widget.set_no_show_all(False)
+    widget.show()
+
+def set_treeview_selection(treeview, item, col=0):
+    """
+    Select the given item in the given treeview and scroll to it.
+
+    :param treeview: treeview to select and item in
+    :type treeview: GtkTreeView
+    :param item: item to be selected
+    :type item: str
+    :param col: column to search for the item in
+    :type col: int
+    :return: selected iterator or None if item was not found
+    :rtype: GtkTreeIter or None
+
+    """
+
+    model = treeview.get_model()
+    itr = model.get_iter_first()
+    while itr and not model[itr][col] == item:
+        itr = model.iter_next(itr)
+
+    if not itr:
+        # item not found, cannot be selected
+        return None
+
+    # otherwise select the item and scroll to it
+    selection = treeview.get_selection()
+    selection.select_iter(itr)
+    path = model.get_path(itr)
+
+    # row_align=0.5 tells GTK to move the cell to the middle of the
+    # treeview viewport (0.0 should align it with the top, 1.0 with bottom)
+    # If the cell is the uppermost one, it should align it with the top
+    # of the viewport.
+    #
+    # Unfortunately, this does not work as expected due to a bug in GTK.
+    # (see rhbz#970048)
+    treeview.scroll_to_cell(path, use_align=True, row_align=0.5)
+
+    return itr
+
+def get_default_widget_direction():
+    """
+    Function to get default widget direction (RTL/LTR) for the current language
+    configuration.
+
+    XXX: this should be provided by the Gtk itself (#1008821)
+
+    :return: either Gtk.TextDirection.LTR or Gtk.TextDirection.RTL
+    :rtype: GtkTextDirection
+
+    """
+
+    # this is quite a hack, but it's exactly the same check Gtk uses internally
+    xlated = gettext.ldgettext("gtk30", "default:LTR")
+    if xlated == "default:LTR":
+        return Gtk.TextDirection.LTR
+    else:
+        return Gtk.TextDirection.RTL
+
+def setup_gtk_direction():
+    """
+    Set the right direction (RTL/LTR) of the Gtk widget's and their layout based
+    on the current language configuration.
+
+    """
+
+    Gtk.Widget.set_default_direction(get_default_widget_direction())

@@ -11,24 +11,33 @@
       <column type="gchararray"/>
       <!-- column-name diskReclaimableSize -->
       <column type="gchararray"/>
-      <!-- column-name diskReclaimablePct -->
-      <column type="gint"/>
       <!-- column-name diskAction -->
       <column type="gchararray"/>
       <!-- column-name diskEditable -->
       <column type="gboolean"/>
       <!-- column-name diskTooltip -->
       <column type="gchararray"/>
+      <!-- column-name diskResizeTarget -->
+      <column type="gint"/>
+      <!-- column-name diskName -->
+      <column type="gchararray"/>
     </columns>
+  </object>
+  <object class="GtkAdjustment" id="resizeAdjustment">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkDialog" id="resizeDialog">
     <property name="height_request">550</property>
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="events">GDK_KEY_RELEASE_MASK | GDK_STRUCTURE_MASK</property>
+    <property name="border_width">6</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="type_hint">dialog</property>
     <property name="decorated">False</property>
+    <signal name="key-release-event" handler="on_key_pressed" swapped="no"/>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox1">
         <property name="can_focus">False</property>
@@ -44,13 +53,13 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
                 <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -60,14 +69,14 @@
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_resize_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">1</property>
+                <property name="position">2</property>
+                <property name="non_homogeneous">True</property>
               </packing>
             </child>
           </object>
@@ -141,7 +150,18 @@
                         <child>
                           <object class="GtkCellRendererText" id="diskRenderer"/>
                           <attributes>
-                            <attribute name="text">1</attribute>
+                            <attribute name="markup">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkTreeViewColumn" id="nameColumn">
+                        <property name="title" translatable="yes">Name</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="nameRenderer"/>
+                          <attributes>
+                            <attribute name="text">8</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -169,24 +189,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkTreeViewColumn" id="percentColumn">
-                        <child>
-                          <object class="GtkCellRendererProgress" id="percentRenderer"/>
-                          <attributes>
-                            <attribute name="visible">6</attribute>
-                            <attribute name="value">4</attribute>
-                          </attributes>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
                       <object class="GtkTreeViewColumn" id="actionColumn">
                         <property name="title" translatable="yes">Action</property>
                         <child>
                           <object class="GtkCellRendererText" id="actionRenderer"/>
                           <attributes>
-                            <attribute name="visible">6</attribute>
-                            <attribute name="text">5</attribute>
+                            <attribute name="visible">5</attribute>
+                            <attribute name="text">4</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -201,36 +210,72 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolbar" id="toolbar1">
+              <object class="GtkBox" id="box2">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="margin_bottom">6</property>
-                <property name="toolbar_style">text</property>
-                <style>
-                  <class name="inline-toolbar"/>
-                </style>
+                <property name="margin_top">6</property>
                 <child>
-                  <object class="GtkToolButton" id="preserveButton">
+                  <object class="GtkButton" id="preserveButton">
+                    <property name="label" translatable="yes">_Preserve</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Preserve</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="valign">center</property>
+                    <property name="use_underline">True</property>
                     <signal name="clicked" handler="on_preserve_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkToolButton" id="deleteButton">
+                  <object class="GtkButton" id="deleteButton">
+                    <property name="label" translatable="yes">_Delete</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Delete</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="valign">center</property>
+                    <property name="use_underline">True</property>
                     <signal name="clicked" handler="on_delete_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
-                    <property name="homogeneous">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="shrinkButton">
+                    <property name="label" translatable="yes">_Shrink</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="valign">center</property>
+                    <property name="use_underline">True</property>
+                    <signal name="clicked" handler="on_shrink_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="deleteAllButton">
+                    <property name="label" translatable="yes">Delete _all</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_underline">True</property>
+                    <signal name="clicked" handler="on_delete_all_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="pack_type">end</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>
@@ -241,13 +286,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="reclaimableSpaceLabel">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="halign">start</property>
-                <property name="margin_bottom">6</property>
-                <property name="label" translatable="yes">&lt;b&gt;%s disks; %s reclaimable space&lt;/b&gt; (in filesystems)</property>
-                <property name="use_markup">True</property>
+              <object class="GtkScale" id="resizeSlider">
+                <property name="can_focus">True</property>
+                <property name="no_show_all">True</property>
+                <property name="margin_bottom">12</property>
+                <property name="adjustment">resizeAdjustment</property>
+                <property name="round_digits">0</property>
+                <property name="digits">0</property>
+                <signal name="format-value" handler="resize_slider_format" swapped="no"/>
+                <signal name="value-changed" handler="on_resize_value_changed" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -256,12 +303,12 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="selectedSpaceLabel">
+              <object class="GtkLabel" id="reclaimableSpaceLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="halign">end</property>
+                <property name="halign">start</property>
                 <property name="margin_bottom">6</property>
-                <property name="label" translatable="yes">Total selected space to reclaim:  &lt;b&gt;%s&lt;/b&gt;</property>
+                <property name="label">&lt;b&gt;%s disks; %s reclaimable space&lt;/b&gt; (in filesystems)</property>
                 <property name="use_markup">True</property>
               </object>
               <packing>
@@ -271,18 +318,33 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="requiredSpaceLabel">
+              <object class="GtkLabel" id="selectedSpaceLabel">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="halign">end</property>
                 <property name="margin_bottom">6</property>
-                <property name="label" translatable="yes">Installation requires a total of &lt;b&gt;%s&lt;/b&gt; for system data.</property>
+                <property name="label">Total selected space to reclaim:  &lt;b&gt;%s&lt;/b&gt;</property>
                 <property name="use_markup">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="requiredSpaceLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">end</property>
+                <property name="margin_bottom">6</property>
+                <property name="label">Installation requires a total of &lt;b&gt;%s&lt;/b&gt; for system data.</property>
+                <property name="use_markup">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">7</property>
               </packing>
             </child>
           </object>
@@ -296,7 +358,7 @@
     </child>
     <action-widgets>
       <action-widget response="0">cancelButton</action-widget>
-      <action-widget response="1">resizeButton</action-widget>
+      <action-widget response="2">resizeButton</action-widget>
     </action-widgets>
   </object>
 </interface>

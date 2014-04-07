@@ -20,8 +20,8 @@
 m4_define(python_required_version, 2.5)
 
 AC_PREREQ([2.63])
-AC_INIT([anaconda], [18.37.11], [anaconda-devel-list@redhat.com])
-AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2])
+AC_INIT([anaconda], [20.25.16], [anaconda-devel-list@redhat.com])
+AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 tar-ustar])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -38,7 +38,33 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
+# Check for the intltool programs
+# These checks and subsitutions are adapted IT_PROG_INTLTOOL provided in
+# intltool.m4, but without the parts where it breaks gettext.
+AC_PATH_PROG([INTLTOOL_EXTRACT], [intltool-extract])
+AC_PATH_PROG([INTLTOOL_MERGE], [intltool-merge])
+AS_IF([test -z "$INTLTOOL_EXTRACT" -o -z "$INTLTOOL_MERGE"],
+      [AC_MSG_ERROR([*** intltool not found])])
+
+# Add the bits for Makefile rules
+INTLTOOL_V_MERGE='$(INTLTOOL__v_MERGE_$(V))'
+INTLTOOL__v_MERGE_='$(INTLTOOL__v_MERGE_$(AM_DEFAULT_VERBOSITY))'
+INTLTOOL__v_MERGE_0='@echo "  ITMRG " $@;'
+INTLTOOL_V_MERGE_OPTIONS='$(intltool__v_merge_options_$(V))'
+intltool__v_merge_options_='$(intltool__v_merge_options_$(AM_DEFAULT_VERBOSITY))'
+intltool__v_merge_options_0='-q'
+AC_SUBST(INTLTOOL_V_MERGE)
+AC_SUBST(INTLTOOL__v_MERGE_)
+AC_SUBST(INTLTOOL__v_MERGE_0)
+AC_SUBST(INTLTOOL_V_MERGE_OPTIONS)
+AC_SUBST(intltool__v_merge_options_)
+AC_SUBST(intltool__v_merge_options_0)
+
+INTLTOOL_DESKTOP_RULE='%.desktop:  %.desktop.in  $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; $(INTLTOOL_V_MERGE)LC_ALL=C $(INTLTOOL_MERGE) $(INTLTOOL_V_MERGE_OPTIONS) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< $@'
+AC_SUBST(INTLTOOL_DESKTOP_RULE)
+
 AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.18.1])
 
 # Checks for libraries.
 AC_CHECK_LIB([X11], [XGetWindowAttributes],
@@ -48,18 +74,6 @@ AC_CHECK_LIB([X11], [XGetWindowAttributes],
 AC_CHECK_LIB([audit], [audit_open],
              [AC_SUBST(AUDIT_LIBS, [-laudit])],
              [AC_MSG_FAILURE([*** libaudit not usable.])])
-
-AC_CHECK_LIB([blkid], [blkid_get_cache],
-             [AC_SUBST(BLKID_LIBS, [-lblkid])],
-             [AC_MSG_FAILURE([*** libblkid not usable.])])
-
-AC_CHECK_LIB([ext2fs], [ext2fs_initialize],
-             [AC_SUBST(EXT2FS_LIBS, [-lext2fs])],
-             [AC_MSG_FAILURE([*** libext2fs not usable.])])
-
-AC_CHECK_LIB([iscsi], [libiscsi_get_firmware_network_config],
-             [AC_SUBST(ISCSI_LIBS, [-liscsi])],
-             [AC_MSG_FAILURE([*** libiscsi not usable.])])
 
 AC_CHECK_LIB([z], [zlibVersion],
              [AC_SUBST(ZLIB_LIBS, [-lz])],
@@ -93,6 +107,7 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
+AC_TYPE_INT64_T
 
 # Checks for library functions.
 AC_FUNC_CHOWN
@@ -111,7 +126,19 @@ AC_CHECK_FUNCS([dup2 fdatasync ftruncate getcwd gethostbyname gettimeofday \
                [AC_MSG_FAILURE([*** Required function $ac_func not found.])])
 
 AM_PATH_PYTHON(python_required_version)
-AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers or library)])
+
+# Check for the python extension paths
+PKG_CHECK_MODULES([PYTHON], [python], [
+    LIBS_save="$LIBS"
+    LIBS="$LIBS $PYTHON_LIBS"
+    AC_MSG_CHECKING([Python libraries])
+    AC_TRY_LINK_FUNC([Py_Initialize], 
+                     [AC_MSG_RESULT([yes])], 
+                     [AC_MSG_RESULT([no])
+                      AC_MSG_FAILURE([*** Unable to use python library])])
+    LIBS="$LIBS_save"
+    ],
+    [AC_MSG_FAILURE([*** Unable to find python library])])
 
 # Check for libraries we need that provide pkg-config scripts
 PKG_PROG_PKG_CONFIG([0.23])
@@ -123,10 +150,8 @@ PKG_CHECK_MODULES([GDK], [gdk-3.0])
 PKG_CHECK_MODULES([NETWORKMANAGER], [NetworkManager >= 0.7.1])
 PKG_CHECK_MODULES([LIBNL], [libnl-1 >= 1.0])
 PKG_CHECK_MODULES([LIBNM_GLIB], [libnm-glib >= 0.7.1 libnm-util >= 0.7.1])
-PKG_CHECK_MODULES([DEVMAPPER], [devmapper >= 1.02.17])
-PKG_CHECK_MODULES([LIBCURL], [libcurl >= 7.19.5])
-PKG_CHECK_MODULES([RPM], [rpm >= 4.8.0])
-PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 2.7.902a])
+PKG_CHECK_MODULES([RPM], [rpm >= 4.10.0])
+PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 3.0.4])
 
 # Set $RPM_OPT_FLAGS if we don't have it
 if test -z $RPM_OPT_FLAGS ; then
@@ -135,32 +160,12 @@ else
     CFLAGS="$CFLAGS $RPM_OPT_FLAGS"
 fi
 
-# SELinux support can be enabled or disabled
-AC_ARG_ENABLE(selinux,
-    AC_HELP_STRING([--enable-selinux],
-                   [enable SELinux support (default is yes)]),
-    [selinux=$enableval],
-    [selinux=yes])
-if test x$selinux = xyes ; then
-    AC_CHECK_LIB([selinux], [matchpathcon], [],
-        [AC_MSG_FAILURE([*** libselinux not usable.])])
-    AC_CHECK_LIB([selinux], [lsetfilecon], [],
-        [AC_MSG_FAILURE([*** libselinux not usable.])])
-
-    selinux_libs="-lselinux -laudit"
-    AC_SUBST(SELINUX_CFLAGS, [-DUSESELINUX=1])
-    AC_SUBST(SELINUX_LIBS, [$selinux_libs])
-fi
-
 # NFS support can, in theory, be enabled or disabled
 AC_ARG_ENABLE(nfs,
     AC_HELP_STRING([--enable-nfs],
                    [enable NFS support (default is yes)]),
     [nfs=$enableval],
     [nfs=yes])
-if test x$selinux = xyes ; then
-    AC_SUBST(NFS_CFLAGS, [-DHAVE_NFS])
-fi
 
 # IPv6 support can be enabled or disabled
 AC_ARG_ENABLE(ipv6,
@@ -203,36 +208,15 @@ CFLAGS="`cflags_filter $CFLAGS`"
 LIBS=
 
 # Get the release number from the spec file
-rel="`awk '/Release:/ { split($2, r, "%"); print r[[1]] }' anaconda.spec.in`"
+rel="`awk '/Release:/ { split($2, r, "%"); print r[[1]] }' $srcdir/anaconda.spec`"
 AC_SUBST(PACKAGE_RELEASE, [$rel])
 
-# Set $(ARCH) and arch-related tests
-s_arch="`uname -m | sed -e s/i.86/i386/ -e s/sparc.*/sparc/ -e s/ppc.*/ppc/`"
-AC_SUBST(ARCH, [$s_arch])
+# Perform arch related tests
+AC_CANONICAL_BUILD
+s_arch="`echo $build_cpu | sed -e s/i.86/i386/ -e s/powerpc.*/ppc/`"
 
 AM_CONDITIONAL(IS_LIVEINST_ARCH,
-  [test x$s_arch == xppc || test x$s_arch == xi386 || test x$s_arch == xx86_64])
-
-AM_CONDITIONAL(IS_GPTSYNC_ARCH,
-  [test x$s_arch == xi386 || test x$s_arch == xx86_64])
-
-AM_CONDITIONAL(IS_KEYMAPS_OVERRIDE_ARCH,
-  [test x$s_arch == xi386 || test x$s_arch == xppc || test x$s_arch == xx86_64])
-
-AM_CONDITIONAL(IS_I386,
-  [test x$s_arch == xi386])
-
-AM_CONDITIONAL(IS_PPC,
-  [test x$s_arch == xppc])
-
-AM_CONDITIONAL(IS_S390,
-  [test x$s_arch == xs390 || test x$s_arch == xs390x])
-
-AM_CONDITIONAL(IS_X86_64,
-  [test x$s_arch == xx86_64])
-
-AM_CONDITIONAL(IS_SPARC,
-  [test x$s_arch == xsparc || test x$s_arch == xsparc64])
+  [test x$s_arch = xppc || test x$s_arch = xi386 || test x$s_arch = xx86_64])
 
 AC_CONFIG_SUBDIRS([widgets])
 
@@ -267,14 +251,12 @@ AC_CONFIG_FILES([Makefile
                  pyanaconda/Makefile
                  pyanaconda/isys/Makefile
                  pyanaconda/packaging/Makefile
-                 pyanaconda/storage/Makefile
-                 pyanaconda/storage/devicelibs/Makefile
-                 pyanaconda/storage/formats/Makefile
                  pyanaconda/ui/Makefile
                  pyanaconda/ui/lib/Makefile
                  pyanaconda/ui/gui/categories/Makefile
                  pyanaconda/ui/gui/hubs/Makefile
                  pyanaconda/ui/gui/spokes/Makefile
+                 pyanaconda/ui/gui/spokes/advstorage/Makefile
                  pyanaconda/ui/gui/spokes/lib/Makefile
                  pyanaconda/ui/gui/tools/Makefile
                  pyanaconda/ui/gui/Makefile
@@ -283,21 +265,8 @@ AC_CONFIG_FILES([Makefile
                  pyanaconda/ui/tui/spokes/Makefile
                  pyanaconda/ui/tui/tools/Makefile
                  pyanaconda/ui/tui/Makefile
-                 tests/Makefile
-                 tests/mock/Makefile
-                 tests/kickstart_test/Makefile
-                 tests/storage_test/Makefile
-                 tests/storage_test/devicelibs_test/Makefile
-                 tests/pylint/Makefile
-                 tests/regex/Makefile
-                 tests/pyanaconda_test/Makefile
-                 tests/logpicker_test/Makefile
-                 tests/logpicker_test/sending_test/Makefile
-                 tests/logpicker_test/archiving_test/Makefile
-                 tests/logpicker_test/logmining_test/Makefile
-                 pyanaconda/textw/Makefile
                  data/post-scripts/Makefile
+                 tests/Makefile
                  utils/Makefile
-                 utils/log_picker/Makefile
-                 utils/log_picker/sending/Makefile])
+                 utils/dd/Makefile])
 AC_OUTPUT

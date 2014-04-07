@@ -5,7 +5,7 @@
   <object class="GtkDialog" id="detailedErrorDialog">
     <property name="height_request">350</property>
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="border_width">6</property>
     <property name="modal">True</property>
     <property name="window_position">center</property>
     <property name="type_hint">dialog</property>
@@ -22,6 +22,7 @@
             <property name="margin_bottom">18</property>
             <property name="xalign">0</property>
             <property name="label" translatable="yes">An unknown error occurred during installation.  Details are below.</property>
+            <property name="wrap">True</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -39,6 +40,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="editable">False</property>
+                <property name="wrap_mode">word</property>
                 <property name="cursor_visible">False</property>
                 <property name="buffer">detailedTextBuffer</property>
               </object>

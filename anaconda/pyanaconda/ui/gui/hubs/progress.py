@@ -21,22 +21,22 @@
 
 from __future__ import division
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-
 from gi.repository import GLib, Gtk
 
 import itertools
 import os
 import sys
+import glob
 
-from pyanaconda.localization import expand_langs
+from pyanaconda.i18n import _
+from pyanaconda.localization import find_best_locale_match
 from pyanaconda.product import productName
 from pyanaconda.flags import flags
-from pykickstart.constants import KS_WAIT, KS_SHUTDOWN, KS_REBOOT
+from pyanaconda.constants import THREAD_INSTALL, THREAD_CONFIGURATION, DEFAULT_LANG
+from pykickstart.constants import KS_SHUTDOWN, KS_REBOOT
 
 from pyanaconda.ui.gui.hubs import Hub
-from pyanaconda.ui.gui.utils import gtk_thread_nowait, gtk_call_once
+from pyanaconda.ui.gui.utils import gtk_action_nowait, gtk_call_once
 
 __all__ = ["ProgressHub"]
 
@@ -52,6 +52,8 @@ class ProgressHub(Hub):
         self._currentStep = 0
         self._configurationDone = False
 
+        self._rnotes_id = None
+
     def _do_configuration(self, widget = None, reenable_ransom = True):
         from pyanaconda.install import doConfiguration
         from pyanaconda.threads import threadMgr, AnacondaThread
@@ -66,8 +68,10 @@ class ProgressHub(Hub):
         if reenable_ransom:
             self._start_ransom_notes()
 
-        self._progress_id = GLib.timeout_add(250, self._update_progress, self._configuration_done)
-        threadMgr.add(AnacondaThread(name="AnaConfigurationThread", target=doConfiguration,
+        self._restart_spinner()
+
+        GLib.timeout_add(250, self._update_progress, self._configuration_done)
+        threadMgr.add(AnacondaThread(name=THREAD_CONFIGURATION, target=doConfiguration,
                                      args=(self.storage, self.payload, self.data, self.instclass)))
 
     def _start_ransom_notes(self):
@@ -77,10 +81,10 @@ class ProgressHub(Hub):
         self._rnotes_id = GLib.timeout_add_seconds(60, self._cycle_rnotes)
 
     def _update_progress(self, callback = None):
-        from pyanaconda import progress
+        from pyanaconda.progress import progressQ
         import Queue
 
-        q = progress.progressQ
+        q = progressQ.q
 
         # Grab all messages may have appeared since last time this method ran.
         while True:
@@ -91,13 +95,13 @@ class ProgressHub(Hub):
             except Queue.Empty:
                 break
 
-            if code == progress.PROGRESS_CODE_INIT:
+            if code == progressQ.PROGRESS_CODE_INIT:
                 self._init_progress_bar(args[0])
-            elif code == progress.PROGRESS_CODE_STEP:
+            elif code == progressQ.PROGRESS_CODE_STEP:
                 self._step_progress_bar()
-            elif code == progress.PROGRESS_CODE_MESSAGE:
+            elif code == progressQ.PROGRESS_CODE_MESSAGE:
                 self._update_progress_message(args[0])
-            elif code == progress.PROGRESS_CODE_COMPLETE:
+            elif code == progressQ.PROGRESS_CODE_COMPLETE:
                 # There shouldn't be any more progress bar updates, so return False
                 # to indicate this method should be removed from the idle loop.  Also,
                 # stop the rnotes cycling and display the finished message.
@@ -108,7 +112,7 @@ class ProgressHub(Hub):
                     callback()
 
                 return False
-            elif code == progress.PROGRESS_CODE_QUIT:
+            elif code == progressQ.PROGRESS_CODE_QUIT:
                 sys.exit(args[0])
 
             q.task_done()
@@ -141,21 +145,38 @@ class ProgressHub(Hub):
             self._progressNotebook.set_current_page(0)
 
     def _get_rnotes(self):
-        import glob
-
         # We first look for rnotes in paths containing the language, then in
         # directories without the language component.  You know, just in case.
-        langs = expand_langs(os.environ["LANG"]) + [""]
-        paths = ["/tmp/updates/pixmaps/rnotes/%s/*.png",
-                 "/tmp/product/pixmaps/rnotes/%s/*.png",
-                 "/usr/share/anaconda/pixmaps/rnotes/%s/*.png"]
 
-        for (l, d) in itertools.product(langs, paths):
-            pixmaps = glob.glob(d % l)
-            if len(pixmaps) > 0:
-                return pixmaps
+        paths = ["/tmp/updates/pixmaps/rnotes/",
+                 "/tmp/product/pixmaps/rnotes/",
+                 "/usr/share/anaconda/pixmaps/rnotes/"]
 
-        return []
+        all_lang_pixmaps = []
+        for path in paths:
+            all_lang_pixmaps += glob.glob(path + "*/*.png") + glob.glob(path + "*/*.jpg")
+
+        pixmap_langs = [pixmap.split(os.path.sep)[-2] for pixmap in all_lang_pixmaps]
+        best_lang = find_best_locale_match(os.environ["LANG"], pixmap_langs)
+
+        if not best_lang:
+            # nothing found, try the default language
+            best_lang = find_best_locale_match(DEFAULT_LANG, pixmap_langs)
+
+        if not best_lang:
+            # nothing found even for the default language, try non-localized rnotes
+            non_localized = []
+            for path in paths:
+                non_localized += glob.glob(path + "*.png") + glob.glob(path + "*.jpg")
+
+            return non_localized
+
+        best_lang_pixmaps = []
+        for path in paths:
+            best_lang_pixmaps += (glob.glob(path + best_lang + "/*.png") +
+                                  glob.glob(path + best_lang + "/*.jpg"))
+
+        return best_lang_pixmaps
 
     def _cycle_rnotes(self):
         # Change the ransom notes image every minute by grabbing the next
@@ -176,9 +197,10 @@ class ProgressHub(Hub):
 
         if flags.livecdInstall:
             continueText = self.builder.get_object("rebootLabel")
-            continueText.set_text("%s is now successfully installed on your system and ready"
-                                  "for you to use!  When you are ready, reboot your system to start using it!")
-            self.continueButton.set_label("_Quit")
+            continueText.set_text(_("%s is now successfully installed on your system and ready "
+                                    "for you to use!  When you are ready, reboot your system to start using it!"))
+            continueText.set_line_wrap(True)
+            self.continueButton.set_label(_("_Quit"))
 
         self._progressBar = self.builder.get_object("progressBar")
         self._progressLabel = self.builder.get_object("progressLabel")
@@ -215,8 +237,8 @@ class ProgressHub(Hub):
         Hub.refresh(self)
 
         self._start_ransom_notes()
-        self._progress_id = GLib.timeout_add(250, self._update_progress, self._install_done)
-        threadMgr.add(AnacondaThread(name="AnaInstallThread", target=doInstall,
+        GLib.timeout_add(250, self._update_progress, self._install_done)
+        threadMgr.add(AnacondaThread(name=THREAD_INSTALL, target=doInstall,
                                      args=(self.storage, self.payload, self.data, self.instclass)))
 
     def _updateContinueButton(self):
@@ -248,7 +270,13 @@ class ProgressHub(Hub):
 
         gtk_call_once(self._progressLabel.set_text, message)
 
-    @gtk_thread_nowait
+    @gtk_action_nowait
+    def _restart_spinner(self):
+        spinner = self.builder.get_object("progressSpinner")
+        spinner.show()
+        spinner.start()
+
+    @gtk_action_nowait
     def _progress_bar_complete(self):
         self._progressBar.set_fraction(1.0)
         self._progressLabel.set_text(_("Complete!"))

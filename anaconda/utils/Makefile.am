@@ -17,10 +17,8 @@
 #
 # Author: David Cantrell <dcantrell@redhat.com>
 
-SUBDIRS = log_picker
+SUBDIRS = dd
 
-utilsdir            = $(libexecdir)/$(PACKAGE_NAME)
-
-dist_sbin_SCRIPTS    = logpicker handle-sshpw
+dist_sbin_SCRIPTS    = handle-sshpw
 
 MAINTAINERCLEANFILES = Makefile.in

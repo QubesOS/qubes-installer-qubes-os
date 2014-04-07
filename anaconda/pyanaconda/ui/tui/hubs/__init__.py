@@ -18,13 +18,12 @@
 #
 # Red Hat Author(s): Martin Sivak <msivak@redhat.com>
 #
-from .. import simpleline as tui
+from pyanaconda.ui.tui import simpleline as tui
 from pyanaconda.ui.tui.tuiobject import TUIObject
 from pyanaconda.ui.tui.spokes import collect_spokes
 from pyanaconda.ui import common
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from pyanaconda.i18n import _
 
 class TUIHub(TUIObject, common.Hub):
     """Base Hub class implementing the pyanaconda.ui.common.Hub interface.
@@ -50,13 +49,18 @@ class TUIHub(TUIObject, common.Hub):
         self._keys = {}       # holds spokes referenced by their user input key
         self._spoke_count = 0
 
+    def setup(self, environment="anaconda"):
         # look for spokes having category present in self.categories
         for c in self.categories:
-            spokes = collect_spokes(c)
+            spokes = collect_spokes(self.paths["spokes"], c)
 
             # sort them according to their priority
-            for s in sorted(spokes, key = lambda s: s.priority):
-                spoke = s(app, data, storage, payload, instclass)
+            for s in sorted(spokes, key = lambda s: s.title):
+                # Check if this spoke is to be shown in anaconda
+                if not s.should_run(environment, self.data):
+                    continue
+
+                spoke = s(self.app, self.data, self.storage, self.payload, self.instclass)
                 spoke.initialize()
 
                 if not spoke.showable:
@@ -71,6 +75,8 @@ class TUIHub(TUIObject, common.Hub):
                 self._keys[self._spoke_count] = spoke
                 self._spokes[spoke.__class__.__name__] = spoke
 
+        # only schedule the hub if it has some spokes
+        return self._spoke_count != 0
 
     def refresh(self, args = None):
         """This methods fills the self._window list by all the objects
@@ -93,6 +99,7 @@ class TUIHub(TUIObject, common.Hub):
     def input(self, args, key):
         """Handle user input. Numbers are used to show a spoke, the rest is passed
         to the higher level for processing."""
+
         try:
             number = int(key)
             self.app.switch_screen_with_return(self._keys[number])
@@ -101,9 +108,10 @@ class TUIHub(TUIObject, common.Hub):
         except (ValueError, KeyError):
             # If we get a continue, check for unfinished spokes.  If unfinished
             # don't continue
+            # TRANSLATORS: 'c' to continue
             if key == _('c'):
                 for spoke in self._spokes.values():
-                    if not spoke.completed:
+                    if not spoke.completed and spoke.mandatory:
                         print(_("Please complete all spokes before continuing"))
                         return False
             return key

@@ -19,12 +19,8 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from gi.repository import Gtk
-
+from pyanaconda.i18n import _
 from pyanaconda.ui.gui import GUIObject
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
 
 __all__ = ["DetailedErrorDialog"]
 
@@ -71,6 +67,7 @@ class DetailedErrorDialog(GUIObject):
         if label:
             self.builder.get_object("detailedLabel").set_text(label)
 
+    # pylint: disable-msg=W0221
     def refresh(self, msg):
         buf = self.builder.get_object("detailedTextBuffer")
         buf.set_text(msg, -1)

@@ -17,7 +17,7 @@
 # Red Hat, Inc.
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
+#                    Martin Sivak <msivak@redhat.com>
 
 from pyanaconda.ui import common
 from pyanaconda.ui.common import collect
@@ -58,11 +58,6 @@ class Spoke(GUIObject):
         """
         pass
 
-    def initialize(self):
-        GUIObject.initialize(self)
-
-        self.window.set_property("window-name", self.title or "")
-
 class StandaloneSpoke(Spoke, common.StandaloneSpoke):
     def __init__(self, data, storage, payload, instclass):
         Spoke.__init__(self, data)
@@ -86,6 +81,13 @@ class NormalSpoke(Spoke, common.NormalSpoke):
     def on_back_clicked(self, window):
         from gi.repository import Gtk
 
+        # Look for failed checks
+        failed_check = next(self.failed_checks, None)
+        if failed_check:
+            # Set the focus to the first failed check and stay in the spoke
+            failed_check.editable.grab_focus()
+            return
+
         self.window.hide()
         Gtk.main_quit()
 
@@ -94,8 +96,19 @@ class PersonalizationSpoke(Spoke, common.PersonalizationSpoke):
         Spoke.__init__(self, data)
         common.PersonalizationSpoke.__init__(self, data, storage, payload, instclass)
 
-def collect_spokes(category):
+def collect_spokes(mask_paths, category):
     """Return a list of all spoke subclasses that should appear for a given
-       category.
+       category. Look for them in files imported as module_path % basename(f)
+
+       :param mask_paths: list of mask, path tuples to search for classes
+       :type mask_paths: list of (mask, path)
+
+       :return: list of Spoke classes belonging to category
+       :rtype: list of Spoke classes
+
     """
-    return collect("pyanaconda.ui.gui.spokes.%s", os.path.dirname(__file__), lambda obj: hasattr(obj, "category") and obj.category != None and obj.category.__name__ == category)
+    spokes = []
+    for mask, path in mask_paths:
+        spokes.extend(collect(mask, path, lambda obj: hasattr(obj, "category") and obj.category != None and obj.category.__name__ == category))
+        
+    return spokes

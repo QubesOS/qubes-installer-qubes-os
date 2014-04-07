@@ -22,17 +22,14 @@
 #            Michael Fulbright <msf@redhat.com>
 #
 
-import inspect
 import logging
 from logging.handlers import SysLogHandler, SYSLOG_UDP_PORT
 import os
-import signal
 import sys
 import types
 import warnings
 
-import iutil
-from flags import flags
+from pyanaconda.flags import flags
 
 DEFAULT_TTY_LEVEL = logging.INFO
 ENTRY_FORMAT = "%(asctime)s,%(msecs)03d %(levelname)s %(name)s: %(message)s"
@@ -43,9 +40,14 @@ DATE_FORMAT = "%H:%M:%S"
 MAIN_LOG_FILE = "/tmp/anaconda.log"
 MAIN_LOG_TTY = "/dev/tty3"
 PROGRAM_LOG_FILE = "/tmp/program.log"
+PROGRAM_LOG_TTY = "/dev/tty5"
 STORAGE_LOG_FILE = "/tmp/storage.log"
 PACKAGING_LOG_FILE = "/tmp/packaging.log"
+SENSITIVE_INFO_LOG_FILE = "/tmp/sensitive-info.log"
 ANACONDA_SYSLOG_FACILITY = SysLogHandler.LOG_LOCAL1
+
+from threading import Lock
+program_log_lock = Lock()
 
 logLevelMap = {"debug": logging.DEBUG, "info": logging.INFO,
                "warning": logging.WARNING, "error": logging.ERROR,
@@ -56,49 +58,9 @@ def autoSetLevel(handler, value):
     handler.autoSetLevel = value
 
 # all handlers of given logger with autoSetLevel == True are set to level
-def setHandlersLevel(logger, level):
+def setHandlersLevel(logr, level):
     map(lambda hdlr: hdlr.setLevel(level),
-        filter (lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logger.handlers))
-
-def function_name_and_depth():
-    IGNORED_FUNCS = ["function_name_and_depth",
-                     "log_method_call",
-                     "log_method_return"]
-    stack = inspect.stack()
-
-    for i, frame in enumerate(stack):
-        methodname = frame[3]
-        if methodname not in IGNORED_FUNCS:
-            return (methodname, len(stack) - i)
-
-    return ("unknown function?", 0)
-
-def log_method_call(d, *args, **kwargs):
-    classname = d.__class__.__name__
-    (methodname, depth) = function_name_and_depth()
-    spaces = depth * ' '
-    fmt = "%s%s.%s:"
-    fmt_args = [spaces, classname, methodname]
-
-    for arg in args:
-        fmt += " %s ;"
-        fmt_args.append(arg)
-
-    for k, v in kwargs.items():
-        fmt += " %s: %s ;"
-        if "pass" in k.lower() and v:
-            v = "Skipped"
-        fmt_args.extend([k, v])
-
-    logging.getLogger("storage").debug(fmt % tuple(fmt_args))
-
-def log_method_return(d, retval):
-    classname = d.__class__.__name__
-    (methodname, depth) = function_name_and_depth()
-    spaces = depth * ' '
-    fmt = "%s%s.%s returned %s"
-    fmt_args = (spaces, classname, methodname, retval)
-    logging.getLogger("storage").debug(fmt % fmt_args)
+        filter (lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logr.handlers))
 
 class AnacondaSyslogHandler(SysLogHandler):
     def __init__(self,
@@ -133,17 +95,19 @@ class AnacondaLog:
         warnings.showwarning = self.showwarning
 
         # Create the storage logger.
-        storage_logger = logging.getLogger("storage")
+        storage_logger = logging.getLogger("blivet")
         self.addFileHandler(STORAGE_LOG_FILE, storage_logger,
                             minLevel=logging.DEBUG)
 
         # Set the common parameters for anaconda and storage loggers.
-        for logger in [self.anaconda_logger, storage_logger]:
-            logger.setLevel(logging.DEBUG)
-            self.forwardToSyslog(logger)
+        for logr in [self.anaconda_logger, storage_logger]:
+            logr.setLevel(logging.DEBUG)
+            self.forwardToSyslog(logr)
             # Logging of basic stuff and storage to tty3.
-            if not iutil.isS390() and os.access(MAIN_LOG_TTY, os.W_OK):
-                self.addFileHandler(MAIN_LOG_TTY, logger,
+            # XXX Use os.uname here since it's too early to be importing the
+            #     storage module.
+            if not os.uname()[4].startswith('s390') and os.access(MAIN_LOG_TTY, os.W_OK):
+                self.addFileHandler(MAIN_LOG_TTY, logr,
                                     fmtStr=TTY_FORMAT,
                                     autoLevel=True)
 
@@ -152,13 +116,17 @@ class AnacondaLog:
         program_logger.setLevel(logging.DEBUG)
         self.addFileHandler(PROGRAM_LOG_FILE, program_logger,
                             minLevel=logging.DEBUG)
+        self.addFileHandler(PROGRAM_LOG_TTY, program_logger,
+                            fmtStr=TTY_FORMAT,
+                            autoLevel=True)
         self.forwardToSyslog(program_logger)
 
         # Create the packaging logger.
         packaging_logger = logging.getLogger("packaging")
         packaging_logger.setLevel(logging.DEBUG)
         self.addFileHandler(PACKAGING_LOG_FILE, packaging_logger,
-                            minLevel=logging.DEBUG)
+                            minLevel=logging.INFO,
+                            autoLevel=True)
         self.forwardToSyslog(packaging_logger)
 
         # Create the yum logger and link it to packaging
@@ -167,6 +135,14 @@ class AnacondaLog:
         self.addFileHandler(PACKAGING_LOG_FILE, yum_logger,
                             minLevel=logging.DEBUG)
         self.forwardToSyslog(yum_logger)
+
+        # Create the sensitive information logger
+        # * the sensitive-info.log file is not copied to the installed
+        # system, as it might contain sensitive information that
+        # should not be persistently stored by default
+        sensitive_logger = logging.getLogger("sensitive-info")
+        self.addFileHandler(SENSITIVE_INFO_LOG_FILE, sensitive_logger,
+                            minLevel=logging.DEBUG)
 
         # Create a second logger for just the stuff we want to dup on
         # stdout.  Anything written here will also get passed up to the
@@ -185,20 +161,23 @@ class AnacondaLog:
                             fmtStr=STDOUT_FORMAT, minLevel=logging.INFO)
 
     # Add a simple handler - file or stream, depending on what we're given.
-    def addFileHandler (self, file, addToLogger, minLevel=DEFAULT_TTY_LEVEL,
+    def addFileHandler (self, dest, addToLogger, minLevel=DEFAULT_TTY_LEVEL,
                         fmtStr=ENTRY_FORMAT,
                         autoLevel=False):
-        if isinstance(file, types.StringTypes):
-            logfileHandler = logging.FileHandler(file)
-        else:
-            logfileHandler = logging.StreamHandler(file)
+        try:
+            if isinstance(dest, types.StringTypes):
+                logfileHandler = logging.FileHandler(dest)
+            else:
+                logfileHandler = logging.StreamHandler(dest)
 
-        logfileHandler.setLevel(minLevel)
-        logfileHandler.setFormatter(logging.Formatter(fmtStr, DATE_FORMAT))
-        autoSetLevel(logfileHandler, autoLevel)
-        addToLogger.addHandler(logfileHandler)
+            logfileHandler.setLevel(minLevel)
+            logfileHandler.setFormatter(logging.Formatter(fmtStr, DATE_FORMAT))
+            autoSetLevel(logfileHandler, autoLevel)
+            addToLogger.addHandler(logfileHandler)
+        except IOError:
+            pass
 
-    def forwardToSyslog(self, logger):
+    def forwardToSyslog(self, logr):
         """Forward everything that goes in the logger to the syslog daemon.
         """
         if flags.imageInstall:
@@ -208,10 +187,11 @@ class AnacondaLog:
         syslogHandler = AnacondaSyslogHandler(
             '/dev/log',
             ANACONDA_SYSLOG_FACILITY,
-            logger.name)
+            logr.name)
         syslogHandler.setLevel(logging.DEBUG)
-        logger.addHandler(syslogHandler)
+        logr.addHandler(syslogHandler)
 
+    # pylint: disable-msg=W0622
     def showwarning(self, message, category, filename, lineno,
                       file=sys.stderr, line=None):
         """ Make sure messages sent through python's warnings module get logged.

@@ -20,8 +20,8 @@
 #
 
 AC_PREREQ([2.63])
-AC_INIT([AnacondaWidgets], [1.0], [clumens@redhat.com])
-AM_INIT_AUTOMAKE(AnacondaWidgets, 1.0)
+AC_INIT([AnacondaWidgets], [2.0], [clumens@redhat.com])
+AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 
 AM_PATH_PYTHON
@@ -38,18 +38,24 @@ AC_PROG_LN_S
 
 AM_GNU_GETTEXT([external])
 
+dnl Make sure that autoconf fails if the gobject-introspection macro
+dnl is not expanded.
+m4_pattern_forbid([GOBJECT_INTROSPECTION_CHECK])dnl
 GOBJECT_INTROSPECTION_CHECK([0.6.7])
+ 
+# Fail if introspection was not enabled
+AS_IF([test "x$found_introspection" = xyes], [:],
+      [AC_MSG_ERROR([*** GObject introspection must be enabled])])
 
-m4_ifdef([GTK_DOC_CHECK], [
-GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
-],[
-AM_CONDITIONAL([ENABLE_GTK_DOC], false)
-])
+dnl A missing GTK_DOC_CHECK should fail in autogen.sh running gtkdocize, but
+dnl might as well check it here too
+m4_pattern_forbid([GTK_DOC_CHECK])dnl
+GTK_DOC_CHECK([1.14], [--flavour no-tmpl])
 
-PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([GLADEUI], [gladeui-2.0 >= 3.10])
 PKG_CHECK_MODULES([GTK], [gtk+-x11-3.0 >= 3.0])
 PKG_CHECK_MODULES([GLIB], [glib-2.0])
+PKG_CHECK_MODULES([LIBXKLAVIER], [libxklavier >= 5.2.1])
 PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 1.30])
 
 AC_CHECK_HEADERS([libintl.h string.h])

@@ -26,15 +26,14 @@ import random
 import tempfile
 import os
 import os.path
-import iutil
+from pyanaconda import iutil
 import pwquality
-from pyanaconda.constants import ROOT_PATH
+from pyanaconda.iutil import strip_accents
+from pyanaconda.i18n import _
+from pyanaconda.constants import PASSWORD_MIN_LEN
 
 import logging
 log = logging.getLogger("anaconda")
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
 
 def createLuserConf(instPath, algoname='sha512'):
     """ Writes a libuser.conf for instPath.
@@ -46,18 +45,16 @@ def createLuserConf(instPath, algoname='sha512'):
     try:
         fn = os.environ["LIBUSER_CONF"]
         if os.access(fn, os.F_OK):
-            log.info("removing libuser.conf at %s" % (os.getenv("LIBUSER_CONF")))
+            log.info("removing libuser.conf at %s", os.getenv("LIBUSER_CONF"))
             os.unlink(fn)
-        log.info("created new libuser.conf at %s with instPath=\"%s\"" % \
-                (fn,instPath))
+        log.info("created new libuser.conf at %s with instPath=\"%s\"", fn, instPath)
         fd = open(fn, 'w')
     except (OSError, IOError, KeyError):
         createTmp = True
 
     if createTmp:
         (fp, fn) = tempfile.mkstemp(prefix="libuser.")
-        log.info("created new libuser.conf at %s with instPath=\"%s\"" % \
-                (fn,instPath))
+        log.info("created new libuser.conf at %s with instPath=\"%s\"", fn, instPath)
         fd = os.fdopen(fp, 'w')
 
     buf = """
@@ -109,45 +106,89 @@ def cryptPassword(password, algo=None):
 
     saltstr = salts[algo]
 
-    for i in range(saltlen):
+    for _i in range(saltlen):
         saltstr = saltstr + random.choice (string.letters +
                                            string.digits + './')
 
     return crypt.crypt (password, saltstr)
 
-def validatePassword(pw, confirm, minlen=6):
-    # Do various steps to validate the password
-    # Return an error string, or None for no errors
-    # If inital checks pass, pwquality will be tested.  Raises
-    # from pwquality will pass up to the calling code
+def validatePassword(pw, user="root", settings=None):
+    """Check the quality of a password.
 
-    # if both pw and confirm are blank, password is disabled.
-    if (pw and not confirm) or (confirm and not pw):
-        error = _("You must enter your root password "
-                  "and confirm it by typing it a second "
-                  "time to continue.")
-        return error
+       This function does three things: given a password and an optional
+       username, it will tell if this password can be used at all, how
+       strong the password is on a scale of 1-100, and, if the password is
+       unusable, why it is unusuable.
 
-    if pw != confirm:
-        error = _("The passwords you entered were "
-                  "different.  Please try again.")
-        return error
+       This function uses libpwquality to check the password strength.
+       pwquality will raise a PWQError on a weak password, which, honestly,
+       is kind of dumb behavior. A weak password isn't exceptional, it's what
+       we're asking about! Anyway, this function does not raise PWQError. If
+       the password fails the PWQSettings conditions, the first member of the
+       return tuple will be False and the second member of the tuple will be 0.
+
+       :param pw: the password to check
+       :type pw: string
+
+       :param user: the username for which the password is being set. If no
+                    username is provided, "root" will be used. Use user=None
+                    to disable the username check.
+       :type user: string
+
+       :param settings: an optional PWQSettings object
+       :type settings: pwquality.PWQSettings
+
+       :returns: A tuple containing (bool(valid), int(score), str(message))
+       :rtype: tuple
+    """
+
+    valid = True
+    message = None
+    strength = 0
+
+    if settings is None:
+        # Generate a default PWQSettings once and save it as a member of this function
+        if not hasattr(validatePassword, "pwqsettings"):
+            validatePassword.pwqsettings = pwquality.PWQSettings()
+            validatePassword.pwqsettings.read_config()
+            validatePassword.pwqsettings.minlen = PASSWORD_MIN_LEN
+        settings = validatePassword.pwqsettings
 
     legal = string.digits + string.ascii_letters + string.punctuation + " "
     for letter in pw:
         if letter not in legal:
-            error = _("Requested password contains "
+            message = _("Requested password contains "
                       "non-ASCII characters, which are "
                       "not allowed.")
-            return error
+            valid = False
+            break
 
-    if pw:
-        settings = pwquality.PWQSettings()
-        settings.read_config()
-        settings.minlen = minlen
-        settings.check(pw, None, "root")
+    if valid:
+        try:
+            strength = settings.check(pw, None, user)
+        except pwquality.PWQError as e:
+            # Leave valid alone here: the password is weak but can still
+            # be accepted.
+            # PWQError values are built as a tuple of (int, str)
+            message = e[1]
 
-    return None
+    return (valid, strength, message)
+
+def guess_username(fullname):
+    fullname = fullname.split()
+
+    # use last name word (at the end in most of the western countries..)
+    if len(fullname) > 0:
+        username = fullname[-1].decode("utf-8").lower()
+    else:
+        username = u""
+
+    # and prefix it with the first name inital
+    if len(fullname) > 1:
+        username = fullname[0].decode("utf-8")[0].lower() + username
+
+    username = strip_accents(username).encode("utf-8")
+    return username
 
 class Users:
     def __init__ (self):
@@ -169,29 +210,32 @@ class Users:
         if not childpid:
             if not root in ["","/"]:
                 os.chroot(root)
+                os.chdir("/")
                 del(os.environ["LIBUSER_CONF"])
 
             self.admin = libuser.admin()
 
-            try:
-                if self.admin.lookupGroupByName(group_name):
-                    os._exit(1)
-
-                groupEnt = self.admin.initGroup(group_name)
-
-                if kwargs.get("gid", -1) >= 0:
-                    groupEnt.set(libuser.GIDNUMBER, kwargs["gid"])
-
-                self.admin.addGroup(groupEnt)
-                os._exit(0)
-            except Exception as e:
-                log.critical("Error when creating new group: %s" % str(e))
+            if self.admin.lookupGroupByName(group_name):
+                log.error("Group %s already exists, not creating.", group_name)
                 os._exit(1)
 
+            groupEnt = self.admin.initGroup(group_name)
+
+            if kwargs.get("gid", -1) >= 0:
+                groupEnt.set(libuser.GIDNUMBER, kwargs["gid"])
+
+            try:
+                self.admin.addGroup(groupEnt)
+            except RuntimeError as e:
+                log.critical("Error when creating new group: %s", e)
+                os._exit(1)
+
+            os._exit(0)
+
         try:
-            (pid, status) = os.waitpid(childpid, 0)
+            status = os.waitpid(childpid, 0)[1]
         except OSError as e:
-            log.critical("exception from waitpid while creating a group: %s %s" % (e.errno, e.strerror))
+            log.critical("exception from waitpid while creating a group: %s %s", e.errno, e.strerror)
             return False
 
         if os.WIFEXITED(status) and (os.WEXITSTATUS(status) == 0):
@@ -215,12 +259,17 @@ class Users:
            lock      -- Is the new account locked by default?  Defaults to
                         False.
            password  -- The password.  See isCrypted for how this is interpreted.
+                        If the password is "" then the account is created
+                        with a blank password. If None or False the account will
+                        be left in its initial state (locked)
            root      -- The directory of the system to create the new user
                         in.  homedir will be interpreted relative to this.
                         Defaults to /mnt/sysimage.
            shell     -- The shell for the new user.  If none is given, the
                         libuser default is used.
            uid       -- The UID for the new user.  If none is given, the next
+                        available one is used.
+           gid       -- The GID for the new user.  If none is given, the next
                         available one is used.
         """
         childpid = os.fork()
@@ -229,66 +278,116 @@ class Users:
         if not childpid:
             if not root in ["","/"]:
                 os.chroot(root)
+                os.chdir("/")
                 del(os.environ["LIBUSER_CONF"])
 
             self.admin = libuser.admin()
 
+            if self.admin.lookupUserByName(user_name):
+                log.error("User %s already exists, not creating.", user_name)
+                os._exit(1)
+
+            userEnt = self.admin.initUser(user_name)
+            groupEnt = self.admin.initGroup(user_name)
+
+            if kwargs.get("gid", -1) >= 0:
+                groupEnt.set(libuser.GIDNUMBER, kwargs["gid"])
+
+            grpLst = filter(lambda grp: grp,
+                            map(self.admin.lookupGroupByName, kwargs.get("groups", [])))
+            userEnt.set(libuser.GIDNUMBER, [groupEnt.get(libuser.GIDNUMBER)[0]] +
+                        map(lambda grp: grp.get(libuser.GIDNUMBER)[0], grpLst))
+
+            if kwargs.get("homedir", False):
+                userEnt.set(libuser.HOMEDIRECTORY, kwargs["homedir"])
+            else:
+                iutil.mkdirChain(root+'/home')
+                userEnt.set(libuser.HOMEDIRECTORY, "/home/" + user_name)
+
+            if kwargs.get("shell", False):
+                userEnt.set(libuser.LOGINSHELL, kwargs["shell"])
+
+            if kwargs.get("uid", -1) >= 0:
+                userEnt.set(libuser.UIDNUMBER, kwargs["uid"])
+
+            if kwargs.get("gecos", False):
+                userEnt.set(libuser.GECOS, kwargs["gecos"])
+
+            # need to create home directory for the user or does it already exist?
+            # userEnt.get returns lists (usually with a single item)
+            mk_homedir = not os.path.exists(userEnt.get(libuser.HOMEDIRECTORY)[0])
+
             try:
-                if self.admin.lookupUserByName(user_name):
+                self.admin.addUser(userEnt, mkmailspool=kwargs.get("mkmailspool", True),
+                                   mkhomedir=mk_homedir)
+            except RuntimeError as e:
+                log.critical("Error when creating new user: %s", e)
+                os._exit(1)
+
+            try:
+                self.admin.addGroup(groupEnt)
+            except RuntimeError as e:
+                log.critical("Error when creating new group: %s", e)
+                os._exit(1)
+
+            if not mk_homedir:
+                try:
+                    stats = os.stat(userEnt.get(libuser.HOMEDIRECTORY)[0])
+                    orig_uid = stats.st_uid
+                    orig_gid = stats.st_gid
+
+                    log.info("Home directory for the user %s already existed, "
+                             "fixing the owner.", user_name)
+                    # home directory already existed, change owner of it properly
+                    iutil.chown_dir_tree(userEnt.get(libuser.HOMEDIRECTORY)[0],
+                                         userEnt.get(libuser.UIDNUMBER)[0],
+                                         groupEnt.get(libuser.GIDNUMBER)[0],
+                                         orig_uid, orig_gid)
+                except OSError as e:
+                    log.critical("Unable to change owner of existing home directory: %s",
+                            os.strerror)
                     os._exit(1)
 
-                userEnt = self.admin.initUser(user_name)
-                groupEnt = self.admin.initGroup(user_name)
-
-                grpLst = filter(lambda grp: grp,
-                                map(lambda name: self.admin.lookupGroupByName(name), kwargs.get("groups", [])))
-                userEnt.set(libuser.GIDNUMBER, [groupEnt.get(libuser.GIDNUMBER)[0]] +
-                            map(lambda grp: grp.get(libuser.GIDNUMBER)[0], grpLst))
-
-                if kwargs.get("homedir", False):
-                    userEnt.set(libuser.HOMEDIRECTORY, kwargs["homedir"])
-                else:
-                    iutil.mkdirChain(root+'/home')
-                    userEnt.set(libuser.HOMEDIRECTORY, "/home/" + user_name)
-
-                if kwargs.get("shell", False):
-                    userEnt.set(libuser.LOGINSHELL, kwargs["shell"])
-
-                if kwargs.get("uid", -1) >= 0:
-                    userEnt.set(libuser.UIDNUMBER, kwargs["uid"])
-
-                if kwargs.get("gecos", False):
-                    userEnt.set(libuser.GECOS, kwargs["gecos"])
-
-                self.admin.addUser(userEnt, mkmailspool=kwargs.get("mkmailspool", True))
-                self.admin.addGroup(groupEnt)
-
-                if kwargs.get("password", False):
+            pw = kwargs.get("password", False)
+            try:
+                if pw:
                     if kwargs.get("isCrypted", False):
                         password = kwargs["password"]
                     else:
                         password = cryptPassword(kwargs["password"], algo=kwargs.get("algo", None))
-
                     self.admin.setpassUser(userEnt, password, True)
+                    userEnt.set(libuser.SHADOWLASTCHANGE, "")
+                    self.admin.modifyUser(userEnt)
+                elif pw == "":
+                    # Setup the account with *NO* password
+                    self.admin.unlockUser(userEnt)
+                    log.info("user account %s setup with no password", user_name)
 
                 if kwargs.get("lock", False):
                     self.admin.lockUser(userEnt)
+                    log.info("user account %s locked", user_name)
+            # setpassUser raises SystemError on failure, while unlockUser and lockUser
+            # raise RuntimeError
+            except (RuntimeError, SystemError) as e:
+                log.critical("Unable to set password for new user: %s", e)
+                os._exit(1)
 
-                # Add the user to all the groups they should be part of.
-                grpLst.append(self.admin.lookupGroupByName(user_name))
+            # Add the user to all the groups they should be part of.
+            grpLst.append(self.admin.lookupGroupByName(user_name))
+            try:
                 for grp in grpLst:
                     grp.add(libuser.MEMBERNAME, user_name)
                     self.admin.modifyGroup(grp)
-
-                os._exit(0)
-            except Exception as e:
-                log.critical("Error when creating new user: %s" % str(e))
+            except RuntimeError as e:
+                log.critical("Unable to add user to groups: %s", e)
                 os._exit(1)
 
+            os._exit(0)
+
         try:
-            (pid, status) = os.waitpid(childpid, 0)
+            status = os.waitpid(childpid, 0)[1]
         except OSError as e:
-            log.critical("exception from waitpid while creating a user: %s %s" % (e.errno, e.strerror))
+            log.critical("exception from waitpid while creating a user: %s %s", e.errno, e.strerror)
             return False
 
         if os.WIFEXITED(status) and (os.WEXITSTATUS(status) == 0):
@@ -302,21 +401,20 @@ class Users:
         if not childpid:
             if not root in ["","/"]:
                 os.chroot(root)
+                os.chdir("/")
                 del(os.environ["LIBUSER_CONF"])
 
             self.admin = libuser.admin()
 
-            try:
-                if self.admin.lookupUserByName(username):
-                    os._exit(0)
-            except Exception as e:
-                log.critical("Error when searching for user: %s" % str(e))
-            os._exit(1)
+            if self.admin.lookupUserByName(username):
+                os._exit(0)
+            else:
+                os._exit(1)
 
         try:
-            (pid, status) = os.waitpid(childpid, 0)
+            status = os.waitpid(childpid, 0)[1]
         except OSError as e:
-            log.critical("exception from waitpid while creating a user: %s %s" % (e.errno, e.strerror))
+            log.critical("exception from waitpid while creating a user: %s %s", e.errno, e.strerror)
             return False
 
         if os.WIFEXITED(status) and (os.WEXITSTATUS(status) == 0):
@@ -335,6 +433,7 @@ class Users:
         if lock:
             self.admin.lockUser(user)
 
+        user.set(libuser.SHADOWLASTCHANGE, "")
         self.admin.modifyUser(user)
 
     def setRootPassword(self, password, isCrypted=False, isLocked=False, algo=None):

@@ -22,11 +22,17 @@
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
 from pyanaconda.constants import USEVNC, USETEXT
+from pyanaconda.constants_text import INPUT_PROCESSED
+from pyanaconda.i18n import _
+from pyanaconda.ui.communication import hubQ
+from pyanaconda.ui.tui import exception_msg_handler
 import getpass
+import sys
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-
+def exception_msg_handler_and_exit(event, data):
+    """Display an exception and exit so that we don't end up in a loop."""
+    exception_msg_handler(event, data)
+    sys.exit(1)
 
 class AskVNCSpoke(NormalTUISpoke):
     title = _("VNC")
@@ -37,6 +43,12 @@ class AskVNCSpoke(NormalTUISpoke):
     def __init__(self, app, data, storage=None, payload=None,
                  instclass=None, message=None):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
+
+        # The TUI hasn't been initialized with the message handlers yet. Add an
+        # exception message handler so that the TUI exits if anything goes wrong
+        # at this stage.
+        self._app.register_event_handler(hubQ.HUB_CODE_EXCEPTION, exception_msg_handler_and_exit)
+
         if message:
             self._message = message
         else:
@@ -45,10 +57,10 @@ class AskVNCSpoke(NormalTUISpoke):
                               "start VNC to connect to "
                               "this computer from another "
                               "computer and perform a "
-                              "graphical install or continue "
-                              "with a text mode install?")
+                              "graphical installation or continue "
+                              "with a text mode installation?")
 
-        self._choices = (USEVNC, USETEXT)
+        self._choices = (_(USEVNC), _(USETEXT))
         self._usevnc = False
 
     @property
@@ -71,12 +83,16 @@ class AskVNCSpoke(NormalTUISpoke):
         """Override input so that we can launch the VNC password spoke"""
 
         try:
-            number = int(key)
-            choice = self._choices[number -1]
-        except (ValueError, KeyError, IndexError):
+            keyid = int(key) - 1
+        except ValueError:
             return key
 
-        if choice == USETEXT:
+        if 0 <= keyid < len(self._choices):
+            choice = self._choices[keyid]
+        else:
+            return INPUT_PROCESSED
+
+        if choice == _(USETEXT):
             self._usevnc = False
         else:
             self._usevnc = True
@@ -86,7 +102,7 @@ class AskVNCSpoke(NormalTUISpoke):
 
         self.apply()
         self.close()
-        return None
+        return INPUT_PROCESSED
 
     def apply(self):
         self.data.vnc.enabled = self._usevnc

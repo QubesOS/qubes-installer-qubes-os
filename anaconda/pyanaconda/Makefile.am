@@ -17,11 +17,11 @@
 #
 # Author: Martin Sivak <msivak@redhat.com>
 
-SUBDIRS = installclasses isys textw storage ui packaging
+SUBDIRS = installclasses isys ui packaging
 
 MAINTAINERCLEANFILES = Makefile.in
 
 # anaconda Python code
 pkgpyexecdir    = $(pyexecdir)/py$(PACKAGE_NAME)
 anacondadir     = $(pkgpyexecdir)
-anaconda_PYTHON = *.py
+anaconda_PYTHON = $(srcdir)/*.py

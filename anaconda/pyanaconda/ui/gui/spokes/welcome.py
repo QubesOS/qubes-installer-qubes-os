@@ -17,63 +17,85 @@
 # Red Hat, Inc.
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
+#                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
 import sys
 import re
+import langtable
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
-
-# pylint: disable-msg=E0611
-from gi.repository import AnacondaWidgets, Gtk
 from pyanaconda.ui.gui.hubs.summary import SummaryHub
-from pyanaconda.ui.gui.spokes import StandaloneSpoke, NormalSpoke
-from pyanaconda.ui.gui.utils import enlightbox
-from pyanaconda.ui.gui.categories.localization import LocalizationCategory
+from pyanaconda.ui.gui.spokes import StandaloneSpoke
+from pyanaconda.ui.gui.utils import enlightbox, setup_gtk_direction
+from pyanaconda.ui.gui.spokes.lib.lang_locale_handler import LangLocaleHandler
 
-from pyanaconda.localization import Language, LOCALE_PREFERENCES, expand_langs
+from pyanaconda import localization
 from pyanaconda.product import distributionText, isFinal, productName, productVersion
 from pyanaconda import keyboard
-from pyanaconda import timezone
 from pyanaconda import flags
+from pyanaconda import geoloc
+from pyanaconda.i18n import _
+from pyanaconda.iutil import is_unsupported_hw
+from pyanaconda.constants import DEFAULT_LANG, DEFAULT_KEYBOARD
 
-__all__ = ["WelcomeLanguageSpoke", "LanguageSpoke"]
+import logging
+log = logging.getLogger("anaconda")
 
-class LanguageMixIn(object):
-    builderObjects = ["languageStore", "languageStoreFilter"]
+__all__ = ["WelcomeLanguageSpoke"]
 
-    def __init__(self, labelName = "welcomeLabel",
-                 viewName = "languageView", selectionName = "languageViewSelection"):
+class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
+    mainWidgetName = "welcomeWindow"
+    uiFile = "spokes/welcome.glade"
+    builderObjects = ["languageStore", "languageStoreFilter", "localeStore",
+                      "welcomeWindow", "betaWarnDialog", "unsupportedHardwareDialog"]
+
+    preForHub = SummaryHub
+    priority = 0
+
+    def __init__(self, *args, **kwargs):
+        StandaloneSpoke.__init__(self, *args, **kwargs)
+        LangLocaleHandler.__init__(self)
         self._xklwrapper = keyboard.XklWrapper.get_instance()
         self._origStrings = {}
-        self._labelName = labelName
-        self._viewName = viewName
-        self._selectionName = selectionName
 
     def apply(self):
-        selected = self.builder.get_object(self._selectionName)
-        (store, itr) = selected.get_selected()
+        (store, itr) = self._localeSelection.get_selected()
 
-        lang = store[itr][2]
-        self.language.select_translation(lang)
-        self.data.lang.lang = lang
+        locale = store[itr][1]
+        localization.setup_locale(locale, self.data.lang)
 
-        #TODO: better use GeoIP data once it is available
-        if self.language.territory and not self.data.timezone.timezone:
-            lang_timezone = timezone.get_preferred_timezone(self.language.territory)
-            if lang_timezone:
-                self.data.timezone.timezone = lang_timezone
+        # Skip timezone and keyboard default setting for kickstart installs.
+        # The user may have provided these values via kickstart and if not, we
+        # need to prompt for them.
+        if flags.flags.automatedInstall:
+            return
 
-        lang_country = self.language.preferred_locale.territory
-        self._set_keyboard_defaults(store[itr][1], lang_country)
+        geoloc_timezone = geoloc.get_timezone()
+        loc_timezones = localization.get_locale_timezones(self.data.lang.lang)
+        if geoloc_timezone:
+            # (the geolocation module makes sure that the returned timezone is
+            # either a valid timezone or None)
+            self.data.timezone.timezone = geoloc_timezone
+        elif loc_timezones and not self.data.timezone.timezone:
+            # no data is provided by Geolocation, try to get timezone from the
+            # current language
+            self.data.timezone.timezone = loc_timezones[0]
 
-    def _set_keyboard_defaults(self, lang_name, country):
+        # setup Gtk direction (RTL/LTR) now that we have the language
+        # configuration applied
+        setup_gtk_direction()
+        self._set_keyboard_defaults(self.data.lang.lang)
+
+    def _set_keyboard_defaults(self, locale):
         """
         Set default keyboard settings (layouts, layout switching).
 
-        @param lang_name: name of the selected language (e.g. "Czech")
+        :param locale: locale string (see localization.LANGCODE_RE)
+        :type locale: str
+        :return: list of preferred keyboard layouts
+        :rtype: list of strings
+        :raise InvalidLocaleSpec: if an invalid locale is given (see
+                                  localization.LANGCODE_RE)
 
         """
 
@@ -89,33 +111,31 @@ class LanguageMixIn(object):
             #do not add layouts if there are any specified in the kickstart
             return
 
-        #get language name without any additional specifications
-        #e.g. 'English (United States)' -> 'English'
-        lang_name = lang_name.split()[0]
-
-        default_layout = self._xklwrapper.get_default_lang_country_layout(lang_name,
-                                                                          country)
-        if default_layout:
-            new_layouts = [default_layout]
+        layouts = localization.get_locale_keyboards(locale)
+        if layouts:
+            # take the first locale (with highest rank) from the list and
+            # store it normalized
+            new_layouts = [keyboard.normalize_layout_variant(layouts[0])]
+            if not langtable.supports_ascii(layouts[0]):
+                # does not support typing ASCII chars, append the default layout
+                new_layouts.append(DEFAULT_KEYBOARD)
         else:
-            new_layouts = ["us"]
-
-        checkbutton = self.builder.get_object("setKeyboardCheckButton")
-        if not checkbutton.get_active() and "us" not in new_layouts:
-            #user doesn't want only the language-default layout, prepend
-            #'English (US)' layout
-            new_layouts.insert(0, "us")
+            log.error("Failed to get layout for chosen locale '%s'", locale)
+            new_layouts = [DEFAULT_KEYBOARD]
 
         self.data.keyboard.x_layouts = new_layouts
-        if flags.can_touch_runtime_system("replace runtime X layouts"):
+        if flags.can_touch_runtime_system("replace runtime X layouts", touch_live=True):
             self._xklwrapper.replace_layouts(new_layouts)
 
         if len(new_layouts) >= 2 and not self.data.keyboard.switch_options:
             #initialize layout switching if needed
             self.data.keyboard.switch_options = ["grp:alt_shift_toggle"]
 
-            if flags.can_touch_runtime_system("init layout switching"):
+            if flags.can_touch_runtime_system("init layout switching", touch_live=True):
                 self._xklwrapper.set_switching_options(["grp:alt_shift_toggle"])
+                # activate the language-default layout instead of the additional
+                # one
+                self._xklwrapper.activate_default_layout()
 
     @property
     def completed(self):
@@ -124,32 +144,82 @@ class LanguageMixIn(object):
         else:
             return False
 
+    def _row_is_separator(self, model, itr, *args):
+        return model[itr][3]
+
     def initialize(self):
-        store = self.builder.get_object("languageStore")
+        self._languageStore = self.builder.get_object("languageStore")
         self._languageStoreFilter = self.builder.get_object("languageStoreFilter")
         self._languageEntry = self.builder.get_object("languageEntry")
-        self._selection = self.builder.get_object(self._selectionName)
-        self._view = self.builder.get_object(self._viewName)
+        self._langSelection = self.builder.get_object("languageViewSelection")
+        self._langSelectedRenderer = self.builder.get_object("langSelectedRenderer")
+        self._langSelectedColumn = self.builder.get_object("langSelectedColumn")
+        self._langView = self.builder.get_object("languageView")
+        self._localeView = self.builder.get_object("localeView")
+        self._localeStore = self.builder.get_object("localeStore")
+        self._localeSelection = self.builder.get_object("localeViewSelection")
 
-        # TODO We can use the territory from geoip here
+        LangLocaleHandler.initialize(self)
+
+        # We need to tell the view whether something is a separator or not.
+        self._langView.set_row_separator_func(self._row_is_separator, None)
+
+        # We can use the territory from geolocation here
         # to preselect the translation, when it's available.
-        # Until then, use None.
-        territory = None
-        self.language = Language(LOCALE_PREFERENCES, territory=territory)
+        territory = geoloc.get_territory_code(wait=True)
 
-        # fill the list with available translations
-        for _code, trans in sorted(self.language.translations.items()):
-            self._addLanguage(store, trans.display_name,
-                              trans.english_name, trans.short_name)
+        # bootopts and kickstart have priority over geoip
+        if self.data.lang.lang and self.data.lang.seen:
+            locales = [self.data.lang.lang]
+        else:
+            locales = localization.get_territory_locales(territory) or [DEFAULT_LANG]
 
-        # select the preferred translation if there wasn't any
-        (store, itr) = self._selection.get_selected()
-        if not itr:
-            lang = self.data.lang.lang or \
-                   self.language.preferred_translation.short_name
-            self._selectLanguage(store, lang)
+        # get the data models
+        filter_store = self._languageStoreFilter
+        store = filter_store.get_model()
 
-        self._languageStoreFilter.set_visible_func(self._matchesEntry, None)
+        # get language codes for the locales
+        langs = [localization.parse_langcode(locale)['language'] for locale in locales]
+
+        # check which of the geolocated languages have translations
+        # and store the iterators for those languages in a dictionary
+        langs_with_translations = {}
+        itr = store.get_iter_first()
+        while itr:
+            row_lang = store[itr][2]
+            if row_lang in langs:
+                langs_with_translations[row_lang] = itr
+            itr = store.iter_next(itr)
+
+        # if there are no translations for the given locales,
+        # use default
+        if not langs_with_translations:
+            localization.setup_locale(DEFAULT_LANG, self.data.lang)
+            lang_itr, _locale_itr = self._select_locale(self.data.lang.lang)
+            langs_with_translations[DEFAULT_LANG] = lang_itr
+            locales = [DEFAULT_LANG]
+
+        # go over all geolocated languages in reverse order
+        # and move those we have translation for to the top of the
+        # list, above the separator
+        for lang in reversed(langs):
+            itr = langs_with_translations.get(lang)
+            if itr:
+                store.move_after(itr, None)
+            else:
+                # we don't have translation for this language,
+                # so dump all locales for it
+                locales = [l for l in locales
+                           if localization.parse_langcode(l)['language'] != lang]
+
+        # And then we add a separator after the selected best language
+        # and any additional languages (that have translations) from geoip
+        newItr = store.insert(len(langs_with_translations))
+        store.set(newItr, 0, "", 1, "", 2, "", 3, True)
+
+        # setup the "best" locale
+        localization.setup_locale(locales[0], self.data.lang)
+        self._select_locale(self.data.lang.lang)
 
     def _retranslate_one(self, widgetName):
         widget = self.builder.get_object(widgetName)
@@ -166,174 +236,82 @@ class LanguageMixIn(object):
         # Change the translations on labels and buttons that do not have
         # substitution text.
         for name in ["pickLanguageLabel", "betaWarnTitle", "betaWarnDesc",
-                     "quitButton", "continueButton", "setKeyboardCheckButton"]:
+                     "quitButton", "continueButton"]:
             self._retranslate_one(name)
 
         # The welcome label is special - it has text that needs to be
         # substituted.
-        welcomeLabel = self.builder.get_object(self._labelName)
+        welcomeLabel = self.builder.get_object("welcomeLabel")
 
         if not welcomeLabel in self._origStrings:
             self._origStrings[welcomeLabel] = welcomeLabel.get_label()
 
         before = self._origStrings[welcomeLabel]
-        xlated = _(before) % (productName.upper(), productVersion)
+        # pylint: disable-msg=E1103
+        xlated = _(before) % {"name" : productName.upper(), "version" : productVersion}
         welcomeLabel.set_label(xlated)
+
+        # Retranslate the language (filtering) entry's placeholder text
+        languageEntry = self.builder.get_object("languageEntry")
+        if not languageEntry in self._origStrings:
+            self._origStrings[languageEntry] = languageEntry.get_placeholder_text()
+
+        languageEntry.set_placeholder_text(_(self._origStrings[languageEntry]))
 
         # And of course, don't forget the underlying window.
         self.window.set_property("distribution", distributionText().upper())
         self.window.retranslate(lang)
 
-    def refresh(self, displayArea):
-        store = self.builder.get_object("languageStore")
-        self._selectLanguage(store, self.data.lang.lang)
-
-        # Rip the label and language selection window
-        # from where it is right now and add it to this
-        # spoke.
-        # This way we can share the dialog and code
-        # between Welcome and Language spokes
-        langLabel = self.builder.get_object("pickLanguageLabel")
-        langLabel.get_parent().remove(langLabel)
-        langAlign = self.builder.get_object("languageAlignment")
-        langAlign.get_parent().remove(langAlign)
-
-        content = self.builder.get_object(displayArea)
-        content.pack_start(child = langLabel, fill = True, expand = False, padding = 0)
-        content.pack_start(child = langAlign, fill = True, expand = True, padding = 0)
-
+    def refresh(self):
+        self._select_locale(self.data.lang.lang)
         self._languageEntry.set_text("")
         self._languageStoreFilter.refilter()
 
-    def _addLanguage(self, store, native, english, setting):
-        store.append(['<span lang="%s">%s</span>' % (re.sub('\..*', '', setting), native), english, setting])
+    def _add_language(self, store, native, english, lang):
+        native_span = '<span lang="%s">%s</span>' % (lang, native)
+        store.append([native_span, english, lang, False])
 
-    def _matchesEntry(self, model, itr, *args):
-        native = model[itr][0]
-        english = model[itr][1]
-        entry = self._languageEntry.get_text().strip()
-
-        # Nothing in the text entry?  Display everything.
-        if not entry:
-            return True
-
-        # Otherwise, filter the list showing only what is matched by the
-        # text entry.  Either the English or native names can match.
-        lowered = entry.lower()
-        if lowered in native.lower() or lowered in english.lower():
-            return True
-        else:
-            return False
-
-    def _selectLanguage(self, store, language):
-        itr = store.get_iter_first()
-        while itr and language not in expand_langs(store[itr][2]):
-            itr = store.iter_next(itr)
-
-        # If we were provided with an unsupported language, just use the default.
-        if not itr:
-            return
-
-        treeview = self.builder.get_object(self._viewName)
-        selection = treeview.get_selection()
-        selection.select_iter(itr)
-        path = store.get_path(itr)
-        treeview.scroll_to_cell(path)
+    def _add_locale(self, store, native, locale):
+        native_span = '<span lang="%s">%s</span>' % (re.sub(r'\..*', '', locale), native)
+        store.append([native_span, locale])
 
     # Signal handlers.
-    def on_selection_changed(self, selection):
+    def on_lang_selection_changed(self, selection):
+        (_store, selected) = selection.get_selected_rows()
+        LangLocaleHandler.on_lang_selection_changed(self, selection)
+
+        if not selected and hasattr(self.window, "set_may_continue"):
+            self.window.set_may_continue(False)
+
+    def on_locale_selection_changed(self, selection):
         (store, selected) = selection.get_selected_rows()
         if hasattr(self.window, "set_may_continue"):
             self.window.set_may_continue(len(selected) > 0)
 
         if selected:
-            lang = store[selected[0]][2]
-            self.language.set_install_lang(lang)
-            self.language.set_system_lang(lang)
+            lang = store[selected[0]][1]
+            localization.setup_locale(lang)
             self.retranslate(lang)
-
-    def on_clear_icon_clicked(self, entry, icon_pos, event):
-        if icon_pos == Gtk.EntryIconPosition.SECONDARY:
-            entry.set_text("")
-
-    def on_entry_changed(self, *args):
-        self._languageStoreFilter.refilter()
-
-class WelcomeLanguageSpoke(LanguageMixIn, StandaloneSpoke):
-    mainWidgetName = "welcomeWindow"
-    uiFile = "spokes/welcome.glade"
-    builderObjects = LanguageMixIn.builderObjects + [mainWidgetName, "betaWarnDialog"]
-
-    preForHub = SummaryHub
-    priority = 0
-
-    def __init__(self, *args):
-        StandaloneSpoke.__init__(self, *args)
-        LanguageMixIn.__init__(self)
-
-    def refresh(self):
-        StandaloneSpoke.refresh(self)
-        LanguageMixIn.refresh(self, "welcomeWindowContentBox")
-
-    def initialize(self):
-        LanguageMixIn.initialize(self)
-        StandaloneSpoke.initialize(self)
 
     # Override the default in StandaloneSpoke so we can display the beta
     # warning dialog first.
     def _on_continue_clicked(self, cb):
         # Don't display the betanag dialog if this is the final release.
-        if isFinal:
-            StandaloneSpoke._on_continue_clicked(self, cb)
-            return
+        if not isFinal:
+            dlg = self.builder.get_object("betaWarnDialog")
+            with enlightbox(self.window, dlg):
+                rc = dlg.run()
+                dlg.destroy()
+            if rc == 0:
+                sys.exit(0)
 
-        dlg = self.builder.get_object("betaWarnDialog")
+        if productName.startswith("Red Hat Enterprise Linux") and \
+          is_unsupported_hw() and not self.data.unsupportedhardware.unsupported_hardware:
+            dlg = self.builder.get_object("unsupportedHardwareDialog")
+            with enlightbox(self.window, dlg):
+                rc = dlg.run()
+                dlg.destroy()
+            if rc == 0:
+                sys.exit(0)
 
-        with enlightbox(self.window, dlg):
-            rc = dlg.run()
-            dlg.destroy()
-
-        if rc == 0:
-            sys.exit(0)
-        else:
-            StandaloneSpoke._on_continue_clicked(self, cb)
-
-
-class LanguageSpoke(LanguageMixIn, NormalSpoke):
-    mainWidgetName = "languageSpokeWindow"
-    uiFile = "spokes/welcome.glade"
-    builderObjects = LanguageMixIn.builderObjects + [mainWidgetName, WelcomeLanguageSpoke.mainWidgetName]
-
-    category = LocalizationCategory
-
-    icon = "accessories-character-map-symbolic"
-    title = N_("LANGUAGE")
-
-    def __init__(self, *args):
-        NormalSpoke.__init__(self, *args)
-        LanguageMixIn.__init__(self)
-
-    def initialize(self):
-        LanguageMixIn.initialize(self)
-        NormalSpoke.initialize(self)
-
-    def refresh(self):
-        NormalSpoke.refresh(self)
-        LanguageMixIn.refresh(self, "languageSpokeWindowContentBox")
-
-    @property
-    def completed(self):
-        # The language spoke is always completed, as it does not require you do
-        # anything.  There's always a default selected.
-        return True
-
-    @property
-    def status(self):
-        selected = self.builder.get_object(self._selectionName)
-        (store, itr) = selected.get_selected()
-
-        return store[itr][0]
-
-    @property
-    def showable(self):
-        return False
+        StandaloneSpoke._on_continue_clicked(self, cb)

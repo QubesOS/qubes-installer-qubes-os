@@ -20,19 +20,22 @@
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
-
-# pylint: disable-msg=E0611
-from gi.repository import GLib, Gkbd, Gtk, Gdk
+from gi.repository import Gkbd, Gdk, Gtk
 
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.gui.categories.localization import LocalizationCategory
-from pyanaconda.ui.gui.utils import enlightbox, gtk_call_once
+from pyanaconda.ui.gui.utils import enlightbox, gtk_call_once, timed_action
 from pyanaconda import keyboard
 from pyanaconda import flags
+from pyanaconda.i18n import _, N_
+from pyanaconda.constants import DEFAULT_KEYBOARD
+from pyanaconda.iutil import strip_accents, have_word_match
+
+import locale as locale_mod
+
+import logging
+log = logging.getLogger("anaconda")
 
 __all__ = ["KeyboardSpoke"]
 
@@ -40,11 +43,11 @@ __all__ = ["KeyboardSpoke"]
 LAYOUT_SWITCHING_INFO = N_("%s to switch layouts.")
 
 def _show_layout(column, renderer, model, itr, wrapper):
-    value = wrapper.name_to_show_str[model[itr][0]]
+    value = wrapper.get_layout_variant_description(model[itr][0])
     renderer.set_property("text", value)
 
 def _show_description(column, renderer, model, itr, wrapper):
-    value = wrapper.switch_to_show_str[model[itr][0]]
+    value = wrapper.get_switch_opt_description(model[itr][0])
     if model[itr][1]:
         value = "<b>%s</b>" % value
     renderer.set_property("markup", value)
@@ -58,25 +61,22 @@ class AddLayoutDialog(GUIObject):
     def __init__(self, *args):
         GUIObject.__init__(self, *args)
         self._xkl_wrapper = keyboard.XklWrapper.get_instance()
+        self._chosen_layouts = []
 
     def matches_entry(self, model, itr, user_data=None):
-        value = model[itr][0]
-        value = self._xkl_wrapper.name_to_show_str[value]
         entry_text = self._entry.get_text()
-        if entry_text is not None:
-            entry_text = entry_text.lower()
-            entry_text_words = entry_text.split()
-        else:
-            return False
-        try:
-            if value:
-                value = value.lower()
-                for word in entry_text_words:
-                    value.index(word)
-                return True
-            return False
-        except ValueError as valerr:
-            return False
+        if not entry_text:
+            # everything matches empty string
+            return True
+
+        value = model[itr][0]
+        eng_value = self._xkl_wrapper.get_layout_variant_description(value, xlated=False)
+        xlated_value = self._xkl_wrapper.get_layout_variant_description(value)
+        translit_value = strip_accents(xlated_value).lower()
+        translit_text = strip_accents(unicode(entry_text, "utf-8")).lower()
+
+        return have_word_match(entry_text, eng_value) or have_word_match(entry_text, xlated_value) \
+            or have_word_match(translit_text, translit_value)
 
     def compare_layouts(self, model, itr1, itr2, user_data=None):
         """
@@ -87,15 +87,10 @@ class AddLayoutDialog(GUIObject):
 
         value1 = model[itr1][0]
         value2 = model[itr2][0]
-        show_str1 = self._xkl_wrapper.name_to_show_str[value1]
-        show_str2 = self._xkl_wrapper.name_to_show_str[value2]
+        show_str1 = self._xkl_wrapper.get_layout_variant_description(value1)
+        show_str2 = self._xkl_wrapper.get_layout_variant_description(value2)
 
-        if show_str1 < show_str2:
-            return -1
-        elif show_str1 == show_str2:
-            return 0
-        else:
-            return 1
+        return locale_mod.strcoll(show_str1, show_str2)
 
     def refresh(self):
         self._entry.grab_focus()
@@ -124,8 +119,9 @@ class AddLayoutDialog(GUIObject):
         self._confirmAddButton.set_sensitive(selected)
 
     def run(self):
+        self.window.show()
         rc = self.window.run()
-        self.window.destroy()
+        self.window.hide()
         return rc
 
     @property
@@ -145,6 +141,7 @@ class AddLayoutDialog(GUIObject):
         selected = selection.count_selected_rows()
         self._confirmAddButton.set_sensitive(selected)
 
+    @timed_action()
     def on_entry_changed(self, *args):
         self._treeModelFilter.refilter()
 
@@ -152,11 +149,12 @@ class AddLayoutDialog(GUIObject):
         self._entry.set_text("")
 
     def on_layout_view_button_press(self, widget, event, *args):
-        # BUG: Gdk.EventType.2BUTTON_PRESS results in syntax error
-        if event.type == getattr(Gdk.EventType, "2BUTTON_PRESS"):
-            # double-click should close the dialog
-            button = self.builder.get_object("confirmAddButton")
-            button.emit("clicked")
+        if event.type == Gdk.EventType._2BUTTON_PRESS and \
+                self._confirmAddButton.get_sensitive():
+            # double-click should close the dialog if something is selected
+            # (i.e. the Add button is sensitive)
+            # @see on_add_layout_selection_changed
+            self._confirmAddButton.emit("clicked")
 
         # let the other actions happen as well
         return False
@@ -222,8 +220,8 @@ class ConfigureSwitchingDialog(GUIObject):
 
         value1 = model[itr1][0]
         value2 = model[itr2][0]
-        show_str1 = self._xkl_wrapper.switch_to_show_str[value1]
-        show_str2 = self._xkl_wrapper.switch_to_show_str[value2]
+        show_str1 = self._xkl_wrapper.get_switch_opt_description(value1)
+        show_str2 = self._xkl_wrapper.get_switch_opt_description(value2)
 
         if show_str1 < show_str2:
             return -1
@@ -236,7 +234,7 @@ class ConfigureSwitchingDialog(GUIObject):
     def checked_options(self):
         """Property returning all checked options from the list"""
 
-        ret = [row[0] for row in self._switchingOptsStore if row[1] and row[0]]
+        ret = [row[0] for row in self._switchingOptsSort if row[1] and row[0]]
         return ret
 
     def on_use_option_toggled(self, renderer, path, *args):
@@ -258,36 +256,54 @@ class KeyboardSpoke(NormalSpoke):
     category = LocalizationCategory
 
     icon = "input-keyboard-symbolic"
-    title = N_("KEYBOARD")
+    title = N_("_KEYBOARD")
 
     def __init__(self, *args):
         NormalSpoke.__init__(self, *args)
         self._remove_last_attempt = False
+        self._confirmed = False
         self._xkl_wrapper = keyboard.XklWrapper.get_instance()
+        self._add_dialog = None
+
+        self._upButton = self.builder.get_object("upButton")
+        self._downButton = self.builder.get_object("downButton")
+        self._removeButton = self.builder.get_object("removeLayoutButton")
+        self._previewButton = self.builder.get_object("previewButton")
 
     def apply(self):
+        # the user has confirmed (seen) the configuration
+        self._confirmed = True
+
         # Clear and repopulate self.data with actual values
         self.data.keyboard.x_layouts = list()
+        self.data.keyboard.seen = True
+
         for row in self._store:
             self.data.keyboard.x_layouts.append(row[0])
-        # FIXME:  Set the keyboard layout here, too.
 
     @property
     def completed(self):
-        # The keyboard spoke is always completed, as it does not require you do
-        # anything.  There's always a default selected.
-        return True
+        if flags.flags.automatedInstall and not self.data.keyboard.seen:
+            return False
+        elif not self._confirmed and self._xkl_wrapper.get_current_layout() != self.data.keyboard.x_layouts[0]:
+            # the currently activated layout is a different one from the
+            # installed system's default
+            return False
+        else:
+            return True
 
     @property
     def status(self):
         # We don't need to check that self._store is empty, because that isn't allowed.
-        return self._xkl_wrapper.name_to_show_str[self._store[0][0]]
+        descriptions = (self._xkl_wrapper.get_layout_variant_description(row[0])
+                        for row in self._store)
+        return ", ".join(descriptions)
 
     def initialize(self):
         NormalSpoke.initialize(self)
 
         if flags.can_touch_runtime_system("hide runtime keyboard configuration "
-                                          "warning"):
+                                          "warning", touch_live=True):
             self.builder.get_object("warningBox").hide()
 
         # We want to store layouts' names but show layouts as
@@ -305,7 +321,7 @@ class KeyboardSpoke(NormalSpoke):
 
         self._layoutSwitchLabel = self.builder.get_object("layoutSwitchLabel")
 
-        if not flags.can_touch_runtime_system("test X layouts"):
+        if not flags.can_touch_runtime_system("test X layouts", touch_live=True):
             # Disable area for testing layouts as we cannot make
             # it work without modifying runtime system
 
@@ -333,11 +349,6 @@ class KeyboardSpoke(NormalSpoke):
         self._store.clear()
         self._add_data_layouts()
 
-        self._upButton = self.builder.get_object("upButton")
-        self._downButton = self.builder.get_object("downButton")
-        self._removeButton = self.builder.get_object("removeLayoutButton")
-        self._previewButton = self.builder.get_object("previewButton")
-
         # Start with no buttons enabled, since nothing is selected.
         self._upButton.set_sensitive(False)
         self._downButton.set_sensitive(False)
@@ -347,9 +358,12 @@ class KeyboardSpoke(NormalSpoke):
         self._refresh_switching_info()
 
     def _addLayout(self, store, name):
-        store.append([name])
-        if flags.can_touch_runtime_system("add runtime X layout"):
+        # first try to add the layout
+        if flags.can_touch_runtime_system("add runtime X layout", touch_live=True):
             self._xkl_wrapper.add_layout(name)
+
+        # valid layout, append it to the store
+        store.append([name])
 
     def _removeLayout(self, store, itr):
         """
@@ -358,14 +372,14 @@ class KeyboardSpoke(NormalSpoke):
 
         """
 
-        if flags.can_touch_runtime_system("remove runtime X layout"):
+        if flags.can_touch_runtime_system("remove runtime X layout", touch_live=True):
             self._xkl_wrapper.remove_layout(store[itr][0])
         store.remove(itr)
 
     def _refresh_switching_info(self):
         if self.data.keyboard.switch_options:
             first_option = self.data.keyboard.switch_options[0]
-            desc = self._xkl_wrapper.switch_to_show_str[first_option]
+            desc = self._xkl_wrapper.get_switch_opt_description(first_option)
 
             self._layoutSwitchLabel.set_text(_(LAYOUT_SWITCHING_INFO) % desc)
         else:
@@ -374,27 +388,29 @@ class KeyboardSpoke(NormalSpoke):
 
     # Signal handlers.
     def on_add_clicked(self, button):
-        dialog = AddLayoutDialog(self.data)
-        dialog.initialize()
-        dialog.refresh()
+        if not self._add_dialog:
+            self._add_dialog = AddLayoutDialog(self.data)
+            self._add_dialog.initialize()
 
-        with enlightbox(self.window, dialog.window):
-            response = dialog.run()
+        self._add_dialog.refresh()
+
+        with enlightbox(self.window, self._add_dialog.window):
+            response = self._add_dialog.run()
 
         if response == 1:
             duplicates = set()
             for row in self._store:
                 item = row[0]
-                if item in dialog.chosen_layouts:
+                if item in self._add_dialog.chosen_layouts:
                     duplicates.add(item)
 
-            for layout in dialog.chosen_layouts:
+            for layout in self._add_dialog.chosen_layouts:
                 if layout not in duplicates:
                     self._addLayout(self._store, layout)
 
             if self._remove_last_attempt:
                 itr = self._store.get_iter_first()
-                if not self._store[itr][0] in dialog.chosen_layouts:
+                if not self._store[itr][0] in self._add_dialog.chosen_layouts:
                     self._removeLayout(self._store, itr)
                 self._remove_last_attempt = False
 
@@ -437,14 +453,18 @@ class KeyboardSpoke(NormalSpoke):
             return
 
         (store, cur) = selection.get_selected()
-        prev = cur.copy()
-        prev = store.iter_previous(prev)
+        prev = store.iter_previous(cur)
         if not prev:
             return
 
         store.swap(cur, prev)
-        if flags.can_touch_runtime_system("reorder runtime X layouts"):
+        if flags.can_touch_runtime_system("reorder runtime X layouts", touch_live=True):
             self._flush_layouts_to_X()
+
+        if not store.iter_previous(cur):
+            #layout is first in the list (set as default), activate it
+            self._xkl_wrapper.activate_default_layout()
+
         selection.emit("changed")
 
     def on_down_clicked(self, button):
@@ -453,13 +473,21 @@ class KeyboardSpoke(NormalSpoke):
             return
 
         (store, cur) = selection.get_selected()
+
+        #if default layout (first in the list) changes we need to activate it
+        activate_default = not store.iter_previous(cur)
+
         nxt = store.iter_next(cur)
         if not nxt:
             return
 
         store.swap(cur, nxt)
-        if flags.can_touch_runtime_system("reorder runtime X layouts"):
+        if flags.can_touch_runtime_system("reorder runtime X layouts", touch_live=True):
             self._flush_layouts_to_X()
+
+        if activate_default:
+            self._xkl_wrapper.activate_default_layout()
+
         selection.emit("changed")
 
     def on_preview_clicked(self, button):
@@ -469,9 +497,18 @@ class KeyboardSpoke(NormalSpoke):
         if not layout_row:
             return
 
+        layout, variant = keyboard.parse_layout_variant(layout_row[0])
+
+        if variant:
+            lay_var_spec = "%s\t%s" % (layout, variant)
+        else:
+            lay_var_spec = layout
+
         dialog = Gkbd.KeyboardDrawing.dialog_new()
         Gkbd.KeyboardDrawing.dialog_set_layout(dialog, self._xkl_wrapper.configreg,
-                                               layout_row[0])
+                                               lay_var_spec)
+        dialog.set_size_request(750, 350)
+        dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         with enlightbox(self.window, dialog):
             dialog.show_all()
             dialog.run()
@@ -523,11 +560,23 @@ class KeyboardSpoke(NormalSpoke):
         self._refresh_switching_info()
 
     def _add_data_layouts(self):
-        if self.data.keyboard.x_layouts:
-            for layout in self.data.keyboard.x_layouts:
+        if not self.data.keyboard.x_layouts:
+            # nothing specified, just add the default
+            self._addLayout(self._store, DEFAULT_KEYBOARD)
+            return
+
+        valid_layouts = []
+        for layout in self.data.keyboard.x_layouts:
+            try:
                 self._addLayout(self._store, layout)
-        else:
-            self._addLayout(self._store, "us")
+                valid_layouts += layout
+            except keyboard.XklWrapperError:
+                log.error("Failed to add layout '%s'", layout)
+
+        if not valid_layouts:
+            log.error("No valid layout given, falling back to default %s", DEFAULT_KEYBOARD)
+            self._addLayout(self._store, DEFAULT_KEYBOARD)
+            self.data.keyboard.x_layouts = [DEFAULT_KEYBOARD]
 
     def _flush_layouts_to_X(self):
         layouts_list = list()

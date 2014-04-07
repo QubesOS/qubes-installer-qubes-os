@@ -38,14 +38,10 @@ flags.imageInstall = True
 import pyanaconda.anaconda_log
 pyanaconda.anaconda_log.init()
 
-from pyanaconda import iutil
+from blivet import StorageDiscoveryConfig
+from blivet.devicetree import DeviceTree
+from blivet import devicelibs
 
-from pyanaconda.cmdline import InstallInterface
-from pyanaconda.storage import StorageDiscoveryConfig
-from pyanaconda.storage.devicetree import DeviceTree
-from pyanaconda.storage import devicelibs
-
-intf = InstallInterface()
 storage_config = StorageDiscoveryConfig()
 
 # find devices representing disk images

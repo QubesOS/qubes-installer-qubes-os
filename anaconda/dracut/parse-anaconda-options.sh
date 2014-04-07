@@ -86,7 +86,6 @@ check_removed_arg ethtool
 
 # interactive junk in initramfs
 # (maybe we'll bring it back someday?)
-check_removed_arg askmethod "Use an appropriate 'inst.repo=' argument instead."
 check_removed_arg asknetwork "Use an appropriate 'ip=' argument instead."
 
 # lang & keymap
@@ -125,8 +124,14 @@ if updates=$(getarg updates inst.updates); then
     fi
 fi
 
+# for vnc bring network up in initramfs so that cmdline configuration is used
+getargbool 0 vnc inst.vnc && warn "anaconda requiring network for vnc" && set_neednet
+
 # make sure we get ifcfg for every interface that comes up
 echo 'save_netinfo $netif' > $hookdir/initqueue/online/anaconda-ifcfg.sh
+
+# Driver Update Disk
+warn_renamed_arg "dd" "inst.dd"
 
 # re-read the commandline args
 unset CMDLINE

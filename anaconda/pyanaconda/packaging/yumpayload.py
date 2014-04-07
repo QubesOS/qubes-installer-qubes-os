@@ -25,7 +25,6 @@
     TODO
         - document all methods
         - YumPayload
-            - preupgrade
             - write test cases
             - more logging in key methods
             - handling of proxy needs cleanup
@@ -36,26 +35,22 @@
 
 """
 
-from ConfigParser import MissingSectionHeaderError
-
+import ConfigParser
 import os
 import shutil
 import sys
 import time
-import tempfile
-
-from . import *
+from pyanaconda.iutil import execReadlines
+from functools import wraps
 
 import logging
 log = logging.getLogger("packaging")
 
 try:
     import rpm
-    import rpmUtils
 except ImportError:
     log.error("import of rpm failed")
     rpm = None
-    rpmUtils = None
 
 try:
     import yum
@@ -67,36 +62,91 @@ except ImportError:
     log.error("import of yum failed")
     yum = None
 
-from pyanaconda.constants import *
+from pyanaconda.constants import BASE_REPO_NAME, DRACUT_ISODIR, INSTALL_TREE, ISO_DIR, MOUNT_DIR, ROOT_PATH
 from pyanaconda.flags import flags
 
 from pyanaconda import iutil
 from pyanaconda.iutil import ProxyString, ProxyStringError
-from pyanaconda import isys
-from pyanaconda.network import hasActiveNetDev
-from pyanaconda.storage.size import Size
+from pyanaconda.i18n import _
+from pyanaconda.nm import nm_is_connected
+from pyanaconda.product import productName, isFinal
+from blivet.size import Size
+import blivet.util
+import blivet.arch
 
-from pyanaconda.image import opticalInstallMedia
-from pyanaconda.image import mountImage
-from pyanaconda.image import findFirstIsoImage
+from pyanaconda.errors import ERROR_RAISE, errorHandler
+from pyanaconda.packaging import DependencyError, MetadataError, NoNetworkError, NoSuchGroup, \
+                                 NoSuchPackage, PackagePayload, PayloadError, PayloadInstallError, \
+                                 PayloadSetupError
+from pyanaconda.progress import progressQ
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from pyanaconda.localization import langcode_matches_locale
 
-from pyanaconda.errors import *
-from pyanaconda.packaging import NoSuchGroup, NoSuchPackage
-import pyanaconda.progress as progress
+from pykickstart.constants import GROUP_ALL, GROUP_DEFAULT, KS_MISSING_IGNORE
 
-from pyanaconda.localization import expand_langs
-import itertools
+YUM_PLUGINS = ["blacklist", "whiteout", "fastestmirror", "langpacks"]
+DEFAULT_REPOS = [productName.lower(), "rawhide"]
+BASE_REPO_NAMES = [BASE_REPO_NAME] + DEFAULT_REPOS
 
-from pykickstart.constants import KS_MISSING_IGNORE
+import inspect
+import threading
+_private_yum_lock = threading.RLock()
 
-default_repos = [productName.lower(), "rawhide"]
+class YumLock(object):
+    def __enter__(self):
+        if isFinal:
+            _private_yum_lock.acquire()
+            return _private_yum_lock
 
-from threading import RLock
-_yum_lock = RLock()
+        frame = inspect.stack()[2]
+        threadName = threading.currentThread().name
 
+        log.debug("about to acquire _yum_lock for %s at %s:%s (%s)", threadName, frame[1], frame[2], frame[3])
+        _private_yum_lock.acquire()
+        log.debug("have _yum_lock for %s", threadName)
+        return _private_yum_lock
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        _private_yum_lock.release()
+
+        if not isFinal:
+            log.debug("gave up _yum_lock for %s", threading.currentThread().name)
+
+def refresh_base_repo(cond_fn=None):
+    """
+    Function returning decorator for methods that invalidate base repo.
+    After the method has been run the base repo will be refreshed
+
+    :param cond_fn: condition function telling if base repo should be
+                    invalidated or not (HAS TO TAKE THE SAME ARGUMENTS AS THE
+                    DECORATED FUNCTION)
+
+    While the method runs the base_repo is set to None.
+    """
+    def decorator(method):
+        """
+        Decorator for methods that invalidate base repo cache.
+
+        :param method: decorated method of the YumPayload class
+
+        """
+        @wraps(method)
+        def inner_method(yum_payload, *args, **kwargs):
+            if cond_fn is None or cond_fn(yum_payload, *args, **kwargs):
+                with yum_payload._base_repo_lock:
+                    yum_payload._base_repo = None
+
+            ret = method(yum_payload, *args, **kwargs)
+
+            if cond_fn is None or cond_fn(yum_payload, *args, **kwargs):
+                yum_payload._refreshBaseRepo()
+            return ret
+
+        return inner_method
+
+    return decorator
+
+_yum_lock = YumLock()
 _yum_cache_dir = "/tmp/yum.cache"
 
 class YumPayload(PackagePayload):
@@ -107,13 +157,16 @@ class YumPayload(PackagePayload):
         only exist in yum. Lastly, the base repo exists in yum and in
         ksdata.method.
     """
+
+
     def __init__(self, data):
         if rpm is None or yum is None:
             raise PayloadError("unsupported payload type")
 
         PackagePayload.__init__(self, data)
 
-        self.install_device = None
+        self.default_repos = [productName.lower(), "rawhide"]
+
         self._root_dir = "/tmp/yum.root"
         self._repos_dir = "/etc/yum.repos.d,/etc/anaconda.repos.d,/tmp/updates/anaconda.repos.d,/tmp/product/anaconda.repos.d"
         self._yum = None
@@ -122,46 +175,25 @@ class YumPayload(PackagePayload):
         self._requiredPackages = []
         self._requiredGroups = []
 
+        # base repo caching
+        self._base_repo = None
+        self._base_repo_lock = threading.RLock()
+
         self.reset()
 
-    def reset(self, root=None):
+    def reset(self, root=None, releasever=None):
         """ Reset this instance to its initial (unconfigured) state. """
 
-        # cdrom: install_device.teardown (INSTALL_TREE)
-        # hd: umount INSTALL_TREE, install_device.teardown (ISO_DIR)
-        # nfs: umount INSTALL_TREE
-        # nfsiso: umount INSTALL_TREE, umount ISO_DIR
-        if os.path.ismount(INSTALL_TREE) and not flags.testing:
-            if self.install_device and \
-               get_mount_device(INSTALL_TREE) == self.install_device.path:
-                self.install_device.teardown(recursive=True)
-            else:
-                isys.umount(INSTALL_TREE, removeDir=False)
-
-        if os.path.ismount(ISO_DIR) and not flags.testing:
-            if self.install_device and \
-               get_mount_device(ISO_DIR) == self.install_device.path:
-                self.install_device.teardown(recursive=True)
-            # The below code will fail when nfsiso is the stage2 source
-            # But if we don't do this we may not be able to switch from
-            # one nfsiso repo to another nfsiso repo.  We need to have a
-            # way to detect the stage2 state and work around it.
-            # Commenting out the below is a hack for F18.  FIXME
-            #else:
-            #    # NFS
-            #    isys.umount(ISO_DIR, removeDir=False)
-
-        self.install_device = None
-
+        super(YumPayload, self).reset()
         # This value comes from a default install of the x86_64 Fedora 18.  It
         # is meant as a best first guess only.  Once package metadata is
         # available we can use that as a better value.
-        self._space_required = Size(spec="3000 MB")
+        self._space_required = Size(en_spec="3000 MB")
 
         self._groups = None
         self._packages = []
 
-        self._resetYum(root=root)
+        self._resetYum(root=root, releasever=releasever)
 
     def setup(self, storage):
         super(YumPayload, self).setup(storage)
@@ -169,16 +201,18 @@ class YumPayload(PackagePayload):
         self._writeYumConfig()
         self._setup = True
 
-        self.updateBaseRepo()
+        self.updateBaseRepo(fallback=not flags.automatedInstall)
 
         # When setup is called, it's already in a separate thread. That thread
         # will try to select groups right after this returns, so make sure we
         # have group info ready.
         self.gatherRepoMetadata()
 
-    def _resetYum(self, root=None, keep_cache=False):
-        """ Delete and recreate the payload's YumBase instance. """
-        import shutil
+    def _resetYum(self, root=None, keep_cache=False, releasever=None):
+        """ Delete and recreate the payload's YumBase instance.
+
+            Setup _yum.preconf -- DO NOT TOUCH IT OUTSIDE THIS METHOD
+        """
         if root is None:
             root = self._root_dir
 
@@ -192,6 +226,7 @@ class YumPayload(PackagePayload):
 
                 del self._yum
 
+            self._writeYumConfig()
             self._yum = yum.YumBase()
 
             self._yum.use_txmbr_in_callback = True
@@ -201,23 +236,22 @@ class YumPayload(PackagePayload):
             # Enable all types of yum plugins. We're somewhat careful about what
             # plugins we put in the environment.
             self._yum.preconf.plugin_types = yum.plugins.ALL_TYPES
-            self._yum.preconf.enabled_plugins = ["blacklist", "whiteout", "fastestmirror",
-                                                 "langpacks"]
+            self._yum.preconf.enabled_plugins = YUM_PLUGINS
             self._yum.preconf.fn = "/tmp/anaconda-yum.conf"
             self._yum.preconf.root = root
-            # set this now to the best default we've got ; we'll update it if/when
-            # we get a base repo set up
-            self._yum.preconf.releasever = self._getReleaseVersion(None)
-            # Set the yum verbosity to 6, and update yum's internal logger
-            # objects to the debug level.  This is a bit of a hack requiring
-            # internal knowledge of yum, that will hopefully go away in the
-            # future with API improvements.
-            self._yum.preconf.debuglevel = 6
-            self._yum.preconf.errorlevel = 6
-            self._yum.logger.setLevel(logging.DEBUG)
-            self._yum.verbose_logger.setLevel(logging.DEBUG)
+            if releasever is None:
+                self._yum.preconf.releasever = self._getReleaseVersion(None)
+            else:
+                self._yum.preconf.releasever = releasever
 
         self.txID = None
+
+    def _writeLangpacksConfig(self):
+        langs = [self.data.lang.lang] + self.data.lang.addsupport
+        log.debug("configuring langpacks for %s", langs)
+        with open("/etc/yum/pluginconf.d/langpacks.conf", "a") as f:
+            f.write("# Added by Anaconda\n")
+            f.write("langpack_locales = %s\n" % ", ".join(langs))
 
     def _writeYumConfig(self):
         """ Write out anaconda's main yum configuration file. """
@@ -230,6 +264,8 @@ metadata_expire=never
 pluginpath=/usr/lib/yum-plugins,/tmp/updates/yum-plugins
 pluginconfpath=/etc/yum/pluginconf.d,/tmp/updates/pluginconf.d
 plugins=1
+debuglevel=3
+errorlevel=6
 reposdir=%s
 """ % (_yum_cache_dir, self._repos_dir)
 
@@ -239,7 +275,7 @@ reposdir=%s
         if self.data.packages.multiLib:
             buf += "multilib_policy=all\n"
 
-        if self.data.method.proxy:
+        if hasattr(self.data.method, "proxy") and self.data.method.proxy:
             try:
                 proxy = ProxyString(self.data.method.proxy)
                 buf += "proxy=%s\n" % (proxy.noauth_url,)
@@ -248,8 +284,8 @@ reposdir=%s
                 if proxy.password:
                     buf += "proxy_password=%s\n" % (proxy.password,)
             except ProxyStringError as e:
-                log.error("Failed to parse proxy for _writeYumConfig %s: %s" \
-                          % (self.data.method.proxy, e))
+                log.error("Failed to parse proxy for _writeYumConfig %s: %s",
+                          self.data.method.proxy, e)
 
         open("/tmp/anaconda-yum.conf", "w").write(buf)
 
@@ -281,17 +317,20 @@ reposdir=%s
 
         for repo in self._yum.repos.listEnabled():
             cfg_path = "%s/%s.repo" % (self._repos_dir, repo.id)
-            ks_repo = self.getRepo(repo.id)
+            log.debug("writing repository file %s for repository %s", cfg_path, repo.id)
+            ks_repo = self.getAddOnRepo(repo.id)
             with open(cfg_path, "w") as f:
                 f.write("[%s]\n" % repo.id)
                 f.write("name=Install - %s\n" % repo.id)
                 f.write("enabled=1\n")
                 if repo.mirrorlist:
                     f.write("mirrorlist=%s" % repo.mirrorlist)
+                elif repo.metalink:
+                    f.write("metalink=%s" % repo.metalink)
                 elif repo.baseurl:
                     f.write("baseurl=%s\n" % repo.baseurl[0])
                 else:
-                    log.error("repo %s has no baseurl or mirrorlist" % repo.id)
+                    log.error("repo %s has no baseurl, mirrorlist or metalink", repo.id)
                     f.close()
                     os.unlink(cfg_path)
                     continue
@@ -310,8 +349,8 @@ reposdir=%s
                             if proxy.password:
                                 f.write("proxy_password=%s\n" % (proxy.password,))
                         except ProxyStringError as e:
-                            log.error("Failed to parse proxy for _writeInstallConfig %s: %s" \
-                                      % (self.data.method.proxy, e))
+                            log.error("Failed to parse proxy for _writeInstallConfig %s: %s",
+                                      ks_repo.proxy, e)
 
                     if ks_repo.cost:
                         f.write("cost=%d\n" % ks_repo.cost)
@@ -329,16 +368,15 @@ reposdir=%s
 
         releasever = self._yum.conf.yumvar['releasever']
         self._writeYumConfig()
-        self._resetYum(root=ROOT_PATH, keep_cache=True)
-        log.debug("setting releasever to previous value of %s" % releasever)
-        self._yum.preconf.releasever = releasever
-
+        self._writeLangpacksConfig()
+        log.debug("setting releasever to previous value of %s", releasever)
+        self._resetYum(root=ROOT_PATH, keep_cache=True, releasever=releasever)
         self._yumCacheDirHack()
         self.gatherRepoMetadata()
 
         # trigger setup of self._yum.config
-        log.debug("installation yum config repos: %s"
-                  % ",".join([r.id for r in self._yum.repos.listEnabled()]))
+        log.debug("installation yum config repos: %s",
+                  ",".join(r.id for r in self._yum.repos.listEnabled()))
 
     # YUMFIXME: there should be a way to reset package sacks without all this
     #           knowledge of the yum internals or, better yet, some convenience
@@ -382,22 +420,53 @@ reposdir=%s
         return _repos
 
     @property
-    def addOns(self):
-        return [r.name for r in self.data.repo.dataList()]
-
-    @property
     def baseRepo(self):
-        repo_names = [BASE_REPO_NAME] + default_repos
-        base_repo_name = None
+        """ Return the current base repo id
+            :returns: repo id or None
+
+            Methods that change (or could change) the base_repo
+            need to be decorated with @refresh_base_repo
+        """
+        return self._base_repo
+
+    def _refreshBaseRepo(self):
+        """ Examine the enabled repos and update _base_repo
+        """
         with _yum_lock:
-            for repo_name in repo_names:
+            for repo_name in BASE_REPO_NAMES:
                 if repo_name in self.repos and \
                    self._yum.repos.getRepo(repo_name).enabled:
-                    base_repo_name = repo_name
+                    with self._base_repo_lock:
+                        self._base_repo = repo_name
                     break
+            else:
+                # didn't find any base repo set and enabled
+                with self._base_repo_lock:
+                    self._base_repo = None
 
-        return base_repo_name
+    @property
+    def mirrorEnabled(self):
+        with _yum_lock:
+            return "fastestmirror" in self._yum.plugins.enabledPlugins
 
+    def getRepo(self, repo_id):
+        """ Return the yum repo object. """
+        with _yum_lock:
+            repo = self._yum.repos.getRepo(repo_id)
+
+        return repo
+
+    def isRepoEnabled(self, repo_id):
+        """ Return True if repo is enabled. """
+        from yum.Errors import RepoError
+
+        try:
+            return self.getRepo(repo_id).enabled
+        except RepoError:
+            return super(YumPayload, self).isRepoEnabled(repo_id)
+
+    # pylint: disable-msg=W0221
+    @refresh_base_repo()
     def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
         """ Update the base repo based on self.data.method.
 
@@ -410,27 +479,64 @@ reposdir=%s
             - Get metadata for all enabled repos, disabling those for which the
               retrieval fails.
         """
-        log.info("updating base repo")
+        log.info("configuring base repo")
+        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage, checkmount)
 
-        # start with a fresh YumBase instance
-        self.reset(root=root)
+        releasever = None
+        method = self.data.method
+        if method.method:
+            try:
+                releasever = self._getReleaseVersion(url)
+                log.debug("releasever from %s is %s", url, releasever)
+            except ConfigParser.MissingSectionHeaderError as e:
+                log.error("couldn't set releasever from base repo (%s): %s",
+                          method.method, e)
+
+        # start with a fresh YumBase instance & tear down old install device
+        self.reset(root=root, releasever=releasever)
+        self._yumCacheDirHack()
+
+        # This needs to be done again, reset tore it down.
+        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage, checkmount)
+
+        # If this is a kickstart install and no method has been set up, or
+        # askmethod was given on the command line, we don't want to do
+        # anything.  Just disable all repos and return.  This should avoid
+        # metadata fetching.
+        if (not method.method and flags.automatedInstall) or \
+           flags.askmethod:
+            with _yum_lock:
+                for repo in self._yum.repos.repos.values():
+                    self.disableRepo(repo.id)
+            return
 
         # see if we can get a usable base repo from self.data.method
-        try:
-            self._configureBaseRepo(self.storage, checkmount=checkmount)
-        except PayloadError as e:
-            if not fallback:
-                with _yum_lock:
-                    for repo in self._yum.repos.repos.values():
-                        if repo.enabled:
-                            self.disableRepo(repo.id)
-                raise
+        if method.method:
+            try:
+                if releasever is None:
+                    raise PayloadSetupError("base repo is unusable")
 
-            # this preserves the method details while disabling it
-            self.data.method.method = None
-            self.install_device = None
-        finally:
-            self._yumCacheDirHack()
+                if hasattr(method, "proxy"):
+                    proxyurl = method.proxy
+                else:
+                    proxyurl = None
+
+                self._addYumRepo(BASE_REPO_NAME, url, mirrorlist=mirrorlist,
+                                 proxyurl=proxyurl, sslverify=sslverify)
+            except (MetadataError, PayloadError) as e:
+                log.error("base repo (%s/%s) not valid -- removing it",
+                          method.method, url)
+                self._removeYumRepo(BASE_REPO_NAME)
+                if not fallback:
+                    with _yum_lock:
+                        for repo in self._yum.repos.repos.values():
+                            if repo.enabled:
+                                self.disableRepo(repo.id)
+                    return
+
+                # this preserves the method details while disabling it
+                method.method = None
+                self.install_device = None
 
         with _yum_lock:
             if BASE_REPO_NAME not in self._yum.repos.repos.keys():
@@ -442,15 +548,16 @@ reposdir=%s
         # set up addon repos
         # FIXME: driverdisk support
         for repo in self.data.repo.dataList():
+            if not repo.enabled:
+                continue
             try:
-                self.configureAddOnRepo(repo)
+                self._configureAddOnRepo(repo)
             except NoNetworkError as e:
-                log.error("repo %s needs an active network connection"
-                          % repo.name)
-                self.removeRepo(repo.name)
+                log.error("repo %s needs an active network connection", repo.name)
+                self.disableRepo(repo.name)
             except PayloadError as e:
-                log.error("repo %s setup failed: %s" % (repo.name, e))
-                self.removeRepo(repo.name)
+                log.error("repo %s setup failed: %s", repo.name, e)
+                self.disableRepo(repo.name)
 
         # now disable and/or remove any repos that don't make sense
         with _yum_lock:
@@ -480,12 +587,13 @@ reposdir=%s
                      self._yum.repos.getRepo("rawhide").enabled and \
                      repo.id != "rawhide":
                     self.disableRepo(repo.id)
-                elif self.data.method.method and \
+                elif method.method and \
                      repo.id != BASE_REPO_NAME and \
-                     repo.id not in [r.name for r in self.data.repo.dataList()]:
+                     repo.id not in (r.name for r in self.data.repo.dataList()):
                     # if a method/repo was given, disable all default repos
                     self.disableRepo(repo.id)
 
+    @refresh_base_repo()
     def gatherRepoMetadata(self):
         # now go through and get metadata for all enabled repos
         log.info("gathering repo metadata")
@@ -496,8 +604,8 @@ reposdir=%s
                     try:
                         self._getRepoMetadata(repo)
                     except PayloadError as e:
-                        log.error("failed to grab repo metadata for %s: %s"
-                                  % (repo_id, e))
+                        log.error("failed to grab repo metadata for %s: %s",
+                                  repo_id, e)
                         self.disableRepo(repo_id)
 
         log.info("metadata retrieval complete")
@@ -508,223 +616,16 @@ reposdir=%s
             return None
         # This could either be mounted to INSTALL_TREE or on
         # DRACUT_ISODIR if dracut did the mount.
-        dev = get_mount_device(INSTALL_TREE)
+        dev = blivet.util.get_mount_device(INSTALL_TREE)
         if dev:
             return dev[len(ISO_DIR)+1:]
-        dev = get_mount_device(DRACUT_ISODIR)
+        dev = blivet.util.get_mount_device(DRACUT_ISODIR)
         if dev:
             return dev[len(DRACUT_ISODIR)+1:]
         return None
 
-    def _setUpMedia(self, device):
-        method = self.data.method
-        if method.method == "harddrive":
-            self._setupDevice(device, mountpoint=ISO_DIR)
-
-            # check for ISO images in the newly mounted dir
-            path = ISO_DIR
-            if method.dir:
-                path = os.path.normpath("%s/%s" % (path, method.dir))
-
-            # XXX it would be nice to streamline this when we're just setting
-            #     things back up after storage activation instead of having to
-            #     pretend we don't already know which ISO image we're going to
-            #     use
-            image = findFirstIsoImage(path)
-            if not image:
-                device.teardown(recursive=True)
-                raise PayloadSetupError("failed to find valid iso image")
-
-            if path.endswith(".iso"):
-                path = os.path.dirname(path)
-
-            # this could already be set up the first time through
-            if not os.path.ismount(INSTALL_TREE):
-                # mount the ISO on a loop
-                image = os.path.normpath("%s/%s" % (path, image))
-                mountImage(image, INSTALL_TREE)
-
-            if not method.dir.endswith(".iso"):
-                method.dir = os.path.normpath("%s/%s" % (method.dir,
-                                                         os.path.basename(image)))
-                while method.dir.startswith("/"):
-                    # riduculous
-                    method.dir = method.dir[1:]
-        # Check to see if the device is already mounted, in which case
-        # we don't need to mount it again
-        elif method.method == "cdrom" and get_mount_paths(device.path):
-                return
-        else:
-            device.format.setup(mountpoint=INSTALL_TREE)
-
-    def _configureBaseRepo(self, storage, checkmount=True):
-        """ Configure the base repo.
-
-            If self.data.method.method is set, failure to configure a base repo
-            should generate a PayloadError exception.
-
-            If self.data.method.method is unset, no exception should be raised
-            and no repo should be configured.
-
-            If checkmount is true, check the dracut mount to see if we have
-            usable media mounted.
-        """
-        log.info("configuring base repo")
-        # set up the main repo specified by method=, repo=, or ks method
-        # XXX FIXME: does this need to handle whatever was set up by dracut?
-        # XXX FIXME: most of this probably belongs up in Payload
-        method = self.data.method
-        sslverify = True
-        url = None
-        mirrorlist = None
-
-        # See if we already have stuff mounted due to dracut
-        isodev = get_mount_device(DRACUT_ISODIR)
-        device = get_mount_device(DRACUT_REPODIR)
-
-        if method.method == "harddrive":
-            if method.biospart:
-                log.warning("biospart support is not implemented")
-                devspec = method.biospart
-            else:
-                devspec = method.partition
-                needmount = True
-                # See if we used this method for stage2, thus dracut left it
-                if isodev and method.partition and method.partition in isodev \
-                and DRACUT_ISODIR in device:
-                    # Everything should be setup
-                    url = "file://" + DRACUT_REPODIR
-                    needmount = False
-                    # We don't setup an install_device here
-                    # because we can't tear it down
-            isodevice = storage.devicetree.resolveDevice(devspec)
-            if needmount:
-                self._setUpMedia(isodevice)
-                url = "file://" + INSTALL_TREE
-                self.install_device = isodevice
-        elif method.method == "nfs":
-            # See if dracut dealt with nfsiso
-            if isodev:
-                options, host, path = iutil.parseNfsUrl('nfs:%s' % isodev)
-                # See if the dir holding the iso is what we want
-                # and also if we have an iso mounted to /run/install/repo
-                if path and path in isodev and DRACUT_ISODIR in device:
-                    # Everything should be setup
-                    url = "file://" + DRACUT_REPODIR
-            else:
-                # see if the nfs dir is mounted
-                needmount = True
-                if device:
-                    options, host, path = iutil.parseNfsUrl('nfs:%s' % device)
-                    if path and path in device:
-                        needmount = False
-                        path = DRACUT_REPODIR
-                if needmount:
-                    # Mount the NFS share on INSTALL_TREE. If it ends up
-                    # being nfsiso we will move the mountpoint to ISO_DIR.
-                    if method.dir.endswith(".iso"):
-                        nfsdir = os.path.dirname(method.dir)
-                    else:
-                        nfsdir = method.dir
-                    self._setupNFS(INSTALL_TREE, method.server, nfsdir,
-                                   method.opts)
-                    path = INSTALL_TREE
-
-                # check for ISO images in the newly mounted dir
-                if method.dir.endswith(".iso"):
-                    # if the given URL includes a specific ISO image file, use it
-                    image_file = os.path.basename(method.dir)
-                    path = os.path.normpath("%s/%s" % (path, image_file))
-
-                image = findFirstIsoImage(path)
-
-                # it appears there are ISO images in the dir, so assume they want to
-                # install from one of them
-                if image:
-                    # move the mount to ISO_DIR
-                    # work around inability to move shared filesystems
-                    iutil.execWithRedirect("mount",
-                                           ["--make-rprivate", "/"],
-                                           stderr="/dev/tty5", stdout="/dev/tty5")
-                    iutil.execWithRedirect("mount",
-                                           ["--move", INSTALL_TREE, ISO_DIR],
-                                           stderr="/dev/tty5", stdout="/dev/tty5")
-                    # Mounts are kept track of in isys it seems
-                    # Remove the count for the source
-                    if isys.mountCount.has_key(INSTALL_TREE):
-                        if isys.mountCount[INSTALL_TREE] > 1:
-                            isys.mountCount[INSTALL_TREE] -= 1
-                        else:
-                            del(isys.mountCount[INSTALL_TREE])
-                    # Add a count for the new location
-                    if not isys.mountCount.has_key(ISO_DIR):
-                        isys.mountCount[ISO_DIR] = 0
-                    isys.mountCount[ISO_DIR] += 1
-                    # mount the ISO on a loop
-                    image = os.path.normpath("%s/%s" % (ISO_DIR, image))
-                    mountImage(image, INSTALL_TREE)
-
-                    url = "file://" + INSTALL_TREE
-                else:
-                    # Fall back to the mount path instead of a mounted iso
-                    url = "file://" + path
-        elif method.method == "url":
-            url = method.url
-            mirrorlist = method.mirrorlist
-            sslverify = not (method.noverifyssl or flags.noverifyssl)
-        elif method.method == "cdrom" or (checkmount and not method.method):
-            # Did dracut leave the DVD or NFS mounted for us?
-            device = get_mount_device(DRACUT_REPODIR)
-            # Only look at the dracut mount if we don't already have a cdrom
-            if device and not self.install_device:
-                self.install_device = storage.devicetree.getDeviceByPath(device)
-                url = "file://" + DRACUT_REPODIR
-                if not method.method:
-                    # See if this is a nfs mount
-                    if ':' in device:
-                        # prepend nfs: to the url as that's what the parser
-                        # wants.  Note we don't get options from this, but
-                        # that's OK for the UI at least.
-                        options, host, path = iutil.parseNfsUrl("nfs:%s" %
-                                                                device)
-                        method.method = "nfs"
-                        method.server = host
-                        method.dir = path
-                    else:
-                        method.method = "cdrom"
-            else:
-                # cdrom or no method specified -- check for media
-                if not self.install_device:
-                    self.install_device = opticalInstallMedia(storage.devicetree)
-                if self.install_device:
-                    if not method.method:
-                        method.method = "cdrom"
-                    self._setUpMedia(self.install_device)
-                    url = "file://" + INSTALL_TREE
-                elif method.method == "cdrom":
-                    raise PayloadSetupError("no usable optical media found")
-
-        if method.method:
-            with _yum_lock:
-                try:
-                    self._yum.preconf.releasever = self._getReleaseVersion(url)
-                except MissingSectionHeaderError as e:
-                    log.error("couldn't set releasever from base repo (%s): %s"
-                              % (method.method, e))
-                    self._removeYumRepo(BASE_REPO_NAME)
-                    raise PayloadSetupError("base repo is unusable")
-
-            self._yumCacheDirHack()
-            try:
-                self._addYumRepo(BASE_REPO_NAME, url, mirrorlist=mirrorlist,
-                                 proxyurl=method.proxy, sslverify=sslverify)
-            except MetadataError as e:
-                log.error("base repo (%s/%s) not valid -- removing it"
-                          % (method.method, url))
-                self._removeYumRepo(BASE_REPO_NAME)
-                raise
-
-    def configureAddOnRepo(self, repo):
+    @refresh_base_repo()
+    def _configureAddOnRepo(self, repo):
         """ Configure a single ksdata repo. """
         url = repo.baseurl
         if url and url.startswith("nfs:"):
@@ -734,10 +635,16 @@ reposdir=%s
 
             url = "file://" + mountpoint
 
-        if self._repoNeedsNetwork(repo) and not hasActiveNetDev():
+        if self._repoNeedsNetwork(repo) and not nm_is_connected():
             raise NoNetworkError
 
-        proxy = repo.proxy or self.data.method.proxy
+        if repo.proxy:
+            proxy = repo.proxy
+        elif hasattr(self.data.method, "proxy"):
+            proxy = self.data.method.proxy
+        else:
+            proxy = None
+
         sslverify = not (flags.noverifyssl or repo.noverifyssl)
 
         # this repo is already in ksdata, so we only add it to yum here
@@ -745,7 +652,70 @@ reposdir=%s
                          exclude=repo.excludepkgs, includepkgs=repo.includepkgs,
                          proxyurl=proxy, sslverify=sslverify)
 
-        # TODO: enable addons via treeinfo
+        addons = self._getAddons(url or repo.mirrorlist,
+                                 proxy,
+                                 sslverify)
+
+        # Addons are added to the kickstart, but are disabled by default
+        for addon in addons:
+            # Does this repo already exist? If so, it was already added and may have
+            # been edited by the user so skip adding it again.
+            if self.getAddOnRepo(addon[1]):
+                log.debug("Skipping %s, already exists.", addon[1])
+                continue
+
+            log.info("Adding addon repo %s", addon[1])
+            ks_repo = self.data.RepoData(name=addon[1],
+                                         baseurl=addon[2],
+                                         proxy=repo.proxy,
+                                         enabled=False)
+            self.data.repo.dataList().append(ks_repo)
+
+    def _getAddons(self, baseurl, proxy_url, sslverify):
+        """ Check the baseurl or mirrorlist for a repository, see if it has any
+            valid addon repos and if so, return a list of (repo name, repo URL).
+
+            :param baseurl: url of the repo
+            :type baseurl: string
+            :param proxy_url: Full URL of optional proxy or ""
+            :type proxy_url: string
+            :param sslverify: True if SSL certificate should be varified
+            :type sslverify: bool
+            :returns: list of tuples of addons (id, name, url)
+            :rtype: list of tuples
+        """
+        retval = []
+
+        # If there's no .treeinfo for this repo, don't bother looking for addons.
+        treeinfo = self._getTreeInfo(baseurl, proxy_url, sslverify)
+        if not treeinfo:
+            return retval
+
+        # We need to know which variant is being installed so we know what addons
+        # are valid options.
+        try:
+            c = ConfigParser.ConfigParser()
+            ConfigParser.ConfigParser.read(c, treeinfo)
+            variant = c.get("general", "variant")
+        except ConfigParser.Error:
+            return retval
+
+        section = "variant-%s" % variant
+        if c.has_section(section) and c.has_option(section, "addons"):
+            validAddons = c.get(section, "addons").split(",")
+        else:
+            return retval
+        log.debug("Addons found: %s", validAddons)
+
+        for addon in validAddons:
+            addonSection = "addon-%s" % addon
+            if not c.has_section(addonSection) or not c.has_option(addonSection, "repository"):
+                continue
+
+            url = "%s/%s" % (baseurl, c.get(addonSection, "repository"))
+            retval.append((addon, c.get(addonSection, "name"), url))
+
+        return retval
 
     def _getRepoMetadata(self, yumrepo):
         """ Retrieve repo metadata if we don't already have it. """
@@ -754,7 +724,7 @@ reposdir=%s
         # And try to grab its metadata.  We do this here so it can be done
         # on a per-repo basis, so we can then get some finer grained error
         # handling and recovery.
-        log.debug("getting repo metadata for %s" % yumrepo.id)
+        log.debug("getting repo metadata for %s", yumrepo.id)
         with _yum_lock:
             try:
                 yumrepo.getPrimaryXML()
@@ -765,22 +735,52 @@ reposdir=%s
             # At the worst, it just means the groups won't be displayed in the UI
             # which isn't too bad, because you may be doing a kickstart install and
             # picking packages instead.
-            log.debug("getting group info for %s" % yumrepo.id)
+            log.debug("getting group info for %s", yumrepo.id)
             try:
                 yumrepo.getGroups()
             except RepoMDError:
-                log.error("failed to get groups for repo %s" % yumrepo.id)
+                log.error("failed to get groups for repo %s", yumrepo.id)
+
+    def _replaceVars(self, url):
+        """ Replace url variables with their values
+
+            :param url: url string to do replacement on
+            :type url:  string
+            :returns:   string with variables substituted
+            :rtype:     string or None
+
+            Currently supports $releasever and $basearch
+        """
+        if not url:
+            return url
+
+        with _yum_lock:
+            url = url.replace("$releasever", self._yum.conf.yumvar['releasever'])
+        url = url.replace("$basearch", blivet.arch.getArch())
+
+        return url
 
     def _addYumRepo(self, name, baseurl, mirrorlist=None, proxyurl=None, **kwargs):
         """ Add a yum repo to the YumBase instance. """
         from yum.Errors import RepoError
 
+        needsAdding = True
+
         # First, delete any pre-existing repo with the same name.
+        # First, check for any pre-existing repo with the same name.
         with _yum_lock:
             if name in self._yum.repos.repos:
-                self._yum.repos.delete(name)
+                if not baseurl and not mirrorlist:
+                    # This is a repo we already have a config file in /etc/anaconda.repos.d,
+                    # so we just need to enable it here.  See the kickstart docs for the repo
+                    # command.
+                    self.enableRepo(name)
+                    obj = self._yum.repos.repos[name]
+                    needsAdding = False
+                else:
+                    self._yum.repos.delete(name)
 
-        if proxyurl:
+        if proxyurl and needsAdding:
             try:
                 proxy = ProxyString(proxyurl)
                 kwargs["proxy"] = proxy.noauth_url
@@ -789,17 +789,22 @@ reposdir=%s
                 if proxy.password:
                     kwargs["proxy_password"] = proxy.password
             except ProxyStringError as e:
-                log.error("Failed to parse proxy for _addYumRepo %s: %s" \
-                          % (proxyurl, e))
+                log.error("Failed to parse proxy for _addYumRepo %s: %s",
+                          proxyurl, e)
 
-        log.debug("adding yum repo %s with baseurl %s and mirrorlist %s"
-                    % (name, baseurl, mirrorlist))
+        if baseurl:
+            baseurl = self._replaceVars(baseurl)
+        if mirrorlist:
+            mirrorlist = self._replaceVars(mirrorlist)
+        log.debug("adding yum repo %s with baseurl %s and mirrorlist %s",
+                  name, baseurl, mirrorlist)
         with _yum_lock:
-            # Then add it to yum's internal structures.
-            obj = self._yum.add_enable_repo(name,
-                                            baseurl=[baseurl],
-                                            mirrorlist=mirrorlist,
-                                            **kwargs)
+            if needsAdding:
+                # Then add it to yum's internal structures.
+                obj = self._yum.add_enable_repo(name,
+                                                baseurl=[baseurl],
+                                                mirrorlist=mirrorlist,
+                                                **kwargs)
 
             # this will trigger retrieval of repomd.xml, which is small and yet
             # gives us some assurance that the repo config is sane
@@ -816,9 +821,10 @@ reposdir=%s
         self._groups = None
         self._packages = []
 
+    @refresh_base_repo(lambda s, r_id: r_id in BASE_REPO_NAMES)
     def addRepo(self, newrepo):
         """ Add a ksdata repo. """
-        log.debug("adding new repo %s" % newrepo.name)
+        log.debug("adding new repo %s", newrepo.name)
         self._addYumRepo(newrepo.name, newrepo.baseurl, newrepo.mirrorlist, newrepo.proxy)   # FIXME: handle MetadataError
         super(YumPayload, self).addRepo(newrepo)
 
@@ -829,16 +835,17 @@ reposdir=%s
                 self._groups = None
                 self._packages = []
 
+    @refresh_base_repo(lambda s, r_id: r_id in BASE_REPO_NAMES)
     def removeRepo(self, repo_id):
         """ Remove a repo as specified by id. """
-        log.debug("removing repo %s" % repo_id)
+        log.debug("removing repo %s", repo_id)
 
         # if this is an NFS repo, we'll want to unmount the NFS mount after
         # removing the repo
         mountpoint = None
         with _yum_lock:
             yum_repo = self._yum.repos.getRepo(repo_id)
-            ks_repo = self.getRepo(repo_id)
+            ks_repo = self.getAddOnRepo(repo_id)
             if yum_repo and ks_repo and ks_repo.baseurl.startswith("nfs:"):
                 mountpoint = yum_repo.baseurl[0][7:]    # strip leading "file://"
 
@@ -847,26 +854,30 @@ reposdir=%s
 
         if mountpoint and os.path.ismount(mountpoint):
             try:
-                isys.umount(mountpoint, removeDir=False)
+                blivet.util.umount(mountpoint)
             except SystemError as e:
-                log.error("failed to unmount nfs repo %s: %s" % (mountpoint, e))
+                log.error("failed to unmount nfs repo %s: %s", mountpoint, e)
 
+    @refresh_base_repo(lambda s, r_id: r_id in BASE_REPO_NAMES)
     def enableRepo(self, repo_id):
         """ Enable a repo as specified by id. """
-        log.debug("enabling repo %s" % repo_id)
+        log.debug("enabling repo %s", repo_id)
         if repo_id in self.repos:
             with _yum_lock:
                 self._yum.repos.enableRepo(repo_id)
+        super(YumPayload, self).enableRepo(repo_id)
 
+    @refresh_base_repo(lambda s, r_id: r_id in BASE_REPO_NAMES)
     def disableRepo(self, repo_id):
         """ Disable a repo as specified by id. """
-        log.debug("disabling repo %s" % repo_id)
+        log.debug("disabling repo %s", repo_id)
         if repo_id in self.repos:
             with _yum_lock:
                 self._yum.repos.disableRepo(repo_id)
 
             self._groups = None
             self._packages = []
+        super(YumPayload, self).disableRepo(repo_id)
 
     ###
     ### METHODS FOR WORKING WITH ENVIRONMENTS
@@ -874,9 +885,6 @@ reposdir=%s
     @property
     def environments(self):
         """ List of environment ids. """
-        from yum.Errors import RepoError
-        from yum.Errors import GroupsError
-
         environments = []
         yum_groups = self._yumGroups
         if yum_groups:
@@ -911,6 +919,20 @@ reposdir=%s
 
             environment = groups.return_environment(environmentid)
             if grpid in environment.options:
+                return True
+        return False
+
+    def environmentOptionIsDefault(self, environmentid, grpid):
+        groups = self._yumGroups
+        if not groups:
+            return False
+
+        with _yum_lock:
+            if not groups.has_environment(environmentid):
+                raise NoSuchGroup(environmentid)
+
+            environment = groups.return_environment(environmentid)
+            if grpid in environment.defaultoptions:
                 return True
         return False
 
@@ -977,20 +999,17 @@ reposdir=%s
         from yum.Errors import RepoError, GroupsError
         with _yum_lock:
             if not self._groups:
-                if not self.needsNetwork or hasActiveNetDev():
+                if not self.needsNetwork or nm_is_connected():
                     try:
                         self._groups = self._yum.comps
                     except (RepoError, GroupsError) as e:
-                        log.error("failed to get group info: %s" % e)
+                        log.error("failed to get group info: %s", e)
 
         return self._groups
 
     @property
     def groups(self):
         """ List of group ids. """
-        from yum.Errors import RepoError
-        from yum.Errors import GroupsError
-
         groups = []
         yum_groups = self._yumGroups
         if yum_groups:
@@ -999,20 +1018,22 @@ reposdir=%s
 
         return groups
 
-    def languageGroups(self, lang):
-        groups = []
+    def languageGroups(self):
         yum_groups = self._yumGroups
+        if not yum_groups:
+            return []
 
-        if yum_groups:
-            with _yum_lock:
-                langs = expand_langs(lang)
-                groups = map(lambda x: [g.groupid for g in
-                             yum_groups.get_groups() if g.langonly == x],
-                             langs)
+        lang_codes = [self.data.lang.lang] + self.data.lang.addsupport
+        lang_groups = set()
 
-        # the map gives us a list of results, this set call reduces
-        # it down to a unique set, then list() makes it back into a list.
-        return list(set(itertools.chain(*groups)))
+        with _yum_lock:
+            groups = yum_groups.get_groups()
+            for lang_code in lang_codes:
+                for group in groups:
+                    if langcode_matches_locale(group.langonly, lang_code):
+                        lang_groups.add(group.groupid)
+
+        return list(lang_groups)
 
     def groupDescription(self, groupid):
         """ Return name/description tuple for the group specified by id. """
@@ -1064,7 +1085,7 @@ reposdir=%s
         if optional:
             pkg_types.append("optional")
 
-        log.debug("select group %s" % groupid)
+        log.debug("select group %s", groupid)
         with _yum_lock:
             try:
                 self._yum.selectGroup(groupid, group_package_types=pkg_types)
@@ -1073,7 +1094,7 @@ reposdir=%s
 
     def _deselectYumGroup(self, groupid):
         # deselect the group in comps
-        log.debug("deselect group %s" % groupid)
+        log.debug("deselect group %s", groupid)
         with _yum_lock:
             try:
                 self._yum.deselectGroup(groupid, force=True)
@@ -1089,13 +1110,13 @@ reposdir=%s
 
         with _yum_lock:
             if not self._packages:
-                if self.needsNetwork and not hasActiveNetDev():
+                if self.needsNetwork and not nm_is_connected():
                     raise NoNetworkError
 
                 try:
                     self._packages = self._yum.pkgSack.returnPackages()
                 except RepoError as e:
-                    log.error("failed to get package list: %s" % e)
+                    log.error("failed to get package list: %s", e)
 
             return self._packages
 
@@ -1105,10 +1126,10 @@ reposdir=%s
            pkgid - The name of a package to be installed.  This could include
                    a version or architecture component.
         """
-        log.debug("select package %s" % pkgid)
+        log.debug("select package %s", pkgid)
         with _yum_lock:
             try:
-                mbrs = self._yum.install(pattern=pkgid)
+                self._yum.install(pattern=pkgid)
             except yum.Errors.InstallError:
                 raise NoSuchPackage(pkgid)
 
@@ -1118,7 +1139,7 @@ reposdir=%s
            pkgid - The name of a package to be excluded.  This could include
                    a version or architecture component.
         """
-        log.debug("deselect package %s" % pkgid)
+        log.debug("deselect package %s", pkgid)
         with _yum_lock:
             self._yum.tsInfo.deselect(pkgid)
 
@@ -1164,10 +1185,11 @@ reposdir=%s
         if errorHandler.cb(exn, str(exn)) == ERROR_RAISE:
             # The progress bar polls kind of slowly, thus installation could
             # still continue for a bit before the quit message is processed.
-            # Doing a sys.exit also ensures the running thread quits before
-            # it can do anything else.
-            progress.send_quit(1)
-            sys.exit(1)
+            # Let's sleep forever to prevent any further actions and wait for
+            # the main thread to quit the process.
+            progressQ.send_quit(1)
+            while True:
+                time.sleep(100000)
 
     def _applyYumSelections(self):
         """ Apply the selections in ksdata to yum.
@@ -1211,17 +1233,39 @@ reposdir=%s
             except NoSuchGroup as e:
                 self._handleMissing(e)
 
-        self.selectKernelPackage()
+        self._select_kernel_package()
         self.selectRequiredPackages()
+
+    def _addDriverRepos(self):
+        """ Add driver repositories and packages
+        """
+        # Drivers are loaded by anaconda-dracut, their repos are copied
+        # into /run/install/DD-X where X is a number starting at 1. The list of
+        # packages that were selected is in /run/install/dd_packages
+
+        # Add repositories
+        dir_num = 1
+        repo_template="/run/install/DD-%d/%s/"
+        while True:
+            repo = repo_template % (dir_num, blivet.arch.getArch())
+            if not os.path.isdir(repo+"repodata"):
+                break
+            ks_repo = self.data.RepoData(name="DD-%d" % dir_num,
+                                         baseurl="file://"+repo,
+                                         enabled=True)
+            self.addRepo(ks_repo)
+            dir_num += 1
+
+        # Add packages
+        if not os.path.exists("/run/install/dd_packages"):
+            return
+        with open("/run/install/dd_packages", "r") as f:
+            for line in f:
+                self._requiredPackages.append(line.strip())
 
     def checkSoftwareSelection(self):
         log.info("checking software selection")
         self.txID = time.time()
-
-        if self.skipBroken:
-            log.info("running software check with skip_broken = True")
-            with _yum_lock:
-                self._yum.conf.skip_broken = True
 
         self.release()
         self.deleteYumTS()
@@ -1236,6 +1280,7 @@ reposdir=%s
             # check dependencies
             log.info("checking dependencies")
             (code, msgs) = self._yum.buildTransaction(unfinished_transactions_check=False)
+            log.debug("buildTransaction = (%s, %s)", code, msgs)
             self._removeTxSaveFile()
             if code == 0:
                 # empty transaction?
@@ -1243,10 +1288,6 @@ reposdir=%s
             elif code == 2:
                 # success
                 log.debug("success")
-            elif self.data.packages.handleMissing == KS_MISSING_IGNORE:
-                log.debug("ignoring missing due to ks config")
-            elif self.data.upgrade.upgrade:
-                log.debug("ignoring unresolved deps on upgrade")
             else:
                 for msg in msgs:
                     log.warning(msg)
@@ -1255,10 +1296,10 @@ reposdir=%s
 
         self.calculateSpaceNeeds()
         with _yum_lock:
-            log.info("%d packages selected totalling %s"
-                     % (len(self._yum.tsInfo.getMembers()), self.spaceRequired))
+            log.info("%d packages selected totalling %s",
+                     len(self._yum.tsInfo.getMembers()), self.spaceRequired)
 
-    def selectKernelPackage(self):
+    def _select_kernel_package(self):
         kernels = self.kernelPackages
         selected = None
         # XXX This is optimistic. I'm curious if yum will DTRT if I just say
@@ -1268,24 +1309,24 @@ reposdir=%s
             try:
                 # XXX might need explicit arch specification
                 self._selectYumPackage(kernel)
-            except NoSuchPackage as e:
-                log.info("no %s package" % kernel)
+            except NoSuchPackage:
+                log.info("no %s package", kernel)
                 continue
             else:
-                log.info("selected %s" % kernel)
+                log.info("selected %s", kernel)
                 selected = kernel
                 # select module packages for this kernel
 
                 # select the devel package if gcc will be installed
                 with _yum_lock:
                     if self._yum.tsInfo.matchNaevr(name="gcc"):
-                        log.info("selecting %s-devel" % kernel)
+                        log.info("selecting %s-devel", kernel)
                         # XXX might need explicit arch specification
                         self._selectYumPackage("%s-devel" % kernel)
                 break
 
         if not selected:
-            log.error("failed to select a kernel from %s" % kernels)
+            log.error("failed to select a kernel from %s", kernels)
 
     def selectRequiredPackages(self):
         if self._requiredPackages:
@@ -1297,13 +1338,15 @@ reposdir=%s
     def preInstall(self, packages=None, groups=None):
         """ Perform pre-installation tasks. """
         super(YumPayload, self).preInstall()
-        progress.send_message(_("Starting package installation process"))
+        progressQ.send_message(_("Starting package installation process"))
 
         self._requiredPackages = packages
         self._requiredGroups = groups
 
+        self._addDriverRepos()
+
         if self.install_device:
-            self._setUpMedia(self.install_device)
+            self._setupMedia(self.install_device)
 
         with _yum_lock:
             self._writeInstallConfig()
@@ -1316,20 +1359,18 @@ reposdir=%s
             self.checkSoftwareSelection()
         except DependencyError as e:
             if errorHandler.cb(e) == ERROR_RAISE:
-                progress.send_quit(1)
-                sys.exit(1)
+                progressQ.send_quit(1)
+                while True:
+                    time.sleep(100000)
 
         # doPreInstall
         # create mountpoints for protected device mountpoints (?)
         # write static configs (storage, modprobe.d/anaconda.conf, network, keyboard)
-        #   on upgrade, just make sure /etc/mtab is a symlink to /proc/self/mounts
 
-        if not self.data.upgrade.upgrade:
-            # this adds nofsync, which speeds things up but carries a risk of
-            # rpmdb data loss if a crash occurs. that's why we only do it on
-            # initial install and not for upgrades.
-            rpm.addMacro("__dbi_htconfig",
-                         "hash nofsync %{__dbi_other} %{__dbi_perms}")
+        # nofsync speeds things up at the risk of rpmdb data loss in a crash.
+        # But if we crash mid-install you're boned anyway, so who cares?
+        rpm.addMacro("__dbi_htconfig",
+                     "hash nofsync %{__dbi_other} %{__dbi_perms}")
 
         if self.data.packages.excludeDocs:
             rpm.addMacro("_excludedocs", "1")
@@ -1370,82 +1411,83 @@ reposdir=%s
         return retval
 
     def install(self):
-        """ Install the payload. """
-        from yum.Errors import PackageSackError, RepoError, YumBaseError, YumRPMTransError
+        """ Install the payload.
 
-        log.info("preparing transaction")
-        log.debug("initialize transaction set")
+            This writes out the yum transaction and then uses a Process thread
+            to execute it in a totally separate process.
+
+            It monitors the status of the install and logs debug info, updates
+            the progress meter and cleans up when it is done.
+        """
+        progress_map = {
+            "PROGRESS_PREP"    : _("Preparing transaction from installation source"),
+            "PROGRESS_INSTALL" : _("Installing"),
+            "PROGRESS_POST"    : _("Performing post-installation setup tasks")
+        }
+
+        ts_file = ROOT_PATH+"/anaconda-yum.yumtx"
         with _yum_lock:
-            self._yum.initActionTs()
+            # Save the transaction, this will be loaded and executed by the new
+            # process.
+            self._yum.save_ts(ts_file)
 
-            if rpmUtils and rpmUtils.arch.isMultiLibArch():
-                self._yum.ts.ts.setColor(3)
+            # Try and clean up yum before the fork
+            self.release()
+            self.deleteYumTS()
+            self._yum.close()
 
-            log.debug("populate transaction set")
-            try:
-                # uses dsCallback.transactionPopulation
-                self._yum.populateTs(keepold=0)
-            except RepoError as e:
-                log.error("error populating transaction: %s" % e)
-                exn = PayloadInstallError(str(e))
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    raise exn
+        script_log = "/tmp/rpm-script.log"
+        release = self._getReleaseVersion(None)
 
-            log.debug("check transaction set")
-            self._yum.ts.check()
-            log.debug("order transaction set")
-            self._yum.ts.order()
-            self._yum.ts.clean()
+        args = ["--config", "/tmp/anaconda-yum.conf",
+                "--tsfile", ts_file,
+                "--rpmlog", script_log,
+                "--installroot", ROOT_PATH,
+                "--release", release,
+                "--arch", blivet.arch.getArch()]
 
-            # Write scriptlet output to a file to be logged later
-            script_log = tempfile.NamedTemporaryFile(delete=False)
-            self._yum.ts.ts.scriptFd = script_log.fileno()
-            rpm.setLogFile(script_log)
-
-            # create the install callback
-            rpmcb = RPMCallback(self._yum, script_log,
-                                upgrade=self.data.upgrade.upgrade)
-
-            if flags.testing:
-                self._yum.ts.setFlags(rpm.RPMTRANS_FLAG_TEST)
-
-            log.info("running transaction")
-            progress.send_step()
-            try:
-                self._yum.runTransaction(cb=rpmcb)
-            except PackageSackError as e:
-                log.error("error [1] running transaction: %s" % e)
-                exn = PayloadInstallError(str(e))
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    raise exn
-            except YumRPMTransError as e:
-                log.error("error [2] running transaction: %s" % e)
-                exn = PayloadInstallError(self._transactionErrors(e.errors))
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    progress.send_quit(1)
-                    sys.exit(1)
-            except YumBaseError as e:
-                log.error("error [3] running transaction: %s" % e)
-                for error in e.errors:
-                    log.error("%s" % error[0])
-                exn = PayloadInstallError(str(e))
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    raise exn
-            else:
-                log.info("transaction complete")
-                progress.send_step()
-            finally:
-                self._yum.ts.close()
-                iutil.resetRpmDb()
-                script_log.close()
-
-                # log the contents of the scriptlet logfile
+        log.info("Running anaconda-yum to install packages")
+        # Watch output for progress, debug and error information
+        install_errors = []
+        try:
+            for line in execReadlines("/usr/libexec/anaconda/anaconda-yum", args):
+                if line.startswith("PROGRESS_"):
+                    key, text = line.split(":", 2)
+                    msg = progress_map[key] + text
+                    progressQ.send_message(msg)
+                    log.debug(msg)
+                elif line.startswith("DEBUG:"):
+                    log.debug(line[6:])
+                elif line.startswith("INFO:"):
+                    log.info(line[5:])
+                elif line.startswith("WARN:"):
+                    log.warn(line[5:])
+                elif line.startswith("ERROR:"):
+                    log.error(line[6:])
+                    install_errors.append(line[6:])
+                else:
+                    log.debug(line)
+        except IOError as e:
+            log.error("Error running anaconda-yum: %s", e)
+            exn = PayloadInstallError(str(e))
+            if errorHandler.cb(exn) == ERROR_RAISE:
+                progressQ.send_quit(1)
+                sys.exit(1)
+        finally:
+            # log the contents of the scriptlet logfile if any
+            if os.path.exists(script_log):
                 log.info("==== start rpm scriptlet logs ====")
-                with open(script_log.name) as f:
+                with open(script_log) as f:
                     for l in f:
                         log.info(l)
                 log.info("==== end rpm scriptlet logs ====")
-                os.unlink(script_log.name)
+                os.unlink(script_log)
+
+        if install_errors:
+            exn = PayloadInstallError("\n".join(install_errors))
+            if errorHandler.cb(exn) == ERROR_RAISE:
+                progressQ.send_quit(1)
+                sys.exit(1)
 
     def writeMultiLibConfig(self):
         if not self.data.packages.multiLib:
@@ -1471,18 +1513,16 @@ reposdir=%s
             try:
                 os.rename(yum_conf, yum_conf + ".anacbak")
             except OSError as e:
-                log.error("failed to back up yum.conf: %s" % e)
+                log.error("failed to back up yum.conf: %s", e)
 
         try:
             yb.conf.write(open(yum_conf, "w"))
-        except Exception as e:
-            log.error("failed to write out yum.conf: %s" % e)
+        except IOError as e:
+            log.error("failed to write out yum.conf: %s", e)
 
     def postInstall(self):
         """ Perform post-installation tasks. """
         with _yum_lock:
-            self._yum.close()
-
             # clean up repo tmpdirs
             self._yum.cleanPackages()
             self._yum.cleanHeaders()
@@ -1492,156 +1532,12 @@ reposdir=%s
                 if repo.name == BASE_REPO_NAME or repo.id.startswith("anaconda-"):
                     shutil.rmtree(repo.cachedir)
 
-            # clean the yum cache on upgrade
-            if self.data.upgrade.upgrade:
-                self._yum.cleanMetadata()
-
-        # TODO: on preupgrade, remove the preupgrade dir
-
         self._removeTxSaveFile()
 
         self.writeMultiLibConfig()
 
         super(YumPayload, self).postInstall()
 
-class RPMCallback(object):
-    def __init__(self, yb, log, upgrade=False):
-        self._yum = yb              # yum.YumBase
-        self.install_log = log      # logfile for yum script logs
-        self.upgrade = upgrade      # boolean
-
-        self.package_file = None    # file instance (package file management)
-
-        self.total_actions = 0
-        self.completed_actions = None   # will be set to 0 when starting tx
-        self.base_arch = iutil.getArch()
-
-    def _get_txmbr(self, key):
-        """ Return a (name, TransactionMember) tuple from cb key. """
-        if hasattr(key, "po"):
-            # New-style callback, key is a TransactionMember
-            txmbr = key
-            name = key.name
-        else:
-            # cleanup/remove error
-            name = key
-            txmbr = None
-
-        return (name, txmbr)
-
-    def callback(self, event, amount, total, key, userdata):
-        """ Yum install callback. """
-        if event == rpm.RPMCALLBACK_TRANS_START:
-            if amount == 6:
-                progress.send_message(_("Preparing transaction from installation source"))
-            self.total_actions = total
-            self.completed_actions = 0
-        elif event == rpm.RPMCALLBACK_TRANS_PROGRESS:
-            # amount / total complete
-            pass
-        elif event == rpm.RPMCALLBACK_TRANS_STOP:
-            # we are done
-            pass
-        elif event == rpm.RPMCALLBACK_INST_OPEN_FILE:
-            # update status that we're installing/upgrading %h
-            # return an open fd to the file
-            txmbr = self._get_txmbr(key)[1]
-
-            # If self.completed_actions is still None, that means this package
-            # is being opened to retrieve a %pretrans script. Don't log that
-            # we're installing the package unless we've been called with a
-            # TRANS_START event.
-            if self.completed_actions is not None:
-                if self.upgrade:
-                    mode = _("Upgrading")
-                else:
-                    mode = _("Installing")
-
-                self.completed_actions += 1
-                msg_format = "%s %s (%d/%d)"
-                progress_package = txmbr.name
-                if txmbr.arch not in ["noarch", self.base_arch]:
-                    progress_package = "%s.%s" % (txmbr.name, txmbr.arch)
-
-                progress_msg =  msg_format % (mode, progress_package,
-                                              self.completed_actions,
-                                              self.total_actions)
-                log_msg = msg_format % (mode, txmbr.po,
-                                        self.completed_actions,
-                                        self.total_actions)
-                log.info(log_msg)
-                self.install_log.write(log_msg+"\n")
-                self.install_log.flush()
-
-                progress.send_message(progress_msg)
-
-            self.package_file = None
-            repo = self._yum.repos.getRepo(txmbr.po.repoid)
-
-            while self.package_file is None:
-                try:
-                    # checkfunc gets passed to yum's use of URLGrabber which
-                    # then calls it with the file being fetched. verifyPkg
-                    # makes sure the checksum matches the one in the metadata.
-                    #
-                    # From the URLGrab documents:
-                    # checkfunc=(function, ('arg1', 2), {'kwarg': 3})
-                    # results in a callback like:
-                    #   function(obj, 'arg1', 2, kwarg=3)
-                    #     obj.filename = '/tmp/stuff'
-                    #     obj.url = 'http://foo.com/stuff'
-                    checkfunc = (self._yum.verifyPkg, (txmbr.po, 1), {})
-                    package_path = repo.getPackage(txmbr.po, checkfunc=checkfunc)
-                except URLGrabError as e:
-                    log.error("URLGrabError: %s" % (e,))
-                    exn = PayloadInstallError("failed to get package")
-                    if errorHandler.cb(exn, package=txmbr.po) == ERROR_RAISE:
-                        raise exn
-                except (yum.Errors.NoMoreMirrorsRepoError, IOError):
-                    if os.path.exists(txmbr.po.localPkg()):
-                        os.unlink(txmbr.po.localPkg())
-                        log.debug("retrying download of %s" % txmbr.po)
-                        continue
-                    exn = PayloadInstallError("failed to open package")
-                    if errorHandler.cb(exn, package=txmbr.po) == ERROR_RAISE:
-                        raise exn
-                except yum.Errors.RepoError:
-                    continue
-
-                self.package_file = open(package_path)
-
-            return self.package_file.fileno()
-        elif event == rpm.RPMCALLBACK_INST_CLOSE_FILE:
-            # close and remove the last opened file
-            # update count of installed/upgraded packages
-            package_path = self.package_file.name
-            self.package_file.close()
-            self.package_file = None
-
-            if package_path.startswith(_yum_cache_dir):
-                try:
-                    os.unlink(package_path)
-                except OSError as e:
-                    log.debug("unable to remove file %s" % e.strerror)
-
-            # rpm doesn't tell us when it's started post-trans stuff which can
-            # take a very long time.  So when it closes the last package, just
-            # display the message.
-            if self.completed_actions == self.total_actions:
-                progress.send_message(_("Performing post-install setup tasks"))
-        elif event == rpm.RPMCALLBACK_UNINST_START:
-            # update status that we're cleaning up %key
-            #progress.set_text(_("Cleaning up %s" % key))
-            pass
-        elif event in (rpm.RPMCALLBACK_CPIO_ERROR,
-                       rpm.RPMCALLBACK_UNPACK_ERROR,
-                       rpm.RPMCALLBACK_SCRIPT_ERROR):
-            name = self._get_txmbr(key)[0]
-
-            # Script errors store whether or not they're fatal in "total".  So,
-            # we should only error out for fatal script errors or the cpio and
-            # unpack problems.
-            if event != rpm.RPMCALLBACK_SCRIPT_ERROR or total:
-                exn = PayloadInstallError("cpio, unpack, or fatal script error")
-                if errorHandler.cb(exn, package=name) == ERROR_RAISE:
-                    raise exn
+        # Make sure yum is really done and gone and lets go of the yum.log
+        self._yum.close()
+        del self._yum

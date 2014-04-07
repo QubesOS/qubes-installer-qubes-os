@@ -17,19 +17,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import isys, iutil
-import os, os.path, stat, sys
-from constants import *
+from pyanaconda import isys
+import os, os.path, stat, tempfile
+from pyanaconda.constants import ISO_DIR
 
-from errors import *
+from pyanaconda.errors import errorHandler, ERROR_RAISE, InvalidImageSizeError, MediaMountError, MediaUnmountError, MissingImageError
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+import blivet.util
+import blivet.arch
+from blivet.errors import FSError, StorageError
 
 import logging
 log = logging.getLogger("anaconda")
 
-_arch = iutil.getArch()
+_arch = blivet.arch.getArch()
 
 def findFirstIsoImage(path):
     """
@@ -39,7 +40,7 @@ def findFirstIsoImage(path):
     Returns the basename of the image
     """
     try:
-        flush = os.stat(path)
+        os.stat(path)
     except OSError:
         return None
 
@@ -53,18 +54,18 @@ def findFirstIsoImage(path):
 
     for fn in files:
         what = path + '/' + fn
-        log.debug("Checking %s" % (what))
+        log.debug("Checking %s", what)
         if not isys.isIsoImage(what):
             continue
 
         log.debug("mounting %s on /mnt/install/cdimage", what)
         try:
-            isys.mount(what, "/mnt/install/cdimage", fstype="iso9660", readOnly=True)
-        except SystemError:
+            blivet.util.mount(what, "/mnt/install/cdimage", fstype="iso9660", options="ro")
+        except OSError:
             continue
 
         if not os.access("/mnt/install/cdimage/.discinfo", os.R_OK):
-            isys.umount("/mnt/install/cdimage", removeDir=False)
+            blivet.util.umount("/mnt/install/cdimage")
             continue
 
         log.debug("Reading .discinfo")
@@ -74,29 +75,29 @@ def findFirstIsoImage(path):
         discArch = f.readline().strip() # read architecture
         f.close()
 
-        log.debug("discArch = %s" % discArch)
+        log.debug("discArch = %s", discArch)
         if discArch != arch:
-            log.warning("findFirstIsoImage: architectures mismatch: %s, %s" %
-                        (discArch, arch))
-            isys.umount("/mnt/install/cdimage", removeDir=False)
+            log.warning("findFirstIsoImage: architectures mismatch: %s, %s",
+                        discArch, arch)
+            blivet.util.umount("/mnt/install/cdimage")
             continue
 
         # If there's no repodata, there's no point in trying to
         # install from it.
         if not os.access("/mnt/install/cdimage/repodata", os.R_OK):
-            log.warning("%s doesn't have repodata, skipping" %(what,))
-            isys.umount("/mnt/install/cdimage", removeDir=False)
+            log.warning("%s doesn't have repodata, skipping", what)
+            blivet.util.umount("/mnt/install/cdimage")
             continue
 
         # warn user if images appears to be wrong size
         if os.stat(what)[stat.ST_SIZE] % 2048:
-            log.warning("%s appears to be corrupted" % what)
+            log.warning("%s appears to be corrupted", what)
             exn = InvalidImageSizeError("size is not a multiple of 2048 bytes")
             if errorHandler.cb(exn) == ERROR_RAISE:
                 raise exn
 
-        log.info("Found disc at %s" % fn)
-        isys.umount("/mnt/install/cdimage", removeDir=False)
+        log.info("Found disc at %s", fn)
+        blivet.util.umount("/mnt/install/cdimage")
         return fn
 
     return None
@@ -132,11 +133,11 @@ def mountImageDirectory(method, storage):
                 device.setup()
                 device.format.setup(mountpoint=ISO_DIR)
             except StorageError as e:
-                log.error("couldn't mount ISO source directory: %s" % e)
+                log.error("couldn't mount ISO source directory: %s", e)
                 exn = MediaMountError(str(e))
                 if errorHandler.cb(exn) == ERROR_RAISE:
                     raise exn
-    elif methodstr.startswith("nfsiso:"):
+    elif method.method.startswith("nfsiso:"):
         # XXX what if we mount it on ISO_DIR and then create a symlink
         #     if there are no isos instead of the remount?
 
@@ -149,9 +150,9 @@ def mountImageDirectory(method, storage):
 
         while True:
             try:
-                isys.mount(url, ISO_DIR, options=method.options)
-            except SystemError as e:
-                log.error("couldn't mount ISO source directory: %s" % e)
+                blivet.util.mount(url, ISO_DIR, fstype="nfs", options=method.options)
+            except OSError as e:
+                log.error("couldn't mount ISO source directory: %s", e)
                 exn = MediaMountError(str(e))
                 if errorHandler.cb(exn) == ERROR_RAISE:
                     raise exn
@@ -172,8 +173,8 @@ def mountImage(isodir, tree):
             image = os.path.normpath("%s/%s" % (isodir, image))
 
         try:
-            isys.mount(image, tree, fstype = 'iso9660', readOnly = True)
-        except SystemError:
+            blivet.util.mount(image, tree, fstype = 'iso9660', options="ro")
+        except OSError:
             exn = MissingImageError()
             if errorHandler.cb(exn) == ERROR_RAISE:
                 raise exn
@@ -184,21 +185,37 @@ def mountImage(isodir, tree):
 
 # Return the first Device instance containing valid optical install media
 # for this product.
-def opticalInstallMedia(devicetree, mountpoint=INSTALL_TREE):
+def opticalInstallMedia(devicetree):
     retval = None
 
-    for dev in devicetree.getDevicesByType("cdrom"):
+    # Search for devices identified as cdrom along with any other
+    # device that has an iso9660 filesystem. This will catch USB media
+    # created from ISO images.
+    for dev in set(devicetree.getDevicesByType("cdrom") + \
+            [d for d in devicetree.devices if d.format.type == "iso9660"]):
+        if not dev.controllable:
+            continue
+
         devicetree.updateDeviceFormat(dev)
+        if not hasattr(dev.format, "mount"):
+            # no mountable media
+            continue
+
+        mountpoint = tempfile.mkdtemp()
         try:
-            dev.format.mount(mountpoint=mountpoint)
-        except Exception:
-            continue
+            try:
+                dev.format.mount(mountpoint=mountpoint)
+            except FSError:
+                continue
 
-        if not verifyMedia(mountpoint):
+            if not verifyMedia(mountpoint):
+                dev.format.unmount()
+                continue
+
             dev.format.unmount()
-            continue
+        finally:
+            os.rmdir(mountpoint)
 
-        dev.format.unmount()
         retval = dev
         break
 
@@ -211,7 +228,7 @@ def potentialHdisoSources(devicetree):
 
 def umountImage(tree):
     if os.path.ismount(tree):
-        isys.umount(tree, removeDir=False)
+        blivet.util.umount(tree)
 
 def unmountCD(dev):
     if not dev:
@@ -220,8 +237,8 @@ def unmountCD(dev):
     while True:
         try:
             dev.format.unmount()
-        except Exception as e:
-            log.error("exception in _unmountCD: %s" %(e,))
+        except FSError as e:
+            log.error("exception in _unmountCD: %s", e)
             exn = MediaUnmountError()
             errorHandler.cb(exn, dev)
         else:
@@ -232,7 +249,8 @@ def verifyMedia(tree, timestamp=None):
         f = open("%s/.discinfo" % tree)
 
         newStamp = f.readline().strip()
-        descr = f.readline().strip()
+        # Next is the description, which we just want to throw away.
+        f.readline()
         arch = f.readline().strip()
         f.close()
 

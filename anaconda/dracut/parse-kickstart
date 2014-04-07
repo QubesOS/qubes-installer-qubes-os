@@ -13,6 +13,8 @@
 
 import sys, os
 import logging
+import shutil
+import uuid
 from pykickstart.parser import KickstartParser, preprocessKickstart
 from pykickstart.version import returnClassForVersion
 from pykickstart.errors import KickstartError
@@ -50,24 +52,29 @@ proc_cmdline = read_cmdline("/proc/cmdline")
 
 # Here are the kickstart commands we care about:
 
-class Method(commands.method.F14_Method):
-    '''install methods: cdrom, harddrive, nfs, url'''
+class Cdrom(commands.cdrom.FC3_Cdrom):
     def dracut_args(self, args, lineno, obj):
-        if self.method == "cdrom":
-            method="cdrom"
-        elif self.method == "harddrive":
-            if self.biospart:
-                method="bd:%s:%s" % (self.partition, self.dir)
-            else:
-                method="hd:%s:%s" % (self.partition, self.dir)
-        elif self.method == "nfs":
-            method="nfs:%s:%s" % (self.server, self.dir)
-            if self.opts:
-                method += ":%s" % self.opts
-        elif self.method == "url":
-            # FIXME: self.proxy, self.noverifyssl
-            method = self.url
+        return "inst.repo=cdrom"
+
+class HardDrive(commands.harddrive.FC3_HardDrive):
+    def dracut_args(self, args, lineno, obj):
+        if self.biospart:
+            return "inst.repo=bd:%s:%s" % (self.partition, self.dir)
+        else:
+            return "inst.repo=hd:%s:%s" % (self.partition, self.dir)
+
+class NFS(commands.nfs.FC6_NFS):
+    def dracut_args(self, args, lineno, obj):
+        method="nfs:%s:%s" % (self.server, self.dir)
+        if self.opts:
+            method += ":%s" % self.opts
+
         return "inst.repo=%s" % method
+
+class URL(commands.url.F18_Url):
+    def dracut_args(self, args, lineno, obj):
+        # FIXME: self.proxy, self.noverifyssl
+        return "inst.repo=%s" % self.url
 
 class Updates(commands.updates.F7_Updates):
     def dracut_args(self, args, lineno, obj):
@@ -91,7 +98,7 @@ class DriverDisk(commands.driverdisk.F14_DriverDisk):
         if location:
             return "inst.driverdisk=%s" % location
 
-class Network(commands.network.F16_Network):
+class Network(commands.network.F20_Network):
     def dracut_args(self, args, lineno, net):
         '''
         NOTE: The first 'network' line get special treatment:
@@ -138,13 +145,18 @@ class DisplayMode(commands.displaymode.FC3_DisplayMode):
         elif self.displayMode == DISPLAY_MODE_GRAPHICAL:
             return "inst.graphical"
 
-# TODO: keymap, lang... device? upgrade? selinux?
+class Bootloader(commands.bootloader.F19_Bootloader):
+    def dracut_args(self, args, lineno, obj):
+        if self.extlinux:
+            return "extlinux"
+
+# TODO: keymap, lang... device? selinux?
 
 dracutCmds = {
-    'cdrom': Method,
-    'harddrive': Method,
-    'nfs': Method,
-    'url': Method,
+    'cdrom': Cdrom,
+    'harddrive': HardDrive,
+    'nfs': NFS,
+    'url': URL,
     'updates': Updates,
     'mediacheck': MediaCheck,
     'driverdisk': DriverDisk,
@@ -152,6 +164,7 @@ dracutCmds = {
     'cmdline': DisplayMode,
     'graphical': DisplayMode,
     'text': DisplayMode,
+    'bootloader': Bootloader,
 }
 handlerclass = returnClassForVersion()
 class DracutHandler(handlerclass):
@@ -190,6 +203,7 @@ def ksnet_to_dracut(args, lineno, net, bootdev=False):
     '''Translate the kickstart network data into dracut network data.'''
     line = []
     ip=""
+    autoconf=""
 
     if is_mac(net.device): # this is a MAC - find the interface name
         mac = net.device
@@ -200,9 +214,9 @@ def ksnet_to_dracut(args, lineno, net, bootdev=False):
 
     # NOTE: dracut currently only does ipv4 *or* ipv6, so only one ip=arg..
     if net.bootProto in (BOOTPROTO_DHCP, BOOTPROTO_BOOTP):
-        ip="dhcp"
+        autoconf="dhcp"
     elif net.bootProto == BOOTPROTO_IBFT:
-        ip="ibft"
+        autoconf="ibft"
     elif net.bootProto == BOOTPROTO_QUERY:
         log.error("'%s': --bootproto=query is deprecated", " ".join(args))
     elif net.bootProto == BOOTPROTO_STATIC:
@@ -212,18 +226,22 @@ def ksnet_to_dracut(args, lineno, net, bootdev=False):
             log.warn("line %u: network missing %s", lineno, missing)
         else:
             ip="{0.ip}::{0.gateway}:{0.netmask}:" \
-               "{0.hostname}:{0.device}:none".format(net)
+               "{0.hostname}:{0.device}:none:{0.mtu}".format(net)
     elif net.ipv6 == "auto":
-        ip="auto6"
+        autoconf="auto6"
     elif net.ipv6 == "dhcp":
-        ip="dhcp6"
+        autoconf="dhcp6"
     elif net.ipv6:
-        ip="[{0.ipv6}]::{0.gateway}:{0.netmask}:" \
-           "{0.hostname}:{0.device}:none".format(net)
+        ip="[{0.ipv6}]::{0.ipv6gateway}:{0.netmask}:" \
+           "{0.hostname}:{0.device}:none:{0.mtu}".format(net)
 
-    if net.device and not ip.endswith(":none"):
-        line.append("ip=%s:%s" % (net.device, ip))
-    else:
+    if autoconf:
+        if net.device or net.mtu:
+            ip="%s:%s:%s" % (net.device, autoconf, net.mtu)
+        else:
+            ip=autoconf
+
+    if ip:
         line.append("ip=%s" % ip)
 
     for ns in net.nameserver.split(","):
@@ -257,7 +275,8 @@ def ksnet_to_ifcfg(net, filename=None):
         dev = find_devname(dev)
     if not dev:
         return
-    if not os.path.isdir("/sys/class/net/%s" % dev):
+    if (not os.path.isdir("/sys/class/net/%s" % dev)
+        and not net.bondslaves and not net.teamslaves):
         log.info("can't find device %s" % dev)
         return
     ifcfg = dict()
@@ -267,7 +286,7 @@ def ksnet_to_ifcfg(net, filename=None):
             os.makedirs("/tmp/ifcfg")
     ifcfg['DEVICE'] = dev
     ifcfg['HWADDR'] = readsysfile("/sys/class/net/%s/address" % dev)
-    ifcfg['UUID'] = readsysfile("/proc/sys/kernel/random/uuid")
+    ifcfg['UUID'] = str(uuid.uuid4())
     # we set real ONBOOT value in anaconda, here
     # we use it to activate devcies by NM on start
     ifcfg['ONBOOT'] = "yes" if net.activate else "no"
@@ -285,42 +304,126 @@ def ksnet_to_ifcfg(net, filename=None):
     # ipv6 settings
     if net.noipv6:
         ifcfg['IPV6INIT'] = "no"
-    elif net.ipv6:
+    else:
         ifcfg['IPV6INIT'] = "yes"
 
-    if net.ipv6 == 'dhcp':
-        ifcfg['DHCPV6C'] = "yes"
-    elif net.ipv6 == 'auto':
-        ifcfg['IPV6_AUTOCONF'] = "yes" # NOTE: redundant (this is the default)
-    elif ':' in net.ipv6:
-        ifcfg['IPV6ADDR'] = net.ipv6
+        if net.ipv6 == 'dhcp':
+            ifcfg['DHCPV6C'] = "yes"
+            ifcfg['IPV6_AUTOCONF'] = "no"
+            if net.ipv6gateway:
+                ifcfg['IPV6_DEFAULTGW'] = net.ipv6gateway
+        elif net.ipv6 == 'auto':
+            ifcfg['IPV6_AUTOCONF'] = "yes" # NOTE: redundant (this is the default)
+        elif ':' in net.ipv6:
+            ifcfg['IPV6ADDR'] = net.ipv6
+            ifcfg['IPV6_AUTOCONF'] = "no"
 
     # misc stuff
     if net.mtu:
         ifcfg['MTU'] = net.mtu
     if net.nameserver:
-        ifcfg['DNS1'] = net.nameserver
+        for i, ip in enumerate(net.nameserver.split(",")):
+            ifcfg["DNS%d" % (i+1)] = ip
     if net.nodefroute:
         ifcfg['DEFROUTE'] = "no"
 
     # TODO: dhcpclass, ethtool, essid/wepkey/wpakay, etc.
 
-    try:
-        log.info("writing ifcfg for %s", dev)
-        outf = open(filename, "w")
-        outf.write('# Generated by parse-kickstart\n')
-        for k,v in ifcfg.items():
-            outf.write("%s=%s\n" % (k,v))
-        outf.close()
-    except IOError as e:
-        log.error("can't write %s: %s" % (filename, str(e)))
-    else:
+    if net.bootProto == 'dhcp':
+        srcpath = "/tmp/dhclient.%s.lease" % dev
+        dstdir = "/tmp/ifcfg-leases"
+        dstpath = "%s/dhclient-%s-%s.lease" % (dstdir, ifcfg['UUID'], dev)
+        if os.path.exists(srcpath):
+            if not os.path.isdir(dstdir):
+                os.makedirs(dstdir)
+            shutil.copyfile(srcpath, dstpath)
+
+    if net.bondslaves:
+        ifcfg.pop('HWADDR')
+        ifcfg['TYPE'] = "Bond"
+        ifcfg['BONDING_MASTER'] = "yes"
+        ifcfg['NAME'] = "Bond connection %s" % dev
+        if ';' in net.bondopts:
+            sep = ";"
+        else:
+            sep = ","
+        ifcfg['BONDING_OPTS'] = '"' + " ".join(net.bondopts.split(sep)) + '"'
+
+        for i, slave in enumerate(net.bondslaves.split(","), 1):
+            slave_ifcfg = {
+                            'TYPE' : "Ethernet",
+                            'NAME' : "%s slave %s" % (dev, i),
+                            'UUID' : str(uuid.uuid4()),
+                            'ONBOOT' : "yes",
+                            'MASTER' : dev,
+                            'HWADDR' : readsysfile("/sys/class/net/%s/address" % slave),
+                          }
+            # not using NM naming conventions, following dracut so that it does not
+            # override kickstart config by generating its own ifcfg files for slaves
+            #slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
+            # FIXME - change in dracut?
+            slave_filename = "/tmp/ifcfg/ifcfg-%s" % slave
+            log.info("writing ifcfg %s for slave %s of bond %s" % (slave_filename, slave, dev))
+            write_ifcfg(slave_filename, slave_ifcfg)
+
+    if net.teamslaves:
+
+        ifcfg.pop('HWADDR')
+        ifcfg['TYPE'] = "Team"
+        ifcfg['NAME'] = "Team connection %s" % dev
+        ifcfg['TEAM_CONFIG'] = "'" + net.teamconfig + "'"
+
+        for i, (slave, cfg) in enumerate(net.teamslaves):
+            slave_ifcfg = {
+                            'DEVICE': slave,
+                            'DEVICETYPE' : "TeamPort",
+                            'NAME' : "%s slave %s" % (dev, i),
+                            'UUID' : str(uuid.uuid4()),
+                            'ONBOOT' : "yes",
+                            'TEAM_MASTER' : dev,
+#                            'HWADDR' : readsysfile("/sys/class/net/%s/address" % slave),
+                          }
+            if cfg:
+                slave_ifcfg['TEAM_PORT_CONFIG'] = "'" + cfg + "'"
+
+            # not using NM naming conventions, following dracut so that it does not
+            # override kickstart config by generating its own ifcfg files for slaves
+            #slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
+            # FIXME - change in dracut?
+            slave_filename = "/tmp/ifcfg/ifcfg-%s" % slave
+            log.info("writing ifcfg %s for slave %s of team %s" % (slave_filename, slave, dev))
+            write_ifcfg(slave_filename, slave_ifcfg)
+
+    if net.vlanid:
+        interface_name = "%s.%s" % (dev, net.vlanid)
+        ifcfg.pop('HWADDR')
+        ifcfg['TYPE'] = "Vlan"
+        ifcfg['VLAN'] = "yes"
+        ifcfg['VLAN_ID'] = net.vlanid
+        ifcfg['NAME'] = "VLAN connection %s" % interface_name
+        ifcfg['DEVICE'] = interface_name
+        ifcfg['PHYSDEV'] = dev
+        filename = "/tmp/ifcfg/ifcfg-%s" % interface_name
+
+    log.info("writing ifcfg %s for %s" % (filename, dev))
+    if write_ifcfg(filename, ifcfg):
         return filename
+
+def write_ifcfg(filename, ifcfg):
+    try:
+        with open(filename, "w") as f:
+            f.write('# Generated by parse-kickstart\n')
+            for k,v in ifcfg.items():
+                f.write("%s=%s\n" % (k,v))
+    except IOError as e:
+        log.error("can't write %s: %s" % (filename, e))
+        return False
+    return True
 
 def process_kickstart(ksfile):
     handler = DracutHandler()
     handler.ksdevice = os.environ.get('ksdevice')
-    parser = KickstartParser(handler, missingIncludeIsFatal=False)
+    parser = KickstartParser(handler, missingIncludeIsFatal=False, errorsAreFatal=False)
     log.info("processing kickstart file %s", ksfile)
     processed_file = preprocessKickstart(ksfile)
     try:

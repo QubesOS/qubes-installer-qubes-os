@@ -43,6 +43,17 @@ find_runtime() {
     done
 }
 
+find_tty() {
+    # find the real tty for /dev/console
+    local tty="console"
+    while [ -f /sys/class/tty/$tty/active ]; do
+        tty=$(< /sys/class/tty/$tty/active)
+        tty=${tty##* } # last item in the list
+    done
+    echo $tty
+}
+
+
 repodir="/run/install/repo"
 isodir="/run/install/isodir"
 rulesfile="/etc/udev/rules.d/90-anaconda.rules"
@@ -95,13 +106,13 @@ anaconda_auto_updates() {
         unpack_updates_img $dir/updates.img /updates
     fi
     if [ -e $dir/product.img ]; then
-        unpack_updates_img $dir/product.img /updates/tmp/product
+        unpack_updates_img $dir/product.img /updates
     fi
 }
 
 # Unpack an image into the given dir.
 unpack_updates_img() {
-    local img="$1" tmpdir="/tmp/${1##*/}.$$" outdir="${2:+/updates}"
+    local img="$1" tmpdir="/tmp/${1##*/}.$$" outdir="${2:-/updates}"
     # NOTE: unpack_img $img $outdir can clobber existing subdirs in $outdir,
     # which is why we use a tmpdir and copytree (which doesn't clobber)
     unpack_img $img $tmpdir
@@ -192,7 +203,7 @@ run_kickstart() {
 
     # replay udev events to trigger actions
     if [ "$do_disk" ]; then
-        . $hookdir/pre-udev/*repo-genrules.sh
+        . $hookdir/pre-trigger/*repo-genrules.sh
         udevadm control --reload
         udevadm trigger --action=change --subsystem-match=block
     fi

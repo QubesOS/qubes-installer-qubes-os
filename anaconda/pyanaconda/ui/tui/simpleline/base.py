@@ -21,21 +21,31 @@
 
 __all__ = ["App", "UIScreen", "Widget"]
 
-import readline
+import sys
+import Queue
+import getpass
+import threading
+from pyanaconda.threads import threadMgr, AnacondaThread
+from pyanaconda.ui.communication import hubQ
+from pyanaconda import constants
+from pyanaconda.i18n import _, N_
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+RAW_INPUT_LOCK = threading.Lock()
 
-class ExitAllMainLoops(Exception):
-    """This exception ends the whole App mainloop structure. App.run() quits
-       after it is processed."""
-    pass
+
+def send_exception(queue, ex):
+    queue.put((hubQ.HUB_CODE_EXCEPTION, [ex]))
+
 
 class ExitMainLoop(Exception):
     """This exception ends the outermost mainloop. Used internally when dialogs
        close."""
     pass
 
+class ExitAllMainLoops(ExitMainLoop):
+    """This exception ends the whole App mainloop structure. App.run() returns
+       False after the exception is processed."""
+    pass
 
 class App(object):
     """This is the main class for TUI screen handling. It is responsible for
@@ -55,7 +65,8 @@ class App(object):
     STOP_MAINLOOP = False
     NOP = None
 
-    def __init__(self, title, yes_or_no_question = None, width = 80):
+    def __init__(self, title, yes_or_no_question = None, width = 80, queue = None,
+                 quit_message = None):
         """
         :param title: application title for whenever we need to display app name
         :type title: unicode
@@ -68,9 +79,25 @@ class App(object):
         """
 
         self._header = title
+        self._redraw = True
         self._spacer = "\n".join(2*[width*"="])
         self._width = width
         self.quit_question = yes_or_no_question
+        self.quit_message = quit_message or N_(u"Do you really want to quit?")
+
+        # async control queue
+        if queue:
+            self.queue = queue
+        else:
+            self.queue = Queue.Queue()
+
+        # ensure unique thread names
+        self._in_thread_counter = 0
+
+        # event handlers
+        # key: event id
+        # value: list of tuples (callback, data)
+        self._handlers = {}
 
         # screen stack contains triplets
         #  UIScreen to show
@@ -80,6 +107,61 @@ class App(object):
         #   - True = execute new loop
         #   - False = already running loop, exit when window closes
         self._screens = []
+
+    def register_event_handler(self, event, callback, data = None):
+        """This method registers a callback which will be called
+           when message "event" is encountered during process_events.
+
+           The callback has to accept two arguments:
+             - the received message in the form of (type, [arguments])
+             - the data registered with the handler
+
+           :param event: the id of the event we want to react on
+           :type event: number|string
+
+           :param callback: the callback function
+           :type callback: func(event_message, data)
+
+           :param data: optional data to pass to callback
+           :type data: anything
+        """
+        if not event in self._handlers:
+            self._handlers[event] = []
+        self._handlers[event].append((callback, data))
+
+    def _thread_input(self, queue, prompt, hidden):
+        """This method is responsible for interruptible user input. It is expected
+        to be used in a thread started on demand by the App class and returns the
+        input via the communication Queue.
+
+        :param queue: communication queue to be used
+        :type queue: Queue.Queue instance
+
+        :param prompt: prompt to be displayed
+        :type prompt: str
+
+        :param hidden: whether typed characters should be echoed or not
+        :type hidden: bool
+
+        """
+
+        if hidden:
+            data = getpass.getpass(prompt)
+        else:
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+            # XXX: only one raw_input can run at a time, don't schedule another
+            # one as it would cause weird behaviour and block other packages'
+            # raw_inputs
+            if not RAW_INPUT_LOCK.acquire(False):
+                # raw_input is already running
+                return
+            else:
+                # lock acquired, we can run raw_input
+                data = raw_input()
+                RAW_INPUT_LOCK.release()
+
+        queue.put((hubQ.HUB_CODE_INPUT, [data]))
 
     def switch_screen(self, ui, args = None):
         """Schedules a screen to replace the current one.
@@ -92,7 +174,8 @@ class App(object):
 
         """
 
-        oldscr, oldattr, oldloop = self._screens.pop()
+        # (oldscr, oldattr, oldloop)
+        oldloop = self._screens.pop()[2]
 
         # we have to keep the oldloop value so we stop
         # dialog's mainloop if it ever uses switch_screen
@@ -111,6 +194,7 @@ class App(object):
         """
 
         self._screens.append((ui, args, self.NOP))
+
         self.redraw()
 
     def switch_screen_modal(self, ui, args = None):
@@ -150,7 +234,7 @@ class App(object):
         :type scr: UIScreen instance
         """
 
-        oldscr, oldattr, oldloop = self._screens.pop()
+        oldscr, _oldattr, oldloop = self._screens.pop()
         if scr is not None:
             assert oldscr == scr
 
@@ -193,11 +277,22 @@ class App(object):
             # and skip the input processing once, to redisplay the screen first
             self.redraw()
             input_needed = False
-        else:
+        elif self._redraw:
             # get the widget tree from the screen and show it in the screen
-            input_needed = screen.refresh(args)
-            screen.window.show_all()
-            self._redraw = False
+            try:
+                input_needed = screen.refresh(args)
+                screen.window.show_all()
+                self._redraw = False
+            except ExitMainLoop:
+                raise
+            except Exception:
+                send_exception(self.queue, sys.exc_info())
+                return False
+
+        else:
+            # this can happen only in case there was invalid input and prompt
+            # should be shown again
+            input_needed = True
 
         return input_needed
 
@@ -208,8 +303,9 @@ class App(object):
 
         try:
             self._mainloop()
+            return True
         except ExitAllMainLoops:
-            pass
+            return False
 
     def _mainloop(self):
         """Single mainloop. Do not use directly, start the application using run()."""
@@ -223,6 +319,9 @@ class App(object):
 
         # run until there is nothing else to display
         while self._screens:
+            # process asynchronous events
+            self.process_events()
+
             # if redraw is needed, separate the content on the screen from the
             # stuff we are about to display now
             if self._redraw:
@@ -231,7 +330,7 @@ class App(object):
             try:
                 # draw the screen if redraw is needed or the screen changed
                 # (unlikely to happen separately, but just be sure)
-                if self._redraw or last_screen != self._screens[-1]:
+                if self._redraw or last_screen != self._screens[-1][0]:
                     # we have fresh screen, reset error counter
                     error_counter = 0
                     if not self._do_redraw():
@@ -241,7 +340,13 @@ class App(object):
                 last_screen = self._screens[-1][0]
 
                 # get the screen's prompt
-                prompt = last_screen.prompt(self._screens[-1][1])
+                try:
+                    prompt = last_screen.prompt(self._screens[-1][1])
+                except ExitMainLoop:
+                    raise
+                except Exception:
+                    send_exception(self.queue, sys.exc_info())
+                    continue
 
                 # None means prompt handled the input by itself
                 # ask for redraw and continue
@@ -256,14 +361,14 @@ class App(object):
                 # increment the error counter
                 if not self.input(self._screens[-1][1], c):
                     error_counter += 1
+                else:
+                    # input was successfully processed, but no other screen was
+                    # scheduled, just redraw the screen to display current state
+                    self.redraw()
 
                 # redraw the screen after 5 bad inputs
                 if error_counter >= 5:
                     self.redraw()
-
-            # end just this loop
-            except ExitMainLoop:
-                break
 
             # propagate higher to end all loops
             # not really needed here, but we might need
@@ -271,10 +376,48 @@ class App(object):
             except ExitAllMainLoops:
                 raise
 
-    def raw_input(self, prompt):
-        """This method reads one input from user. Its basic form has only one line,
-        but we might need to override it for more complex apps or testing."""
-        return raw_input(prompt)
+            # end just this loop
+            except ExitMainLoop:
+                break
+
+    def process_events(self, return_at = None):
+        """This method processes incoming async messages and returns
+           when a specific message is encountered or when the queue
+           is empty.
+
+           If return_at message was specified, the received
+           message is returned.
+
+           If the message does not fit return_at, but handlers are
+           defined then it processes all handlers for this message
+        """
+        while return_at or not self.queue.empty():
+            event = self.queue.get()
+            if event[0] == return_at:
+                return event
+            elif event[0] in self._handlers:
+                for handler, data in self._handlers[event[0]]:
+                    try:
+                        handler(event, data)
+                    except ExitMainLoop:
+                        raise
+                    except Exception:
+                        send_exception(self.queue, sys.exc_info())
+
+    def raw_input(self, prompt, hidden=False):
+        """This method reads one input from user. Its basic form has only one
+        line, but we might need to override it for more complex apps or testing."""
+
+        thread_name = "%s%d" % (constants.THREAD_INPUT_BASENAME,
+                                self._in_thread_counter)
+        self._in_thread_counter += 1
+        input_thread = AnacondaThread(name=thread_name,
+                                      target=self._thread_input,
+                                      args=(self.queue, prompt, hidden))
+        input_thread.daemon = True
+        threadMgr.add(input_thread)
+        event = self.process_events(return_at=hubQ.HUB_CODE_INPUT)
+        return event[1][0] # return the user input
 
     def input(self, args, key):
         """Method called internally to process unhandled input key presses.
@@ -293,19 +436,33 @@ class App(object):
 
         # delegate the handling to active screen first
         if self._screens:
-            key = self._screens[-1][0].input(args, key)
-            if key is None:
-                return True
+            try:
+                key = self._screens[-1][0].input(args, key)
+                if key is None:
+                    return True
+            except ExitMainLoop:
+                raise
+            except Exception:
+                send_exception(self.queue, sys.exc_info())
+                return False
+
+        # global refresh command
+        # TRANSLATORS: 'r' to refresh
+        if self._screens and (key == _('r')):
+            self._do_redraw()
+            return True
 
         # global close command
+        # TRANSLATORS: 'c' to continue
         if self._screens and (key == _('c')):
             self.close_screen()
             return True
 
         # global quit command
+        # TRANSLATORS: 'q' to quit
         elif self._screens and (key == _('q')):
             if self.quit_question:
-                d = self.quit_question(self, _(u"Do you really want to quit?"))
+                d = self.quit_question(self, _(self.quit_message))
                 self.switch_screen_modal(d)
                 if d.answer:
                     raise ExitAllMainLoops()
@@ -333,16 +490,37 @@ class UIScreen(object):
     # title line of the screen
     title = u"Screen.."
 
-    def __init__(self, app):
+    def __init__(self, app, screen_height = 25):
         """
         :param app: reference to application main class
         :type app: instance of class App
+
+        :param screen_height: height of the screen (useful for printing long widgets)
+        :type screen_height: int
         """
 
         self._app = app
+        self._screen_height = screen_height
 
         # list that holds the content to be printed out
         self._window = []
+
+        # index of the page (subset of screen) shown during show_all
+        # indexing starts with 0
+        self._page = 0
+
+    def setup(self, environment):
+        """
+        Do additional setup right before this screen is used.
+
+        :param environment: environment (see pyanaconda.constants) the UI is running in
+        :type environment: either FIRSTBOOT_ENVIRON or ANACONDA_ENVIRON
+        :return: whether this screen should be scheduled or not
+        :rtype: bool
+
+        """
+
+        return True
 
     def refresh(self, args = None):
         """Method which prepares the content desired on the screen to self._window.
@@ -363,15 +541,53 @@ class UIScreen(object):
         """Return reference to the window instance. In TUI, just return self."""
         return self
 
+    def _print_long_widget(self, widget):
+        """Prints a long widget (possibly longer than the screen height) with
+           user interaction (when needed).
+
+           :param widget: possibly long widget to print
+           :type widget: Widget instance
+
+        """
+
+        pos = 0
+        lines = widget.get_lines()
+        num_lines = len(lines)
+
+        if num_lines < self._screen_height - 2:
+            # widget plus prompt are shorter than screen height, just print the widget
+            print u"\n".join(lines)
+            return
+
+        # long widget, print it in steps and prompt user to continue
+        last_line = num_lines - 1
+        while pos <= last_line:
+            if pos + self._screen_height - 2 > last_line:
+                # enough space to print the rest of the widget plus regular
+                # prompt (2 lines)
+                for line in lines[pos:]:
+                    print line
+                pos += self._screen_height - 1
+            else:
+                # print part with a prompt to continue
+                for line in lines[pos:(pos + self._screen_height - 2)]:
+                    print line
+                self._app.raw_input(_("Press ENTER to continue"))
+                pos += self._screen_height - 1
+
     def show_all(self):
         """Prepares all elements of self._window for output and then prints
         them on the screen."""
 
         for w in self._window:
             if hasattr(w, "render"):
+                # pylint: disable-msg=E1101
                 w.render(self.app.width)
-            print unicode(w)
-
+            if isinstance(w, Widget):
+                self._print_long_widget(w)
+            else:
+                # not a widget, just print its unicode representation
+                print unicode(w)
     show = show_all
 
     def hide(self):
@@ -387,8 +603,9 @@ class UIScreen(object):
         :param args: optional argument passed from switch_screen calls
         :type args: anything
 
-        :return: return True or None if key was handled, False if the screen should not
-                 process input on the App and key if you want it to.
+        :return: return True or INPUT_PROCESSED (None) if key was handled,
+                 INPUT_DISCARDED (False) if the screen should not process input
+                 on the App and key if you want it to.
         :rtype: True|False|None|unicode
         """
 
@@ -404,7 +621,7 @@ class UIScreen(object):
                  to skip further input processing
         :rtype: unicode|None
         """
-        return _(u"  Please make your choice from above ['q' to quit | 'c' to continue]: ")
+        return _(u"  Please make your choice from above ['q' to quit | 'c' to continue |\n  'r' to refresh]: ")
 
     @property
     def app(self):
@@ -453,7 +670,7 @@ class Widget(object):
         """This has to return list (rows) of lists (columns) with one character elements."""
         return self._buffer
 
-    def render(self, width = None):
+    def render(self, width):
         """This method has to redraw the widget's self._buffer.
 
            :param width: the width of buffer requested by the caller
@@ -464,9 +681,14 @@ class Widget(object):
            """
         self.clear()
 
-    def __unicode__(self):
-        """Method to render the screen when printing as unicode string."""
-        return u"\n".join([u"".join(l) for l in self._buffer])
+    def get_lines(self):
+        """Get lines to write out in order to show this widget.
+
+           :return: lines representing this widget
+           :rtype: list(unicode)
+           """
+
+        return [unicode(u"".join(line)) for line in self._buffer]
 
     def setxy(self, row, col):
         """Sets cursor position.
@@ -513,7 +735,7 @@ class Widget(object):
 
         # fill up rows to accomodate for w.height
         if self.height < row + w.height:
-            for i in range(row + w.height - self.height):
+            for _i in range(row + w.height - self.height):
                 self._buffer.append(list())
 
         # append columns to accomodate for w.width
@@ -548,6 +770,14 @@ class Widget(object):
            :param block: when printing newline, start at column col (True) or at column 0 (False)
            :type block: boolean
            """
+        if not text:
+            return
+
+        try:
+            text = text.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise ValueError("Unable to decode string %s" %
+                    str(e.object).decode("utf-8", "replace"))
 
         if row is None:
             row = self._cursor[0]
@@ -574,7 +804,7 @@ class Widget(object):
 
             # if the line is not in buffer, create it
             if x >= len(self._buffer):
-                for i in range(x - len(self._buffer) + 1):
+                for _i in range(x - len(self._buffer) + 1):
                     self._buffer.append(list())
 
             # if the line's length is not enough, fill it with spaces

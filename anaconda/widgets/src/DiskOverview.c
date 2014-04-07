@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012  Red Hat, Inc.
+ * Copyright (C) 2011-2013  Red Hat, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
  */
 
 #include <gdk/gdk.h>
+#include <gio/gio.h>
 #include <string.h>
 
 #include "DiskOverview.h"
@@ -41,8 +42,9 @@
 enum {
     PROP_DESCRIPTION = 1,
     PROP_KIND,
+    PROP_FREE,
     PROP_CAPACITY,
-    PROP_OS,
+    PROP_NAME,
     PROP_POPUP_INFO
 };
 
@@ -50,21 +52,23 @@ enum {
 #define DEFAULT_DESCRIPTION   N_("New Device")
 #define DEFAULT_KIND          "drive-harddisk"
 #define DEFAULT_CAPACITY      N_("0 MB")
-#define DEFAULT_OS            ""
+#define DEFAULT_FREE          N_("0 MB")
+#define DEFAULT_NAME          ""
 #define DEFAULT_POPUP_INFO    ""
 
-#define ICON_SIZE             125
+#define ICON_SIZE             128
 
 struct _AnacondaDiskOverviewPrivate {
-    GtkWidget *vbox;
-    GtkWidget *kind;
+    GtkWidget *grid;
+    GtkWidget *kind_icon;
     GtkWidget *description_label;
-    GtkWidget *capacity_label;
-    GtkWidget *os_label;
+    GtkWidget *capacity_label, *free_label;
+    GtkWidget *name_label;
     GtkWidget *tooltip;
 
     GdkCursor *cursor;
 
+    gchar *kind;
     gboolean chosen;
 };
 
@@ -136,18 +140,36 @@ static void anaconda_disk_overview_class_init(AnacondaDiskOverviewClass *klass) 
                                                         G_PARAM_READWRITE));
 
     /**
-     * AnacondaDiskOverview:os:
+     * AnacondaDiskOverview:free:
      *
-     * The :os string describes any operating system found on this device.
+     * The :free string is the amount of free, unpartitioned space on the disk,
+     * plus units.
      *
      * Since: 1.0
      */
     g_object_class_install_property(object_class,
-                                    PROP_OS,
-                                    g_param_spec_string("os",
-                                                        P_("Operating System"),
-                                                        P_("Installed OS on this drive"),
-                                                        DEFAULT_OS,
+                                    PROP_FREE,
+                                    g_param_spec_string("free",
+                                                        P_("Free space"),
+                                                        P_("The drive's unpartitioned free space (including units)"),
+                                                        DEFAULT_FREE,
+                                                        G_PARAM_READWRITE));
+
+    /**
+     * AnacondaDiskOverview:name:
+     *
+     * The :name string provides this device's node name (like 'sda').  Note
+     * that these names aren't guaranteed to be consistent across reboots but
+     * their use is so ingrained that we need to continue displaying them.
+     *
+     * Since: 1.0
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_NAME,
+                                    g_param_spec_string("name",
+                                                        P_("Device node name"),
+                                                        P_("Device node name"),
+                                                        DEFAULT_NAME,
                                                         G_PARAM_READWRITE));
 
     /**
@@ -184,6 +206,50 @@ GtkWidget *anaconda_disk_overview_new() {
     return g_object_new(ANACONDA_TYPE_DISK_OVERVIEW, NULL);
 }
 
+static void set_icon(AnacondaDiskOverview *widget, const char *icon_name) {
+    GError *err = NULL;
+    GIcon *base_icon, *emblem_icon, *icon;
+    GEmblem *emblem = NULL;
+
+    if (!icon_name)
+        return;
+
+    if (widget->priv->kind_icon)
+        gtk_widget_destroy(widget->priv->kind_icon);
+
+    if (widget->priv->chosen) {
+        base_icon = g_icon_new_for_string(icon_name, &err);
+        if (!base_icon) {
+            fprintf(stderr, "could not create icon: %s\n", err->message);
+            g_error_free(err);
+            return;
+        }
+
+        emblem_icon = g_icon_new_for_string("/usr/share/anaconda/pixmaps/anaconda-selected-icon.svg", &err);
+        if (!emblem_icon) {
+            fprintf(stderr, "could not create emblem: %s\n", err->message);
+            g_error_free(err);
+        }
+        else {
+            emblem = g_emblem_new(emblem_icon);
+        }
+
+        icon = g_emblemed_icon_new(base_icon, emblem);
+        g_object_unref(base_icon);
+    }
+    else {
+        icon = g_icon_new_for_string(icon_name, &err);
+        if (!icon) {
+            fprintf(stderr, "could not create icon: %s\n", err->message);
+            g_error_free(err);
+            return;
+        }
+    }
+
+    widget->priv->kind_icon = gtk_image_new_from_gicon(icon, GTK_ICON_SIZE_DIALOG);
+    gtk_image_set_pixel_size(GTK_IMAGE(widget->priv->kind_icon), ICON_SIZE);
+}
+
 /* Initialize the widgets in a newly allocated DiskOverview. */
 static void anaconda_disk_overview_init(AnacondaDiskOverview *widget) {
     char *markup;
@@ -206,9 +272,11 @@ static void anaconda_disk_overview_init(AnacondaDiskOverview *widget) {
     /* Set some properties. */
     widget->priv->chosen = FALSE;
 
-    /* Create the vbox. */
-    widget->priv->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
-    gtk_container_set_border_width(GTK_CONTAINER(widget->priv->vbox), 6);
+    /* Create the grid. */
+    widget->priv->grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(widget->priv->grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(widget->priv->grid), 6);
+    gtk_container_set_border_width(GTK_CONTAINER(widget->priv->grid), 6);
 
     /* Create the capacity label. */
     widget->priv->capacity_label = gtk_label_new(NULL);
@@ -217,8 +285,7 @@ static void anaconda_disk_overview_init(AnacondaDiskOverview *widget) {
     g_free(markup);
 
     /* Create the spoke's icon. */
-    widget->priv->kind = gtk_image_new_from_icon_name(DEFAULT_KIND, GTK_ICON_SIZE_DIALOG);
-    gtk_image_set_pixel_size(GTK_IMAGE(widget->priv->kind), ICON_SIZE);
+    set_icon(widget, DEFAULT_KIND);
 
     /* Create the description label. */
     widget->priv->description_label = gtk_label_new(NULL);
@@ -226,19 +293,26 @@ static void anaconda_disk_overview_init(AnacondaDiskOverview *widget) {
     gtk_label_set_markup(GTK_LABEL(widget->priv->description_label), markup);
     g_free(markup);
 
-    /* Create the OS label.  By default there is no operating system, so just
-     * create a new label here so we have a place for later, should an OS be
-     * specified.
-     */
-    widget->priv->os_label = gtk_label_new(NULL);
+    /* Create the name label. */
+    widget->priv->name_label = gtk_label_new(NULL);
+    gtk_widget_set_halign(widget->priv->name_label, GTK_ALIGN_END);
 
-    /* Add everything to the vbox, add the vbox to the widget. */
-    gtk_container_add(GTK_CONTAINER(widget->priv->vbox), widget->priv->capacity_label);
-    gtk_container_add(GTK_CONTAINER(widget->priv->vbox), widget->priv->kind);
-    gtk_container_add(GTK_CONTAINER(widget->priv->vbox), widget->priv->description_label);
-    gtk_container_add(GTK_CONTAINER(widget->priv->vbox), widget->priv->os_label);
+    /* Create the free space label. */
+    widget->priv->free_label = gtk_label_new(NULL);
+    gtk_widget_set_halign(widget->priv->free_label, GTK_ALIGN_START);
+    markup = g_markup_printf_escaped("<span size='large'>%s</span>", _(DEFAULT_FREE));
+    gtk_label_set_markup(GTK_LABEL(widget->priv->capacity_label), markup);
+    g_free(markup);
 
-    gtk_container_add(GTK_CONTAINER(widget), widget->priv->vbox);
+    /* Add everything to the grid, add the grid to the widget. */
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->capacity_label, 0, 0, 3, 1);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->kind_icon, 0, 1, 3, 1);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->description_label, 0, 2, 3, 1);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->name_label, 0, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), gtk_label_new("/"), 1, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->free_label, 2, 3, 1, 1);
+
+    gtk_container_add(GTK_CONTAINER(widget), widget->priv->grid);
 
     /* We need to handle button-press-event in order to change the background color. */
     g_signal_connect(widget, "button-press-event", G_CALLBACK(anaconda_disk_overview_clicked), NULL);
@@ -251,7 +325,10 @@ gboolean anaconda_disk_overview_clicked(AnacondaDiskOverview *widget, GdkEvent *
     /* This handler runs for mouse presses and key releases.  For key releases, it only
      * runs for activate-type keys (enter, space, etc.).
      */
-    if (event->type == GDK_KEY_RELEASE &&
+    gtk_widget_grab_focus(GTK_WIDGET(widget));
+    if (event->type != GDK_BUTTON_PRESS && event->type != GDK_KEY_RELEASE)
+        return FALSE;
+    else if (event->type == GDK_KEY_RELEASE &&
         (event->key.keyval != GDK_KEY_space && event->key.keyval != GDK_KEY_Return &&
          event->key.keyval != GDK_KEY_ISO_Enter && event->key.keyval != GDK_KEY_KP_Enter &&
          event->key.keyval != GDK_KEY_KP_Space))
@@ -263,11 +340,9 @@ gboolean anaconda_disk_overview_clicked(AnacondaDiskOverview *widget, GdkEvent *
 }
 
 static void anaconda_disk_overview_toggle_background(AnacondaDiskOverview *widget) {
-    if (widget->priv->chosen) {
-	gtk_widget_set_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED, FALSE);
-    }
-    else
-	gtk_widget_unset_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED);
+    set_icon(widget, widget->priv->kind);
+    gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->kind_icon, 0, 1, 3, 1);
+    gtk_widget_show(widget->priv->kind_icon);
 }
 
 static void anaconda_disk_overview_finalize(AnacondaDiskOverview *widget) {
@@ -290,15 +365,19 @@ static void anaconda_disk_overview_get_property(GObject *object, guint prop_id, 
             break;
 
         case PROP_KIND:
-            g_value_set_object (value, (GObject *)priv->kind);
+            g_value_set_object (value, (GObject *)priv->kind_icon);
+            break;
+
+        case PROP_FREE:
+            g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->free_label)));
             break;
 
         case PROP_CAPACITY:
             g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->capacity_label)));
             break;
 
-        case PROP_OS:
-            g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->os_label)));
+        case PROP_NAME:
+            g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->name_label)));
             break;
 
         case PROP_POPUP_INFO:
@@ -314,15 +393,26 @@ static void anaconda_disk_overview_set_property(GObject *object, guint prop_id, 
     switch(prop_id) {
         case PROP_DESCRIPTION: {
             char *markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", g_value_get_string(value));
-	    gtk_label_set_markup(GTK_LABEL(priv->description_label), markup);
+            gtk_label_set_markup(GTK_LABEL(priv->description_label), markup);
             g_free(markup);
             break;
         }
 
         case PROP_KIND:
-            gtk_image_set_from_icon_name(GTK_IMAGE(priv->kind), g_value_get_string(value), GTK_ICON_SIZE_DIALOG);
-            gtk_image_set_pixel_size(GTK_IMAGE(priv->kind), ICON_SIZE);
+            if (widget->priv->kind)
+                g_free(widget->priv->kind);
+
+            widget->priv->kind = g_strdup(g_value_get_string(value));
+            set_icon(widget, widget->priv->kind);
+            gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->kind_icon, 0, 1, 3, 1);
             break;
+
+        case PROP_FREE: {
+            char *markup = g_markup_printf_escaped("<span size='large'>%s</span>", g_value_get_string(value));
+            gtk_label_set_markup(GTK_LABEL(priv->free_label), markup);
+            g_free(markup);
+            break;
+        }
 
         case PROP_CAPACITY: {
             char *markup = g_markup_printf_escaped("<span size='large'>%s</span>", g_value_get_string(value));
@@ -331,19 +421,11 @@ static void anaconda_disk_overview_set_property(GObject *object, guint prop_id, 
             break;
         }
 
-        case PROP_OS: {
-            /* If no OS is given, set the label to blank.  This will prevent
-             * seeing a strange brown blob with no text in the middle of
-             * nowhere.
-             */
-            if (!strcmp(g_value_get_string(value), ""))
-               gtk_label_set_text(GTK_LABEL(priv->os_label), NULL);
-            else {
-                char *markup = g_markup_printf_escaped("<span foreground='white' background='brown'>%s</span>", g_value_get_string(value));
-                gtk_label_set_markup(GTK_LABEL(priv->os_label), markup);
-                g_free(markup);
-                break;
-            }
+        case PROP_NAME: {
+            char *markup = g_markup_printf_escaped("<span size='large'>%s</span>", g_value_get_string(value));
+            gtk_label_set_markup(GTK_LABEL(priv->name_label), markup);
+            g_free(markup);
+            break;
         }
 
         case PROP_POPUP_INFO: {

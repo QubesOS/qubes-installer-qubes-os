@@ -1,6 +1,6 @@
 # Base classes for spoke categories.
 #
-# Copyright (C) 2011  Red Hat, Inc.
+# Copyright (C) 2011, 2013  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -19,9 +19,8 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-N_ = lambda x: x
-
 import os.path
+from pyanaconda.i18n import N_
 from pyanaconda.ui.common import collect
 
 __all__ = ["SpokeCategory", "collect_categories"]
@@ -37,40 +36,22 @@ class SpokeCategory(object):
 
        displayOnHub  -- The Hub subclass to display this Category on.  If
                         None, this Category will be skipped.
+       sortOrder     -- A number indicating the order in which this Category
+                        will be displayed.  A lower number indicates display
+                        higher up in the Hub.
        title         -- The title of this SpokeCategory, to be displayed above
                         the grid.
     """
     displayOnHub = None
+    sortOrder = 1000
     title = N_("DEFAULT TITLE")
 
-    def grid(self, selectors):
-        """Construct a Gtk.Grid consisting of two columns from the provided
-           list of selectors.
-        """
-        from gi.repository import Gtk
+def collect_categories(mask_paths):
+    """Return a list of all category subclasses. Look for them in modules
+       imported as module_mask % basename(f) where f is name of all files in path.
+    """
+    categories = []
+    for mask, path in mask_paths:
+        categories.extend(collect(mask, path, lambda obj: getattr(obj, "displayOnHub", None) != None))
 
-        if len(selectors) == 0:
-            return None
-
-        row = 0
-        col = 0
-
-        g = Gtk.Grid()
-        g.set_row_homogeneous(True)
-        g.set_column_homogeneous(True)
-        g.set_row_spacing(6)
-        g.set_column_spacing(6)
-        g.set_margin_bottom(12)
-
-        for selector in selectors:
-            g.attach(selector, col, row, 1, 1)
-
-            col = int(not col)
-            if col == 0:
-                row += 1
-
-        return g
-
-def collect_categories():
-    """Return a list of all category subclasses."""
-    return collect("pyanaconda.ui.gui.categories.%s", os.path.dirname(__file__), lambda obj: getattr(obj, "displayOnHub", None) != None)
+    return categories

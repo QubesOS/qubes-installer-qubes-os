@@ -17,11 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os
 import selinux
 import shlex
 import glob
-from constants import *
+from pyanaconda.constants import SELINUX_DEFAULT
 from collections import OrderedDict
 
 import logging
@@ -32,7 +31,7 @@ class Flags(object):
     def __setattr__(self, attr, val):
         # pylint: disable-msg=E1101
         if attr not in self.__dict__ and not self._in_init:
-            raise AttributeError, attr
+            raise AttributeError(attr)
         else:
             self.__dict__[attr] = val
 
@@ -45,14 +44,10 @@ class Flags(object):
 
     def __init__(self, read_cmdline=True):
         self.__dict__['_in_init'] = True
-        self.test = 0
         self.livecdInstall = 0
         self.dlabel = 0
         self.ibft = 1
         self.iscsi = 0
-        self.serial = 0
-        self.autostep = 0
-        self.autoscreenshot = 0
         self.usevnc = 0
         self.vncquestion = True
         self.mpath = 1
@@ -67,14 +62,14 @@ class Flags(object):
         self.noverifyssl = False
         self.imageInstall = False
         self.automatedInstall = False
-        # for non-physical consoles like some ppc and sgi altix,
-        # we need to preserve the console device and not try to
-        # do things like bogl on them.  this preserves what that
-        # device is
-        self.virtpconsole = None
+        self.dirInstall = False
+        self.askmethod = False
+        self.eject = True
+        self.extlinux = False
         self.gpt = False
         self.leavebootorder = False
         self.testing = False
+        self.dnf = False
         # ksprompt is whether or not to prompt for missing ksdata
         self.ksprompt = True
         # parse the boot commandline
@@ -94,8 +89,14 @@ class Flags(object):
         if not selinux.is_selinux_enabled():
             self.selinux = 0
 
+        if "extlinux" in self.cmdline:
+            self.extlinux = True
+
         if "gpt" in self.cmdline:
             self.gpt = True
+
+        if "dnf" in self.cmdline:
+            self.dnf = True
 
 cmdline_files = ['/proc/cmdline', '/run/install/cmdline',
                  '/run/install/cmdline.d/*.conf', '/etc/cmdline']
@@ -103,13 +104,15 @@ class BootArgs(OrderedDict):
     """
     Hold boot arguments as an OrderedDict.
     """
-    def __init__(self, cmdline=None, files=cmdline_files):
+    def __init__(self, cmdline=None, files=None):
         """
         Create a BootArgs object.
         Reads each of the "files", then parses "cmdline" if it was provided.
         """
         OrderedDict.__init__(self)
-        if files:
+        if files is None:
+            self.read(cmdline_files)
+        elif files:
             self.read(files)
         if cmdline:
             self.readstr(cmdline)
@@ -145,6 +148,10 @@ class BootArgs(OrderedDict):
         if right.count('"') % 2:
             cmdline = left + middle + '"' + right
 
+        # shlex doesn't properly handle \\ (it removes them)
+        # which scrambles the spaces used in labels so use underscores
+        cmdline = cmdline.replace("\\x20", "_")
+
         lst = shlex.split(cmdline)
 
         for i in lst:
@@ -173,25 +180,32 @@ class BootArgs(OrderedDict):
                 result = False # XXX: should noarg=off -> True?
         return result
 
-def can_touch_runtime_system(msg):
+def can_touch_runtime_system(msg, touch_live=False):
     """
     Guard that should be used before doing actions that modify runtime system.
 
-    @param msg: message to be logged in case that runtime system cannot be touched
-    @rtype: bool
+    :param msg: message to be logged in case that runtime system cannot be touched
+    :type msg: str
+    :param touch_live: whether to allow touching liveCD installation system
+    :type touch_live: bool
+    :rtype: bool
 
     """
 
-    if flags.livecdInstall:
-        log.info("Not doing '%s' in live installation" % msg)
+    if flags.livecdInstall and not touch_live:
+        log.info("Not doing '%s' in live installation", msg)
         return False
 
     if flags.imageInstall:
-        log.info("Not doing '%s' in image installation" % msg)
+        log.info("Not doing '%s' in image installation", msg)
+        return False
+
+    if flags.dirInstall:
+        log.info("Not doing '%s' in directory installation", msg)
         return False
 
     if flags.testing:
-        log.info("Not doing '%s', because we are just testing" % msg)
+        log.info("Not doing '%s', because we are just testing", msg)
         return False
 
     return True

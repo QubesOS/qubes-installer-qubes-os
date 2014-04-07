@@ -28,7 +28,6 @@ dist_dracut_SCRIPTS = module-setup.sh \
 		      repo-genrules.sh \
 		      kickstart-genrules.sh \
 		      updates-genrules.sh \
-		      anaconda-udevprop.sh \
 		      anaconda-ks-sendheaders.sh \
 		      anaconda-netroot.sh \
 		      anaconda-diskroot \
@@ -38,7 +37,16 @@ dist_dracut_SCRIPTS = module-setup.sh \
 		      fetch-kickstart-disk \
 		      fetch-updates-disk \
 		      parse-kickstart \
-		      anaconda-modprobe.sh
-
+		      anaconda-modprobe.sh \
+		      save-initramfs.sh \
+		      anaconda-pre-shutdown.sh \
+		      parse-anaconda-dd.sh \
+		      fetch-driver-net.sh \
+		      driver-updates@.service \
+		      driver-updates-net@.service \
+		      driver-updates.sh \
+		      driver-updates-net.sh \
+		      anaconda-depmod.sh \
+		      driver-updates
 
 MAINTAINERCLEANFILES = Makefile.in

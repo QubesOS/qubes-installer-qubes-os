@@ -1,6 +1,6 @@
 # Localization classes and functions
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2013 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -17,262 +17,391 @@
 # Red Hat, Inc.
 #
 # Red Hat Author(s): Martin Gracik <mgracik@redhat.com>
+#                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-from collections import defaultdict, deque, OrderedDict
 import gettext
-import locale
 import os
 import re
+import langtable
+import locale as locale_mod
+import glob
 
-import babel
+from pyanaconda import constants
+from pyanaconda.iutil import upcase_first_letter
 
-
-LOCALE_PREFERENCES = {}
+import logging
+log = logging.getLogger("anaconda")
 
 LOCALE_CONF_FILE_PATH = "/etc/locale.conf"
+
+#e.g. 'SR_RS.UTF-8@latin'
+LANGCODE_RE = re.compile(r'(?P<language>[A-Za-z]+)'
+                         r'(_(?P<territory>[A-Za-z]+))?'
+                         r'(\.(?P<encoding>[-A-Za-z0-9]+))?'
+                         r'(@(?P<script>[-A-Za-z0-9]+))?')
 
 class LocalizationConfigError(Exception):
     """Exception class for localization configuration related problems"""
 
     pass
 
-class LocaleInfo(object):
+class InvalidLocaleSpec(LocalizationConfigError):
+    """Exception class for the errors related to invalid locale specs"""
 
-    def __init__(self, localedata, encoding="", script=""):
-        """
-        @param encoding: encoding from the locale specification, e.g. UTF-8
-                         (localedata object has no attribute for that)
-        @param script: script from the locale specification (e.g. latin)
-                       (changing localedata.script attribute results in
-                       problems)
+    pass
 
-        """
+def parse_langcode(langcode):
+    """
+    For a given langcode (e.g. 'SR_RS.UTF-8@latin') returns a dictionary
+    with the following keys and example values:
 
-        self._localedata = localedata
-        self._encoding = encoding or "UTF-8"
-        self._script = script
+    'language' : 'SR'
+    'territory' : 'RS'
+    'encoding' : 'UTF-8'
+    'script' : 'latin'
 
-    @property
-    def language(self):
-        return self._localedata.language
+    or None if the given string doesn't match the LANGCODE_RE.
 
-    @property
-    def territory(self):
-        return self._localedata.territory
+    """
 
-    @property
-    def script(self):
-        return self._script
+    if not langcode:
+        return None
 
-    @property
-    def variant(self):
-        return self._localedata.variant
+    match = LANGCODE_RE.match(langcode)
+    if match:
+        return match.groupdict()
+    else:
+        return None
 
-    @property
-    def encoding(self):
-        return self._encoding
+def is_supported_locale(locale):
+    """
+    Function that tells if the given locale is supported by the Anaconda or
+    not. We consider locales supported by the langtable as supported by the
+    Anaconda.
 
-    @property
-    def english_name(self):
-        return self._localedata.english_name or u''
+    :param locale: locale to test
+    :type locale: str
+    :return: whether the given locale is supported or not
+    :rtype: bool
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
 
-    @property
-    def display_name(self):
-        # some languages don't have a display_name
-        display_name = self._localedata.display_name or self.english_name
-        # some start with lowercase
-        display_name = display_name.title()
-        return display_name
+    """
 
-    @property
-    def short_name(self):
-        return self.__repr__()
+    en_name = get_english_name(locale)
+    return bool(en_name)
 
-    def __repr__(self):
-        formatstr = '{0.language}'
-        if self.territory is not None:
-            formatstr += '_{0.territory}'
-        if self.encoding:
-            formatstr += '.{0.encoding}'
-        if self.script:
-            formatstr += '@{0.script}'
-        if self.variant is not None:
-            formatstr += '#{0.variant}'
+def langcode_matches_locale(langcode, locale):
+    """
+    Function that tells if the given langcode matches the given locale. I.e. if
+    all parts of appearing in the langcode (language, territory, script and
+    encoding) are the same as the matching parts of the locale.
 
-        return formatstr.format(self)
+    :param langcode: a langcode (e.g. en, en_US, en_US@latin, etc.)
+    :type langcode: str
+    :param locale: a valid locale (e.g. en_US.UTF-8 or sr_RS.UTF-8@latin, etc.)
+    :type locale: str
+    :return: whether the given langcode matches the given locale or not
+    :rtype: bool
 
-    def __str__(self):
-        return self.english_name.encode('ascii', 'replace')
+    """
 
-    def __unicode__(self):
-        return self.english_name
+    langcode_parts = parse_langcode(langcode)
+    locale_parts = parse_langcode(locale)
 
-    def __eq__(self, other):
-        return repr(self) == repr(other)
+    if not langcode_parts or not locale_parts:
+        # to match, both need to be valid langcodes (need to have at least
+        # language specified)
+        return False
 
-def mangleLocale(inLocale):
-    mangleMap = {"af":  "af_ZA",  "am":  "am_ET",  "ar":  "ar_SA",  "as":  "as_IN",
-                 "ast": "ast_ES", "be":  "be_BY",  "bg":  "bg_BG",  "bn":  "bn_BD",
-                 "bs":  "bs_BA",  "ca":  "ca_ES",  "cs":  "cs_CZ",  "cy":  "cy_GB",
-                 "da":  "da_DK",  "de":  "de_DE",  "el":  "el_GR",  "en":  "en_US",
-                 "es":  "es_ES",  "et":  "et_EE",  "eu":  "eu_ES",  "fa":  "fa_IR",
-                 "fi":  "fi_FI",  "fr":  "fr_FR",  "gl":  "gl_ES",  "gu":  "gu_IN",
-                 "he":  "he_IL",  "hi":  "hi_IN",  "hr":  "hr_HR",  "hu":  "hu_HU",
-                 "hy":  "hy_AM",  "id":  "id_ID",  "ilo": "ilo_PH", "is":  "is_IS",
-                 "it":  "it_IT",  "ja":  "ja_JP",  "ka":  "ka_GE",  "kk":  "kk_KZ",
-                 "kn":  "kn_IN",  "ko":  "ko_KR",  "lt":  "lt_LT",  "lv":  "lv_LV",
-                 "mai": "mai_IN", "mk":  "mk_MK",  "ml":  "ml_IN",  "mr":  "mr_IN",
-                 "ms":  "ms_MY",  "nb":  "nb_NO",  "nds": "nds_DE", "ne":  "ne_NP",
-                 "nl":  "nl_NL",  "nn":  "nn_NO",  "nso": "nso_ZA", "or":  "or_IN",
-                 "pa":  "pa_IN",  "pl":  "pl_PL",  "pt":  "pt_PT",  "ro":  "ro_RO",
-                 "ru":  "ru_RU",  "si":  "si_LK",  "sk":  "sk_SK",  "sl":  "sl_SI",
-                 "sq":  "sq_AL",  "sr":  "sr_RS",  "sr@latin": "sr_Latn_RS",
-                 "sv":  "sv_SE",  "ta":  "ta_IN",  "te":  "te_IN",  "tg":  "tg_TJ",
-                 "th":  "th_TH",  "tr":  "tr_TR",  "uk":  "uk_UA",  "ur":  "ur_PK",
-                 "vi":  "vi_VN",  "zu":  "zu_ZA"}
+    # Check parts one after another. If some part appears in the langcode and
+    # doesn't match the one from the locale (or is missing in the locale),
+    # return False, otherwise they match
+    for part in ("language", "territory", "script", "encoding"):
+        if langcode_parts[part] and langcode_parts[part] != locale_parts.get(part):
+            return False
 
-    return mangleMap.get(inLocale, inLocale)
+    return True
 
-# XXX this should probably be somewhere else
-def partition(seq, func=bool, func_range=(True, False)):
-    buffers = dict(((x, deque()) for x in func_range))
+def find_best_locale_match(locale, langcodes):
+    """
+    Find the best match for the locale in a list of langcodes. This is useful
+    when e.g. pt_BR is a locale and there are possibilities to choose an item
+    (e.g. rnote) for a list containing both pt and pt_BR or even also pt_PT.
 
-    def values(x, seq=iter(seq)):
-        while True:
-            while not buffers[x]:
-                item = seq.next()
-                buffers[func(item)].append(item)
+    :param locale: a valid locale (e.g. en_US.UTF-8 or sr_RS.UTF-8@latin, etc.)
+    :type locale: str
+    :param langcodes: a list or generator of langcodes (e.g. en, en_US, en_US@latin, etc.)
+    :type langcodes: list(str) or generator(str)
+    :return: the best matching langcode from the list of None if none matches
+    :rtype: str or None
 
-            yield buffers[x].popleft()
+    """
 
-    return tuple(values(x) for x in func_range)
+    score_map = { "language" : 1000,
+                  "territory":  100,
+                  "script"   :   10,
+                  "encoding" :    1 }
 
+    def get_match_score(locale, langcode):
+        score = 0
 
-def get_all_locales():
-    localeset = set()
-    for localename in sorted(babel.localedata.list()):
-        try:
-            localedata = babel.Locale.parse(localename)
-        except babel.core.UnknownLocaleError:
-            continue
+        locale_parts = parse_langcode(locale)
+        langcode_parts = parse_langcode(langcode)
+        if not locale_parts or not langcode_parts:
+            return score
 
-        # BUG: babel.Locale.parse does not parse @script
-        script = _get_locale_script(localename)
-        encoding = _get_locale_encoding(localename)
+        for part, part_score in score_map.iteritems():
+            if locale_parts[part] and langcode_parts[part]:
+                if locale_parts[part] == langcode_parts[part]:
+                    # match
+                    score += part_score
+                else:
+                    # not match
+                    score -= part_score
+            elif langcode_parts[part] and not locale_parts[part]:
+                # langcode has something the locale doesn't have
+                score -= part_score
 
-        locale = LocaleInfo(localedata, encoding, script)
-        if repr(locale) not in localeset:
-            localeset.add(repr(locale))
-            yield locale
+        return score
 
+    scores = []
 
-def get_available_translations(domain=None, localedir=None):
-    domain = domain or gettext._current_domain
+    # get score for each langcode
+    for langcode in langcodes:
+        scores.append((langcode, get_match_score(locale, langcode)))
+
+    # find the best one
+    sorted_langcodes = sorted(scores, key=lambda item_score: item_score[1], reverse=True)
+
+    # matches matching only script or encoding or both are not useful
+    if sorted_langcodes and sorted_langcodes[0][1] > score_map["territory"]:
+        return sorted_langcodes[0][0]
+    else:
+        return None
+
+def setup_locale(locale, lang=None):
+    """
+    Procedure setting the system to use the given locale and store it in to the
+    ksdata.lang object (if given). DOES NOT PERFORM ANY CHECKS OF THE GIVEN
+    LOCALE.
+
+    :param locale: locale to setup
+    :type locale: str
+    :param lang: ksdata.lang object or None
+    :return: None
+    :rtype: None
+
+    """
+
+    if lang:
+        lang.lang = locale
+
+    os.environ["LANG"] = locale
+    locale_mod.setlocale(locale_mod.LC_ALL, locale)
+
+def get_english_name(locale):
+    """
+    Function returning english name for the given locale.
+
+    :param locale: locale to return english name for
+    :type locale: str
+    :return: english name for the locale or empty string if unknown
+    :rtype: st
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    name = langtable.language_name(languageId=parts["language"],
+                                   territoryId=parts.get("territory", ""),
+                                   scriptId=parts.get("script", ""),
+                                   languageIdQuery="en")
+
+    return upcase_first_letter(name)
+
+def get_native_name(locale):
+    """
+    Function returning native name for the given locale.
+
+    :param locale: locale to return native name for
+    :type locale: str
+    :return: english name for the locale or empty string if unknown
+    :rtype: st
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    name = langtable.language_name(languageId=parts["language"],
+                                   territoryId=parts.get("territory", ""),
+                                   scriptId=parts.get("script", ""),
+                                   languageIdQuery=parts["language"],
+                                   territoryIdQuery=parts.get("territory", ""),
+                                   scriptIdQuery=parts.get("script", ""))
+
+    return upcase_first_letter(name)
+
+def get_available_translations(localedir=None):
+    """
+    Method that generates (i.e. returns a generator) available translations for
+    the installer in the given localedir.
+
+    :type localedir: str
+    :return: generator yielding available translations (languages)
+    :rtype: generator yielding strings
+
+    """
+
     localedir = localedir or gettext._default_localedir
 
-    langs = babel.localedata.list()
-    messagefiles = gettext.find(domain, localedir, langs, all=True)
-    languages = [path.split(os.path.sep)[-3] for path in messagefiles]
-
     # usually there are no message files for en
-    if 'en' not in languages:
-        languages.append('en')
+    messagefiles = sorted(glob.glob(localedir + "/*/LC_MESSAGES/anaconda.mo") +
+                          ["blob/en/blob/blob"])
+    trans_gen = (path.split(os.path.sep)[-3] for path in messagefiles)
 
-    for langcode in languages:
-        try:
-            localedata = babel.Locale.parse(mangleLocale(langcode))
-        except babel.core.UnknownLocaleError:
-            continue
+    langs = set()
 
-        encoding = _get_locale_encoding(langcode)
+    for trans in trans_gen:
+        parts = parse_langcode(trans)
+        lang = parts.get("language", "")
+        if lang and lang not in langs:
+            langs.add(lang)
+            # check if there are any locales for the language
+            locales = get_language_locales(lang)
+            if not locales:
+                continue
 
-        # BUG: babel.Locale.parse does not parse @script
-        script = _get_locale_script(langcode)
+            yield lang
 
-        localeinfo = LocaleInfo(localedata, encoding, script)
-        yield localeinfo
-
-def expand_langs(astring):
+def get_language_locales(lang):
     """
-    Converts a single language into a "language search path". For example,
-    for "fr_FR.UTF-8@euro" would return set containing:
-    "fr", "fr_FR", "fr_FR.UTF-8@euro", "fr.UTF-8@euro", "fr_FR@euro",
-    "fr_FR.UTF-8", "fr@euro", "fr.UTF-8"
+    Function returning all locales available for the given language.
 
-    @rtype: list of strings
-
-    """
-
-    langs = set([astring])
-
-    base = None
-    loc = None
-    encoding = None
-    script = None
-
-    if "@" in astring:
-        (astring, script) = astring.split("@", 1)
-
-    if "." in astring:
-        (astring, encoding) = astring.split(".", 1)
-
-    if "_" in astring:
-        (astring, loc) = astring.split("_", 1)
-
-    base = astring
-
-    if not base:
-        return list(langs)
-
-    if not encoding:
-        encoding = "UTF-8"
-
-    langs.add(base)
-    langs.add("%s.%s" % (base, encoding))
-
-    if loc:
-        langs.add("%s_%s" % (base, loc))
-        langs.add("%s_%s.%s" %(base, loc, encoding))
-    if script:
-        langs.add("%s@%s" % (base, script))
-        langs.add("%s.%s@%s" % (base, encoding, script))
-
-    if loc and script:
-        langs.add("%s_%s@%s" % (base, loc, script))
-
-    return list(langs)
-
-def _get_locale_encoding(locale):
-    """
-    If locale specification includes encoding (e.g. cs_CZ.UTF-8) returns
-    the encoding. Otherwise returns "".
+    :param lang: language to get available locales for
+    :type lang: str
+    :return: a list of available locales
+    :rtype: list of strings
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
 
     """
 
-    if "@" in locale:
-        # remove @script suffix
-        locale = locale.split("@", -1)[0]
+    parts = parse_langcode(lang)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid language" % lang)
 
-    if "." in locale:
-        return locale.split(".", -1)[1]
-    else:
-        return ""
+    return langtable.list_locales(languageId=parts["language"],
+                                  territoryId=parts.get("territory", ""),
+                                  scriptId=parts.get("script", ""))
 
-def _get_locale_script(locale):
-    """Same as _get_locale_encoding but with the script."""
+def get_territory_locales(territory):
+    """
+    Function returning list of locales for the given territory. The list is
+    sorted from the most probable locale to the least probable one (based on
+    langtable's ranking.
 
-    if "@" in locale:
-        return locale.split("@", -1)[1]
-    else:
-        return ""
+    :param territory: territory to return locales for
+    :type territory: str
+    :return: list of locales
+    :rtype: list of strings
+
+    """
+
+    return langtable.list_locales(territoryId=territory)
+
+def get_locale_keyboards(locale):
+    """
+    Function returning preferred keyboard layouts for the given locale.
+
+    :param locale: locale string (see LANGCODE_RE)
+    :type locale: str
+    :return: list of preferred keyboard layouts
+    :rtype: list of strings
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    return langtable.list_keyboards(languageId=parts["language"],
+                                    territoryId=parts.get("territory", ""),
+                                    scriptId=parts.get("script", ""))
+
+def get_locale_timezones(locale):
+    """
+    Function returning preferred timezones for the given locale.
+
+    :param locale: locale string (see LANGCODE_RE)
+    :type locale: str
+    :return: list of preferred timezones
+    :rtype: list of strings
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    return langtable.list_timezones(languageId=parts["language"],
+                                    territoryId=parts.get("territory", ""),
+                                    scriptId=parts.get("script", ""))
+
+def get_locale_territory(locale):
+    """
+    Function returning locale's territory.
+
+    :param locale: locale string (see LANGCODE_RE)
+    :type locale: str
+    :return: territory or None
+    :rtype: str or None
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    return parts.get("territory", None)
+
+def get_xlated_timezone(tz_spec_part):
+    """
+    Function returning translated name of a region, city or complete timezone
+    name according to the current value of the $LANG variable.
+
+    :param tz_spec_part: a region, city or complete timezone name
+    :type tz_spec_part: str
+    :return: translated name of the given region, city or timezone
+    :rtype: str
+
+    """
+
+    locale = os.environ.get("LANG", constants.DEFAULT_LANG)
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    xlated = langtable.timezone_name(tz_spec_part, languageIdQuery=parts["language"],
+                                     territoryIdQuery=parts.get("territory", ""),
+                                     scriptIdQuery=parts.get("script", ""))
+
+    return xlated.encode("utf-8")
 
 def write_language_configuration(lang, root):
     """
     Write language configuration to the $root/etc/locale.conf file.
 
-    @param lang: ksdata.lang object
-    @param root: path to the root of the installed system
+    :param lang: ksdata.lang object
+    :param root: path to the root of the installed system
 
     """
 
@@ -280,135 +409,63 @@ def write_language_configuration(lang, root):
         fpath = os.path.normpath(root + LOCALE_CONF_FILE_PATH)
         with open(fpath, "w") as fobj:
             fobj.write('LANG="%s"\n' % lang.lang)
-
     except IOError as ioerr:
         msg = "Cannot write language configuration file: %s" % ioerr.strerror
         raise LocalizationConfigError(msg)
 
-class PreferredLocale(object):
+def load_firmware_language(lang):
+    """
+    Procedure that loads firmware language information (if any). It stores the
+    information in the given ksdata.lang object and sets the $LANG environment
+    variable.
 
-    @staticmethod
-    def from_language(language):
-        locales = defaultdict(set)
-        for locale in get_all_locales():
-            locales[repr(locale)].add(locale)
-            locales[locale.language].add(locale)
+    :param lang: ksdata.lang object
+    :return: None
+    :rtype: None
 
-        return PreferredLocale(locales[language])
+    """
 
-    @staticmethod
-    def from_territory(territory):
-        locales = defaultdict(set)
-        for locale in get_all_locales():
-            locales[locale.territory].add(locale)
+    if lang.lang and lang.seen:
+        # set in kickstart, do not override
+        return
 
-        return PreferredLocale(locales[territory])
+    try:
+        n = "/sys/firmware/efi/efivars/PlatformLang-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+        d = open(n, 'r', 0).read()
+    except IOError:
+        return
 
-    def __init__(self, localeset):
-        self._localedict = {repr(locale):locale for locale in localeset}
+    # the contents of the file are:
+    # 4-bytes of attribute data that we don't care about
+    # NUL terminated ASCII string like 'en-US'.
+    if len(d) < 10:
+        log.debug("PlatformLang was too short")
+        return
+    d = d[4:]
+    if d[2] != '-':
+        log.debug("PlatformLang was malformed")
+        return
 
-    def get_all_locales(self, preferences=[]):
-        preferences = filter(self._localedict.__contains__, preferences)
-        inside, outside = partition(self._localedict.keys(), func=lambda x: x in preferences)
-        sorted_locales = [self._localedict[localename] for localename in list(inside) + list(outside)]
-        return sorted_locales
+    # they use - and we use _, so fix it...
+    d = d[:2] + '_' + d[3:-1]
 
-    def get_preferred_locale(self, preferences=[]):
-        try:
-            return self.get_all_locales(preferences)[0]
-        except IndexError:
-            return None
+    # UEFI 2.3.1 Errata C specifies 2 aliases in common use that
+    # aren't part of RFC 4646, but are allowed in PlatformLang.
+    # Because why make anything simple?
+    if d.startswith('zh_chs'):
+        d = 'zh_Hans'
+    elif d.startswith('zh_cht'):
+        d = 'zh_Hant'
+    d += '.UTF-8'
 
+    if not is_supported_locale(d):
+        log.debug("PlatformLang was '%s', which is unsupported.", d)
+        return
 
-class Language(object):
+    locales = get_language_locales(d)
+    if not locales:
+        log.debug("No locales found for the PlatformLang '%s'.", d)
+        return
 
-    def __init__(self, preferences={}, territory=None):
-        self.translations = {repr(locale):locale for locale in get_available_translations()}
-        self.locales = {repr(locale):locale for locale in get_all_locales()}
-        self.preferred_translation = self.translations['en_US.UTF-8']
-        self.preferred_locales = [self.locales['en_US.UTF-8']]
-        self.preferred_locale = self.preferred_locales[0]
-
-        self.all_preferences = preferences
-        self.preferences = self.all_preferences.get(territory, [])
-        self.territory = territory
-        if self.territory:
-            self._get_preferred_translation_and_locales()
-
-    def _get_preferred_translation_and_locales(self):
-        # get locales from territory
-        locales_from_territory = PreferredLocale.from_territory(self.territory)
-        all_locales = locales_from_territory.get_all_locales(self.preferences)
-
-        # get preferred translation
-        for locale in all_locales:
-            if locale.language in self.translations:
-                self.preferred_translation = self.translations[locale.language]
-                break
-
-        for locale in all_locales:
-            if locale.short_name in self.translations:
-                self.preferred_translation = self.translations[locale.short_name]
-                break
-
-        self.preferred_locales = all_locales
-
-    def select_translation(self, translation):
-        translation = self.translations[translation]
-        self.preferences.extend(self.all_preferences.get(translation.language, []))
-
-        # get locales from translation
-        locales_from_language = PreferredLocale.from_language(translation.short_name)
-        all_locales = locales_from_language.get_all_locales(self.preferences)
-
-        # get preferred locale
-        for locale in all_locales:
-            if locale in self.preferred_locales:
-                self.preferred_locale = locale
-                break
-        else:
-            try:
-                self.preferred_locale = all_locales[0]
-            except IndexError:
-                self.preferred_locale = self.preferred_locales[0]
-
-        # add the preferred locale to the beginning of locales
-        if self.preferred_locale in self.preferred_locales:
-            self.preferred_locales.remove(self.preferred_locale)
-        self.preferred_locales.insert(0, self.preferred_locale)
-
-        # if territory is not set, use the one from preferred locale
-        self.territory = self.territory or self.preferred_locale.territory
-
-    @staticmethod
-    def parse_langcode(langcode):
-        pattern = re.compile(r'(?P<language>[A-Za-z]+)(_(?P<territory>[A-Za-z]+))?(\.(?P<codeset>[-\w]+))?(@(?P<modifier>[-\w]+))?')
-        m = pattern.match(langcode)
-        return m.groupdict()
-
-    @property
-    def install_lang_as_dict(self):
-        self.parse_langcode(self.install_lang)
-
-    @property
-    def system_lang_as_dict(self):
-        self.parse_langcode(self.system_lang)
-
-    def set_install_lang(self, langcode):
-        self.install_lang = langcode
-
-        os.environ['LANG'] = langcode
-        os.environ['LC_NUMERIC'] = 'C'
-
-        try:
-            locale.setlocale(locale.LC_ALL, '')
-        except locale.Error:
-            pass
-
-        # XXX this is the sort of thing which you should never do,
-        # but we switch languages at runtime and thus need to invalidate
-        # the set of languages/mofiles which gettext knows about
-        gettext._translations = {}
-
-    def set_system_lang(self, langcode):
-        self.system_lang = langcode
+    log.debug("Using UEFI PlatformLang '%s' ('%s') as our language.", d, locales[0])
+    setup_locale(locales[0], lang)

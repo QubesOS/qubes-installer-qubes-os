@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
+  <!-- interface-requires AnacondaWidgets 1.0 -->
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkDialog" id="passphrase_dialog">
     <property name="can_focus">False</property>
-    <property name="border_width">5</property>
+    <property name="border_width">6</property>
     <property name="type_hint">dialog</property>
     <property name="decorated">False</property>
     <child internal-child="vbox">
@@ -49,10 +50,11 @@
             </child>
             <child>
               <object class="GtkButton" id="passphrase_save_button">
-                <property name="label" translatable="yes">Save Passphrase</property>
+                <property name="label" translatable="yes">_Save Passphrase</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_save_clicked" swapped="no"/>
               </object>
               <packing>
@@ -94,7 +96,10 @@
               <object class="GtkLabel" id="passphrase_entry_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Passphrase:</property>
+                <property name="xalign">0</property>
+                <property name="label" translatable="yes">_Passphrase:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">passphrase_entry</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -112,6 +117,7 @@
                 <property name="width_chars">32</property>
                 <signal name="changed" handler="on_passphrase_changed" swapped="no"/>
                 <signal name="focus-out-event" handler="on_passphrase_editing_done" swapped="no"/>
+                <signal name="activate" handler="on_entry_activated" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -124,7 +130,10 @@
               <object class="GtkLabel" id="confirm_entry_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Confirm:</property>
+                <property name="xalign">0</property>
+                <property name="label" translatable="yes">_Confirm:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">confirm_entry</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -141,6 +150,7 @@
                 <property name="invisible_char">●</property>
                 <property name="width_chars">32</property>
                 <signal name="changed" handler="on_confirm_changed" swapped="no"/>
+                <signal name="activate" handler="on_entry_activated" swapped="no"/>
                 <signal name="focus-out-event" handler="on_confirm_editing_done" swapped="no"/>
               </object>
               <packing>
@@ -179,7 +189,19 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="AnacondaLayoutIndicator" id="AnacondaLayoutIndicator1">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="has_tooltip">True</property>
+                <property name="halign">center</property>
+                <property name="label_width">4</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -209,7 +231,7 @@
               <object class="GtkLabel" id="passphrase_warning_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">keymap warning label</property>
+                <property name="label" translatable="yes">Warning: You won't be able to switch between keyboard layouts (from the default one) when you decrypt your disks after install.</property>
                 <property name="use_markup">True</property>
                 <property name="wrap">True</property>
               </object>

@@ -1,6 +1,6 @@
 # Datetime configuration spoke class
 #
-# Copyright (C) 2012 Red Hat, Inc.
+# Copyright (C) 2012-2013 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -19,31 +19,35 @@
 # Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-N_ = lambda x: x
-
 import logging
 log = logging.getLogger("anaconda")
 
-# pylint: disable-msg=E0611
-from gi.repository import AnacondaWidgets, GLib, Gtk
+from gi.repository import GLib, Gtk, Gdk
 
+from pyanaconda.ui.communication import hubQ
+from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.gui.categories.localization import LocalizationCategory
-from pyanaconda.ui.gui.utils import enlightbox, gtk_thread_nowait, gtk_call_once
+from pyanaconda.ui.gui.utils import enlightbox, gtk_action_nowait, gtk_call_once
 
-from pyanaconda import timezone
+from pyanaconda.i18n import _, N_
+from pyanaconda.timezone import NTP_SERVICE, get_all_regions_and_timezones, is_valid_timezone
+from pyanaconda.localization import get_xlated_timezone
 from pyanaconda import iutil
+from pyanaconda import isys
 from pyanaconda import network
+from pyanaconda import nm
 from pyanaconda import ntp
 from pyanaconda import flags
+from pyanaconda import constants
 from pyanaconda.threads import threadMgr, AnacondaThread
 
 import datetime
 import os
+import re
 import threading
+import locale as locale_mod
 
 __all__ = ["DatetimeSpoke"]
 
@@ -53,7 +57,59 @@ SERVER_QUERY = 2
 
 DEFAULT_TZ = "America/New_York"
 
-POOL_SERVERS_NOTE = N_("Note: pool servers may not be available all the time")
+SPLIT_NUMBER_SUFFIX_RE = re.compile(r'([^0-9]*)([-+])([0-9]+)')
+
+def _compare_regions(reg_xlated1, reg_xlated2):
+    """Compare two pairs of regions and their translations."""
+
+    reg1, xlated1 = reg_xlated1
+    reg2, xlated2 = reg_xlated2
+
+    # sort the Etc timezones to the end
+    if reg1 == "Etc" and reg2 == "Etc":
+        return 0
+    elif reg1 == "Etc":
+        return 1
+    elif reg2 == "Etc":
+        return -1
+    else:
+        # otherwise compare the translated names
+        return locale_mod.strcoll(xlated1, xlated2)
+
+def _compare_cities(city_xlated1, city_xlated2):
+    """Compare two paris of cities and their translations."""
+
+    # if there are "cities" ending with numbers (like GMT+-X), we need to sort
+    # them based on their numbers
+    val1 = city_xlated1[1]
+    val2 = city_xlated2[1]
+
+    match1 = SPLIT_NUMBER_SUFFIX_RE.match(val1)
+    match2 = SPLIT_NUMBER_SUFFIX_RE.match(val2)
+
+    if match1 is None and match2 is None:
+        # no +-X suffix, just compare the strings
+        return locale_mod.strcoll(val1, val2)
+
+    if match1 is None or match2 is None:
+        # one with the +-X suffix, compare the prefixes
+        if match1:
+            prefix, _sign, _suffix = match1.groups()
+            return locale_mod.strcoll(prefix, val2)
+        else:
+            prefix, _sign, _suffix = match2.groups()
+            return locale_mod.strcoll(val1, prefix)
+
+    # both have the +-X suffix
+    prefix1, sign1, suffix1 = match1.groups()
+    prefix2, sign2, suffix2 = match2.groups()
+
+    if prefix1 == prefix2:
+        # same prefixes, let signs determine
+        return cmp(int(sign1 + suffix1), int(sign2 + suffix2))
+    else:
+        # compare prefixes
+        return locale_mod.strcoll(prefix1, prefix2)
 
 class NTPconfigDialog(GUIObject):
     builderObjects = ["ntpConfigDialog", "addImage", "serversStore"]
@@ -110,13 +166,11 @@ class NTPconfigDialog(GUIObject):
 
         self._serverEntry = self.builder.get_object("serverEntry")
         self._serversStore = self.builder.get_object("serversStore")
-        self._poolsNote = self.builder.get_object("poolsNote")
 
         self._initialize_store_from_config()
 
     def _initialize_store_from_config(self):
         self._serversStore.clear()
-        self._poolsNote.set_text("")
 
         if self.data.timezone.ntpservers:
             for server in self.data.timezone.ntpservers:
@@ -125,7 +179,7 @@ class NTPconfigDialog(GUIObject):
             try:
                 for server in ntp.get_servers_from_config():
                     self._add_server(server)
-            except ntp.NTPconfigError as ntperr:
+            except ntp.NTPconfigError:
                 log.warning("Failed to load NTP servers configuration")
 
     def refresh(self):
@@ -153,7 +207,7 @@ class NTPconfigDialog(GUIObject):
 
             if flags.can_touch_runtime_system("save NTP servers configuration"):
                 ntp.save_servers_to_config(new_servers)
-                iutil.restart_service("chronyd")
+                iutil.restart_service(NTP_SERVICE)
 
         #Cancel clicked, window destroyed...
         else:
@@ -170,18 +224,18 @@ class NTPconfigDialog(GUIObject):
         If the server is working, set its data to SERVER_OK, otherwise set its
         data to SERVER_NOK.
 
-        @param itr: iterator of the $server's row in the self._serversStore
+        :param itr: iterator of the $server's row in the self._serversStore
 
         """
 
-        @gtk_thread_nowait
+        @gtk_action_nowait
         def set_store_value(arg_tuple):
             """
             We need a function for this, because this way it can be added to
             the MainLoop with thread-safe GLib.idle_add (but only with one
             argument).
 
-            @param arg_tuple: (store, itr, column, value)
+            :param arg_tuple: (store, itr, column, value)
 
             """
 
@@ -208,7 +262,7 @@ class NTPconfigDialog(GUIObject):
                                     itr, 1, SERVER_NOK))
         self._epoch_lock.release()
 
-    @gtk_thread_nowait
+    @gtk_action_nowait
     def _refresh_server_working(self, itr):
         """ Runs a new thread with _set_server_ok_nok(itr) as a taget. """
 
@@ -224,13 +278,13 @@ class NTPconfigDialog(GUIObject):
         Checks if a given server is a valid hostname and if yes, adds it
         to the list of servers.
 
-        @param server: string containing hostname
+        :param server: string containing hostname
 
         """
 
         (valid, error) = network.sanityCheckHostname(server)
         if not valid:
-            log.error("'%s' is not a valid hostname: %s" % (server, error))
+            log.error("'%s' is not a valid hostname: %s", server, error)
             return
 
         for row in self._serversStore:
@@ -239,9 +293,6 @@ class NTPconfigDialog(GUIObject):
                 return
 
         itr = self._serversStore.append([server, SERVER_QUERY, True])
-
-        if "pool" in server:
-            self._poolsNote.set_text(_(POOL_SERVERS_NOTE))
 
         #do not block UI while starting thread (may take some time)
         self._refresh_server_working(itr)
@@ -266,7 +317,7 @@ class NTPconfigDialog(GUIObject):
 
         (valid, error) = network.sanityCheckHostname(new_text)
         if not valid:
-            log.error("'%s' is not a valid hostname: %s" % (new_text, error))
+            log.error("'%s' is not a valid hostname: %s", new_text, error)
             return
 
         itr = self._serversStore.get_iter(path)
@@ -279,12 +330,13 @@ class NTPconfigDialog(GUIObject):
 
         self._refresh_server_working(itr)
 
-class DatetimeSpoke(NormalSpoke):
+class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
     builderObjects = ["datetimeWindow",
                       "days", "months", "years", "regions", "cities",
                       "upImage", "upImage1", "upImage2", "downImage",
                       "downImage1", "downImage2", "downImage3", "configImage",
-                      "citiesFilter", "daysFilter", "citiesSort", "regionsSort",
+                      "citiesFilter", "daysFilter",
+                      "cityCompletion", "regionCompletion",
                       ]
 
     mainWidgetName = "datetimeWindow"
@@ -293,10 +345,17 @@ class DatetimeSpoke(NormalSpoke):
     category = LocalizationCategory
 
     icon = "preferences-system-time-symbolic"
-    title = N_("DATE & TIME")
+    title = N_("DATE & _TIME")
 
     def __init__(self, *args):
         NormalSpoke.__init__(self, *args)
+
+        # taking values from the kickstart file?
+        self._kickstarted = flags.flags.automatedInstall
+
+        self._config_dialog = None
+        self._update_datetime_timer_id = None
+        self._start_updating_timer_id = None
 
     def initialize(self):
         NormalSpoke.initialize(self)
@@ -307,26 +366,9 @@ class DatetimeSpoke(NormalSpoke):
         self._citiesStore = self.builder.get_object("cities")
         self._tzmap = self.builder.get_object("tzmap")
 
-        self._regions_zones = timezone.get_all_regions_and_timezones()
-
-        for day in xrange(1, 32):
-            self.add_to_store(self._daysStore, day)
-
-        self._months_nums = dict()
-        for i in xrange(1, 13):
-            #a bit hacky way, but should return the translated string
-            #TODO: how to handle language change? Clear and populate again?
-            month = datetime.date(2000, i, 1).strftime('%B')
-            self.add_to_store(self._monthsStore, month)
-            self._months_nums[month] = i
-
-        for year in xrange(1990, 2051):
-            self.add_to_store(self._yearsStore, year)
-
-        for region in self._regions_zones.keys():
-            self.add_to_store(self._regionsStore, region)
-            for city in self._regions_zones[region]:
-                self.add_to_store(self._citiesStore, city)
+        # we need to know it the new value is the same as previous or not
+        self._old_region = None
+        self._old_city = None
 
         self._regionCombo = self.builder.get_object("regionCombobox")
         self._cityCombo = self.builder.get_object("cityCombobox")
@@ -340,9 +382,6 @@ class DatetimeSpoke(NormalSpoke):
         self._citiesFilter = self.builder.get_object("citiesFilter")
         self._citiesFilter.set_visible_func(self.city_in_region, None)
 
-        self._citiesSort = self.builder.get_object("citiesSort")
-        self._citiesSort.set_sort_column_id(0, Gtk.SortType.ASCENDING)
-
         self._hoursLabel = self.builder.get_object("hoursLabel")
         self._minutesLabel = self.builder.get_object("minutesLabel")
         self._amPmUp = self.builder.get_object("amPmUpButton")
@@ -351,19 +390,49 @@ class DatetimeSpoke(NormalSpoke):
         self._radioButton24h = self.builder.get_object("timeFormatRB")
 
         self._ntpSwitch = self.builder.get_object("networkTimeSwitch")
-        self._added_chrony = False
-        self._enabled_chrony = False
+
+        self._regions_zones = get_all_regions_and_timezones()
+
+        self._months_nums = dict()
+
+        threadMgr.add(AnacondaThread(name=constants.THREAD_DATE_TIME,
+                                     target=self._initialize))
+
+    def _initialize(self):
+        for day in xrange(1, 32):
+            self.add_to_store(self._daysStore, day)
+
+        for i in xrange(1, 13):
+            #a bit hacky way, but should return the translated string
+            #TODO: how to handle language change? Clear and populate again?
+            month = datetime.date(2000, i, 1).strftime('%B')
+            self.add_to_store(self._monthsStore, month)
+            self._months_nums[month] = i
+
+        for year in xrange(1990, 2051):
+            self.add_to_store(self._yearsStore, year)
+
+        cities = set()
+        xlated_regions = ((region, get_xlated_timezone(region))
+                          for region in self._regions_zones.iterkeys())
+        for region, xlated in sorted(xlated_regions, cmp=_compare_regions):
+            self.add_to_store_xlated(self._regionsStore, region, xlated)
+            for city in self._regions_zones[region]:
+                cities.add((city, get_xlated_timezone(city)))
+
+        for city, xlated in sorted(cities, cmp=_compare_cities):
+            self.add_to_store_xlated(self._citiesStore, city, xlated)
 
         if self._radioButton24h.get_active():
             self._set_amPm_part_sensitive(False)
 
         self._update_datetime_timer_id = None
-        if timezone.is_valid_timezone(self.data.timezone.timezone):
-            self._tzmap.set_timezone(self.data.timezone.timezone)
-        else:
-            log.warning("%s is not a valid timezone, falling back to default "\
-                        "(%s)" % (self.data.timezone.timezone, DEFAULT_TZ))
-            self._tzmap.set_timezone(DEFAULT_TZ)
+        if is_valid_timezone(self.data.timezone.timezone):
+            self._set_timezone(self.data.timezone.timezone)
+        elif not flags.flags.automatedInstall:
+            log.warning("%s is not a valid timezone, falling back to default (%s)",
+                        self.data.timezone.timezone, DEFAULT_TZ)
+            self._set_timezone(DEFAULT_TZ)
             self.data.timezone.timezone = DEFAULT_TZ
 
         if not flags.can_touch_runtime_system("modify system time and date"):
@@ -372,59 +441,69 @@ class DatetimeSpoke(NormalSpoke):
         self._config_dialog = NTPconfigDialog(self.data)
         self._config_dialog.initialize()
 
+        time_init_thread = threadMgr.get(constants.THREAD_TIME_INIT)
+        if time_init_thread is not None:
+            hubQ.send_message(self.__class__.__name__,
+                             _("Restoring hardware time..."))
+            threadMgr.wait(constants.THREAD_TIME_INIT)
+
+        hubQ.send_ready(self.__class__.__name__, False)
+
     @property
     def status(self):
         if self.data.timezone.timezone:
-            if timezone.is_valid_timezone(self.data.timezone.timezone):
-                return _("%s timezone") % self.data.timezone.timezone
+            if is_valid_timezone(self.data.timezone.timezone):
+                return _("%s timezone") % get_xlated_timezone(self.data.timezone.timezone)
             else:
                 return _("Invalid timezone")
-
+        elif self._tzmap.get_timezone():
+            return _("%s timezone") % get_xlated_timezone(self._tzmap.get_timezone())
         else:
-            return _("%s timezone") % self._tzmap.get_timezone()
+            return _("Nothing selected")
 
     def apply(self):
-        GLib.source_remove(self._update_datetime_timer_id)
-        self._update_datetime_timer_id = None
+        # we could use self._tzmap.get_timezone() here, but it returns "" if
+        # Etc/XXXXXX timezone is selected
+        region = self._get_active_region()
+        city = self._get_active_city()
+        # nothing selected, just leave the spoke and
+        # return to hub without changing anything
+        if not region or not city:
+            return
 
-        new_tz = self._tzmap.get_timezone()
-
-        # get_timezone() may return "" if Etc/XXXXX is selected
-        if not new_tz:
-            # get selected "Etc/XXXXXX" zone
-            region = self._get_active_region()
-            city = self._get_active_city()
-            new_tz = region + "/" + city
+        old_tz = self.data.timezone.timezone
+        new_tz = region + "/" + city
 
         self.data.timezone.timezone = new_tz
 
-        if self._ntpSwitch.get_active():
-            # turned ON
-            self.data.timezone.nontp = False
-            if not "chrony" in self.data.packages.packageList:
-                self.data.packages.packageList.append("chrony")
-                self._added_chrony = True
+        if old_tz != new_tz:
+            # new values, not from kickstart
+            self.data.timezone.seen = False
+            self._kickstarted = False
 
-            if not "chronyd" in self.data.services.enabled and \
-                    not "chronyd" in self.data.services.disabled:
-                self.data.services.enabled.append("chronyd")
-                self._enabled_chrony = True
-        else:
-            # turned OFF
-            self.data.timezone.nontp = True
-            if self._added_chrony and ("chrony" in
-                                        self.data.packages.packageList):
-                self.data.packages.packageList.remove("chrony")
-                self._added_chrony = False
+        self.data.timezone.nontp = not self._ntpSwitch.get_active()
 
-            if self._enabled_chrony and ("chronyd" in
-                                            self.data.services.enabled):
-                self.data.services.enabled.remove("chronyd")
-                self._enabled_chrony = False
+    def execute(self):
+        if self._update_datetime_timer_id is not None:
+            GLib.source_remove(self._update_datetime_timer_id)
+        self._update_datetime_timer_id = None
+        self.data.timezone.setup(self.data)
+
+    @property
+    def ready(self):
+        return not threadMgr.get("AnaDateTimeThread")
 
     @property
     def completed(self):
-        return timezone.is_valid_timezone(self.data.timezone.timezone)
+        if self._kickstarted and not self.data.timezone.seen:
+            # taking values from kickstart, but not specified
+            return False
+        else:
+            return is_valid_timezone(self.data.timezone.timezone)
+
+    @property
+    def mandatory(self):
+        return True
 
     def refresh(self):
         #update the displayed time
@@ -432,12 +511,12 @@ class DatetimeSpoke(NormalSpoke):
                                                     self._update_datetime)
         self._start_updating_timer_id = None
 
-        if timezone.is_valid_timezone(self.data.timezone.timezone):
-            self._tzmap.set_timezone(self.data.timezone.timezone)
+        if is_valid_timezone(self.data.timezone.timezone):
+            self._set_timezone(self.data.timezone.timezone)
 
         self._update_datetime()
 
-        has_active_network = network.hasActiveNetDev()
+        has_active_network = nm.nm_is_connected()
         if not has_active_network:
             self._show_no_network_warning()
         else:
@@ -445,12 +524,39 @@ class DatetimeSpoke(NormalSpoke):
             gtk_call_once(self._config_dialog.refresh_servers_state)
 
         if flags.can_touch_runtime_system("get NTP service state"):
-            ntp_working = has_active_network and iutil.service_running("chronyd")
+            ntp_working = has_active_network and iutil.service_running(NTP_SERVICE)
         else:
             ntp_working = not self.data.timezone.nontp
 
         self._ntpSwitch.set_active(ntp_working)
 
+    def _set_timezone(self, timezone):
+        """
+        Sets timezone to the city/region comboboxes and the timezone map.
+
+        :param timezone: timezone to set
+        :type timezone: str
+        :return: if successfully set or not
+        :rtype: bool
+
+        """
+
+        parts = timezone.split("/", 1)
+        if len(parts) != 2:
+            # invalid timezone cannot be set
+            return False
+
+        region, city = parts
+        self._set_combo_selection(self._regionCombo, region)
+        self._set_combo_selection(self._cityCombo, city)
+
+        return True
+
+    @gtk_action_nowait
+    def add_to_store_xlated(self, store, item, xlated):
+        store.append([item, xlated])
+
+    @gtk_action_nowait
     def add_to_store(self, store, item):
         store.append([item])
 
@@ -478,7 +584,7 @@ class DatetimeSpoke(NormalSpoke):
         try:
             datetime.date(year, self._months_nums[month], day)
             return True
-        except ValueError as valerr:
+        except ValueError:
             return False
 
     def _get_active_city(self):
@@ -585,9 +691,7 @@ class DatetimeSpoke(NormalSpoke):
         #day may be None if there is no such in the selected year and month
         if day:
             day = int(day)
-            seconds = datetime.datetime.now().second
-            os.system("date -s '%0.2d/%0.2d/%0.4d %0.2d:%0.2d:%0.2d'" %
-                                (month, day, year, hours, minutes, seconds))
+            isys.set_system_date_time(year, month, day, hours, minutes)
 
         #start the timer only when the spoke is shown
         if self._update_datetime_timer_id is not None:
@@ -648,7 +752,7 @@ class DatetimeSpoke(NormalSpoke):
         """
         Get the selected item of the combobox.
 
-        @return: selected item or None
+        :return: selected item or None
 
         """
 
@@ -659,6 +763,11 @@ class DatetimeSpoke(NormalSpoke):
 
         return model[itr][0]
 
+    def _restore_old_city_region(self):
+        """Restore stored "old" (or last valid) values."""
+        # check if there are old values to go back to
+        if self._old_region and self._old_city:
+            self._set_timezone(self._old_region + "/" + self._old_city)
 
     def on_up_hours_clicked(self, *args):
         self._stop_and_maybe_start_time_updating()
@@ -700,7 +809,6 @@ class DatetimeSpoke(NormalSpoke):
         minutes = int(self._minutesLabel.get_text())
         minutes_str = "%0.2d" % ((minutes + 1) % 60)
         self._minutesLabel.set_text(minutes_str)
-        pass
 
     def on_down_minutes_clicked(self, *args):
         self._stop_and_maybe_start_time_updating()
@@ -725,41 +833,96 @@ class DatetimeSpoke(NormalSpoke):
         else:
             self._amPmLabel.set_text("AM")
 
-    def on_region_changed(self, *args):
-        self._citiesFilter.refilter()
+    def on_region_changed(self, combo, *args):
+        """
+        :see: on_city_changed
 
-        # Attempt to set the city to the first one available in this newly
-        # selected region.
+        """
+
         region = self._get_active_region()
-        if not region:
+
+        if not region or region == self._old_region:
+            # region entry being edited or old_value chosen, no action needed
+            # @see: on_city_changed
             return
 
+        self._citiesFilter.refilter()
+
+        # Set the city to the first one available in this newly selected region.
         zone = self._regions_zones[region]
         firstCity = sorted(list(zone))[0]
 
         self._set_combo_selection(self._cityCombo, firstCity)
-        self._cityCombo.emit("changed")
+        self._old_region = region
+        self._old_city = firstCity
 
-    def on_city_changed(self, *args):
+    def on_city_changed(self, combo, *args):
+        """
+        ComboBox emits ::changed signal not only when something is selected, but
+        also when its entry's text is changed. We need to distinguish between
+        those two cases ('London' typed in the entry => no action until ENTER is
+        hit etc.; 'London' chosen in the expanded combobox => update timezone
+        map and do all necessary actions). Fortunately when entry is being
+        edited, self._get_active_city returns None.
+
+        """
+
         timezone = None
 
         region = self._get_active_region()
         city = self._get_active_city()
 
+        if not region or not city or (region == self._old_region and
+                                      city == self._old_city):
+            # entry being edited or no change, no actions needed
+            return
+
         if city and region:
             timezone = region + "/" + city
+        else:
+            # both city and region are needed to form a valid timezone
+            return
 
-        if timezone is not None and region == "Etc":
+        if region == "Etc":
             # Etc timezones cannot be displayed on the map, so let's set the map
             # to "" which sets it to "Europe/London" (UTC) without a city pin
-            self._tzmap.set_timezone("")
+            self._tzmap.set_timezone("", no_signal=True)
+        else:
+            # we don't want the timezone-changed signal to be emitted
+            self._tzmap.set_timezone(timezone, no_signal=True)
 
-            # Change to Etc/XXXXX emits timezone-changed with "" as timezone,
-            # so let's help it a bit.
-            self._tzmap.emit("timezone-changed", timezone)
+        # update "old" values
+        self._old_city = city
 
-        elif timezone and (self._tzmap.get_timezone() != timezone):
-            self._tzmap.set_timezone(timezone)
+    def on_entry_left(self, entry, *args):
+        # user clicked somewhere else or hit TAB => finished editing
+        entry.emit("activate")
+
+    def on_city_region_key_released(self, entry, event, *args):
+        if event.type == Gdk.EventType.KEY_RELEASE and \
+                event.keyval == Gdk.KEY_Escape:
+            # editing canceled
+            self._restore_old_city_region()
+
+    def on_completion_match_selected(self, combo, model, itr):
+        item = None
+        if model and itr:
+            item = model[itr][0]
+        if item:
+            self._set_combo_selection(combo, item)
+
+    def on_city_region_text_entry_activated(self, entry):
+        combo = entry.get_parent()
+        model = combo.get_model()
+        entry_text = entry.get_text().lower()
+
+        for row in model:
+            if entry_text == row[0].lower():
+                self._set_combo_selection(combo, row[0])
+                return
+
+        # non-matching value entered, reset to old values
+        self._restore_old_city_region()
 
     def on_month_changed(self, *args):
         self._stop_and_maybe_start_time_updating(interval=5)
@@ -773,20 +936,10 @@ class DatetimeSpoke(NormalSpoke):
         self._daysFilter.refilter()
 
     def on_timezone_changed(self, tz_map, timezone):
-        fields = timezone.split("/", 1)
-        if len(fields) == 1:
-            # timezone may be ""
-            return
-
-        region, city = fields
-        if region != "Etc":
-            # If region is "Etc", TimezoneMap returns "" from get_timezone
-            # and changing comboboxes here would create an endless loop.
-            self._set_combo_selection(self._regionCombo, region)
-            self._set_combo_selection(self._cityCombo, city)
-
-        os.environ["TZ"] = timezone
-        self._update_datetime()
+        if self._set_timezone(timezone):
+            # timezone successfully set
+            os.environ["TZ"] = timezone
+            self._update_datetime()
 
     def on_timeformat_changed(self, button24h, *args):
         hours = int(self._hoursLabel.get_text())
@@ -812,9 +965,11 @@ class DatetimeSpoke(NormalSpoke):
     def _show_no_network_warning(self):
         self.set_warning(_("You need to set up networking first if you "\
                            "want to use NTP"))
+        self.window.show_all()
 
     def _show_no_ntp_server_warning(self):
         self.set_warning(_("You have no working NTP server configured"))
+        self.window.show_all()
 
     def on_ntp_switched(self, switch, *args):
         if switch.get_active():
@@ -823,7 +978,7 @@ class DatetimeSpoke(NormalSpoke):
                 #cannot touch runtime system, not much to do here
                 return
 
-            if not network.hasActiveNetDev():
+            if not nm.nm_is_connected():
                 self._show_no_network_warning()
                 switch.set_active(False)
                 return
@@ -838,12 +993,12 @@ class DatetimeSpoke(NormalSpoke):
                     #the time as drastically as we need
                     ntp.one_time_sync_async(working_server)
 
-            ret = iutil.start_service("chronyd")
+            ret = iutil.start_service(NTP_SERVICE)
             self._set_date_time_setting_sensitive(False)
 
             #if starting chronyd failed and chronyd is not running,
             #set switch back to OFF
-            if (ret != 0) and not iutil.service_running("chronyd"):
+            if (ret != 0) and not iutil.service_running(NTP_SERVICE):
                 switch.set_active(False)
 
         else:
@@ -853,12 +1008,14 @@ class DatetimeSpoke(NormalSpoke):
                 return
 
             self._set_date_time_setting_sensitive(True)
-            ret = iutil.stop_service("chronyd")
+            ret = iutil.stop_service(NTP_SERVICE)
 
             #if stopping chronyd failed and chronyd is running,
             #set switch back to ON
-            if (ret != 0) and iutil.service_running("chronyd"):
+            if (ret != 0) and iutil.service_running(NTP_SERVICE):
                 switch.set_active(True)
+
+            self.clear_info()
 
     def on_ntp_config_clicked(self, *args):
         self._config_dialog.refresh()

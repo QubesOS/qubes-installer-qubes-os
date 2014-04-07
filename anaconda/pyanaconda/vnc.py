@@ -21,23 +21,37 @@
 
 import os, sys
 import time
-from constants import *
-import network
-import product
+from pyanaconda import network, product, iutil
 import socket
 import subprocess
-import iutil
+import dbus
 
+from pyanaconda.i18n import _, P_
 from pyanaconda.ui.tui.simpleline import App
 from pyanaconda.ui.tui.spokes.askvnc import VNCPassSpoke
-
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-P_ = lambda x, y, z: gettext.ldngettext("anaconda", x, y, z)
 
 import logging
 log = logging.getLogger("anaconda")
 stdoutLog = logging.getLogger("anaconda.stdout")
+
+XVNC_BINARY_NAME = "Xvnc"
+
+
+def shutdownServer():
+    """Try to shutdown any running XVNC server
+
+    Why is this function on the module level and not in the VncServer class ?
+
+    As the server needs to be killed from the exit handler, it would have
+    to somehow get to the VncServer instance. Like this, it can just kill
+    it by calling a function of the vnc module.
+    """
+    try:
+        iutil.execWithCapture("killall", [XVNC_BINARY_NAME])
+        log.info("The XVNC server has been shut down.")
+    except OSError as e:
+        log.error("Shutdown of the XVNC server failed with exception:\n%s", e)
+
 
 class VncServer:
 
@@ -68,12 +82,13 @@ class VncServer:
         r, w = os.pipe()
         os.write(w, "%s\n" % self.password)
 
-        # the -f option makes sure vncpasswd does not ask for the password again
-        rc = iutil.execWithRedirect("vncpasswd", ["-f"],
-                                    stdin=r, stdout=self.pw_file)
+        with open(self.pw_file, "w") as pw_file:
+            # the -f option makes sure vncpasswd does not ask for the password again
+            rc = iutil.execWithRedirect("vncpasswd", ["-f"],
+                                        stdin=r, stdout=pw_file)
 
-        os.close(r)
-        os.close(w)
+            os.close(r)
+            os.close(w)
 
         return rc
 
@@ -95,9 +110,8 @@ class VncServer:
         ipstr = self.ip
         try:
             hinfo = socket.gethostbyaddr(ipstr)
-        except Exception as e:
-            log.debug("Exception caught trying to get host name of %s: %s" %
-                      (ipstr, e))
+        except socket.herror as e:
+            log.debug("Exception caught trying to get host name of %s: %s", ipstr, e)
             self.name = network.getHostname()
         else:
             if len(hinfo) == 3:
@@ -107,7 +121,7 @@ class VncServer:
             ipstr = "[%s]" % (self.ip,)
 
         if (self.name is not None) and (not self.name.startswith('localhost')) and (ipstr is not None):
-            self.connxinfo = "%s:%s (%s)" % (socket.getfqdn(name=self.name), self.display, ipstr,)
+            self.connxinfo = "%s:%s (%s:%s)" % (socket.getfqdn(name=self.name), self.display, ipstr, self.display)
         elif ipstr is not None:
             self.connxinfo = "%s:%s" % (ipstr, self.display,)
         else:
@@ -143,9 +157,9 @@ class VncServer:
 
         vncconfigcommand = [self.root+"/usr/bin/vncconfig", "-display", ":%s"%self.display, "-connect", hostarg]
 
-        for i in range(maxTries):
+        for _i in range(maxTries):
             vncconfp = subprocess.Popen(vncconfigcommand, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # vncconfig process
-            (out, err) = vncconfp.communicate()
+            err = vncconfp.communicate()[1]
 
             if err == '':
                 self.log.info(_("Connected!"))
@@ -176,13 +190,13 @@ class VncServer:
 
     def startServer(self):
         self.log.info(_("Starting VNC..."))
-        network.wait_for_dhcp()
+        network.wait_for_connectivity()
 
         # Lets call it from here for now.
         try:
             self.initialize()
-        except Exception, e:
-            stdoutLog.critical("Could not initialize the VNC server: %s" % e)
+        except (socket.herror, dbus.DBusException, ValueError) as e:
+            stdoutLog.critical("Could not initialize the VNC server: %s", e)
             sys.exit(1)
 
         if self.password and len(self.password) < 6:
@@ -195,10 +209,10 @@ class VncServer:
             SecurityTypes = "VncAuth"
             rfbauth = self.pw_file
             # Create the password file.
-            rc = self.setVNCPassword()
+            self.setVNCPassword()
 
         # Lets start the xvnc.
-        xvnccommand =  [ "Xvnc", ":%s" % self.display,
+        xvnccommand =  [ XVNC_BINARY_NAME, ":%s" % self.display,
                         "-depth", "16", "-br",
                         "IdleTimeout=0", "-auth", "/dev/null", "-once",
                         "DisconnectClients=false", "desktop=%s" % (self.desktop,),

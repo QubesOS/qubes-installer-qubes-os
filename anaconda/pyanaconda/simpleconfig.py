@@ -17,21 +17,10 @@
 #
 import os
 import shutil
-import string
 import shlex
 from pipes import _safechars
 import tempfile
-
-# use our own ASCII only uppercase function to avoid locale issues
-# not going to be fast but not important
-def uppercase_ASCII_string(s):
-    newstr = ""
-    for c in s:
-        if c in string.lowercase:
-            newstr += chr(ord(c)-32)
-        else:
-            newstr += c
-    return newstr
+from pyanaconda.iutil import upperASCII
 
 def unquote(s):
     return ' '.join(shlex.split(s))
@@ -81,38 +70,43 @@ class SimpleConfigFile(object):
                 if key:
                     self.info[key] = value
 
-    def write(self, filename=None):
+    def write(self, filename=None, use_tmp=True):
         """ passing filename will override the filename passed to init.
         """
         filename = filename or self.filename
         if not filename:
             return None
 
-        tmpf = tempfile.NamedTemporaryFile(mode="w", delete=False)
-        tmpf.write(str(self))
-        tmpf.close()
+        if use_tmp:
+            tmpf = tempfile.NamedTemporaryFile(mode="w", delete=False)
+            tmpf.write(str(self))
+            tmpf.close()
 
-        # Move the temporary file (with 0600 permissions) over the top of the
-        # original and preserve the original's permissions
-        filename = os.path.realpath(filename)
-        if os.path.exists(filename):
-            m = os.stat(filename).st_mode
+            # Move the temporary file (with 0600 permissions) over the top of the
+            # original and preserve the original's permissions
+            filename = os.path.realpath(filename)
+            if os.path.exists(filename):
+                m = os.stat(filename).st_mode
+            else:
+                m = int('0100644', 8)
+            shutil.move(tmpf.name, filename)
+            os.chmod(filename, m)
         else:
-            m = int('0100644', 8)
-        shutil.move(tmpf.name, filename)
-        os.chmod(filename, m)
+            # write directly to the file
+            with open(filename, "w") as fobj:
+                fobj.write(str(self))
 
     def set(self, *args):
         for key, value in args:
-           self.info[uppercase_ASCII_string(key)] = value
+            self.info[upperASCII(key)] = value
 
     def unset(self, *keys):
-        for key in [uppercase_ASCII_string(k) for k in keys]:
+        for key in (upperASCII(k) for k in keys):
             if key in self.info:
-               del self.info[key]
+                del self.info[key]
 
     def get(self, key):
-        return self.info.get(uppercase_ASCII_string(key), "")
+        return self.info.get(upperASCII(key), "")
 
     def _parseline(self, line):
         """ parse a line into a key, value pair
@@ -128,7 +122,7 @@ class SimpleConfigFile(object):
         if self.read_unquote:
             val = unquote(val)
         if key != '' and eq == '=':
-            return (uppercase_ASCII_string(key), val)
+            return (upperASCII(key), val)
         else:
             return (None, None)
 
@@ -145,7 +139,7 @@ class SimpleConfigFile(object):
         oldkeys = []
         s = ""
         for line in self._lines:
-            key, val = self._parseline(line)
+            key = self._parseline(line)[0]
             if key is None:
                 s += line
             else:
@@ -165,38 +159,4 @@ class SimpleConfigFile(object):
 
         return s
 
-
-class IfcfgFile(SimpleConfigFile):
-    def __init__(self, dir, iface):
-        SimpleConfigFile.__init__(self, always_quote=True)
-        self.iface = iface
-        self.dir = dir
-
-    @property
-    def path(self):
-        return os.path.join(self.dir, "ifcfg-%s" % self.iface)
-
-    def clear(self):
-        SimpleConfigFile.reset(self)
-
-    def read(self):
-        """ Reads values from ifcfg file.
-
-            returns: number of values read
-        """
-        SimpleConfigFile.read(self, self.path)
-        return len(self.info)
-
-    # ifcfg-rh is using inotify IN_CLOSE_WRITE event
-    # so we don't use temporary file for new configuration.
-    def write(self, dir=None):
-        """ Writes values into ifcfg file.
-        """
-
-        if not dir:
-            path = self.path
-        else:
-            path = os.path.join(dir, os.path.basename(self.path))
-
-        SimpleConfigFile.write(self, path)
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2013  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -27,9 +27,12 @@ import re
 import os
 import tempfile
 import shutil
+import ntplib
+import socket
 
-from pyanaconda import iutil
+from pyanaconda import isys
 from pyanaconda.threads import threadMgr, AnacondaThread
+from pyanaconda.constants import THREAD_SYNC_TIME_BASENAME
 
 NTP_CONFIG_FILE = "/etc/chrony.conf"
 
@@ -43,19 +46,30 @@ class NTPconfigError(Exception):
 
 def ntp_server_working(server):
     """
-    Runs rdate to try to connect to the $server (timeout may take some time).
+    Tries to do an NTP request to the $server (timeout may take some time).
 
-    @return: True if the given server is reachable and working, False otherwise
+    :param server: hostname or IP address of an NTP server
+    :type server: string
+    :return: True if the given server is reachable and working, False otherwise
+    :rtype: bool
 
     """
 
-    #FIXME: It would be nice to use execWithRedirect here, but it is not
-    #       thread-safe and hangs if this function is called from threads.
-    #       By using tee (and block-buffered pipes) it is also much slower.
-    #we just need to know the exit status
-    retc = os.system("rdate -p %s &>/dev/null" % server)
+    client = ntplib.NTPClient()
 
-    return retc == 0
+    try:
+        client.request(server)
+    except ntplib.NTPException:
+        return False
+    # address related error
+    except socket.gaierror:
+        return False
+    # socket related error
+    # (including "Network is unreachable")
+    except socket.error:
+        return False
+
+    return True
 
 def get_servers_from_config(conf_file_path=NTP_CONFIG_FILE,
                             srv_regexp=SRV_LINE_REGEXP):
@@ -63,8 +77,8 @@ def get_servers_from_config(conf_file_path=NTP_CONFIG_FILE,
     Goes through the chronyd's configuration file looking for lines starting
     with 'server'.
 
-    @return: servers found in the chronyd's configuration
-    @rtype: list
+    :return: servers found in the chronyd's configuration
+    :rtype: list
 
     """
 
@@ -91,8 +105,8 @@ def save_servers_to_config(servers, conf_file_path=NTP_CONFIG_FILE,
     the given ones. If the out_file is not None, then it is used for the
     resulting config.
 
-    @type servers: iterable
-    @param out_file_path: path to the file used for the resulting config
+    :type servers: iterable
+    :param out_file_path: path to the file used for the resulting config
 
     """
 
@@ -141,8 +155,10 @@ def save_servers_to_config(servers, conf_file_path=NTP_CONFIG_FILE,
     if not out_file_path:
         try:
             stat = os.stat(conf_file_path)
-            shutil.move(temp_path, conf_file_path)
+            # Use copy rather then move to get the correct selinux context
+            shutil.copy(temp_path, conf_file_path)
             os.chmod(conf_file_path, stat.st_mode)
+            os.unlink(temp_path)
 
         except OSError as oserr:
             msg = "Cannot replace the old config with "\
@@ -156,17 +172,22 @@ def one_time_sync(server, callback=None):
     function is blocking and will not return until the time gets synced or
     querying server fails (may take some time before timeouting).
 
-    @param server: NTP server
-    @param callback: callback function to run after sync or failure
-    @type callback: a function taking one boolean argument (success)
-    @return: True if the sync was successful, False otherwise
+    :param server: NTP server
+    :param callback: callback function to run after sync or failure
+    :type callback: a function taking one boolean argument (success)
+    :return: True if the sync was successful, False otherwise
 
     """
 
-    ret = iutil.execWithRedirect("rdate", ["-s", server], stdout="/dev/tty5",
-                                 stderr="/dev/tty5")
-
-    success = ret == 0
+    client = ntplib.NTPClient()
+    try:
+        results = client.request(server)
+        isys.set_system_time(int(results.tx_time))
+        success = True
+    except ntplib.NTPException:
+        success = False
+    except socket.gaierror:
+        success = False
 
     if callback is not None:
         callback(success)
@@ -180,17 +201,16 @@ def one_time_sync_async(server, callback=None):
     returns. Use callback argument to specify the function called when the
     new thread finishes if needed.
 
-    @param server: NTP server
-    @param callback: callback function to run after sync or failure
-    @type callback: a function taking one boolean argument (success)
+    :param server: NTP server
+    :param callback: callback function to run after sync or failure
+    :type callback: a function taking one boolean argument (success)
 
     """
 
-    thread_name = "AnaSyncTime_%s" % server
+    thread_name = "%s_%s" % (THREAD_SYNC_TIME_BASENAME, server)
     if threadMgr.get(thread_name):
         #syncing with the same server running
         return
 
     threadMgr.add(AnacondaThread(name=thread_name, target=one_time_sync,
                                  args=(server, callback)))
-

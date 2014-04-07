@@ -9,7 +9,7 @@ import gi.overrides
 for p in os.environ.get("ANACONDA_WIDGETS_OVERRIDES", "").split(":"):
     gi.overrides.__path__.insert(0, p)
 
-from gi.repository import AnacondaWidgets, Gtk
+from gi.repository import Gtk
 
 import ctypes
 import os.path
@@ -20,17 +20,16 @@ if len(sys.argv)<2:
     sys.exit(1)
 
 # This is a hack to make sure the AnacondaWidgets library gets loaded
-ctypes.CDLL("libAnacondaWidgets.so.0", ctypes.RTLD_GLOBAL)
+ctypes.CDLL("libAnacondaWidgets.so.1", ctypes.RTLD_GLOBAL)
 
 # Logging always needs to be set up first thing, or there'll be tracebacks.
 from pyanaconda import anaconda_log
 anaconda_log.init()
 
 from pyanaconda.installclass import DefaultInstall
-from pyanaconda.storage import Storage
+from blivet import Blivet
 from pyanaconda.threads import initThreading
 from pyanaconda.packaging.yumpayload import YumPayload
-from pyanaconda.platform import getPlatform
 from pykickstart.version import makeVersion
 
 # Don't worry with fcoe, iscsi, dasd, any of that crud.
@@ -89,9 +88,8 @@ if not spokeClass:
 
 print "Running %s %s from %s" % (spokeText, spokeClass, spokeModule)
 
-platform = getPlatform()
 ksdata = makeVersion()
-storage = Storage(data=ksdata, platform=platform)
+storage = Blivet(ksdata=ksdata)
 storage.reset()
 instclass = DefaultInstall()
 
@@ -100,10 +98,21 @@ payload.setup(storage)
 
 spoke = spokeClass(ksdata, storage, payload, instclass)
 if hasattr(spoke, "register_event_cb"):
-    spoke.register_event_cb("continue", lambda: Gtk.main_quit())
-    spoke.register_event_cb("quit", lambda: Gtk.main_quit())
-spoke.initialize()
+    spoke.register_event_cb("continue", Gtk.main_quit)
+    spoke.register_event_cb("quit", Gtk.main_quit)
 
+if hasattr(spoke, "set_path"):
+    spoke.set_path("categories", [
+        ("pyanaconda.ui.gui.categories.%s",
+         os.path.join(os.path.dirname(__file__),"..", "categories"))
+         ])
+    spoke.set_path("spokes", [
+        ("pyanaconda.ui.gui.spokes.%s",
+         os.path.join(os.path.dirname(__file__), "..", "spokes"))
+         ])
+    
+spoke.initialize()
+    
 if not spoke.showable:
     print "This %s is not showable, but I'll continue anyway." % spokeText
 

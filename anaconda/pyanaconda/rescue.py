@@ -19,28 +19,31 @@
 # Author(s): Mike Fulbright <msf@redhat.com>
 #            Jeremy Katz <katzj@redhat.com>
 #
-
-from snack import *
-from constants import *
-from textw.constants_text import *
-from text import WaitWindow, OkCancelWindow, ProgressWindow, PassphraseEntryWindow, stepToClasses
-from flags import flags
 import sys
 import os
-import isys
-from storage import mountExistingSystem
-from storage.errors import StorageError
-from installinterfacebase import InstallInterfaceBase
-import iutil
+from pyanaconda import iutil
 import shutil
 import time
 import re
-import network
 import subprocess
-from pykickstart.constants import *
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
+from snack import ButtonChoiceWindow, ListboxChoiceWindow,SnackScreen
+
+from pyanaconda.constants import ANACONDA_CLEANUP, ROOT_PATH
+from pyanaconda.constants_text import TEXT_OK_BUTTON, TEXT_NO_BUTTON, TEXT_YES_BUTTON
+from pyanaconda.text import WaitWindow, OkCancelWindow, ProgressWindow, PassphraseEntryWindow
+from pyanaconda.flags import flags
+from pyanaconda.installinterfacebase import InstallInterfaceBase
+from pyanaconda.i18n import _
+from pyanaconda.kickstart import runPostScripts
+
+from blivet import mountExistingSystem
+from blivet.errors import StorageError
+from blivet.devices import LUKSDevice
+
+from pykickstart.constants import KS_REBOOT, KS_SHUTDOWN
+
+import meh.ui.text
 
 import logging
 log = logging.getLogger("anaconda")
@@ -52,50 +55,58 @@ class RescueInterface(InstallInterfaceBase):
     def progressWindow(self, title, text, total, updpct = 0.05, pulse = False):
         return ProgressWindow(self.screen, title, text, total, updpct, pulse)
 
-    def detailedMessageWindow(self, title, text, longText=None, type="ok",
+    def detailedMessageWindow(self, title, text, longText=None, ty="ok",
                               default=None, custom_icon=None,
-                              custom_buttons=[], expanded=False):
-        return self.messageWindow(title, text, type, default, custom_icon,
+                              custom_buttons=None, expanded=False):
+        return self.messageWindow(title, text, ty, default, custom_icon,
                                   custom_buttons)
 
-    def messageWindow(self, title, text, type = "ok", default = None,
-                      custom_icon=None, custom_buttons=[]):
-	if type == "ok":
-	    ButtonChoiceWindow(self.screen, title, text,
-			       buttons=[TEXT_OK_BUTTON])
-        elif type == "yesno":
+    def messageWindow(self, title, text, ty = "ok", default = None,
+                      custom_icon=None, custom_buttons=None):
+        if custom_buttons is None:
+            custom_buttons = []
+
+        if ty == "ok":
+            ButtonChoiceWindow(self.screen, title, text, buttons=[TEXT_OK_BUTTON])
+        elif ty == "yesno":
             if default and default == "no":
                 btnlist = [TEXT_NO_BUTTON, TEXT_YES_BUTTON]
             else:
                 btnlist = [TEXT_YES_BUTTON, TEXT_NO_BUTTON]
-	    rc = ButtonChoiceWindow(self.screen, title, text,
-			       buttons=btnlist)
+            rc = ButtonChoiceWindow(self.screen, title, text, buttons=btnlist)
             if rc == "yes":
                 return 1
             else:
                 return 0
-	elif type == "custom":
-	    tmpbut = []
-	    for but in custom_buttons:
-		tmpbut.append(but.replace("_",""))
+        elif ty == "custom":
+            tmpbut = []
+            for but in custom_buttons:
+                tmpbut.append(but.replace("_",""))
 
-	    rc = ButtonChoiceWindow(self.screen, title, text, width=60,
-				    buttons=tmpbut)
+            rc = ButtonChoiceWindow(self.screen, title, text, width=60, buttons=tmpbut)
 
-	    idx = 0
-	    for b in tmpbut:
-		if b.lower() == rc:
-		    return idx
-		idx = idx + 1
-	    return 0
-	else:
-	    return OkCancelWindow(self.screen, title, text)
+            idx = 0
+            for b in tmpbut:
+                if b.lower() == rc:
+                    return idx
+                idx += 1
+            return 0
+        else:
+            return OkCancelWindow(self.screen, title, text)
 
     def passphraseEntryWindow(self, device):
         w = PassphraseEntryWindow(self.screen, device)
         passphrase = w.run()
         w.pop()
         return passphrase
+
+    @property
+    def meh_interface(self):
+        return self._meh_interface
+
+    @property
+    def tty_num(self):
+        return 1
 
     def shutdown (self):
         self.screen.finish()
@@ -109,6 +120,7 @@ class RescueInterface(InstallInterfaceBase):
     def __init__(self):
         InstallInterfaceBase.__init__(self)
         self.screen = SnackScreen()
+        self._meh_interface = meh.ui.text.TextIntf()
 
 def makeFStab(instPath = ""):
     if os.access("/proc/mounts", os.R_OK):
@@ -124,7 +136,7 @@ def makeFStab(instPath = ""):
             f.write(buf)
         f.close()
     except IOError as e:
-        log.info("failed to write /etc/fstab: %s" % e)
+        log.info("failed to write /etc/fstab: %s", e)
 
 # make sure they have a resolv.conf in the chroot
 def makeResolvConf(instPath):
@@ -191,27 +203,79 @@ def runShell(screen = None, msg=""):
     if screen:
         screen.finish()
 
-def doRescue(rescue_mount, ksdata, platform):
-    import storage
+def _exception_handler_wrapper(orig_except_handler, screen, *args):
+    """
+    Helper function that wraps the exception handler with snack shutdown.
 
-    for file in [ "services", "protocols", "group", "joe", "man.config",
-                  "nsswitch.conf", "selinux", "mke2fs.conf" ]:
+    :param orig_except_handler: original exception handler that should be run
+                                after the wrapping changes are done
+    :type orig_except_handler: exception handler as can be set as sys.excepthook
+    :param screen: snack screen that should be shut down before further actions
+    :type screen: snack screen
+
+    """
+
+    screen.finish()
+    return orig_except_handler(*args)
+
+def _unlock_devices(intf, storage):
+    try_passphrase = None
+    for device in storage.devices:
+        if device.format.type == "luks":
+            skip = False
+            unlocked = False
+            while not (skip or unlocked):
+                if try_passphrase is None:
+                    passphrase = intf.passphraseEntryWindow(device.name)
+                else:
+                    passphrase = try_passphrase
+
+                if passphrase is None:
+                    # canceled
+                    skip = True
+                else:
+                    device.format.passphrase = passphrase
+                    try:
+                        device.setup()
+                        device.format.setup()
+                        luks_dev = LUKSDevice(device.format.mapName,
+                                              parents=[device],
+                                              exists=True)
+                        storage.devicetree._addDevice(luks_dev)
+                        storage.devicetree.populate()
+                        unlocked = True
+                        # try to use the same passhprase for other devices
+                        try_passphrase = passphrase
+                    except StorageError as serr:
+                        log.error("Failed to unlock %s: %s", device.name, serr)
+                        device.teardown(recursive=True)
+                        device.format.passphrase = None
+                        try_passphrase = None
+
+def doRescue(intf, rescue_mount, ksdata):
+    import blivet
+
+    # XXX: hook the exception handler wrapper that turns off snack first
+    orig_hook = sys.excepthook
+    sys.excepthook = lambda ty, val, tb: _exception_handler_wrapper(orig_hook,
+                                                                    intf.screen,
+                                                                    ty, val, tb)
+
+    for f in [ "services", "protocols", "group", "joe", "man.config",
+               "nsswitch.conf", "selinux", "mke2fs.conf" ]:
         try:
-            os.symlink('/mnt/runtime/etc/' + file, '/etc/' + file)
+            os.symlink('/mnt/runtime/etc/' + f, '/etc/' + f)
         except OSError:
             pass
-
-    intf = RescueInterface()
 
     # Early shell access with no disk access attempts
     if not rescue_mount:
         # the %post should be responsible for mounting all needed file systems
         # NOTE: 1st script must be bash or simple python as nothing else might be available in the rescue image
         if flags.automatedInstall and ksdata.scripts:
-           from kickstart import runPostScripts
-           runPostScripts(ksdata.scripts)
+            runPostScripts(ksdata.scripts)
         else:
-           runShell()
+            runShell()
 
         sys.exit(0)
 
@@ -242,13 +306,14 @@ def doRescue(rescue_mount, ksdata, platform):
 
             break
 
-    sto = storage.Storage(ksdata, platform)
-    storage.storageInitialize(sto, ksdata, [])
-    roots = storage.findExistingInstallations(sto.devicetree)
+    sto = blivet.Blivet(ksdata=ksdata)
+    blivet.storageInitialize(sto, ksdata, [])
+    _unlock_devices(intf, sto)
+    roots = blivet.findExistingInstallations(sto.devicetree)
 
     if not roots:
         root = None
-    elif len(roots) == 1 or ksdata.upgrade.upgrade:
+    elif len(roots) == 1:
         root = roots[0]
     else:
         height = min (len (roots), 12)
@@ -302,7 +367,7 @@ def doRescue(rescue_mount, ksdata, platform):
                 rootmounted = False
             else:
                 if flags.automatedInstall:
-                    log.info("System has been mounted under: %s" % ROOT_PATH)
+                    log.info("System has been mounted under: %s", ROOT_PATH)
                 else:
                     ButtonChoiceWindow(intf.screen, _("Rescue"),
                        _("Your system has been mounted under %(rootPath)s.\n\n"
@@ -364,7 +429,7 @@ def doRescue(rescue_mount, ksdata, platform):
         except (ValueError, LookupError, SyntaxError, NameError):
             raise
         except Exception as e:
-            log.error("doRescue caught exception: %s" % e)
+            log.error("doRescue caught exception: %s", e)
             if flags.automatedInstall:
                 log.error("An error occurred trying to mount some or all of your system")
             else:
@@ -404,7 +469,7 @@ def doRescue(rescue_mount, ksdata, platform):
         try:
             makeResolvConf(ROOT_PATH)
         except (OSError, IOError) as e:
-            log.error("error making a resolv.conf: %s" %(e,))
+            log.error("error making a resolv.conf: %s", e)
         msgStr = _("Your system is mounted under the %s directory.") % (ROOT_PATH,)
         ButtonChoiceWindow(intf.screen, _("Rescue"), msgStr, [_("OK")] )
 
@@ -416,7 +481,6 @@ def doRescue(rescue_mount, ksdata, platform):
 
     # run %post if we've mounted everything
     if rootmounted and not readOnly and flags.automatedInstall:
-        from kickstart import runPostScripts
         runPostScripts(ksdata.scripts)
 
     # start shell if reboot wasn't requested

@@ -20,28 +20,27 @@
 #                    Jesse Keating <jkeating@redhat.com>
 #
 
-from pyanaconda.ui.tui.spokes import NormalTUISpoke
+from pyanaconda.ui.tui.spokes import EditTUIDialog, EditTUISpokeEntry
+from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda.ui.tui.simpleline import TextWidget
-from pyanaconda.ui.tui import YesNoDialog
-from pyanaconda.users import validatePassword
-from pwquality import PWQError
-import getpass
+from pyanaconda.i18n import _
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-
-
-class PasswordSpoke(NormalTUISpoke):
-    title = _("Set root password")
-    category = "password"
+class PasswordSpoke(FirstbootSpokeMixIn, EditTUIDialog):
+    title = _("Root password")
+    category = "user"
 
     def __init__(self, app, data, storage, payload, instclass):
-        NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
+        EditTUIDialog.__init__(self, app, data, storage, payload, instclass)
         self._password = None
 
     @property
     def completed(self):
         return bool(self.data.rootpw.password or self.data.rootpw.lock)
+
+    @property
+    def mandatory(self):
+        return not any(user for user in self.data.user.userList
+                       if "wheel" in user.groups)
 
     @property
     def status(self):
@@ -53,7 +52,7 @@ class PasswordSpoke(NormalTUISpoke):
             return _("Password is not set.")
 
     def refresh(self, args = None):
-        NormalTUISpoke.refresh(self, args)
+        EditTUIDialog.refresh(self, args)
 
         self._window += [TextWidget(_("Please select new root password. You will have to type it twice.")), ""]
 
@@ -61,31 +60,17 @@ class PasswordSpoke(NormalTUISpoke):
 
     def prompt(self, args = None):
         """Overriden prompt as password typing is special."""
-        pw = getpass.getpass(_("Password: "))
-        confirm = getpass.getpass(_("Password (confirm): "))
+        EditTUIDialog.prompt(self, EditTUISpokeEntry(_("Password"), "", EditTUIDialog.PASSWORD, True))
+        if self.value == None:
+            return
 
-        error = None
-        # just returning an error is either blank or mismatched
-        # passwords.  Raising is because of poor quality.
-        try:
-            error = validatePassword(pw, confirm)
-            if error:
-                print(error)
-                return None
-        except PWQError as (e, msg):
-            error = _("You have provided a weak password: %s. " % msg)
-            error += _("\nWould you like to use it anyway?")
-            question_window = YesNoDialog(self._app, error)
-            self._app.switch_screen_modal(question_window)
-            if not question_window.answer:
-                return None
-
-        self._password = pw
+        self._password = self.value
         self.apply()
 
         self.close()
 
     def apply(self):
         self.data.rootpw.password = self._password
-        self.data.rootpw.isCrypted = False
+        self.data.rootpw.isCrypted = True
         self.data.rootpw.lock = False
+        self.data.rootpw.seen = False

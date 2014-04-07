@@ -22,13 +22,10 @@
 
 from gi.repository import Gtk
 
+from pyanaconda.i18n import _, P_
+from pyanaconda.ui.lib.disks import size_str
 from pyanaconda.ui.gui import GUIObject
-from pyanaconda.storage.size import Size
-
-import gettext
-
-_ = lambda x: gettext.ldgettext("anaconda", x)
-P_ = lambda x, y, z: gettext.ldngettext("anaconda", x, y, z)
+from blivet.size import Size
 
 __all__ = ["SelectedDisksDialog"]
 
@@ -36,31 +33,35 @@ IS_BOOT_COL = 0
 DESCRIPTION_COL = 1
 SIZE_COL = 2
 FREE_SPACE_COL = 3
-SERIAL_COL = 4
+NAME_COL = 4
 ID_COL = 5
-
-def size_str(mb):
-    if isinstance(mb, Size):
-        spec = str(mb)
-    else:
-        spec = "%s mb" % mb
-
-    return str(Size(spec=spec)).upper()
 
 class SelectedDisksDialog(GUIObject):
     builderObjects = ["selected_disks_dialog", "disk_store", "disk_tree_view"]
     mainWidgetName = "selected_disks_dialog"
     uiFile = "spokes/lib/cart.glade"
 
+    def __init__(self, data):
+        GUIObject.__init__(self, data)
+
+        self._view = self.builder.get_object("disk_tree_view")
+        self._store = self.builder.get_object("disk_store")
+        self._selection = self.builder.get_object("disk_selection")
+        self._summary_label = self.builder.get_object("summary_label")
+
+        self._set_button = self.builder.get_object("set_as_boot_button")
+        self._remove_button = self.builder.get_object("remove_button")
+
+    # pylint: disable-msg=W0221
     def initialize(self, disks, free, showRemove=True, setBoot=True):
         self._previousID = None
 
         for disk in disks:
             self._store.append([False,
-                                disk.description,
+                                "%s (%s)" % (disk.description, disk.serial),
                                 size_str(disk.size),
                                 size_str(free[disk.name][0]),
-                                disk.serial,
+                                disk.name,
                                 disk.id])
         self.disks = disks[:]
         self._update_summary()
@@ -96,15 +97,9 @@ class SelectedDisksDialog(GUIObject):
                 row[IS_BOOT_COL] = True
                 break
 
+    # pylint: disable-msg=W0221
     def refresh(self, disks, free, showRemove=True, setBoot=True):
         super(SelectedDisksDialog, self).refresh()
-
-        self._view = self.builder.get_object("disk_tree_view")
-        self._store = self.builder.get_object("disk_store")
-        self._selection = self.builder.get_object("disk_selection")
-        self._summary_label = self.builder.get_object("summary_label")
-
-        self._set_button = self.builder.get_object("set_as_boot_button")
 
         # clear out the store and repopulate it from the devicetree
         self._store.clear()
@@ -118,8 +113,8 @@ class SelectedDisksDialog(GUIObject):
     def _get_selection_refs(self):
         selected_refs = []
         if self._selection.count_selected_rows():
-            model, selected_paths = self._selection.get_selected_rows()
-            selected_refs = [Gtk.TreeRowReference() for p in selected_paths]
+            selected_paths = self._selection.get_selected_rows()[1]
+            selected_refs = [Gtk.TreeRowReference() for _p in selected_paths]
 
         return selected_refs
 
@@ -135,16 +130,16 @@ class SelectedDisksDialog(GUIObject):
         size = str(Size(bytes=long(size))).upper()
         free = str(Size(bytes=long(free))).upper()
 
-        text = P_("<b>%d disk; %s capacity; %s free space</b> "
+        text = P_("<b>%(count)d disk; %(size)s capacity; %(free)s free space</b> "
                    "(unpartitioned and in filesystems)",
-                  "<b>%d disks; %s capacity; %s free space</b> "
+                  "<b>%(count)d disks; %(size)s capacity; %(free)s free space</b> "
                    "(unpartitioned and in filesystems)",
-                  count) % (count, size, free)
+                   count) % {"count" : count, "size" : size, "free" : free}
         self._summary_label.set_markup(text)
 
     # signal handlers
     def on_remove_clicked(self, button):
-        model, itr = self._selection.get_selected()
+        itr = self._selection.get_selected()[1]
         if not itr:
             return
 
@@ -170,6 +165,10 @@ class SelectedDisksDialog(GUIObject):
 
         self._update_summary()
 
+        # If no disks are available in the cart anymore, grey out the buttons.
+        self._set_button.set_sensitive(len(self._store) > 0)
+        self._remove_button.set_sensitive(len(self._store) > 0)
+
     def on_close_clicked(self, button):
         # Save the boot device setting, if something was selected.
         for row in self._store:
@@ -192,14 +191,14 @@ class SelectedDisksDialog(GUIObject):
             self._set_button.set_label(_("_Set as Boot Device"))
 
     def on_selection_changed(self, *args):
-        model, itr = self._selection.get_selected()
+        itr = self._selection.get_selected()[1]
         if not itr:
             return
 
         self._toggle_button_text(self._store[itr])
 
     def on_set_as_boot_clicked(self, button):
-        model, itr = self._selection.get_selected()
+        itr = self._selection.get_selected()[1]
         if not itr:
             return
 
@@ -213,11 +212,11 @@ class SelectedDisksDialog(GUIObject):
             # previously selected device.
             for row in self._store:
                 if row[ID_COL] == self._previousID:
-                    row[IS_BOOT_COL] = not row[IS_BOOT_COL]
+                    row[IS_BOOT_COL] = False
                     break
 
             # Then we select the new row.
-            self._store[itr][IS_BOOT_COL] = not self._store[itr][IS_BOOT_COL]
+            self._store[itr][IS_BOOT_COL] = True
             self._previousID = self._store[itr][ID_COL]
 
         self._toggle_button_text(self._store[itr])

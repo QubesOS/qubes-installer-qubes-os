@@ -22,18 +22,20 @@
 
 from pyanaconda.ui.tui.hubs import TUIHub
 from pyanaconda.flags import flags
+from pyanaconda.i18n import _
 import sys
 import time
 
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
-
 class SummaryHub(TUIHub):
-    title = _("Install hub")
-    categories = ["source", "localization", "destination", "password"]
+    title = _("Installation")
+    ## FIXME: this should be pulling data from somewhere, not just a static list
+    categories = ["localization", "software", "system", "user"]
 
-    def __init__(self, app, data, storage, payload, instclass):
-        TUIHub.__init__(self, app, data, storage, payload, instclass)
+    def setup(self, environment="anaconda"):
+        should_schedule = TUIHub.setup(self, environment=environment)
+        if not should_schedule:
+            return False
+
         if flags.automatedInstall:
             sys.stdout.write(_("Starting automated install"))
             sys.stdout.flush()
@@ -45,13 +47,16 @@ class SummaryHub(TUIHub):
 
             print('')
             for spoke in spokes:
-                spoke.execute()
+                if spoke.changed:
+                    spoke.execute()
+
+        return True
 
     # override the prompt so that we can skip user input on kickstarts
     # where all the data is in hand.  If not in hand, do the actual prompt.
     def prompt(self, args=None):
         if flags.automatedInstall and \
-        all(spoke.completed for spoke in self._keys.values()):
+        all(spoke.completed for spoke in self._keys.values() if spoke.mandatory):
             self.close()
             return None
         if not flags.ksprompt:
