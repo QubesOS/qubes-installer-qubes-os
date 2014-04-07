@@ -15,6 +15,7 @@ URL:            https://fedorahosted.org/pungi
 Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name}-%{version}.tar.bz2
 Patch0:         support-verify-downloaded-packages.patch
 Patch1:         disable-efi.patch
+Patch2:         effective-nosource-option.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires:       yum => 3.4.3-28, repoview, createrepo >= 0.4.11
 Requires:       lorax
@@ -31,6 +32,7 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 %{__python} setup.py build
