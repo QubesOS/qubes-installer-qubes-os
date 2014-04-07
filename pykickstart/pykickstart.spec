@@ -7,7 +7,7 @@
 Summary:  A python library for manipulating kickstart files
 Name: pykickstart
 Url: http://fedoraproject.org/wiki/pykickstart
-Version: 1.99.22
+Version: 1.99.48
 Release: 1.2%{?dist}
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
@@ -20,7 +20,10 @@ Group: System Environment/Libraries
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: python-devel, gettext, python-setuptools-devel
+BuildRequires: python-urlgrabber
+%if ! 0%{?rhel}
 BuildRequires: transifex-client
+%endif
 Requires: python, python-urlgrabber
 
 %description
@@ -51,8 +54,144 @@ rm -rf %{buildroot}
 %{_bindir}/ksvalidator
 %{_bindir}/ksflatten
 %{_bindir}/ksverdiff
+%{_bindir}/ksshell
+%{_mandir}/man1/*
 
 %changelog
+* Mon Nov 25 2013 Chris Lumens <clumens@redhat.com> - 1.99.48-1
+- Specify a kickstart version when running package-related tests. (clumens)
+- We need python-urlgrabber to do builds now. (clumens)
+
+* Mon Nov 25 2013 Chris Lumens <clumens@redhat.com> - 1.99.47-1
+- Add missing version bumps for RHEL7 command control map (#1032738) (mkolman)
+- Run "make test" as part of the RPM build process (#1025226). (clumens)
+- Include test cases in the source distribution. (clumens)
+- With the previous patch, RAID test formatting needs to change. (clumens)
+- Do not add a list of PVs or RAID members when writing out --useexisting (#1021274). (clumens)
+- Raise an error if bootloader --boot-drive gets more than one argument. (clumens)
+
+* Thu Nov 14 2013 Chris Lumens <clumens@redhat.com> - 1.99.46-1
+- Add support for network team devices (#1003591) (rvykydal)
+- Work on test coverage a little bit. (clumens)
+- Don't use OrderedDict. (clumens)
+- Add tests for tmpfs usage (mkolman)
+- Add tmpfs support (#918621) (mkolman)
+
+* Fri Nov 01 2013 Chris Lumens <clumens@redhat.com> - 1.99.45-1
+- Set bootloader location constructor default value to "none" (#916529) (amulhern)
+
+* Fri Oct 25 2013 Chris Lumens <clumens@redhat.com> - 1.99.44-1
+- method getattr should default to handler.url (bcl)
+  Related: rhbz#1016801
+
+* Wed Oct 16 2013 Chris Lumens <clumens@redhat.com> - 1.99.43-1
+- Use F20_Raid for RHEL7. (#997146) (dlehman)
+
+* Tue Oct 08 2013 Chris Lumens <clumens@redhat.com> - 1.99.42-1
+- Remove a triple-X message that is no longer needed (mkolman)
+- Add --remove-service option for the firewall command (#1016008) (mkolman)
+
+* Wed Sep 25 2013 Chris Lumens <clumens@redhat.com> - 1.99.41-1
+- New 'eula' command (#1000409) (vpodzime)
+
+* Tue Sep 24 2013 Chris Lumens <clumens@redhat.com> 1.99.40-2
+- Only BuildRequire transifex on OSes that include it.
+
+* Tue Sep 24 2013 Chris Lumens <clumens@redhat.com> - 1.99.40-1
+- Don't error out if volgroup --useexisting is given with no members. (clumens)
+
+* Tue Sep 10 2013 Chris Lumens <clumens@redhat.com> - 1.99.39-1
+- Call the right attribute method (#1004889) (bcl)
+- Reset method seen attrs when switching method (#1004889) (bcl)
+
+* Tue Sep 03 2013 Brian C. Lane <bcl@redhat.com> - 1.99.38-1
+- Return None for attributes if no method has been set (#1001081) (dshea)
+- Fix up a couple pylint errors in the tools. (clumens)
+
+* Wed Aug 21 2013 Chris Lumens <clumens@redhat.com> - 1.99.37-1
+- Correct exception raising style. (clumens)
+- Fix up how we call pylint for 1.0.0. (clumens)
+- Set method.method when attempted. (dshea)
+
+* Mon Aug 19 2013 Chris Lumens <clumens@redhat.com> - 1.99.36-1
+- When method.method is set, also set the right seen attribute (#994553). (clumens)
+- Add tests for incorrect command usage detection (mkolman)
+- Add class for independent multi-line command sequence tests (mkolman)
+- Raise an error if autopart is combined with partitioning commands (#886010) (mkolman)
+
+* Mon Jul 29 2013 Chris Lumens <clumens@redhat.com> - 1.99.35-1
+- Add aliases for all the old method classes (#986069). (clumens)
+- Check syntax version before issuing a deprecation warning (#972098). (clumens)
+
+* Mon Jul 15 2013 Chris Lumens <clumens@redhat.com> - 1.99.34-1
+- Always create self.handler on-demand in the test cases. (clumens)
+- Also set the seen attribute when __call__ is used. (clumens)
+- Mark the upgrade command as deprecated. (clumens)
+- Add the method test case back in. (clumens)
+- Set the seen attribute when parsing in test cases, too. (clumens)
+- Add a proxy method command object. (clumens)
+- Add an interactive kickstart shell command, ksshell. (clumens)
+- Fix string substitution errors in translatable text. (clumens)
+- Break the method command out into individual commands. (clumens)
+
+* Tue Jul 09 2013 Chris Lumens <clumens@redhat.com> - 1.99.33-1
+- Add support for lvm thin provisioning. (dlehman)
+- Add support for F20. (clumens)
+- Add a new test for the group command. (clumens)
+- In the test cases, error on all non-deprecation warnings. (clumens)
+- Remove unused imports from the test suite. (clumens)
+
+* Fri Jun 14 2013 Chris Lumens <clumens@redhat.com> - 1.99.32-1
+- transifex.net is now transifex.com (bcl)
+- Update raid --device to be an array name specifier. (dlehman)
+- Add more tests for the realm command (mkolman)
+- RHEL7 is now more or less based on F19, at least for kickstart. (clumens)
+- realm: Fix --no-password option (stefw)
+- Add man pages for all programs (#948440). (clumens)
+
+* Wed May 15 2013 Chris Lumens <clumens@redhat.com> - 1.99.31-1
+- Fix F18/F19 cdrom methods (bcl)
+
+* Thu May 09 2013 Chris Lumens <clumens@redhat.com> - 1.99.30-1
+- Add support for the realm command (mkolman)
+- Add liveimg install method (bcl)
+
+* Thu May 09 2013 Chris Lumens <clumens@redhat.com> - 1.99.29-1
+- add --extlinux option (mattdm)
+
+* Tue Apr 23 2013 Chris Lumens <clumens@redhat.com> - 1.99.28-1
+- Add network --ipv6gateway option (#905226) (rvykydal)
+- Add lang --addsupport option (#912364) (rvykydal)
+
+* Wed Apr 10 2013 Chris Lumens <clumens@redhat.com> - 1.99.27-1
+- A new user's group should default to None, not 0 (#929204). (clumens)
+
+* Fri Mar 22 2013 Chris Lumens <clumens@redhat.com> - 1.99.26-1
+- parser.py: Allow shlex to strip lines (fedora.dm0)
+- Fix a bug in logvol duplicate reporting (#924579, mhuth). (clumens)
+- Add gid attribute to User command and associated data structure (msivak)
+- Make sure tests can run and report import errors (bcl)
+- Add network --vlanid option to Fedora. (rvykydal)
+
+* Mon Mar 04 2013 Chris Lumens <clumens@redhat.com> - 1.99.25-1
+- pylint appears to have gotten pickier. (clumens)
+- Fix typo in --wpakey string representation method (rvykydal)
+- Also add the F19 handler file. (clumens)
+- Don't strip the newline from reboot or shutdown commands (#915013). (clumens)
+- Add bonding support to RHEL 7 (rvykydal)
+- Add bonding support to F19 (rvykydal)
+- Add support for F19 (rvykydal)
+
+* Wed Feb 13 2013 Chris Lumens <clumens@redhat.com> - 1.99.24-1
+- Add a seen attribute to commands, sections, and the packages object. (clumens)
+
+* Mon Jan 14 2013 Chris Lumens <clumens@redhat.com> - 1.99.23-1
+- Don't print any of the autopart command if autopart is disabled (#888841). (clumens)
+- Call sys.exit instead of os._exit (#891419, gconradi AT factset.com). (clumens)
+- Beware of possible unicode strings (#876293) (vpodzime)
+- Remove the lang.apply method (#882186). (clumens)
+- Add 'make coverage' command to the make file (stefw)
+
 * Tue Nov 20 2012 Chris Lumens <clumens@redhat.com> - 1.99.22-1
 - Add support for url --mirrorlist, needed by anaconda (#868558). (clumens)
 - Only write out a logging line if one was provided (#873242). (clumens)
