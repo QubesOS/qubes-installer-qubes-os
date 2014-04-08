@@ -17,15 +17,15 @@ fi
 # mean that the rpm has been signed! It might simply
 # have no PGP signature at all. Yes, stupidity...
 
-if ! rpm --checksig $RPM | grep pgp > /dev/null ; then
-    echo "No PGP signature found!"
-
+if ! rpm --checksig $RPM | grep ' pgp ' > /dev/null ; then
     if [ "$NO_SIGN" == "1" ] ; then
         # When signing is disabed in qubes-builder
         # This is used to build unsigned ISO
         # This should only be used for testing builds
         return 0
     fi
+
+    echo "No PGP signature found!"
 
     exit 2
 fi
