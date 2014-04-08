@@ -57,7 +57,7 @@ networkConfFile = "%s/network" % (sysconfigDir)
 hostnameFile = "/etc/hostname"
 ipv6ConfFile = "/etc/sysctl.d/anaconda.conf"
 ifcfgLogFile = "/tmp/ifcfg.log"
-DEFAULT_HOSTNAME = "localhost.localdomain"
+DEFAULT_HOSTNAME = "dom0"
 
 # part of a valid hostname between two periods (cannot start nor end with '-')
 # for more info about '(?!-)' and '(?<!-)' see 're' module documentation
