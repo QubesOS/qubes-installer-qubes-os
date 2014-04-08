@@ -58,11 +58,11 @@ class InstallClass(BaseInstallClass):
         BaseInstallClass.setDefaultPartitioning(self,
                                                 storage)
         for autoreq in storage.autoPartitionRequests:
-	    if autoreq.mountpoint == "/":
-		autoreq.maxSize=None
-		autoreq.requiredSpace=50*1024
+            if autoreq.mountpoint == "/":
+                autoreq.maxSize=None
+                autoreq.requiredSpace=50*1024
             if autoreq.mountpoint == "/home":
-		storage.autoPartitionRequests.remove(autoreq)
+                storage.autoPartitionRequests.remove(autoreq)
 
     def productMatches(self, oldprod):
         if oldprod is None:
