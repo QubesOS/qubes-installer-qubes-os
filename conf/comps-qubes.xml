@@ -287,7 +287,6 @@
       <packagereq>xfce4-time-out-plugin</packagereq>
       <packagereq>xfce4-timer-plugin</packagereq>
       <packagereq>xfce4-verve-plugin</packagereq>
-      <packagereq>xfce4-websearch-plugin</packagereq>
       <packagereq>xfce4-xkb-plugin</packagereq>
     </packagelist>
   </group>
@@ -1123,28 +1122,6 @@
     <packagelist>
       <packagereq>pavucontrol</packagereq>
       <packagereq>xfce4-mixer</packagereq>
-    </packagelist>
-  </group>
-  <group>
-    <id>xfce-extra-plugins</id>
-    <name>Extra plugins for the Xfce panel</name>
-    <default>true</default>
-    <uservisible>true</uservisible>
-    <packagelist>
-      <packagereq>xfce4-battery-plugin</packagereq>
-      <packagereq>xfce4-cpugraph-plugin</packagereq>
-      <packagereq>xfce4-diskperf-plugin</packagereq>
-      <packagereq>xfce4-eyes-plugin</packagereq>
-      <packagereq>xfce4-fsguard-plugin</packagereq>
-      <packagereq>xfce4-genmon-plugin</packagereq>
-      <packagereq>xfce4-mount-plugin</packagereq>
-      <packagereq>xfce4-sensors-plugin</packagereq>
-      <packagereq>xfce4-systemload-plugin</packagereq>
-      <packagereq>xfce4-taskmanager</packagereq>
-      <packagereq>xfce4-time-out-plugin</packagereq>
-      <packagereq>xfce4-timer-plugin</packagereq>
-      <packagereq>xfce4-verve-plugin</packagereq>
-      <packagereq>xfce4-xkb-plugin</packagereq>
     </packagelist>
   </group>
   <group>
