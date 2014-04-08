@@ -44,15 +44,24 @@ class moduleClass(Module):
         self.icon = "qubes.png"
         self.admin = libuser.admin()
 
+    def _showErrorMessage(self, text):
+        dlg = gtk.MessageDialog(None, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
+        dlg.set_position(gtk.WIN_POS_CENTER)
+        dlg.set_modal(True)
+        rc = dlg.run()
+        dlg.destroy()
+        return None
+
     def apply(self, interface, testing=False):
         try:
 
             qubes_users = self.admin.enumerateUsersByGroup('qubes')
-            if self.radio_servicevms_and_appvms.get_active() and len(qubes_users) < 1:
-                self._showErrorMessage(_("You must create a user account to create default AppVMs."))
-                return RESULT_FAILURE
-            else:
-                self.qubes_user = qubes_users[0]
+            if not self.radio_dontdoanything.get_active():
+                if len(qubes_users) < 1:
+                    self._showErrorMessage(_("You must create a user account to create default VMs."))
+                    return RESULT_FAILURE
+                else:
+                    self.qubes_user = qubes_users[0]
 
             self.radio_servicevms_and_appvms.set_sensitive(False)
             self.radio_onlyservicevms.set_sensitive(False)
