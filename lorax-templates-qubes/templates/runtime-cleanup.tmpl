@@ -20,7 +20,8 @@ removefrom ${product.name}-logos /usr/share/plymouth/*
 ## We also need dracut-shutdown.service and dracut-initramfs-restore to reboot
 removefrom dracut --allbut /usr/lib/dracut/modules.d/30convertfs/convertfs.sh \
                   /usr/lib/dracut/modules.d/99base/dracut-lib.sh \
-                  /usr/lib/systemd/* /usr/lib/dracut/dracut-initramfs-restore
+                  /usr/lib/systemd/* /usr/lib/dracut/modules.d/98systemd/*.service \
+                  /usr/lib/dracut/dracut-initramfs-restore
 ## we don't run SELinux (not in enforcing, anyway)
 removepkg checkpolicy selinux-policy libselinux-utils
 ## anaconda has its own repo files
@@ -49,13 +50,13 @@ removefrom isomd5sum --allbut /usr/bin/checkisomd5
 removepkg avahi-autoipd coreutils-libs curl dash db4-utils diffutils file
 removepkg genisoimage gnome-python2 info iptables
 removepkg jasper-libs libXt libXxf86misc
-removepkg libasyncns libdaemon libhbaapi libhbalinux
+removepkg libasyncns libhbaapi libhbalinux
 removepkg libmcpp libpcap libtiff libutempter linux-atm-libs
 removepkg lvm2-libs m4 mailx makebootfat mcpp
 removepkg mingetty mobile-broadband-provider-info pkgconfig ppp pth
 removepkg rmt rpcbind squashfs-tools system-config-firewall-base
 removepkg tigervnc-license ttmkfdir xml-common xorg-x11-font-utils
-removepkg xorg-x11-server-common yum-utils
+removepkg xorg-x11-server-common yum-utils firewalld
 
 ## other removals
 remove /boot /home /media /opt /srv /tmp/*
@@ -164,12 +165,10 @@ removefrom dbus-glib /usr/bin/*
 removefrom dbus-x11 /etc/X11/*
 removefrom dejavu-sans-fonts --allbut *.conf */DejaVuSans{,-Bold}.ttf
 removefrom dejavu-sans-mono-fonts --allbut *.conf */DejaVuSansMono.ttf
-removefrom device-mapper-multipath /etc/* /sbin/mpathconf /sbin/multipathd /lib/udev/rules.d/62-multipath.rules
 removefrom dhclient /usr/lib/* /usr/share/*
 removefrom dnsmasq /etc/rc.d/* /usr/sbin/*
 removefrom dump /etc/*
 removefrom elfutils-libelf /usr/share/locale/*
-removefrom ethtool /usr/sbin/*
 removefrom expat /usr/bin/*
 removefrom fcoe-utils /etc/rc.d/* /usr/libexec/fcoe/dcbcheck.sh
 removefrom fcoe-utils /usr/libexec/fcoe/fcc.sh /usr/libexec/fcoe/fcoe-setup.sh
@@ -177,8 +176,6 @@ removefrom fcoe-utils /usr/libexec/fcoe/fcoedump.sh /usr/sbin/fcnsq
 removefrom fcoe-utils /usr/sbin/fcoeadm /usr/sbin/fcping /usr/sbin/fcrls
 removefrom file-libs /usr/share/*
 removefrom findutils /usr/bin/oldfind /usr/share/*
-removefrom firstboot /lib/systemd/* /usr/sbin/* /usr/share/firstboot/*
-removefrom firstboot /usr/share/locale/*
 removefrom fontconfig /usr/bin/*
 removefrom gawk /usr/bin/{igawk,pgawk} /usr/libexec/* /usr/share/*
 removefrom gdisk /usr/share/*
@@ -242,7 +239,6 @@ removefrom librsvg2 /usr/bin/*
 removefrom libselinux /usr/sbin/*
 removefrom libsemanage /etc/selinux/*
 removefrom libstdc++ /usr/share/*
-removefrom libthai /usr/share/libthai/*
 removefrom libuser /usr/bin/* /usr/sbin/* /usr/share/locale/*
 removefrom libvorbis /usr/${libdir}/libvorbisenc.*
 removefrom libxml2 /usr/bin/*
@@ -250,7 +246,6 @@ removefrom libxml2-python /usr/${libdir}/python?.?/site-packages/libxml2mod.a
 removefrom libxml2-python /usr/${libdir}/python?.?/site-packages/libxml2mod.la
 removefrom lldpad /etc/* /usr/sbin/lldptool
 removefrom lua /usr/bin/*
-removefrom lvm2 /etc/*
 removefrom madan-fonts /usr/share/fonts/madan/*
 removefrom mdadm /etc/*
 removefrom module-init-tools /etc/* /usr/sbin/insmod.static /usr/sbin/weak-modules
@@ -282,8 +277,8 @@ removefrom nss-softokn /usr/${libdir}/nss/*
 removefrom openldap /etc/openldap/* /usr/${libdir}/libldap_r-*
 removefrom openssh /etc/ssh/* /usr/libexec/*
 removefrom openssh-clients /etc/ssh/* /usr/bin/slogin /usr/bin/ssh-*
-removefrom openssh-clients /usr/${libdir}/* /usr/libexec/*
-removefrom openssh-server /etc/ssh/* /usr/${libdir}/* /usr/libexec/*
+removefrom openssh-clients /usr/libexec/*
+removefrom openssh-server /etc/ssh/* /usr/libexec/*
 removefrom openssl /etc/pki/* /usr/bin/* /usr/${libdir}/openssl/*
 removefrom pam /usr/sbin/* /usr/share/locale/*
 removefrom pciutils /usr/sbin/*
@@ -316,19 +311,17 @@ removefrom sysvinit-tools /usr/bin/*
 removefrom tar /usr/share/locale/*
 removefrom usbutils /usr/bin/*
 removefrom util-linux --allbut \
-    /usr/bin/{dmesg,kill,login,lsblk,more,mount,umount,mountpoint} \
+    /usr/bin/{dmesg,getopt,kill,login,lsblk,more,mount,umount,mountpoint} \
     /etc/mtab /etc/pam.d/login /etc/pam.d/remote \
     /usr/sbin/{agetty,blkid,blockdev,clock,fdisk,fsck,fstrim,hwclock,losetup} \
-    /usr/sbin/{mkswap,nologin,sfdisk,swapoff,swapon,wipefs} \
+    /usr/sbin/{mkswap,nologin,sfdisk,swapoff,swapon,wipefs,partx} \
     /usr/bin/logger
 removefrom volume_key-libs /usr/share/locale/*
 removefrom wget /etc/* /usr/share/locale/*
-removefrom xkeyboard-config /usr/share/locale/*
 removefrom xorg-x11-drv-intel /usr/${libdir}/libI*
 removefrom xorg-x11-drv-openchrome /usr/${libdir}/libchrome*
 removefrom xorg-x11-drv-synaptics /usr/bin/*
 removefrom xorg-x11-drv-wacom /usr/bin/*
-removefrom xorg-x11-fonts-ethiopic /etc/X11/* /usr/share/X11/fonts/OTF/*
 removefrom xorg-x11-fonts-misc --allbut /usr/share/X11/fonts/misc/{6x13,encodings,fonts,*cursor}*
 removefrom xorg-x11-server-utils --allbut /usr/bin/xrandr /usr/share/X11/rgb.txt
 removefrom yum /etc/* /usr/share/locale/* /usr/share/yum-cli/*

@@ -34,8 +34,11 @@ installpkg xen-hypervisor
 %if basearch == "i386":
     installpkg kernel-PAE gpart
 %endif
+%if basearch == "x86_64":
+    installpkg efibootmgr grub2-efi shim shim-unsigned
+%endif
 %if basearch in ("i386", "x86_64"):
-    installpkg grub2 grub2-tools shim grub2-efi efibootmgr biosdevname memtest86+
+    installpkg grub2 grub2-tools shim grub2-efi efibootmgr biosdevname memtest86+ syslinux
 %endif
 %if basearch in ("ppc", "ppc64"):
     installpkg grub2 grub2-tools yaboot fbset hfsutils kernel-bootwrapper ppc64-utils
@@ -51,7 +54,7 @@ installpkg xen-hypervisor
 installpkg plymouth
 
 ## extra dracut modules
-installpkg dracut-network anaconda-dracut
+installpkg anaconda-dracut dracut-network dracut-config-generic
 
 ## fedup-dracut handles upgrades
 ##installpkg fedup-dracut fedup-dracut-plymouth *-fedup-dracut
@@ -85,22 +88,30 @@ installpkg python-imaging
 ## filesystem tools
 installpkg btrfs-progs jfsutils xfsprogs reiserfs-utils gfs2-utils ntfs-3g ntfsprogs
 installpkg python-volume_key volume_key
+installpkg system-storage-manager
+installpkg device-mapper-persistent-data
 
 ## SELinux support
 installpkg selinux-policy-targeted audit libsemanage-python
 
 ## network tools/servers
 installpkg python-ethtool ethtool openssh-server nfs-utils
-installpkg tigervnc-server-minimal tigervnc-server-module
-installpkg chrony rdate
+installpkg tigervnc-server-minimal
+%if basearch != "s390x":
+installpkg tigervnc-server-module
+%endif
+installpkg net-tools
 
 ## hardware utilities/libraries
-installpkg pciutils pcmciautils usbutils
-installpkg mt-st hdparm smartmontools
+installpkg pciutils usbutils
+installpkg mt-st smartmontools
+%if basearch != "s390x":
+installpkg hdparm pcmciautils
+%endif
 installpkg libmlx4
 
 ## translations & language packs
-##installpkg yum-langpacks specspo
+installpkg yum-langpacks
 
 ## fonts & themes
 installpkg bitmap-fangsongti-fonts
@@ -115,7 +126,8 @@ installpkg smc-meera-fonts
 installpkg thai-scalable-waree-fonts
 installpkg vlgothic-fonts
 installpkg wqy-microhei-fonts
-installpkg xorg-x11-fonts-ethiopic xorg-x11-fonts-misc
+installpkg sil-abyssinica-fonts
+installpkg xorg-x11-fonts-misc
 installpkg gnome-themes-standard gnome-icon-theme-legacy
 
 ## debugging/bug reporting tools
