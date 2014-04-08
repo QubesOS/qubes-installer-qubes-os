@@ -6,7 +6,7 @@
 
 Name:           pungi
 Version:        3.03
-Release:        1.3%{?dist}
+Release:        1.4%{?dist}
 Summary:        Distribution compose tool
 
 Group:          Development/Tools
