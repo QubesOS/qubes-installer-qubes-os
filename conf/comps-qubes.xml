@@ -210,6 +210,7 @@
       <packagereq type="mandatory">ed</packagereq>
       <packagereq type="mandatory">util-linux</packagereq>
       <packagereq type="mandatory">gnupg2</packagereq>
+      <packagereq type="mandatory">grub2-starfield-theme</packagereq>
       <packagereq type="mandatory">irqbalance</packagereq>
       <packagereq type="mandatory">linux-firmware</packagereq>
       <packagereq type="mandatory">logrotate</packagereq>
@@ -986,6 +987,7 @@
       <packagereq>firewalld</packagereq>
       <packagereq>gfs2-utils</packagereq>
       <packagereq>grub2-efi</packagereq>
+      <packagereq>grub2-starfield-theme</packagereq>
       <packagereq>grub2</packagereq>
       <packagereq>hfsplus-tools</packagereq>
       <packagereq>iscsi-initiator-utils</packagereq>
