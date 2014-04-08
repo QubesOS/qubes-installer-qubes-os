@@ -203,6 +203,9 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
     @classmethod
     def should_run(cls, environment, data):
+        # The Qubes installer still uses old firstboot to create users (TODO)
+        return False
+
         # the user spoke should run always in the anaconda and in firstboot only
         # when doing reconfig or if no user has been created in the installation
         if environment == ANACONDA_ENVIRON:
