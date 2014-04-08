@@ -1352,7 +1352,7 @@ class GRUB2(GRUB):
     defaults_file = "/etc/default/grub"
     can_dual_boot = True
     can_update = True
-    terminal_type = "console"
+    terminal_type = "gfxterm"
 
     # requirements for boot devices
     stage2_device_types = ["partition", "mdarray"]
@@ -1456,7 +1456,7 @@ class GRUB2(GRUB):
         defaults.write("GRUB_CMDLINE_LINUX=\"%s\"\n" % self.boot_args)
         defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none\"\n")
         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
-        #defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
+        defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
         defaults.close()
 
     def _encrypt_password(self):
