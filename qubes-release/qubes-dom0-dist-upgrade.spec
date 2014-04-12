@@ -7,7 +7,7 @@
 Summary:	Qubes dom0 dist upgrade
 Name:		qubes-dom0-dist-upgrade
 Version:	2.0
-Release:	1
+Release:	2
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
