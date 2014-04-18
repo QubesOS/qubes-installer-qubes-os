@@ -171,8 +171,8 @@ class InstallOptions1Dialog(GUIObject):
         return True
 
     def _get_sw_needs_text(self, required_space, auto_swap):
-        sw_text = (_("Your current <a href=\"\"><b>%(product)s</b> software "
-                     "selection</a> requires <b>%(total)s</b> of available "
+        sw_text = (_("Your current <b>%(product)s</b> software "
+                     "selection requires <b>%(total)s</b> of available "
                      "space, including <b>%(software)s</b> for software and "
                      "<b>%(swap)s</b> for swap space.")
                    % {"product": productName,
@@ -243,8 +243,6 @@ class InstallOptions2Dialog(InstallOptions1Dialog):
                        "amounts of free space:") % sw_text
         label = self.builder.get_object("options2_label1")
         label.set_markup(label_text)
-        label.set_tooltip_text(_("Please wait... software metadata still loading."))
-        label.connect("activate-link", self._modify_sw_link_clicked)
 
         self._set_free_space_labels(disk_free, fs_free)
 
