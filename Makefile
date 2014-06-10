@@ -33,7 +33,6 @@ package = $(shell \
 
 ANACONDA_VERSION := $(call spec_version,anaconda/anaconda.spec)
 FIRSTBOOT_VERSION := $(call spec_version,firstboot/firstboot.spec)
-QBSLOGOS_VERSION := $(call spec_version,qubes-logos/qubes-logos.spec)
 QBSRELEASE_VERSION := $(call spec_version,qubes-release/qubes-release.spec)
 LORAXQBS_VERSION := $(call spec_version,lorax-templates-qubes/lorax-templates-qubes.spec)
 PUNGI_VERSION := $(call spec_version,pungi/pungi.spec)
@@ -52,7 +51,6 @@ help:
 	@echo "make rpms             <--- make all rpms and sign them";\
 	    echo "make rpms_anaconda    <--- create binary rpms for Anaconda"; \
 	    echo "make rpms_firstboot   <--- create binary rpms for Firstboot"; \
-	    echo "make rpms_logos       <--- create binary rpms for Qubes Logos package"; \
 	    echo "make rpms_release     <--- create binary rpms for Qubes Release package"; \
 	    echo; \
 	    echo "make update-repo      <-- copy newly generated rpms to installer yum repo";\
@@ -62,11 +60,11 @@ help:
 	    echo; \
 	    exit 0;
 
-.PHONY: rpms rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax \
+.PHONY: rpms rpms_anaconda rpms_firstboot rpms_release rpms_lorax \
 	rpms_pungi rpms_pykickstart \
 	update-repo update-repo-testing clean iso
 
-rpms: rpms_anaconda rpms_firstboot rpms_logos rpms_release rpms_lorax rpms_pungi rpms_pykickstart
+rpms: rpms_anaconda rpms_firstboot rpms_release rpms_lorax rpms_pungi rpms_pykickstart
 	rpm --addsign `ls -d rpm/x86_64/*.rpm rpm/i686/*.rpm rpm/noarch/*.rpm 2>/dev/null`
 
 rpms-dom0: rpms
@@ -81,9 +79,6 @@ rpm/SOURCES/lorax-templates-qubes-$(LORAXQBS_VERSION).tar.bz2: lorax-templates-q
 
 rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2: firstboot firstboot/firstboot.spec
 	$(call package,firstboot,$(FIRSTBOOT_VERSION))
-
-rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2: qubes-logos qubes-logos/qubes-logos.spec
-	$(call package,qubes-logos,$(QBSLOGOS_VERSION))
 
 rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2: qubes-release qubes-release/qubes-release.spec conf/comps-qubes.xml
 	$(call package,qubes-release,$(QBSRELEASE_VERSION))
@@ -104,13 +99,10 @@ rpms_pykickstart: pykickstart/pykickstart-$(PYKICKSTART_VERSION).tar.gz pykickst
 rpms_firstboot: rpm/SOURCES/firstboot-$(FIRSTBOOT_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb firstboot/firstboot.spec
 
-rpms_logos: rpm/SOURCES/qubes-logos-$(QBSLOGOS_VERSION).tar.bz2
-	rpmbuild $(RPMBUILD_DEFINES) -bb qubes-logos/qubes-logos.spec
-
 rpms_release: rpm/SOURCES/qubes-release-$(QBSRELEASE_VERSION).tar.bz2
 	rpmbuild $(RPMBUILD_DEFINES) -bb qubes-release/qubes-release.spec
 
-RPMS = rpm/noarch/qubes-logos-$(QBSLOGOS_VERSION)-*.rpm \
+RPMS = \
 	rpm/noarch/qubes-release-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/qubes-release-notes-$(QBSRELEASE_VERSION)-*.rpm \
 	rpm/noarch/lorax-templates-qubes-$(LORAXQBS_VERSION)-*.rpm \

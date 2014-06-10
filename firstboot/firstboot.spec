@@ -34,6 +34,7 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 Requires: firstboot(windowmanager)
 Requires: libreport-python
+Requires: qubes-artwork
 
 %define debug_package %{nil}
 

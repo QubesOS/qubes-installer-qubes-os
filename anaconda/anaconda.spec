@@ -98,7 +98,7 @@ Requires: parted >= %{partedver}
 Requires: pyparted >= %{pypartedver}
 Requires: yum >= %{yumver}
 Requires: python-urlgrabber >= %{pythonurlgrabberver}
-Requires: system-logos
+Requires: qubes-artwork
 Requires: pykickstart >= %{pykickstartver}
 Requires: langtable-data >= %{langtablever}
 Requires: langtable-python >= %{langtablever}
