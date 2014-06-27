@@ -1046,6 +1046,7 @@
       <packagereq type="mandatory">oxygen-icon-theme</packagereq>
       <packagereq type="mandatory">qubes-kde-dom0</packagereq>
       <packagereq type="mandatory">xsettings-kde</packagereq>
+      <packagereq type="default">apper</packagereq>
       <packagereq type="default">kmix</packagereq>
     </packagelist>
   </group>
@@ -1098,6 +1099,7 @@
       <packagereq>xfce4-quicklauncher-plugin</packagereq>
       <packagereq>xfce4-screenshooter-plugin</packagereq>
       <packagereq>xfwm4-themes</packagereq>
+      <packagereq>yumex</packagereq>
       <packagereq>zenity</packagereq>
     </packagelist>
   </group>
