@@ -5,10 +5,6 @@ for pkg in /run/install/repo/extrakernels/*.rpm; do
   rpm --root=$ANA_INSTALL_PATH -q $name > /dev/null || rpm --root=$ANA_INSTALL_PATH -i --oldpackage $pkg
 done
 
-# Set default VM kernel back to newest one
-kver=`ls /var/lib/qubes/vm-kernels|sort -n|tail -1`
-chroot $ANA_INSTALL_PATH qubes-prefs -s default-kernel $kver
-
 # Set grub default to the current kernel if running not the latest one
 latest=`basename /run/install/repo/Packages/k/kernel-[0-9]*.rpm .rpm|cut -d- -f2-`
 if [ "$latest" != "`uname -r`" ]; then
