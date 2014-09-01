@@ -79,6 +79,7 @@ if [ "$vms_service" == "yes" ]; then
     for template in `ls /var/lib/qubes/vm-templates`; do
         /bin/mount -oloop "/var/lib/qubes/vm-templates/$template/root.img" /mnt/template-root
         cp /etc/localtime /mnt/template-root/etc
+        cp /etc/locale.conf /mnt/template-root/etc
         cp /etc/ntp.conf /mnt/template-root/etc
         umount /mnt/template-root
     done

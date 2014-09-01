@@ -216,6 +216,7 @@ class moduleClass(Module):
                 '/mnt/template-root'])
             # Copy timezone setting from Dom0 to template
             subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
+            subprocess.check_call(['cp', '/etc/locale.conf', '/mnt/template-root/etc'])
             subprocess.check_call(['cp', '/etc/ntp.conf', '/mnt/template-root/etc'])
             subprocess.check_call(['/bin/umount', '/mnt/template-root'])
             subprocess.check_call(['/bin/rmdir', '/mnt/template-root'])
