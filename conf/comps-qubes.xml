@@ -1126,6 +1126,7 @@
     <packagelist>
       <packagereq>pavucontrol</packagereq>
       <packagereq>xfce4-mixer</packagereq>
+      <packagereq type="default">alsa-utils</packagereq>
     </packagelist>
   </group>
   <group>
