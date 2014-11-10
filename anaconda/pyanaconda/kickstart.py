@@ -582,10 +582,11 @@ class Firstboot(commands.firstboot.FC3_Firstboot):
             f = open(ROOT_PATH + "/etc/reconfigSys", "w+")
             f.close()
 
-        iutil.execWithRedirect("systemctl", [action, "firstboot-graphical.service",
-                                                     "initial-setup-graphical.service",
-                                                     "initial-setup-text.service"],
-                               root=ROOT_PATH)
+        for unit in [
+                "firstboot-graphical.service",
+                "initial-setup-graphical.service",
+                "initial-setup-text.service"]:
+            iutil.execWithRedirect("systemctl", [action, unit], root=ROOT_PATH)
 
 class Group(commands.group.F12_Group):
     def execute(self, storage, ksdata, instClass, users):
