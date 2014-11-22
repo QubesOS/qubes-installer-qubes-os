@@ -38,7 +38,7 @@ if [ $# -lt 1 ]; then
 fi
 
 # Make sure that the right Qubes release key is imported (in chroot)
-rpm --import qubes-release/RPM-GPG-KEY-qubes-*-primary
+rpm --import `dirname $0`/qubes-release/RPM-GPG-KEY-qubes-*-primary
 
 for FILE in "$@"; do
         verify_rpm $FILE || exit 1
