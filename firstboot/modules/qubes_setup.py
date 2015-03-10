@@ -33,8 +33,8 @@ _ = lambda x: gettext.ldgettext("firstboot", x)
 N_ = lambda x: x
 
 class moduleClass(Module):
-    netvm_name = "netvm"
-    fwvm_name  = "firewallvm"
+    netvm_name = "sys-net"
+    fwvm_name  = "sys-firewall"
 
     def __init__(self):
         Module.__init__(self)

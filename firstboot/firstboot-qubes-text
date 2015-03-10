@@ -96,14 +96,14 @@ if [ "$vms_template" == "yes" ]; then
 fi
 if [ "$vms_service" == "yes" ]; then
     echo "-> Creating default netvm..."
-    su -c "/usr/bin/qvm-create --net --label red netvm" - $user
+    su -c "/usr/bin/qvm-create --net --label red sys-net" - $user
     for dev in `/sbin/lspci -mm -n | sed -ne 's/^\([0-9][0-9]:[0-9][0-9].[0-9]\) "02.*/\1/p'`; do
-        su -c "/usr/bin/qvm-pci -a netvm $dev" - $user
+        su -c "/usr/bin/qvm-pci -a sys-net $dev" - $user
     done 
     echo "-> Creating default firewallvm..."
-    su -c "/usr/bin/qvm-create --proxy --label green firewallvm" - $user
-    su -c "/usr/bin/qvm-prefs --set firewallvm netvm netvm" - $user
-    su -c "/usr/bin/qubes-prefs --set default-netvm firewallvm" - $user
+    su -c "/usr/bin/qvm-create --proxy --label green sys-firewall" - $user
+    su -c "/usr/bin/qvm-prefs --set sys-firewall netvm sys-net" - $user
+    su -c "/usr/bin/qubes-prefs --set default-netvm sys-firewall" - $user
     echo "-> Starting network..."
     service qubes-netvm start
     echo "-> Creating DispVM savefile (can take long time)..."
