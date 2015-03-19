@@ -81,11 +81,11 @@ class moduleClass(Module):
 
             interface.nextButton.set_sensitive(False)
 
+            self.configure_template()
             self.create_default_netvm()
             self.create_default_fwvm()
             self.set_networking_type(netvm=True)
             self.start_qubes_networking()
-            self.configure_template()
             self.create_default_dvm()
 
             if self.radio_servicevms_and_appvms.get_active():
@@ -168,6 +168,16 @@ class moduleClass(Module):
         except Exception as e:
             self.process_error = str(e)
 
+    def get_timezone(self):
+        localtime = "/etc/localtime"
+        zoneinfo = "/usr/share/zoneinfo/"    # must end with "/"
+        if os.path.exists(localtime) and os.path.islink(localtime):
+            tzfile = os.path.realpath(localtime)
+            if tzfile.startswith(zoneinfo):
+                return tzfile[len(zoneinfo):]
+        return None
+
+
     def find_net_devices(self):
         p = subprocess.Popen (["/sbin/lspci", "-mm", "-n"], stdout=subprocess.PIPE)
         result = p.communicate()
@@ -209,17 +219,16 @@ class moduleClass(Module):
         subprocess.check_call(['/usr/sbin/service', 'qubes_netvm', 'start'])
 
     def do_configure_template(self):
-        subprocess.check_call(['/bin/mkdir', '-p', '/mnt/template-root'])
         for template in os.listdir('/var/lib/qubes/vm-templates'):
-            subprocess.check_call(['/bin/mount', '-oloop',
-                '/var/lib/qubes/vm-templates/%s/root.img' % template,
-                '/mnt/template-root'])
+            subprocess.check_call(['qvm-start', '--no-guid', template])
             # Copy timezone setting from Dom0 to template
-            subprocess.check_call(['cp', '/etc/localtime', '/mnt/template-root/etc'])
-            subprocess.check_call(['cp', '/etc/locale.conf', '/mnt/template-root/etc'])
-            subprocess.check_call(['cp', '/etc/ntp.conf', '/mnt/template-root/etc'])
-            subprocess.check_call(['/bin/umount', '/mnt/template-root'])
-            subprocess.check_call(['/bin/rmdir', '/mnt/template-root'])
+            subprocess.check_call(['qvm-run', '--nogui', '--pass-io',
+                '-u', 'root', template, 'cat > /etc/locale.conf'],
+                stdin=open('/etc/locale.conf', 'r'))
+            subprocess.check_call(['su', '-c',
+                'qvm-sync-appmenus {}'.format(template),
+                '-', self.qubes_user])
+            subprocess.check_call(['qvm-shutdown', '--wait', template])
 
     def do_create_appvms(self):
         self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
