@@ -4,6 +4,12 @@
 
 # Welcome
 
+if [ "x$1" = "x--help" ]; then
+    echo "Failsafe minimal text-mode firstboot"
+    echo "For unattended mode use: $0 <username> <userpass> <vm-creation-option-number>"
+    exit 0
+fi
+
 echo "########################################################"
 echo "###                                                  ###"
 echo "### Welcome to `cat /etc/qubes-release`                  ###"
@@ -19,20 +25,26 @@ echo "Anyway some basic setup is needed to continue:"
 
 echo
 echo "1. Setup user account"
-user=
+user=$1
 while [ -z "$user" ]; do
     echo -n "Enter desired username: "
     read user
     if echo "$user" | grep -q "[^a-z0-9]"; then
         echo "ERROR: Invalid characters in username, try again"
+        user=
     elif id $user > /dev/null 2>&1; then
         echo "ERROR: This user already exists, try again"
+        user=
     else
         break
     fi
 done
 useradd -G qubes -m "$user" || exit 1
-while ! passwd "$user"; do true; done
+if [ -n "$2" ]; then
+    echo -e "$2\n$2" | passwd --stdin "$user"
+else
+    while ! passwd "$user"; do true; done
+fi
 
 
 # Create default VMs
@@ -43,27 +55,45 @@ echo
 echo "Choose one option:"
 echo "  1. Create default service VMs, and pre-defined AppVMs (work, banking, personal, untrusted)"
 echo "  2. Just create default service VMs"
-echo "  3. Do not create any VMs right now (not recommended, for advanced users only)"
-vms_option=
+echo "  3. Do not create any VMs right now, but configure template(s)"
+echo "  4. Do not do anything (not recommended, for advanced users only)"
+vms_option=$3
 while true; do
-    echo -n "Enter your choice (1/2/3): "
-    read vms_option
+    if [ -z "$vms_option" ]; then
+        echo -n "Enter your choice (1/2/3): "
+        read vms_option
+    fi
     if [ "$vms_option" == "1" ]; then
+        vms_template=yes
         vms_service=yes
         vms_app=yes
         break
     elif [ "$vms_option" == "2" ]; then
+        vms_template=yes
         vms_service=yes
         break
     elif [ "$vms_option" == "3" ]; then
+        vms_template=yes
+        break
+    elif [ "$vms_option" == "4" ]; then
         break
     else
         echo "ERROR: Invalid choice, try again"
+        vms_option=
     fi
 done
 
 set -e
 
+if [ "$vms_template" == "yes" ]; then
+    for template in `ls /var/lib/qubes/vm-templates`; do
+        echo "-> Configuring template $template..."
+        qvm-start --no-guid $template
+        qvm-run --nogui --pass-io -u root $template 'cat > /etc/locale.conf' < /etc/locale.conf
+        su -c "qvm-sync-appmenus $template" - $user
+        qvm-shutdown --wait $template
+    done
+fi
 if [ "$vms_service" == "yes" ]; then
     echo "-> Creating default netvm..."
     su -c "/usr/bin/qvm-create --net --label red netvm" - $user
@@ -74,19 +104,10 @@ if [ "$vms_service" == "yes" ]; then
     su -c "/usr/bin/qvm-create --proxy --label green firewallvm" - $user
     su -c "/usr/bin/qvm-prefs --set firewallvm netvm netvm" - $user
     su -c "/usr/bin/qubes-prefs --set default-netvm firewallvm" - $user
-    echo "-> Configuring template..."
-    /bin/mkdir -p /mnt/template-root
-    for template in `ls /var/lib/qubes/vm-templates`; do
-        /bin/mount -oloop "/var/lib/qubes/vm-templates/$template/root.img" /mnt/template-root
-        cp /etc/localtime /mnt/template-root/etc
-        cp /etc/locale.conf /mnt/template-root/etc
-        cp /etc/ntp.conf /mnt/template-root/etc
-        umount /mnt/template-root
-    done
     echo "-> Starting network..."
-    service qubes_netvm start
+    service qubes-netvm start
     echo "-> Creating DispVM savefile (can take long time)..."
-    su -c "/usr/bin/qvm-create-default-dvm --default-template --default-script" - $user
+    su -c "/usr/bin/qvm-create-default-dvm --default-template --default-script" - $user || :
 fi
 
 if [ "$vms_app" == "yes" ]; then
