@@ -20,7 +20,7 @@ Group: System Environment/Base
 ExclusiveOS: Linux
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: gettext
-BuildRequires: python-devel, python-setuptools-devel
+BuildRequires: python-devel
 BuildRequires: systemd-units
 Requires: pygtk2, python
 Requires: setuptool, libuser-python, system-config-date
