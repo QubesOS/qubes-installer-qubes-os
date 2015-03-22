@@ -3,7 +3,7 @@
 
 <%page args="root, basearch, libdir, configdir"/>
 <%
-PYTHONDIR = glob("usr/"+libdir+"/python?.?")[0]
+PYTHONDIR = sorted(glob("usr/"+libdir+"/python?.?"))[0]
 stubs = ("list-harddrives", "raidstart", "raidstop")
 configdir = configdir + "/common"
 %>
@@ -17,6 +17,10 @@ move ${PYTHONDIR}/site-packages/pyanaconda/sitecustomize.py ${PYTHONDIR}/site-pa
 
 ## move_repos()
 move etc/yum.repos.d etc/anaconda.repos.d
+
+## Setup mdadm config to turn off homehost
+remove etc/mdadm.conf
+append etc/mdadm.conf "HOMEHOST <ignore>\n"
 
 ## Configure systemd to start anaconda
 remove etc/systemd/system/default.target
@@ -32,12 +36,17 @@ systemctl disable systemd-readahead-collect.service \
                   mdmonitor.service \
                   mdmonitor-takeover.service \
                   NetworkManager.service \
-                  lvm2-monitor.service
+                  lvm2-monitor.service \
+                  dnf-makecache.timer
 ## These services can't be disabled normally (they're linked into place in
 ## /usr/lib/systemd rather than /etc/systemd), so we have to mask them.
 systemctl mask fedora-configure.service fedora-loadmodules.service \
                fedora-autorelabel.service fedora-autorelabel-mark.service \
                fedora-wait-storage.service media.mount
+
+## Make logind activate anaconda-shell@.service on switch to empty VT
+symlink anaconda-shell@.service lib/systemd/system/autovt@.service
+replace "#ReserveVT=6" "ReserveVT=2" etc/systemd/logind.conf
 
 ## Don't write the journal to the overlay, just keep it in RAM
 remove var/log/journal
@@ -101,6 +110,7 @@ copy usr/share/gtk-3.0/settings.ini etc/gtk-3.0/
 
 ## Some settings are controlled by gsettings now.
 install ${configdir}/org.gnome.desktop.wm.keybindings.gschema.override usr/share/glib-2.0/schemas
+install ${configdir}/org.gnome.desktop.wm.preferences.gschema.override usr/share/glib-2.0/schemas
 runcmd chroot ${root} glib-compile-schemas /usr/share/glib-2.0/schemas
 
 move usr/libexec/anaconda/auditd sbin
@@ -119,7 +129,16 @@ append etc/dracut.conf.d/extra-install-modules.conf "add_drivers+=' ehci-pci xhc
 append etc/dracut.conf.d/extra-install-modules.conf "add_dracutmodules+=' livenet nfs img-lib convertfs ifcfg '"
 
 ## make lvm auto-activate
-remove etc/lvm/*
+remove etc/lvm/archive/*
+remove etc/lvm/archive
+remove etc/lvm/backup/*
+remove etc/lvm/backup
+remove etc/lvm/cache/*
+remove etc/lvm/cache
+remove etc/lvm/lvm.conf
 append etc/lvm/lvm.conf "global {\n\tuse_lvmetad = 1\n}\n"
+
+## Record the package versions used to create the image
+runcmd chroot ${root} /bin/rpm -qa --pipe "tee /root/lorax-packages.log"
 
 ## TODO: we could run prelink here if we wanted?
