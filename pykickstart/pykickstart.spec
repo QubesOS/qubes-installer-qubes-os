@@ -7,13 +7,14 @@
 Summary:  A python library for manipulating kickstart files
 Name: pykickstart
 Url: http://fedoraproject.org/wiki/pykickstart
-Version: 1.99.48
-Release: 1.2%{?dist}
+Version: 1.99.65
+Release: 2.2%{?dist}
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
 # within this srpm.
 Source0: %{name}-%{version}.tar.gz
-Patch0: repo-gpgkey-option.patch
+Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
+Patch1: repo-gpgkey-option.patch
 
 License: GPLv2
 Group: System Environment/Libraries
@@ -34,6 +35,7 @@ files.
 %setup -q
 
 %patch0 -p1
+%patch1 -p1
 
 %build
 make
@@ -48,7 +50,7 @@ rm -rf %{buildroot}
 
 %files -f %{name}.lang
 %defattr(-,root,root,-)
-%doc README ChangeLog COPYING docs/programmers-guide
+%doc README COPYING docs/programmers-guide
 %doc docs/kickstart-docs.txt
 %{python_sitelib}/*
 %{_bindir}/ksvalidator
@@ -58,6 +60,110 @@ rm -rf %{buildroot}
 %{_mandir}/man1/*
 
 %changelog
+* Fri Dec 19 2014 Chris Lumens <clumens@redhat.com> 1.99.65-2
+- Rebuild for F21.
+
+* Mon Dec 15 2014 Chris Lumens <clumens@redhat.com> - 1.99.65-1
+- Add support for setting user account ssh key (bcl)
+- Add = to the output for various network options (#1171926). (clumens)
+- When ksflatten fails, return a failure code (#1162881). (clumens)
+
+* Mon Nov 24 2014 Chris Lumens <clumens@redhat.com> - 1.99.64-1
+- Get rid of an unused variable. (clumens)
+- network: add support for bridge to RHEL7 (#1075195) (rvykydal)
+- Add new RHEL7 logvol objects to master (vpodzime)
+- Add new RHEL7 volgroup objects to master (vpodzime)
+- RHEL7 supports the ostreesetup command. (clumens)
+
+* Mon Oct 13 2014 Chris Lumens <clumens@redhat.com> 1.99.63-2
+- Rebuild for F20.
+
+* Fri Oct 10 2014 Chris Lumens <clumens@redhat.com> - 1.99.63-1
+- Move the test for --nombr option to the right class (vpodzime)
+- Add the --nombr bootloader option in pykickstart (gczarcinski)
+
+* Tue Oct 07 2014 Chris Lumens <clumens@redhat.com> - 1.99.62-1
+- Allow recommended flag for non-prexisting logical volumes (#1149718) (amulhern)
+- Apply a couple more 2to3 fixes, still avoiding the hard ones.(#985310). (clumens)
+- Apply the obvious easy changes from 2to3 (#985310). (clumens)
+
+* Fri Oct 03 2014 Chris Lumens <clumens@redhat.com> - 1.99.61-1
+- Add support for specifying thin pool profile (vpodzime)
+- Add missing import (mkolman)
+- Add tests for --interfacename validation (mkolman)
+- Validate network interface name when parsing the kickstart (#1081982) (mkolman)
+
+* Thu Sep 25 2014 Chris Lumens <clumens@redhat.com> 1.99.60-2
+- Add a patch to default to F21 syntax.
+
+* Wed Sep 24 2014 Chris Lumens <clumens@redhat.com> - 1.99.60-1
+- Make --size and --percent mutually exclusive in logvol. (dlehman)
+- Add support for F22. (clumens)
+
+* Wed Sep 17 2014 Chris Lumens <clumens@redhat.com> - 1.99.59-1
+- Some tests for --size and --percent (#1117908) (amulhern)
+- Update tests where necessary with --size flag (#1117908) (amulhern)
+- Supply regex values for assert_parse_error calls in logvol.py (#1117908) (amulhern)
+- Check the regular expression when asserting a parse error (#1117908) (amulhern)
+- Do not reference non-existant attribute (#1117908) (amulhern)
+- Move some statically detectable kickstart errors out of anaconda (#1117908) (amulhern)
+- Remove --disable-override from tx arguments. (clumens)
+- Add the bootloader --disabled option for RHEL7 as well. (clumens)
+
+* Tue Aug 12 2014 Chris Lumens <clumens@redhat.com> - 1.99.58-1
+- Add --install flag to repo command (#1119867) (bcl)
+
+* Wed Jul 02 2014 Chris Lumens <clumens@redhat.com> - 1.99.57-1
+- Replace python-setuptools-devel BR with python-setuptools (toshio). (clumens)
+- Add autopart --fstype support (#1112697) (bcl)
+- Add some more tests to bump up the "make coverage" numbers. (clumens)
+
+* Thu Jun 19 2014 Chris Lumens <clumens@redhat.com> - 1.99.56-1
+- Add support for --disklabel to clearpart (#1078537) (bcl)
+- Make print statements Python 3 compatible (mkolman)
+
+* Fri May 16 2014 Chris Lumens <clumens@redhat.com> - 1.99.55-1
+- Do not set any magic default PE size in pykickstart (vpodzime)
+- ostreesetup: Fix noGpg attribute (walters)
+- Fix bogus changelog in pykickstart.spec (sagarun)
+- Stop shipping a ChangeLog file. (clumens)
+- We can use descriptive pylint message names on the command line, too. (clumens)
+
+* Tue Apr 22 2014 Chris Lumens <clumens@redhat.com> - 1.99.54-1
+- Move ks tools from optparse to argparse (#1083913). (clumens)
+- Use descriptive pylint messages instead of numbers. (clumens)
+- Fix up some printing problems in some of the tools. (clumens)
+- Add support for the --listversions option to ksverdiff too. (clumens)
+- Run pylint on tools/, and fix up all the errors. (clumens)
+- disable-msg -> disable for pylint. (clumens)
+
+* Mon Mar 31 2014 Chris Lumens <clumens@redhat.com> - 1.99.53-1
+- ostreesetup: New command (walters)
+- Move commandMap and dataMap setting into the individual handler classes. (clumens)
+
+* Fri Mar 21 2014 Chris Lumens <clumens@redhat.com> - 1.99.52-1
+- Take care of all the unused argument warnings. (clumens)
+- Take care of all the unused variable warnings. (clumens)
+- Remove unused imports. (clumens)
+- Don't do relative import any more, either. (clumens)
+- Stop doing wildcard imports. (clumens)
+- Add an option to disable even installing the core group. (clumens)
+
+* Tue Mar 18 2014 Chris Lumens <clumens@redhat.com> - 1.99.51-1
+- Use the correct indentation for the new network stuff. (clumens)
+- Add network --interfacename option for vlans (#1061646) (rvykydal)
+
+* Mon Mar 17 2014 Chris Lumens <clumens@redhat.com> - 1.99.50-1
+- Add a new bootloader --disabled option (#1074522). (clumens)
+- Add support for F21. (clumens)
+- Fix an error on the printing side of handling environments. (clumens)
+- Add support for fcoe --autovlan option (#1055779) (rvykydal)
+
+* Wed Feb 05 2014 Chris Lumens <clumens@redhat.com> - 1.99.49-1
+- Provide syntax for specifying environments (#1061296). (clumens)
+- Use the correct LogVolData object (#1058520). (clumens)
+- Don't do string comparisons in "make test" (#1057573). (clumens)
+
 * Mon Nov 25 2013 Chris Lumens <clumens@redhat.com> - 1.99.48-1
 - Specify a kickstart version when running package-related tests. (clumens)
 - We need python-urlgrabber to do builds now. (clumens)
@@ -889,7 +995,7 @@ rm -rf %{buildroot}
 - Make ksvalidator validate from a URL in addition to a file.
 - Don't write out an empty packages section (#192851).
 
-* Tue May 23 2006 Chris Lumens <clumens@redhat.com> 0.29-1
+* Thu May 23 2006 Chris Lumens <clumens@redhat.com> 0.29-1
 - Add multipath command, handlers, and data objects (pjones).
 - Rename --ports to --port in writer.
 

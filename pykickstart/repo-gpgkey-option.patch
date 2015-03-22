@@ -8,7 +8,7 @@ Index: pykickstart-1.99.22/pykickstart/commands/repo.py
 ===================================================================
 --- pykickstart-1.99.22.orig/pykickstart/commands/repo.py
 +++ pykickstart-1.99.22/pykickstart/commands/repo.py
-@@ -131,7 +131,22 @@ class F14_RepoData(F13_RepoData):
+@@ -130,9 +130,24 @@
  
  RHEL6_RepoData = F14_RepoData
  
@@ -23,22 +23,27 @@ Index: pykickstart-1.99.22/pykickstart/commands/repo.py
 +
 +    def _getArgsAsStr(self):
 +        retval = F14_RepoData._getArgsAsStr(self)
-+
+ 
+-class F21_RepoData(F14_RepoData):
 +        if self.gpgkey:
 +            retval += " --gpgkey=\"%s\"" % self.gpgkey
 +
 +        return retval
 +
++
++class F21_RepoData(F15_RepoData):
+     removedKeywords = F14_RepoData.removedKeywords
+     removedAttrs = F14_RepoData.removedAttrs
  
- class FC6_Repo(KickstartCommand):
-     removedKeywords = KickstartCommand.removedKeywords
-@@ -253,3 +268,9 @@ class F15_Repo(F14_Repo):
-     removedAttrs = F14_Repo.removedAttrs
+@@ -271,6 +286,11 @@
  
      urlRequired = False
-+
+ 
 +    def _getParser(self):
 +        op = F14_Repo._getParser(self)
 +        op.add_option("--gpgkey", action="store", type="string")
 +        return op
 +
+ class F21_Repo(F15_Repo):
+     removedKeywords = F15_Repo.removedKeywords
+     removedAttrs = F15_Repo.removedAttrs

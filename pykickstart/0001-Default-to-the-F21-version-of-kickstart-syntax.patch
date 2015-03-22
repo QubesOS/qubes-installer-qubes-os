@@ -1,0 +1,44 @@
+diff -ruN pykickstart-1.99.63.orig/pykickstart/version.py pykickstart-1.99.63/pykickstart/version.py
+--- pykickstart-1.99.63.orig/pykickstart/version.py	2014-10-13 11:22:47.053181434 -0400
++++ pykickstart-1.99.63/pykickstart/version.py	2014-10-13 11:22:53.773239001 -0400
+@@ -78,8 +78,8 @@
+ F21 = 19000
+ F22 = 20000
+ 
+-# This always points at the latest version and is the default.
+-DEVEL = F22
++# Point to the proper version of kickstart syntax for this release.
++DEVEL = F21
+ 
+ # A one-to-one mapping from string representations to version numbers.
+ versionMap = {
+diff -ruN pykickstart-1.99.63.orig/tests/version.py pykickstart-1.99.63/tests/version.py
+--- pykickstart-1.99.63.orig/tests/version.py	2014-10-13 11:22:47.066181228 -0400
++++ pykickstart-1.99.63/tests/version.py	2014-10-13 11:23:24.882507493 -0400
+@@ -148,17 +148,6 @@
+ 
+ class VersionToString_TestCase(CommandTest):
+     def runTest(self):
+-
+-        # Make sure DEVEL is the highest version, but RHEL versions aren't
+-        # counted as devel.
+-        highest = 0
+-        for (ver_str,ver_num) in list(versionMap.items()):
+-            if ver_str.startswith("RHEL"):
+-                continue
+-
+-            highest = max(ver_num, highest)
+-        self.assertEqual(highest, DEVEL)
+-
+         # FC series
+         self.assertEqual(versionToString(FC3), "FC3")
+         self.assertEqual(versionToString(FC4), "FC4")
+@@ -184,7 +173,7 @@
+         self.assertEqual(versionToString(F20, skipDevel=True), "F20")
+         self.assertEqual(versionToString(F21, skipDevel=True), "F21")
+         self.assertEqual(versionToString(F22, skipDevel=True), "F22")
+-        self.assertEqual(versionToString(F22, skipDevel=False), "DEVEL")
++        self.assertEqual(versionToString(F21, skipDevel=False), "DEVEL")
+         # RHEL series
+         self.assertEqual(versionToString(RHEL3), "RHEL3")
+         self.assertEqual(versionToString(RHEL4), "RHEL4")
