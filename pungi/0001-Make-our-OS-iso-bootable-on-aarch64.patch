@@ -1,0 +1,29 @@
+From 33ebc4e11f88390a70e4f4b2c24725e8dc2ce741 Mon Sep 17 00:00:00 2001
+From: Peter Jones <pjones@redhat.com>
+Date: Tue, 9 Dec 2014 11:48:59 -0500
+Subject: [PATCH] Make our OS iso bootable on aarch64.
+
+Aarch64 needs to get the el torito image generation code x86 has for
+UEFI as well.
+
+Signed-off-by: Peter Jones <pjones@redhat.com>
+---
+ src/pypungi/__init__.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/pypungi/__init__.py b/src/pypungi/__init__.py
+index 2211513..6a1d474 100644
+--- a/src/pypungi/__init__.py
++++ b/src/pypungi/__init__.py
+@@ -1625,6 +1625,8 @@ class Pungi(pypungi.PungiBase):
+         elif self.tree_arch.startswith('ppc'):
+             extraargs.extend(ppcbootargs)
+             extraargs.append(os.path.join(self.topdir, "ppc/mac"))
++        elif self.tree_arch.startswith('aarch64'):
++            extraargs.extend(efibootargs)
+ 
+         # NOTE: if this doesn't match what's in the bootloader config, the
+         # image won't be bootable!
+-- 
+2.2.0
+

@@ -5,7 +5,7 @@
 %endif
 
 Name:           pungi
-Version:        3.03
+Version:        3.12
 Release:        2%{?dist}
 Epoch:          1000
 Summary:        Distribution compose tool
@@ -14,11 +14,13 @@ Group:          Development/Tools
 License:        GPLv2
 URL:            https://fedorahosted.org/pungi
 Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name}-%{version}.tar.bz2
-Patch0:         support-verify-downloaded-packages.patch
-Patch1:         disable-efi.patch
-Patch2:         effective-nosource-option.patch
-#Patch3:         fix-recursive-partition-table-on-iso-image.patch
-Patch4:         disable-upgrade.patch
+Patch0:         0001-replace-tabs-with-spaces.patch
+Patch1:         0001-Make-our-OS-iso-bootable-on-aarch64.patch
+Patch2:         support-verify-downloaded-packages.patch
+Patch3:         disable-efi.patch
+Patch4:         effective-nosource-option.patch
+#Patch5:         fix-recursive-partition-table-on-iso-image.patch
+Patch6:         disable-upgrade.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires:       yum => 3.4.3-28, repoview, createrepo >= 0.4.11
 Requires:       lorax
@@ -36,8 +38,10 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-#%%patch3 -p1
+%patch3 -p1
 %patch4 -p1
+#%patch5 -p1
+%patch6 -p1
 
 %build
 %{__python} setup.py build
@@ -71,6 +75,53 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Dec 15 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-3
+- add patch to make the dvd bootable on aarch64
+
+* Tue Sep 30 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-2
+- add patch to fix whitespace errors
+
+* Thu Sep 11 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-1
+- Remove magic parameter to mkisofs (hamzy)
+- Added option for setting release note files (riehecky)
+
+* Thu Jul 31 2014 Dennis Gilmore <dennis@ausil.us> - 3.11-1
+- make sure that the dvd/cd is using the shortened volumeid (dennis)
+
+* Thu Jul 31 2014 Dennis Gilmore <dennis@ausil.us> - 3.10-1
+- fix up volume shortening substituions to actually work (dennis)
+
+* Wed Jul 30 2014 Dennis Gilmore <dennis@ausil.us> - 3.09-1
+- implement nameing scheme from
+  https://fedoraproject.org/wiki/User:Adamwill/Draft_fedora_image_naming_policy
+  (dennis)
+- implement shortening of the volumeid which has a 32 character limit (dennis)
+
+* Wed Jul 23 2014 Dennis Gilmore <dennis@ausil.us> - 3.08-1
+- fix up some issues with --no-dvd and --workbasedir (dennis)
+
+* Sun Jul 20 2014 Dennis Gilmore <dennis@ausil.us> - 3.07-1
+- add option to not make a dvd
+
+* Mon Jul 14 2014 Dennis Gilmore <dennis@ausil.us> - 3.06-1
+- allow the base work directory to be configurable
+
+* Tue Jul 08 2014 Dennis Gilmore <dennis@ausil.us> - 3.05-1
+- Don't emit media labels with spaces in them. (pjones)
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 3.04-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Thu May 01 2014 Dennis Gilmore <dennis@ausil.us> - 3.04-2
+- add missing requires on python-lockfile
+
+* Tue Apr 29 2014 Dennis Gilmore <dennis@ausil.us> - 3.04-1
+- Use a lockfile around things that modify the cachedir. (rbean)
+- Improve logging for missing srpms. (rbean)
+- honour the --nosource option (dennis)
+- support ppc64le in pungi (hamzy)
+- Add configurable compression type to pungi (default to xz) (rbean)
+
 * Thu Oct 31 2013 Dennis Gilmore <dennis@ausil.us> - 3.03-1
 - revert to the old way of doing versioning as the change in 3.01 did not work
 

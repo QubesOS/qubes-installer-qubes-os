@@ -1,0 +1,29 @@
+From add538d7b42f50a08c66c0114dd3f021f0235fd8 Mon Sep 17 00:00:00 2001
+From: Dennis Gilmore <dennis@ausil.us>
+Date: Fri, 19 Sep 2014 15:28:05 -0500
+Subject: [PATCH] replace tabs with spaces
+
+---
+ src/bin/pungi.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/bin/pungi.py b/src/bin/pungi.py
+index 2d1761e..aa831a6 100755
+--- a/src/bin/pungi.py
++++ b/src/bin/pungi.py
+@@ -273,10 +273,10 @@ if __name__ == '__main__':
+           help="Flag to enable processing the BuildInstall stage")
+         parser.add_option("-I", action="store_true", default=False, dest="do_createiso",
+           help="Flag to enable processing the CreateISO stage")
+-	parser.add_option("--relnotepkgs", dest="relnotepkgs", type="string",
++        parser.add_option("--relnotepkgs", dest="relnotepkgs", type="string",
+           action="callback", callback=set_config, callback_args=(config, ),
+           help='Rpms which contain the release notes')
+-	parser.add_option("--relnotefilere", dest="relnotefilere", type="string",
++        parser.add_option("--relnotefilere", dest="relnotefilere", type="string",
+           action="callback", callback=set_config, callback_args=(config, ),
+           help='Which files are the release notes -- GPL EULA')
+ 
+-- 
+2.1.0
+
