@@ -16,7 +16,7 @@ Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name
 Patch0:         support-verify-downloaded-packages.patch
 Patch1:         disable-efi.patch
 Patch2:         effective-nosource-option.patch
-Patch3:         fix-recursive-partition-table-on-iso-image.patch
+#Patch3:         fix-recursive-partition-table-on-iso-image.patch
 Patch4:         disable-upgrade.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires:       yum => 3.4.3-28, repoview, createrepo >= 0.4.11
@@ -35,7 +35,7 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
+#%%patch3 -p1
 %patch4 -p1
 
 %build
