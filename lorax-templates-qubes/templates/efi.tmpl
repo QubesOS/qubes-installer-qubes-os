@@ -1,5 +1,6 @@
 <%page args="configdir, KERNELDIR, efiarch, isolabel"/>
 <%
+from string import lower
 EFIBOOTDIR="EFI/BOOT"
 APPLE_EFI_ICON=inroot+"/usr/share/pixmaps/bootloader/fedora.icns"
 APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
@@ -8,12 +9,14 @@ APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
 mkdir ${EFIBOOTDIR}
 mkdir ${EFIBOOTDIR}/fonts/
 install boot/efi/EFI/*/shim.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
+install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen-check.efi
+install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
 install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
-install boot/efi/EFI/*/gcdx64.efi ${EFIBOOTDIR}/grubx64.efi
+install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
 install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
 
 ## actually make the EFI images
-${make_efiboot("images/efiboot.img")}
+${make_efiboot("images/efiboot.img", include_kernel=True)}
 %if domacboot:
     ${make_efiboot("images/macboot.img", imgtype="apple")}
 %endif
@@ -23,7 +26,9 @@ ${make_efiboot("images/efiboot.img")}
     <%
     kdir = EFIBOOTDIR if include_kernel else KERNELDIR
     eficonf = "%s/grub.cfg" % (EFIBOOTDIR, )
-    args = "--label=ANACONDA"
+    xenconf = "%s/xen-check.cfg" % (EFIBOOTDIR, )
+    xenconf_no_check = "%s/xen.cfg" % (EFIBOOTDIR, )
+    args = "--label=ANACONDA --debug"
     if disk: args += " --disk"
     if imgtype == "apple": args += ' --apple --icon=%s --diskname=%s --product="%s %s"' % (APPLE_EFI_ICON, APPLE_EFI_DISKNAME, product.name, product.version)
     %>
@@ -32,23 +37,26 @@ ${make_efiboot("images/efiboot.img")}
         copy ${KERNELDIR}/initrd.img ${EFIBOOTDIR}
     %endif
     install ${configdir}/grub2-efi.cfg ${eficonf}
+    install ${configdir}/xen-efi.cfg ${xenconf}
     replace @PRODUCT@ '${product.name}' ${eficonf}
     replace @VERSION@ ${product.version} ${eficonf}
     replace @KERNELNAME@ vmlinuz ${eficonf}
     replace @KERNELPATH@ /${kdir}/vmlinuz ${eficonf}
+    replace @KERNELPATH@ /${kdir}/vmlinuz ${xenconf}
     replace @INITRDPATH@ /${kdir}/initrd.img ${eficonf}
+    replace @EFIDIR@ /${EFIBOOTDIR} ${eficonf}
     replace @ISOLABEL@ '${isolabel}' ${eficonf}
     %if disk:
         replace @ROOT@ inst.stage2=hd:LABEL=ANACONDA ${eficonf}
+        replace @ROOT@ inst.stage2=hd:LABEL=ANACONDA ${xenconf}
     %else:
         replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${eficonf}
+        replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${xenconf}
     %endif
+    copy ${xenconf} ${xenconf_no_check}
+    replace rd.live.check '' ${xenconf_no_check}
     %if efiarch == 'IA32':
         copy ${eficonf} ${EFIBOOTDIR}/BOOT.conf
     %endif
     runcmd mkefiboot ${args} ${outroot}/${EFIBOOTDIR} ${outroot}/${img}
-    %if include_kernel:
-        remove ${EFIBOOTDIR}/vmlinuz
-        remove ${EFIBOOTDIR}/initrd.img
-    %endif
 </%def>
