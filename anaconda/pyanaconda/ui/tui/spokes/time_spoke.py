@@ -19,23 +19,28 @@
 # Red Hat Author(s): Martin Sivak <msivak@redhat.com>
 #
 
+from pyanaconda.ui.categories.localization import LocalizationCategory
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
 from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda import timezone
-from pyanaconda.i18n import _
+from pyanaconda.i18n import N_, _
 from pyanaconda.constants_text import INPUT_PROCESSED
 
 class TimeZoneSpoke(FirstbootSpokeMixIn, NormalTUISpoke):
-    title = _("Timezone settings")
-    category = "localization"
+    title = N_("Timezone settings")
+    category = LocalizationCategory
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
 
     def initialize(self):
-        self._timezones = dict((k, sorted(v)) for k,v in timezone.get_all_regions_and_timezones().iteritems())
-        self._regions = [r for r in self._timezones]
+        # it's stupid to call get_all_regions_and_timezones twice, but regions
+        # needs to be unsorted in order to display in the same order as the GUI
+        # so whatever
+        self._regions = timezone.get_all_regions_and_timezones().keys()
+        self._timezones = dict((k, sorted(v)) for k,v in timezone.get_all_regions_and_timezones
+().iteritems())
         self._lower_regions = [r.lower() for r in self._timezones]
 
         self._zones = ["%s/%s" % (region, z) for region in self._timezones for z in self._timezones[region]]
@@ -103,7 +108,7 @@ class TimeZoneSpoke(FirstbootSpokeMixIn, NormalTUISpoke):
                     self.apply()
                     self.close()
                 else:
-                    self.app.switch_screen(self, self._regions[id])
+                    self.app.switch_screen(self, self._regions[index])
                 return INPUT_PROCESSED
             elif key.lower() == "b":
                 self.app.switch_screen(self, None)

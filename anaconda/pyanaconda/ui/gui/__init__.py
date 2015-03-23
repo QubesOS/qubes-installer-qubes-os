@@ -21,13 +21,16 @@
 import inspect, os, sys, time, site
 import meh.ui.gui
 
-from gi.repository import Gdk, Gtk, AnacondaWidgets
+from contextlib import contextmanager
+
+from gi.repository import Gdk, Gtk, AnacondaWidgets, Keybinder, GdkPixbuf, GLib, GObject
 
 from pyanaconda.i18n import _
 from pyanaconda import product
 
 from pyanaconda.ui import UserInterface, common
-from pyanaconda.ui.gui.utils import enlightbox, gtk_action_wait, busyCursor, unbusyCursor
+from pyanaconda.ui.gui.utils import gtk_action_wait, busyCursor, unbusyCursor
+from pyanaconda import ihelp
 import os.path
 
 import logging
@@ -36,99 +39,21 @@ log = logging.getLogger("anaconda")
 __all__ = ["GraphicalUserInterface", "QuitDialog"]
 
 _screenshotIndex = 0
+_last_screenshot_timestamp = 0
+SCREENSHOT_DELAY = 1  # in seconds
 
 ANACONDA_WINDOW_GROUP = Gtk.WindowGroup()
 
-class GUICheck(object):
-    """Handle an input validation check."""
+# Stylesheet priorities to use for product-specific stylesheets and our
+# missing icon overrides. The missing icon rules should be higher than
+# the regular stylesheet, applied at GTK_STYLE_PROVIDER_PRIORITY_APPLICATION,
+# and stylesheets from updates.img and product.img should be higher than that,
+# so that they can override background images and not get re-overriden by us.
+# Both should be lower than GTK_STYLE_PROVIDER_PRIORITY_USER.
+STYLE_PROVIDER_PRIORITY_MISSING_ICON = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 10
+STYLE_PROVIDER_PRIORITY_UPDATES = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 20
+assert STYLE_PROVIDER_PRIORITY_UPDATES < Gtk.STYLE_PROVIDER_PRIORITY_USER
 
-    # Use as a return value to indicate a passed check
-    CHECK_OK = None
-
-    def __init__(self, parent, editable, run_check, check_data, set_error):
-        """Create a new input validation check.
-
-           :param parent: The parent GUIObject. When a check state changes,
-                          the GUICheck will call set_error(check, check-state)
-           :type parent:  GUIObject
-           
-           :param editable: The input field being checked
-           :type editable:  GtkEditable
-
-           :param run_check: The check function. The function is called as
-                             check(editable, check_data). The return value is an
-                             error state object or CHECK_OK if the check succeeds.
-           :type run_check:  function
-
-           :param check_data: An optional parameter passed to check().
-
-           :param set_error: A function called when the state of this check
-                             changes. The parameters are (GUICheck, run_check_return).
-                             The return value is ignored.
-           :type set_error:  function
-        """
-
-        self._parent = parent
-        self._editable = editable
-        self._run_check = run_check
-        self._check_data = check_data
-        self._set_error = set_error
-
-        # Set to the Gtk handler ID in enable()
-        self._handler_id = None
-
-        # Initial check state
-        self._check_status = None
-
-        self.enable()
-
-    def enable(self):
-        """Enable the check.
-
-           enable() does not check the current state of the input field. To
-           check the current state, run update_check_status() after enable().
-        """
-        if not self._handler_id:
-            self._handler_id = self._editable.connect_after("changed", self.update_check_status)
-
-    def disable(self):
-        """Disable the check. The check will no longer appear in failed_checks,
-           but disabling the check does not call set_error to update the
-           GUIObject's state.
-        """
-        if self._handler_id:
-            self._editable.disconnect(self._handler_id)
-            self._handler_id = None
-            self._check_status = None
-
-    def update_check_status(self, editable=None, check_data=None):
-        """Run an input validation check."""
-
-        # Allow check parameters to be overriden in parameters
-        if editable is None:
-            editable = self._editable
-        if check_data is None:
-            check_data = self._check_data
-
-        new_check_status = self._run_check(editable, check_data)
-        check_status_changed = (self._check_status != new_check_status)
-        self._check_status = new_check_status
-
-        if check_status_changed:
-            self._set_error(self, self._check_status)
-
-    @property
-    def check_status(self):
-        return self._check_status
-
-    @property
-    def editable(self):
-        return self._editable
-
-    @property
-    def check_data(self):
-        return self._check_data
-        
 class GUIObject(common.UIObject):
     """This is the base class from which all other GUI classes are derived.  It
        thus contains only attributes and methods that are common to everything
@@ -154,14 +79,34 @@ class GUIObject(common.UIObject):
        mainWidgetName   -- The name of the top-level widget this object
                            object implements.  This will be the widget searched
                            for in uiFile by the window property.
+       focusWidgetName  -- The name of the widget to focus when the object is entered,
+                           or None.
        uiFile           -- The location of an XML file that describes the layout
                            of widgets shown by this object.  UI files are
                            searched for relative to the same directory as this
                            object's module.
+       translationDomain-- The gettext translation domain for the given GUIObject
+                           subclass. By default the "anaconda" translation domain
+                           is used, but external applications, such as Initial Setup,
+                           that use GUI elements (Hubs & Spokes) from Anaconda
+                           can override the translation domain with their own,
+                           so that their subclasses are properly translated.
+       helpFile         -- The location of the yelp-compatible help file for the
+                           given GUI object. The default value of "" indicates
+                           that the object has not specific help file assigned
+                           and the default help file should be used.
     """
     builderObjects = []
     mainWidgetName = None
+
+    # Since many of the builder files do not define top-level widgets, the usual
+    # {get,can,is,has}_{focus,default} properties don't work real good. Define the
+    # widget to be focused in python, instead.
+    focusWidgetName = None
+
     uiFile = ""
+    helpFile = None
+    translationDomain = "anaconda"
 
     screenshots_directory = "/tmp/anaconda-screenshots"
 
@@ -196,7 +141,7 @@ class GUIObject(common.UIObject):
         self.applyOnSkip = False
 
         self.builder = Gtk.Builder()
-        self.builder.set_translation_domain("anaconda")
+        self.builder.set_translation_domain(self.translationDomain)
         self._window = None
 
         if self.builderObjects:
@@ -204,11 +149,11 @@ class GUIObject(common.UIObject):
         else:
             self.builder.add_from_file(self._findUIFile())
 
-        ANACONDA_WINDOW_GROUP.add_window(self.window)
         self.builder.connect_signals(self)
-        self.window.connect("key-release-event", self._handlePrntScreen)
 
-        self._check_list = []
+        # Keybinder from GI needs to be initialized before use
+        Keybinder.init()
+        Keybinder.bind("<Shift>Print", self._handlePrntScreen, [])
 
     def _findUIFile(self):
         path = os.environ.get("UIPATH", "./:/tmp/updates/:/tmp/updates/ui/:/usr/share/anaconda/ui/")
@@ -224,31 +169,32 @@ class GUIObject(common.UIObject):
 
         raise IOError("Could not load UI file '%s' for object '%s'" % (self.uiFile, self))
 
-    def _handlePrntScreen(self, window, event):
+    def _handlePrntScreen(self, *args, **kwargs):
         global _screenshotIndex
+        global _last_screenshot_timestamp
+        # as a single press of the assigned key generates
+        # multiple callbacks, we need to skip additional
+        # callbacks for some time once a screenshot is taken
+        if (time.time() - _last_screenshot_timestamp) >= SCREENSHOT_DELAY:
+            # Make sure the screenshot directory exists.
+            if not os.access(self.screenshots_directory, os.W_OK):
+                os.makedirs(self.screenshots_directory)
 
-        if event.keyval != Gdk.KEY_Print:
-            return
-
-        # Make sure the screenshot directory exists.
-        if not os.access(self.screenshots_directory, os.W_OK):
-            os.mkdir(self.screenshots_directory)
-
-        fn = os.path.join(self.screenshots_directory,
-                          "screenshot-%04d.png" % _screenshotIndex)
-
-        win = window.get_window()
-        width = win.get_width()
-        height = win.get_height()
-
-        pixbuf = Gdk.pixbuf_get_from_window(win, 0, 0, width, height)
-        pixbuf.savev(fn, "png", [], [])
-
-        _screenshotIndex += 1
+            fn = os.path.join(self.screenshots_directory,
+                              "screenshot-%04d.png" % _screenshotIndex)
+            root_window = Gdk.get_default_root_window()
+            pixbuf = Gdk.pixbuf_get_from_window(root_window, 0, 0,
+                                                root_window.get_width(),
+                                                root_window.get_height())
+            pixbuf.savev(fn, 'png', [], [])
+            log.info("screenshot nr. %d taken", _screenshotIndex)
+            _screenshotIndex += 1
+            # start counting from the time the screenshot operation is done
+            _last_screenshot_timestamp = time.time()
 
     @property
     def window(self):
-        """Return the top-level object out of the GtkBuilder representation
+        """Return the object out of the GtkBuilder representation
            previously loaded by the load method.
         """
 
@@ -258,6 +204,11 @@ class GUIObject(common.UIObject):
             self._window = self.builder.get_object(self.mainWidgetName)
 
         return self._window
+
+    @property
+    def main_window(self):
+        """Return the top-level window containing this GUIObject."""
+        return self.window.get_toplevel()
 
     def clear_info(self):
         """Clear any info bar from the bottom of the screen."""
@@ -288,184 +239,6 @@ class GUIObject(common.UIObject):
         """
         self.window.set_warning(msg)
 
-    def add_check(self, editable, run_check, check_data=None, set_error=None):
-        """Add an input validation check to this object.
-
-           This function creates new GUICheck object and adds it to this
-           GUIObject. The check is run any time the input field changes.
-           If the result of a check changes, the check object will call
-           the set_error function. By default, set_error will call
-           self.set_warning with the status of the first failed check.
-
-           :param editable: the input field to validate
-           :type editable: GtkEditable
-
-           :param run_check: a function called to validate the input field. The
-                         parameters are (editable, check_data). The return
-                         value is an object used by update_check, or
-                         GUICheck.CHECK_OK if the check passes.
-           :type run_check: function
-           
-           :param check_data: additional data to pass to the check function
-
-           :param set_error: a function called when a check changes state. The
-                         parameters are (GUICheck, run_check_return).  The
-                         return value is ignored.
-           :type set_error: function
-           
-           :returns: A check object
-           :rtype: GUICheck
-        """
-
-        if not set_error:
-            set_error = self.set_check_error
-
-        checkRef = GUICheck(self, editable, run_check, check_data, set_error)
-        self._check_list.append(checkRef)
-        return checkRef
-
-    def add_re_check(self, editable, regex, message, set_error=None):
-        """Add a check using a regular expresion.
-           
-           :param editable: the input field to validate
-           :type editable:  GtkEditable
-
-           :param regex: the regular expression to use to check the input
-           :type regex:  re.RegexObject
-
-           :param message: The message to set if the regex does not match
-           :type message:  str
-
-           :param set_error: a function called when a check changes state. The
-                         parameters are (GUICheck, run_check_return).  The
-                         return value is ignored.
-           :type set_error: function
-
-           :returns: A check object
-           :rtype: GUICheck
-        """
-        if not set_error:
-            set_error = self.set_check_error
-        return self.add_check(editable=editable, run_check=check_re, 
-                check_data={'regex': regex, 'message': message}, set_error=set_error)
-
-    def update_check(self, check, check_status):
-        """This method is called when the state of a check in the check list changes.
-
-           :param check: The check object that changed
-           :type check:  GUICheck
-
-           :param check_status: The new status of the check
-        """
-        raise NotImplementedError()
-
-    def set_check_error(self, check, check_return):
-        """Update the warning with the input validation check error."""
-        # Grab the first failed check
-        failed_check = next(self.failed_checks, None)
-
-        self.clear_info()
-        if failed_check:
-            self.set_warning(failed_check.check_status)
-            self.window.show_all()
-
-    @property
-    def failed_checks(self):
-        """A generator of all failed input checks"""
-        return (c for c in self._check_list if c.check_status)
-
-    @property
-    def checks(self):
-        """An iterator over all input checks"""
-        return self._check_list.__iter__()
-
-class GUIDialog(GUIObject):
-    """This is an abstract for creating dialog windows. It implements the
-       update_check interface to display an error message when an input
-       validation fails.
-
-       GUIDialog does not define where errors are displayed, so classes
-       that derive from GUIDialog must define error labels and include them
-       as the check_data parameter to add_check. More than one check can use
-       the same label: the message from the first failed check will update the
-       label.
-    """
-
-    def __init__(self, data):
-        if self.__class__ is GUIDialog:
-            raise TypeError("GUIDialog is an abstract class")
-
-        GUIObject.__init__(self, data)
-
-    def add_check_with_error_label(self, editable, error_label, run_check, 
-            check_data=None, set_error=None):
-        """Add an input validation check to this dialog. The error_label will
-           be added to the check_data for the validation check and will be
-           used to display the error message if the check fails.
-
-           :param editable: the input field to validate
-           :type editable: GtkEditable
-
-           :param error_label: the label in which to display the error data
-           :type error_label:  GtkLabel
-
-           :param run_check: a function called to validate the input field. The
-                         parameters are (editable, check_data). The return
-                         value is an object used by update_check, or
-                         GUICheck.CHECK_OK if the check passes.
-           :type run_check: function
-           
-           :param check_data: additional data to pass to the check function
-
-           :param set_error: a function called when a check changes state. The
-                         parameters are (GUICheck, run_check_return).  The
-                         return value is ignored.
-           :type set_error: function
-           
-           :returns: A check object
-           :rtype: GUICheck
-        """
-        if not set_error:
-            set_error = self.set_check_error
-
-        return self.add_check(editable=editable, run_check=run_check, 
-                check_data={'error_label': error_label, 'message': check_data},
-                set_error=set_error)
-
-    def add_re_check_with_error_label(self, editable, error_label, regex, message, set_error=None):
-        """Add a check using a regular expression."""
-        # Use the GUIObject function so we can create the check_data dictionary here
-        if not set_error:
-            set_error = self.set_check_error
-
-        return self.add_check(editable=editable, run_check=check_re,
-                check_data={'error_label': error_label, 'message': message, 'regex': regex},
-                set_error=set_error)
-
-    def set_check_error(self, check, check_return):
-        """Update all input check failure messages.
-
-           If multiple checks use the same GtkLabel, only the first one will
-           be used.
-        """
-
-        # If the signaling check passed, clear its error label
-        if not check_return:
-            if 'error_label' in check.check_data:
-                check.check_data['error_label'].set_text('')
-
-        # Keep track of which labels have errors set. If we see an error for
-        # a label that's already been set, skip it.
-        labels_seen = []
-        for failed_check in self.failed_checks:
-            if not 'error_label' in failed_check.check_data:
-                continue
-
-            label = failed_check.check_data['error_label']
-            if label not in labels_seen:
-                labels_seen.append(label)
-                label.set_text(failed_check.check_status)
-
 class QuitDialog(GUIObject):
     builderObjects = ["quitDialog"]
     mainWidgetName = "quitDialog"
@@ -479,32 +252,232 @@ class QuitDialog(GUIObject):
         rc = self.window.run()
         return rc
 
+class ErrorDialog(GUIObject):
+    builderObjects = ["errorDialog", "errorTextBuffer"]
+    mainWidgetName = "errorDialog"
+    uiFile = "main.glade"
+
+    # pylint: disable=arguments-differ
+    def refresh(self, msg):
+        buf = self.builder.get_object("errorTextBuffer")
+        buf.set_text(msg, -1)
+
+    def run(self):
+        rc = self.window.run()
+        return rc
+
+class MainWindow(Gtk.Window):
+    """This is a top-level, full size window containing the Anaconda screens."""
+
+    def __init__(self):
+        Gtk.Window.__init__(self)
+
+        # Treat an attempt to close the window the same as hitting quit
+        self.connect("delete-event", self._on_delete_event)
+
+        # Create a black, 50% opacity pixel that will be scaled to fit the lightbox overlay
+        # The confusing list of unnamed parameters is:
+        # bytes, colorspace (there is no other colorspace), has-alpha,
+        # bits-per-sample (has to be 8), width, height,
+        # rowstride (bytes between row starts, but we only have one row)
+        self._transparent_base = GdkPixbuf.Pixbuf.new_from_bytes(GLib.Bytes.new([0, 0, 0, 127]),
+                GdkPixbuf.Colorspace.RGB, True, 8, 1, 1, 1)
+
+        # Contain everything in an overlay so the window can be overlayed with the transparency
+        # for the lightbox effect
+        self._overlay = Gtk.Overlay()
+        self._overlay_img = None
+        self._overlay.connect("get-child-position", self._on_overlay_get_child_position)
+
+        self._overlay_depth = 0
+
+        # Create a stack and a list of what's been added to the stack
+        self._stack = Gtk.Stack()
+        self._stack_contents = set()
+
+        # Create an accel group for the F12 accelerators added after window transitions
+        self._accel_group = Gtk.AccelGroup()
+        self.add_accel_group(self._accel_group)
+
+        # Connect to window-state-event changes to catch when the user
+        # maxmizes/unmaximizes the window.
+        self.connect("window-state-event", self._on_window_state_event)
+
+        # Start the window as full screen
+        self.fullscreen()
+
+        self._overlay.add(self._stack)
+        self.add(self._overlay)
+        self.show_all()
+
+        self._current_action = None
+
+    def _on_window_state_event(self, window, event, user_data=None):
+        # If the window is being maximized, fullscreen it instead
+        if (Gdk.WindowState.MAXIMIZED & event.changed_mask) and \
+                (Gdk.WindowState.MAXIMIZED & event.new_window_state):
+            self.fullscreen()
+
+            # Return true to stop the signal handler since we're changing
+            # state mid-stream here
+            return True
+
+        return False
+
+    def _on_delete_event(self, widget, event, user_data=None):
+        # Use the quit-clicked signal on the the current standalone, even if the
+        # standalone is not currently displayed.
+        if self.current_action:
+            self.current_action.window.emit("quit-clicked")
+
+        # Stop the window from being closed here
+        return True
+
+    def _on_overlay_get_child_position(self, overlay_container, overlayed_widget, allocation, user_data=None):
+        overlay_allocation = overlay_container.get_allocation()
+
+        # Scale the overlayed image's pixbuf to the size of the GtkOverlay
+        overlayed_widget.set_from_pixbuf(self._transparent_base.scale_simple(
+            overlay_allocation.width, overlay_allocation.height, GdkPixbuf.InterpType.NEAREST))
+
+        # Set the allocation for the overlayed image to the full size of the GtkOverlay
+        allocation.x = 0
+        allocation.y = 0
+        allocation.width = overlay_allocation.width
+        allocation.height = overlay_allocation.height
+
+        return True
+
+    @property
+    def current_action(self):
+        return self._current_action
+
+    def _setVisibleChild(self, child):
+        # Remove the F12 accelerator from the old window
+        old_screen = self._stack.get_visible_child()
+        if old_screen:
+            old_screen.remove_accelerator(self._accel_group, Gdk.KEY_F12, 0)
+            old_screen.remove_accelerator(self._accel_group, Gdk.KEY_F1, 0)
+            old_screen.remove_accelerator(self._accel_group, Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK)
+
+        # Check if the widget is already on the stack
+        if child not in self._stack_contents:
+            self._stack.add(child.window)
+            self._stack_contents.add(child)
+            child.window.show_all()
+
+        # It would be handy for F12 to continue to work like it did in the old
+        # UI, by skipping you to the next screen or sending you back to the hub
+        if isinstance(child.window, AnacondaWidgets.BaseStandalone):
+            child.window.add_accelerator("continue-clicked", self._accel_group,
+                    Gdk.KEY_F12, 0, 0)
+            child.window.add_accelerator("help-button-clicked", self._accel_group,
+                    Gdk.KEY_F1, 0, 0)
+            child.window.add_accelerator("help-button-clicked", self._accel_group,
+                    Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK, 0)
+        elif isinstance(child.window, AnacondaWidgets.SpokeWindow):
+            child.window.add_accelerator("button-clicked", self._accel_group,
+                    Gdk.KEY_F12, 0, 0)
+            child.window.add_accelerator("help-button-clicked", self._accel_group,
+                    Gdk.KEY_F1, 0, 0)
+            child.window.add_accelerator("help-button-clicked", self._accel_group,
+                    Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK, 0)
+
+        self._stack.set_visible_child(child.window)
+
+        if child.focusWidgetName:
+            child.builder.get_object(child.focusWidgetName).grab_focus()
+
+    def setCurrentAction(self, standalone):
+        """Set the current standalone widget.
+
+           This changes the currently displayed screen and, if the standalone
+           is a hub, sets the hub as the screen to which spokes will return.
+
+           :param AnacondaWidgets.BaseStandalone standalone: the new standalone action
+        """
+        self._current_action = standalone
+        self._setVisibleChild(standalone)
+
+    def enterSpoke(self, spoke):
+        """Enter a spoke.
+
+           The spoke will be displayed as the current screen, but the current-action
+           to which the spoke will return will not be changed.
+
+           :param AnacondaWidgets.SpokeWindow spoke: a spoke to enter
+        """
+        self._setVisibleChild(spoke)
+
+    def returnToHub(self):
+        """Exit a spoke and return to a hub."""
+        self._setVisibleChild(self._current_action)
+
+    def lightbox_on(self):
+        self._overlay_depth += 1
+        if not self._overlay_img:
+            # Add an overlay image that will be filled and scaled in get-child-position
+            self._overlay_img = Gtk.Image()
+            self._overlay_img.show_all()
+            self._overlay.add_overlay(self._overlay_img)
+
+    def lightbox_off(self):
+        self._overlay_depth -= 1
+        if self._overlay_depth == 0 and self._overlay_img:
+            # Remove the overlay image
+            self._overlay_img.destroy()
+            self._overlay_img = None
+
+    @contextmanager
+    def enlightbox(self, dialog):
+        """Display a dialog in a lightbox over the main window.
+
+           :param GtkDialog: the dialog to display
+        """
+        self.lightbox_on()
+
+        # Set the dialog as transient for ourself
+        ANACONDA_WINDOW_GROUP.add_window(dialog)
+        dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        dialog.set_transient_for(self)
+
+        yield
+
+        self.lightbox_off()
+
 class GraphicalUserInterface(UserInterface):
     """This is the standard GTK+ interface we try to steer everything to using.
        It is suitable for use both directly and via VNC.
     """
     def __init__(self, storage, payload, instclass,
                  distributionText = product.distributionText, isFinal = product.isFinal,
-                 quitDialog = QuitDialog):
+                 quitDialog = QuitDialog, gui_lock = None):
 
         UserInterface.__init__(self, storage, payload, instclass)
 
         self._actions = []
         self._currentAction = None
         self._ui = None
+        self._gui_lock = gui_lock
 
         self.data = None
+
+        self.mainWindow = MainWindow()
 
         self._distributionText = distributionText
         self._isFinal = isFinal
         self._quitDialog = quitDialog
         self._mehInterface = GraphicalExceptionHandlingIface(
-                                    self.lightbox_over_current_action)
+                                    self.mainWindow.lightbox_on)
 
-    basemask = "pyanaconda.ui.gui"
+        ANACONDA_WINDOW_GROUP.add_window(self.mainWindow)
+        # we have a sensible initial value, just in case
+        self._saved_help_button_label = _("Help!")
+
+    basemask = "pyanaconda.ui"
     basepath = os.path.dirname(__file__)
-    updatepath = "/tmp/updates/pyanaconda/ui/gui"
-    sitepackages = [os.path.join(dir, "pyanaconda", "ui", "gui")
+    updatepath = "/tmp/updates/pyanaconda/ui"
+    sitepackages = [os.path.join(dir, "pyanaconda", "ui")
                     for dir in site.getsitepackages()]
     pathlist = set([updatepath, basepath] + sitepackages)
 
@@ -512,17 +485,102 @@ class GraphicalUserInterface(UserInterface):
             "categories": [(basemask + ".categories.%s",
                         os.path.join(path, "categories"))
                         for path in pathlist],
-            "spokes": [(basemask + ".spokes.%s",
-                        os.path.join(path, "spokes"))
+            "spokes": [(basemask + ".gui.spokes.%s",
+                        os.path.join(path, "gui/spokes"))
                         for path in pathlist],
-            "hubs": [(basemask + ".hubs.%s",
-                      os.path.join(path, "hubs"))
+            "hubs": [(basemask + ".gui.hubs.%s",
+                      os.path.join(path, "gui/hubs"))
                       for path in pathlist]
             }
 
+    def _assureLogoImage(self):
+        # make sure there is a logo image present,
+        # otherwise the console will get spammed by errors
+        replacement_image_path = None
+        logo_path = "/usr/share/anaconda/pixmaps/sidebar-logo.png"
+        header_path = "/usr/share/anaconda/pixmaps/anaconda_header.png"
+        sad_smiley_path = "/usr/share/icons/Adwaita/48x48/emotes/face-crying.png"
+        if not os.path.exists(logo_path):
+            # first try to replace the missing logo with the Anaconda header image
+            if os.path.exists(header_path):
+                replacement_image_path = header_path
+            # if the header image is not present, use a sad smiley from GTK icons
+            elif os.path.exists(sad_smiley_path):
+                replacement_image_path = sad_smiley_path
+
+            if replacement_image_path:
+                log.warning("logo image is missing, using a substitute")
+
+                # Add a new stylesheet overriding the background-image for .logo
+                provider = Gtk.CssProvider()
+                provider.load_from_data(".logo { background-image: url('%s'); }" % replacement_image_path)
+                Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                        STYLE_PROVIDER_PRIORITY_MISSING_ICON)
+            else:
+                log.warning("logo image is missing")
+
+        # Look for the top and sidebar images. If missing remove the background-image
+        topbar_path = "/usr/share/anaconda/pixmaps/topbar-bg.png"
+        sidebar_path = "/usr/share/anaconda/pixmaps/sidebar-bg.png"
+        if not os.path.exists(topbar_path):
+            provider = Gtk.CssProvider()
+            provider.load_from_data("AnacondaSpokeWindow #nav-box { background-image: none; }")
+            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                    STYLE_PROVIDER_PRIORITY_MISSING_ICON)
+
+        if not os.path.exists(sidebar_path):
+            provider = Gtk.CssProvider()
+            provider.load_from_data(".logo-sidebar { background-image: none; }")
+            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                    STYLE_PROVIDER_PRIORITY_MISSING_ICON)
+
+
+    def _widgetScale(self):
+        # First, check if the GDK_SCALE environment variable is already set. If so,
+        # leave it alone.
+        if "GDK_SCALE" in os.environ:
+            log.debug("GDK_SCALE already set to %s, not scaling", os.environ["GDK_SCALE"])
+            return
+
+        # Next, check if a scaling factor is already being applied via XSETTINGS,
+        # such as by gnome-settings-daemon
+        display = Gdk.Display.get_default()
+        screen = display.get_default_screen()
+        val = GObject.Value()
+        val.init(GObject.TYPE_INT)
+        if screen.get_setting("gdk-window-scaling-factor", val):
+            log.debug("Window scale set to %s by XSETTINGS, not scaling", val.get_int())
+            return
+
+        # Get the primary monitor dimensions in pixels and mm from Gdk
+        primary = screen.get_primary_monitor()
+        monitor_geometry = screen.get_monitor_geometry(primary)
+        monitor_scale = screen.get_monitor_scale_factor(primary)
+        monitor_width_mm = screen.get_monitor_width_mm(primary)
+        monitor_height_mm = screen.get_monitor_height_mm(primary)
+
+        # Sometimes gdk returns 0 for physical widths and heights
+        if monitor_height_mm == 0 or monitor_width_mm == 0:
+            return
+
+        # Check if this monitor is high DPI, using heuristics from gnome-settings-dpi.
+        # If the monitor has a height >= 1200 pixels and a resolution > 192 dpi in both
+        # x and y directions, apply a scaling factor of 2 so that anaconda isn't all tiny
+        monitor_width_px = monitor_geometry.width * monitor_scale
+        monitor_height_px = monitor_geometry.height * monitor_scale
+        monitor_dpi_x = monitor_width_px / (monitor_width_mm / 25.4)
+        monitor_dpi_y = monitor_height_px / (monitor_height_mm / 25.4)
+
+        log.debug("Detected primary monitor: %dx%d %ddpix %ddpiy", monitor_width_px,
+                monitor_height_px, monitor_dpi_x, monitor_dpi_y)
+        if monitor_height_px >= 1200 and monitor_dpi_x > 192 and monitor_dpi_y > 192:
+            display.set_window_scale(2)
+            # Export the scale so that Gtk programs launched by anaconda are also scaled
+            os.environ["GDK_SCALE"] = "2"
+
     @property
     def tty_num(self):
-        return 7
+        return 6
 
     @property
     def meh_interface(self):
@@ -557,22 +615,7 @@ class GraphicalUserInterface(UserInterface):
         # Second, order them according to their relationship
         return self._orderActionClasses(standalones, hubs)
 
-    def lightbox_over_current_action(self, window):
-        """
-        Creates lightbox over current action for the given window. Or
-        DOES NOTHING IF THERE ARE NO ACTIONS.
-
-        """
-
-        # if there are no actions (not populated yet), we can do nothing
-        if len(self._actions) > 0 and self._currentAction:
-            lightbox = AnacondaWidgets.Lightbox(parent_window=self._currentAction.window)
-            ANACONDA_WINDOW_GROUP.add_window(lightbox)
-            window.main_window.set_transient_for(lightbox)
-
     def _instantiateAction(self, actionClass):
-        from pyanaconda.ui.gui.spokes import StandaloneSpoke
-
         # Instantiate an action on-demand, passing the arguments defining our
         # spoke API and setting up continue/quit signal handlers.
         obj = actionClass(self.data, self.storage, self.payload, self.instclass)
@@ -589,8 +632,11 @@ class GraphicalUserInterface(UserInterface):
             del(obj)
             return None
 
-        obj.register_event_cb("continue", self._on_continue_clicked)
-        obj.register_event_cb("quit", self._on_quit_clicked)
+        # Use connect_after so classes can add actions before we change screens
+        obj.window.connect_after("continue-clicked", self._on_continue_clicked)
+        obj.window.connect_after("help-button-clicked", self._on_help_clicked, obj)
+        self.mainWindow.connect("notify::mnemonics-visible", self._on_mnemonics_visible_changed, obj)
+        obj.window.connect_after("quit-clicked", self._on_quit_clicked)
 
         return obj
 
@@ -599,7 +645,8 @@ class GraphicalUserInterface(UserInterface):
         if not success:
             raise RuntimeError("Failed to initialize Gtk")
 
-        if Gtk.main_level() > 0:
+        # Check if the GUI lock has already been taken
+        if self._gui_lock and not self._gui_lock.acquire(False):
             # Gtk main loop running. That means python-meh caught exception
             # and runs its main loop. Do not crash Gtk by running another one
             # from a different thread and just wait until python-meh is
@@ -607,10 +654,13 @@ class GraphicalUserInterface(UserInterface):
             unbusyCursor()
             log.error("Unhandled exception caught, waiting for python-meh to "\
                       "exit")
-            while Gtk.main_level() > 0:
-                time.sleep(2)
 
-            sys.exit(0)
+            # Loop forever, meh will call sys.exit() when it's done
+            while True:
+                time.sleep(10000)
+
+        # Apply a widget-scale to hidpi monitors
+        self._widgetScale()
 
         while not self._currentAction:
             self._currentAction = self._instantiateAction(self._actions[0])
@@ -621,6 +671,7 @@ class GraphicalUserInterface(UserInterface):
                 return
 
         self._currentAction.initialize()
+        self._currentAction.entry_logger()
         self._currentAction.refresh()
 
         self._currentAction.window.set_beta(not self._isFinal)
@@ -637,7 +688,19 @@ class GraphicalUserInterface(UserInterface):
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
-        self._currentAction.window.show_all()
+        # Look for updates to the stylesheet and apply them at a higher priority
+        for updates_dir in ("updates", "product"):
+            updates_css = "/run/install/%s/anaconda-gtk.css" % updates_dir
+            if os.path.exists(updates_css):
+                provider = Gtk.CssProvider()
+                provider.load_from_path(updates_css)
+                Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                        STYLE_PROVIDER_PRIORITY_UPDATES)
+
+        # try to make sure a logo image is present
+        self._assureLogoImage()
+
+        self.mainWindow.setCurrentAction(self._currentAction)
 
         # Do this at the last possible minute.
         unbusyCursor()
@@ -649,16 +712,15 @@ class GraphicalUserInterface(UserInterface):
     ###
     @gtk_action_wait
     def showError(self, message):
-        dlg = Gtk.MessageDialog(flags=Gtk.DialogFlags.MODAL,
-                                message_type=Gtk.MessageType.ERROR,
-                                buttons=Gtk.ButtonsType.NONE,
-                                message_format=message)
-        dlg.set_decorated(False)
-        dlg.add_button(_("_Exit Installer"), 0)
+        dlg = ErrorDialog(None)
 
-        with enlightbox(self._currentAction.window, dlg):
+        with self.mainWindow.enlightbox(dlg.window):
+            dlg.refresh(message)
             dlg.run()
-            dlg.destroy()
+            dlg.window.destroy()
+
+        # the dialog has the only button -- "Exit installer", so just do so
+        sys.exit(1)
 
     @gtk_action_wait
     def showDetailedError(self, message, details):
@@ -666,7 +728,7 @@ class GraphicalUserInterface(UserInterface):
         dlg = DetailedErrorDialog(None, buttons=[_("_Quit")],
                                   label=message)
 
-        with enlightbox(self._currentAction.window, dlg.window):
+        with self.mainWindow.enlightbox(dlg.window):
             dlg.refresh(details)
             rc = dlg.run()
             dlg.window.destroy()
@@ -681,7 +743,7 @@ class GraphicalUserInterface(UserInterface):
         dlg.add_buttons(_("_No"), 0, _("_Yes"), 1)
         dlg.set_default_response(1)
 
-        with enlightbox(self._currentAction.window, dlg):
+        with self.mainWindow.enlightbox(dlg):
             rc = dlg.run()
             dlg.destroy()
 
@@ -690,7 +752,10 @@ class GraphicalUserInterface(UserInterface):
     ###
     ### SIGNAL HANDLING METHODS
     ###
-    def _on_continue_clicked(self):
+    def _on_continue_clicked(self, win, user_data=None):
+        if not win.get_may_continue():
+            return
+
         # If we're on the last screen, clicking Continue quits.
         if len(self._actions) == 1:
             Gtk.main_quit()
@@ -734,25 +799,50 @@ class GraphicalUserInterface(UserInterface):
         if not nextAction.showable:
             self._currentAction.window.hide()
             self._actions.pop(0)
-            self._on_continue_clicked()
+            self._on_continue_clicked(nextAction)
             return
+
+        self._currentAction.exit_logger()
+        nextAction.entry_logger()
 
         nextAction.refresh()
 
         # Do this last.  Setting up curAction could take a while, and we want
         # to leave something on the screen while we work.
-        nextAction.window.show_all()
-        self._currentAction.window.hide()
+        self.mainWindow.setCurrentAction(nextAction)
         self._currentAction = nextAction
         self._actions.pop(0)
 
-    def _on_quit_clicked(self):
+    def _on_help_clicked(self, window, obj):
+        # the help button has been clicked, start the yelp viewer with
+        # content for the current screen
+        ihelp.start_yelp(ihelp.get_help_path(obj.helpFile, self.instclass))
+
+    def _on_mnemonics_visible_changed(self, window, property, obj):
+        # mnemonics display has been activated or deactivated,
+        # add or remove the F1 mnemonics display from the help button
+        help_button = obj.window.get_help_button()
+        if window.props.mnemonics_visible:
+            # save current label
+            old_label = help_button.get_label()
+            self._saved_help_button_label = old_label
+            # add the (F1) "mnemonics" to the help button
+            help_button.set_label("%s (F1)" % old_label)
+        else:
+            # restore the old label
+            help_button.set_label(self._saved_help_button_label)
+
+    def _on_quit_clicked(self, win, userData=None):
+        if not win.get_quit_button():
+            return
+
         dialog = self._quitDialog(None)
-        with enlightbox(self._currentAction.window, dialog.window):
+        with self.mainWindow.enlightbox(dialog.window):
             rc = dialog.run()
             dialog.window.destroy()
 
         if rc == 1:
+            self._currentAction.exit_logger()
             sys.exit(0)
 
 class GraphicalExceptionHandlingIface(meh.ui.gui.GraphicalIntf):
@@ -766,7 +856,7 @@ class GraphicalExceptionHandlingIface(meh.ui.gui.GraphicalIntf):
         """
         :param lightbox_func: a function that creates lightbox for a given
                               window
-        :type lightbox_func: GtkWindow -> None
+        :type lightbox_func: None -> None
 
         """
         meh.ui.gui.GraphicalIntf.__init__(self)
@@ -778,32 +868,11 @@ class GraphicalExceptionHandlingIface(meh.ui.gui.GraphicalIntf):
         exc_window = meh_intf.mainExceptionWindow(text, exn_file)
         exc_window.main_window.set_decorated(False)
 
-        self._lightbox_func(exc_window)
+        self._lightbox_func()
 
-        # without a new GtkWindowGroup, python-meh's window is insensitive if it
-        # appears above a spoke (Gtk.Window running its own Gtk.main loop)
-        window_group = Gtk.WindowGroup()
-        window_group.add_window(exc_window.main_window)
+        ANACONDA_WINDOW_GROUP.add_window(exc_window.main_window)
 
         # the busy cursor may be set
         unbusyCursor()
 
         return exc_window
-
-def check_re(editable, data):
-    """Perform an input validation check against a regular expression.
-
-       :param editable: The input field being checked
-       :type editable:  GtkEditable
-
-       :param data: The check_data set in add_check. This data must
-                    be a dictionary that includes the keys
-                    'regex' and 'message'.
-       :type data:  dict
-
-       :returns: error_data if the check fails, otherwise GUICheck.CHECK_OK.
-    """
-    if data['regex'].match(editable.get_text()):
-        return GUICheck.CHECK_OK
-    else:
-        return data['message']

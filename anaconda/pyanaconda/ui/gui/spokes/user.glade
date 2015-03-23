@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.1 -->
 <interface>
-  <!-- interface-requires gtk+ 3.6 -->
-  <!-- interface-requires AnacondaWidgets 1.0 -->
+  <requires lib="gtk+" version="3.6"/>
+  <requires lib="AnacondaWidgets" version="1.0"/>
   <object class="AnacondaSpokeWindow" id="userCreationWindow">
-    <property name="startup_id">filler</property>
     <property name="can_focus">False</property>
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
-    <property name="startup_id">filler</property>
     <property name="window_name" translatable="yes">CREATE USER</property>
     <signal name="button-clicked" handler="on_back_clicked" swapped="no"/>
     <child internal-child="main_box">
@@ -17,7 +16,6 @@
         <property name="spacing">6</property>
         <child internal-child="nav_box">
           <object class="GtkEventBox" id="AnacondaSpokeWindow-nav_box1">
-            <property name="app_paintable">True</property>
             <property name="can_focus">False</property>
             <child internal-child="nav_area">
               <object class="GtkGrid" id="AnacondaSpokeWindow-nav_area1">
@@ -39,8 +37,8 @@
             <property name="can_focus">False</property>
             <property name="margin_top">12</property>
             <property name="yalign">0</property>
-            <property name="xscale">0.75</property>
-            <property name="yscale">0.75</property>
+            <property name="xscale">0</property>
+            <property name="yscale">0.5</property>
             <property name="bottom_padding">48</property>
             <property name="left_padding">24</property>
             <property name="right_padding">24</property>
@@ -61,7 +59,7 @@
                         <property name="can_focus">False</property>
                         <property name="xalign">1</property>
                         <property name="xpad">10</property>
-                        <property name="label" translatable="yes">_Full name</property>
+                        <property name="label" translatable="yes" context="GUI|User">_Full name</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">t_fullname</property>
                         <attributes>
@@ -71,8 +69,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -81,7 +77,7 @@
                         <property name="can_focus">False</property>
                         <property name="xalign">1</property>
                         <property name="xpad">10</property>
-                        <property name="label" translatable="yes">_Username</property>
+                        <property name="label" translatable="yes" context="GUI|User">_Username</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">t_username</property>
                         <attributes>
@@ -91,8 +87,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -100,15 +94,17 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
-                        <property name="invisible_char_set">True</property>
                         <property name="caps_lock_warning">False</property>
                         <signal name="changed" handler="full_name_changed" swapped="no"/>
+                        <child internal-child="accessible">
+                          <object class="AtkObject" id="t_fullname-atkobject">
+                            <property name="AtkObject::accessible-name" translatable="yes">Full Name</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -116,14 +112,16 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
-                        <property name="invisible_char_set">True</property>
                         <signal name="changed" handler="username_changed" swapped="no"/>
+                        <child internal-child="accessible">
+                          <object class="AtkObject" id="t_username-atkobject">
+                            <property name="AtkObject::accessible-name" translatable="yes">Username</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -132,7 +130,7 @@
                         <property name="can_focus">False</property>
                         <property name="xalign">1</property>
                         <property name="xpad">10</property>
-                        <property name="label" translatable="yes">_Password</property>
+                        <property name="label" translatable="yes" context="GUI|User">_Password</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">t_password</property>
                         <attributes>
@@ -142,8 +140,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">5</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -152,7 +148,7 @@
                         <property name="can_focus">False</property>
                         <property name="xalign">1</property>
                         <property name="xpad">10</property>
-                        <property name="label" translatable="yes">_Confirm password</property>
+                        <property name="label" translatable="yes" context="GUI|User">_Confirm password</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">t_verifypassword</property>
                         <attributes>
@@ -162,8 +158,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">7</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -173,12 +167,15 @@
                         <property name="visibility">False</property>
                         <property name="invisible_char">●</property>
                         <signal name="changed" handler="password_changed" swapped="no"/>
+                        <child internal-child="accessible">
+                          <object class="AtkObject" id="t_password-atkobject">
+                            <property name="AtkObject::accessible-name" translatable="yes">Password</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">5</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -187,12 +184,15 @@
                         <property name="can_focus">True</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">●</property>
+                        <child internal-child="accessible">
+                          <object class="AtkObject" id="t_verifypassword-atkobject">
+                            <property name="AtkObject::accessible-name" translatable="yes">Confirm Password</property>
+                          </object>
+                        </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">7</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -206,13 +206,11 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">2</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkCheckButton" id="c_usepassword">
-                        <property name="label" translatable="yes">Require a password to use this account</property>
+                        <property name="label" translatable="yes" context="GUI|User">Require a password to use this account</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
@@ -224,8 +222,6 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">4</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -268,13 +264,11 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">6</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkCheckButton" id="c_admin">
-                        <property name="label" translatable="yes">Make this user administrator</property>
+                        <property name="label" translatable="yes" context="GUI|User">Make this user administrator</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
@@ -284,8 +278,6 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">3</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -294,7 +286,7 @@
                         <property name="can_focus">False</property>
                         <child>
                           <object class="GtkButton" id="b_advanced">
-                            <property name="label" translatable="yes">_Advanced...</property>
+                            <property name="label" translatable="yes" context="GUI|User">_Advanced...</property>
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
@@ -305,16 +297,12 @@
                           <packing>
                             <property name="left_attach">0</property>
                             <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">8</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -351,6 +339,11 @@
         <child>
           <placeholder/>
         </child>
+      </object>
+    </child>
+    <child internal-child="accessible">
+      <object class="AtkObject" id="userCreationWindow-atkobject">
+        <property name="AtkObject::accessible-name" translatable="yes">CREATE USER</property>
       </object>
     </child>
   </object>

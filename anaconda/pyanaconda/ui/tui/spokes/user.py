@@ -1,6 +1,6 @@
 # User creation text spoke
 #
-# Copyright (C) 2013  Red Hat, Inc.
+# Copyright (C) 2013-2014  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -17,13 +17,16 @@
 # Red Hat, Inc.
 #
 # Red Hat Author(s): Martin Sivak <msivak@redhat.com>
+#                    Chris Lumens <clumens@redhat.com>
 #
 
+from pyanaconda.ui.categories.user_settings import UserSettingsCategory
 from pyanaconda.ui.tui.spokes import EditTUISpoke
 from pyanaconda.ui.tui.spokes import EditTUISpokeEntry as Entry
 from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda.users import guess_username
-from pyanaconda.i18n import _
+from pyanaconda.flags import flags
+from pyanaconda.i18n import N_, _
 from pykickstart.constants import FIRSTBOOT_RECONFIG
 from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON
 from pyanaconda.regexes import GECOS_VALID, USERNAME_VALID, GROUPLIST_SIMPLE_VALID
@@ -31,8 +34,8 @@ from pyanaconda.regexes import GECOS_VALID, USERNAME_VALID, GROUPLIST_SIMPLE_VAL
 __all__ = ["UserSpoke"]
 
 class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
-    title = _("User creation")
-    category = "user"
+    title = N_("User creation")
+    category = UserSettingsCategory
 
     edit_fields = [
         Entry("Create user", "_create", EditTUISpoke.CHECK, True),
@@ -95,9 +98,15 @@ class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
             return False
 
     @property
+    def showable(self):
+        return not (self.completed and flags.automatedInstall)
+
+    @property
     def mandatory(self):
-        """ Only mandatory if root account is disabled. """
-        return not bool(self.data.rootpw.password) or self.data.rootpw.lock
+        """ Only mandatory if the root pw hasn't been set in the UI
+            eg. not mandatory if the root account was locked in a kickstart
+        """
+        return not self.data.rootpw.password and not self.data.rootpw.lock
 
     @property
     def status(self):

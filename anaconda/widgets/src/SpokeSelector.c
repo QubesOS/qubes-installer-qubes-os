@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013  Red Hat, Inc.
+ * Copyright (C) 2011-2014  Red Hat, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  * Author: Chris Lumens <clumens@redhat.com>
  */
 
+#include <atk/atk.h>
 #include <gdk/gdk.h>
 #include <gio/gio.h>
 #include <glib.h>
@@ -24,6 +25,7 @@
 
 #include "SpokeSelector.h"
 #include "intl.h"
+#include "widgets-common.h"
 
 /**
  * SECTION: SpokeSelector
@@ -51,7 +53,7 @@ enum {
     PROP_TITLE,
 };
 
-#define DEFAULT_ICON    "gtk-missing-image"
+#define DEFAULT_ICON    "image-missing"
 #define DEFAULT_STATUS  N_("None")
 #define DEFAULT_TITLE   N_("New Selector")
 
@@ -71,7 +73,7 @@ G_DEFINE_TYPE(AnacondaSpokeSelector, anaconda_spoke_selector, GTK_TYPE_EVENT_BOX
 static void anaconda_spoke_selector_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static void anaconda_spoke_selector_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
 static void anaconda_spoke_selector_realize(GtkWidget *widget, gpointer user_data);
-static void anaconda_spoke_selector_finalize(AnacondaSpokeSelector *spoke);
+static void anaconda_spoke_selector_finalize(GObject *object);
 
 static gboolean anaconda_spoke_selector_focus_changed(GtkWidget *widget, GdkEventFocus *event, gpointer user_data);
 
@@ -80,7 +82,7 @@ static void anaconda_spoke_selector_class_init(AnacondaSpokeSelectorClass *klass
 
     object_class->set_property = anaconda_spoke_selector_set_property;
     object_class->get_property = anaconda_spoke_selector_get_property;
-    object_class->finalize = (GObjectFinalizeFunc) anaconda_spoke_selector_finalize;
+    object_class->finalize = anaconda_spoke_selector_finalize;
 
     /**
      * AnacondaSpokeSelector:icon:
@@ -193,6 +195,7 @@ static void set_icon(AnacondaSpokeSelector *widget, const char *icon_name) {
     GtkIconTheme *icon_theme;
     GtkIconInfo *icon_info;
     GdkPixbuf *pixbuf;
+    gchar *file;
 
     if (!icon_name)
         return;
@@ -208,7 +211,9 @@ static void set_icon(AnacondaSpokeSelector *widget, const char *icon_name) {
             return;
         }
 
-        emblem_icon = g_icon_new_for_string("/usr/share/anaconda/pixmaps/dialog-warning-symbolic.svg", &err);
+        file = g_strdup_printf("%s/pixmaps/dialog-warning-symbolic.svg", anaconda_get_widgets_datadir());
+        emblem_icon = g_icon_new_for_string(file, &err);
+        g_free(file);
         if (!emblem_icon) {
             fprintf(stderr, "could not create emblem: %s\n", err->message);
             g_error_free(err);
@@ -234,16 +239,36 @@ static void set_icon(AnacondaSpokeSelector *widget, const char *icon_name) {
     icon_info = gtk_icon_theme_lookup_by_gicon(icon_theme,
                                                icon,
                                                64, 0);
-    pixbuf = gtk_icon_info_load_icon(icon_info, NULL);
+    if (NULL == icon_info) {
+        gchar *icon_str = g_icon_to_string(icon);
+        fprintf(stderr, "unable to lookup icon %s\n", icon_str);
+        if (NULL != icon_str) {
+            g_free(icon_str);
+        }
+        return;
+    }
+
+    pixbuf = gtk_icon_info_load_icon(icon_info, &err);
+    g_object_unref(icon_info);
+
+    if (NULL == pixbuf) {
+        fprintf(stderr, "could not load icon: %s\n", err->message);
+        g_error_free(err);
+        return;
+    }
 
     widget->priv->icon = gtk_image_new_from_pixbuf(pixbuf);
     gtk_image_set_pixel_size(GTK_IMAGE(widget->priv->icon), 64);
     gtk_widget_set_valign(widget->priv->icon, GTK_ALIGN_START);
-    gtk_misc_set_padding(GTK_MISC(widget->priv->icon), 12, 0);
+    gtk_widget_set_margin_start(widget->priv->icon, 12);
+    gtk_widget_set_margin_end(widget->priv->icon, 12);
     gtk_grid_attach(GTK_GRID(widget->priv->grid), widget->priv->icon, 0, 0, 1, 2);
 }
 
 static void anaconda_spoke_selector_init(AnacondaSpokeSelector *spoke) {
+    AtkObject *atk;
+    AtkRole role;
+
     spoke->priv = G_TYPE_INSTANCE_GET_PRIVATE(spoke,
                                               ANACONDA_TYPE_SPOKE_SELECTOR,
                                               AnacondaSpokeSelectorPrivate);
@@ -276,14 +301,19 @@ static void anaconda_spoke_selector_init(AnacondaSpokeSelector *spoke) {
     format_title_label(spoke, _(DEFAULT_TITLE));
     gtk_label_set_justify(GTK_LABEL(spoke->priv->title_label), GTK_JUSTIFY_LEFT);
     gtk_label_set_mnemonic_widget(GTK_LABEL(spoke->priv->title_label), GTK_WIDGET(spoke));
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    /* gtk+ did a garbage job of "deprecating" GtkMisc, so keep using it for now */
     gtk_misc_set_alignment(GTK_MISC(spoke->priv->title_label), 0, 1);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_hexpand(GTK_WIDGET(spoke->priv->title_label), FALSE);
 
     /* Create the status label. */
     spoke->priv->status_label = gtk_label_new(NULL);
     format_status_label(spoke, _(DEFAULT_STATUS));
     gtk_label_set_justify(GTK_LABEL(spoke->priv->status_label), GTK_JUSTIFY_LEFT);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(spoke->priv->status_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_label_set_ellipsize(GTK_LABEL(spoke->priv->status_label), PANGO_ELLIPSIZE_MIDDLE);
     gtk_label_set_max_width_chars(GTK_LABEL(spoke->priv->status_label), 45);
     gtk_widget_set_hexpand(GTK_WIDGET(spoke->priv->status_label), FALSE);
@@ -295,10 +325,24 @@ static void anaconda_spoke_selector_init(AnacondaSpokeSelector *spoke) {
     gtk_grid_attach(GTK_GRID(spoke->priv->grid), spoke->priv->status_label, 1, 1, 2, 1);
 
     gtk_container_add(GTK_CONTAINER(spoke), spoke->priv->grid);
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    /* No existing role is appropriate for this, so ignore the warning raised
+       by registering a new role. */
+    role = atk_role_register("spoke selector");
+G_GNUC_END_IGNORE_DEPRECATIONS
+
+    atk = gtk_widget_get_accessible(GTK_WIDGET(spoke));
+    atk_object_set_name(atk, _(DEFAULT_TITLE));
+    atk_object_set_description(atk, _(DEFAULT_STATUS));
+    atk_object_set_role(atk, role);
 }
 
-static void anaconda_spoke_selector_finalize(AnacondaSpokeSelector *spoke) {
+static void anaconda_spoke_selector_finalize(GObject *object) {
+    AnacondaSpokeSelector *spoke = ANACONDA_SPOKE_SELECTOR(object);
     g_object_unref(spoke->priv->cursor);
+
+    G_OBJECT_CLASS(anaconda_spoke_selector_parent_class)->finalize(object);
 }
 
 static void anaconda_spoke_selector_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec) {
@@ -321,6 +365,7 @@ static void anaconda_spoke_selector_get_property(GObject *object, guint prop_id,
 }
 
 static void anaconda_spoke_selector_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec) {
+    AtkObject *atk;
     AnacondaSpokeSelector *widget = ANACONDA_SPOKE_SELECTOR(object);
 
     switch(prop_id) {
@@ -334,12 +379,18 @@ static void anaconda_spoke_selector_set_property(GObject *object, guint prop_id,
             break;
 
         case PROP_STATUS: {
+            atk = gtk_widget_get_accessible(GTK_WIDGET(widget));
+
             format_status_label(widget, g_value_get_string(value));
+            atk_object_set_description(atk, g_value_get_string(value));
             break;
         }
 
         case PROP_TITLE: {
+            atk = gtk_widget_get_accessible(GTK_WIDGET(widget));
+
             format_title_label(widget, g_value_get_string(value));
+            atk_object_set_name(atk, gtk_label_get_text(GTK_LABEL(widget->priv->title_label)));
             break;
         }
     }
@@ -387,9 +438,9 @@ void anaconda_spoke_selector_set_incomplete(AnacondaSpokeSelector *spoke, gboole
 static gboolean anaconda_spoke_selector_focus_changed(GtkWidget *widget, GdkEventFocus *event, gpointer user_data) {
     GtkStateFlags new_state;
 
-    new_state = gtk_widget_get_state_flags(widget) & ~GTK_STATE_FOCUSED;
+    new_state = gtk_widget_get_state_flags(widget) & ~GTK_STATE_FLAG_SELECTED;
     if (event->in)
-        new_state |= GTK_STATE_FOCUSED;
+        new_state |= GTK_STATE_FLAG_SELECTED;
     gtk_widget_set_state_flags(widget, new_state, TRUE);
     return FALSE;
 }

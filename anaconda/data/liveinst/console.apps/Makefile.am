@@ -18,9 +18,14 @@
 # Author: David Cantrell <dcantrell@redhat.com>
 
 if IS_LIVEINST_ARCH
-consoledir        = /etc/security/console.apps
+consoledir        = $(sysconfdir)/security/console.apps
 dist_console_DATA = liveinst
 endif
+#
+# Files generated for gettext need to be included in the distribution
+EXTRA_DIST = $(srcdir)/liveinst.h
+$(srcdir)/liveinst.h: $(srcdir)/liveinst
+	@$(MAKE) -C $(top_builddir)/po $(abs_top_srcdir)/$(subdir)/$$(basename $@)
 
 CLEANFILES = *.h
 MAINTAINERCLEANFILES = Makefile.in

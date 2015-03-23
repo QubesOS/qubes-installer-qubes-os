@@ -1,5 +1,6 @@
 <glade-catalog name="AnacondaWidgets"
-               version="1.0"
+               version="3.1"
+               targetable="3.0,2.0,1.0"
                library="AnacondaWidgets"
                domain="glade-3"
                depends="gtk+">
@@ -17,7 +18,6 @@
                 <property id="height-request" disabled="True" />
                 <property id="modal" disabled="True" />
                 <property id="resizable" disabled="True" />
-                <property id="startup-id" visible="False" />
                 <property id="title" disabled="True" />
                 <property id="type" disabled="True" />
                 <property id="width-request" disabled="True" />
@@ -25,6 +25,11 @@
                 <property id="distribution" translatable="True" />
                 <property id="window-name" translatable="True" />
             </properties>
+
+            <signals>
+              <signal since="3.1" id="help-button-clicked" />
+            </signals>
+
         </glade-widget-class>
 
         <glade-widget-class title="Standalone Spoke Window"
@@ -34,7 +39,6 @@
                             use-placeholders="True"
                             toplevel="True">
             <post-create-function>anaconda_standalone_window_post_create</post-create-function>
-            <write-widget-function>anaconda_standalone_window_write_widget</write-widget-function>
 
             <internal-children>
                 <object name="main_box">
@@ -56,7 +60,16 @@
                             toplevel="True">
             <!-- Not a typo - we really can use the same functions here (for now) -->
             <post-create-function>anaconda_standalone_window_post_create</post-create-function>
-            <write-widget-function>anaconda_standalone_window_write_widget</write-widget-function>
+
+            <properties>
+              <property since="3.0" id="quit-button" />
+              <property since="3.0" id="continue-button" />
+            </properties>
+
+            <signals>
+              <signal since="3.0" id="quit-clicked" />
+              <signal since="3.0" id="continue-clicked" />
+            </signals>
 
             <internal-children>
                 <object name="main_box">
@@ -80,7 +93,6 @@
                             toplevel="True">
             <!-- Not a typo - we really can use the same functions here (for now) -->
             <post-create-function>anaconda_standalone_window_post_create</post-create-function>
-            <write-widget-function>anaconda_standalone_window_write_widget</write-widget-function>
 
             <internal-children>
                 <object name="main_box">
@@ -92,10 +104,6 @@
                     </object>
                 </object>
             </internal-children>
-
-            <properties>
-                <property id="button-label" translatable="True" />
-            </properties>
         </glade-widget-class>
 
         <glade-widget-class title="Spoke Selector"
@@ -105,7 +113,7 @@
             <properties>
                 <property id="column-spacing" default="6" visible="False" />
 
-                <property since="1.0" themed-icon="True" id="icon" name="Icon" default="gtk-missing-image" visible="True">
+                <property since="1.0" themed-icon="True" id="icon" name="Icon" default="image-missing" visible="True">
                     <parameter-spec>
                         <type>GParamString</type>
                     </parameter-spec>
@@ -134,15 +142,6 @@
             </properties>
         </glade-widget-class>
 
-	<glade-widget-class title="Timezone Map"
-			    name="AnacondaTimezoneMap"
-			    icon-name="widget-gtk-image"
-			    generic-name="AnacondaTimezoneMap">
-	    <properties>
-	        <property id="spacing" default="6" visible="False" />
-	    </properties>
-	</glade-widget-class>
-
     <glade-widget-class title="Layout Indicator"
 			            name="AnacondaLayoutIndicator"
 			            icon-name="widget-gtk-label"
@@ -165,7 +164,6 @@
 
     <glade-widget-group name="anaconda-misc-widgets" title="Anaconda Miscellaneous Widgets">
         <glade-widget-class-ref name="AnacondaSpokeSelector" />
-        <glade-widget-class-ref name="AnacondaTimezoneMap" />
         <glade-widget-class-ref name="AnacondaLayoutIndicator" />
     </glade-widget-group>
 </glade-catalog>

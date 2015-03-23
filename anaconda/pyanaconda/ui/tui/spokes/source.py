@@ -20,25 +20,28 @@
 #
 
 from pyanaconda.flags import flags
+from pyanaconda.ui.categories.software import SoftwareCategory
 from pyanaconda.ui.tui.spokes import EditTUISpoke, NormalTUISpoke
 from pyanaconda.ui.tui.spokes import EditTUISpokeEntry as Entry
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
 from pyanaconda.threads import threadMgr, AnacondaThread
-from pyanaconda.packaging import PayloadError, MetadataError
-from pyanaconda.i18n import _
+from pyanaconda.packaging import PackagePayload, payloadMgr
+from pyanaconda.i18n import N_, _
 from pyanaconda.image import opticalInstallMedia, potentialHdisoSources
+from pyanaconda.iutil import DataHolder
 
-from pyanaconda.constants import THREAD_SOURCE_WATCHER, THREAD_SOFTWARE_WATCHER, THREAD_PAYLOAD
-from pyanaconda.constants import THREAD_PAYLOAD_MD, THREAD_STORAGE, THREAD_STORAGE_WATCHER
+from pyanaconda.constants import THREAD_SOURCE_WATCHER, THREAD_PAYLOAD
+from pyanaconda.constants import THREAD_STORAGE_WATCHER
 from pyanaconda.constants import THREAD_CHECK_SOFTWARE, ISO_DIR, DRACUT_ISODIR
 from pyanaconda.constants_text import INPUT_PROCESSED
+
+from pyanaconda.ui.helpers import SourceSwitchHandler
 
 from blivet.util import get_mount_paths
 
 import re
 import os
 import fnmatch
-import copy
 
 import logging
 LOG = logging.getLogger("anaconda")
@@ -46,103 +49,19 @@ LOG = logging.getLogger("anaconda")
 
 __all__ = ["SourceSpoke"]
 
-class SourceSwitchHandler(object):
-    """ A class that can be used as a mixin handling
-    installation source switching.
-    It will correctly switch to the new method
-    and cleanup any previous method set.
-    """
-    def __init__(self, data, storage):
-        self._device = None
-        self._current_iso_path = None
-        self._data = data
-        self._storage = storage
-
-    def _clean_hdd_iso(self):
-        """ Clean HDD ISO usage
-        This means unmounting the partition and unprotecting it,
-        so it can be used for the installation.
-        """
-        if self._data.method.method == "harddrive" and self._data.method.partition:
-            part = self._data.method.partition
-            dev = self._storage.devicetree.getDeviceByName(part)
-            if dev:
-                dev.protected = False
-            self._storage.config.protectedDevSpecs.remove(part)
-
-    def set_source_hdd_iso(self, device, iso_path):
-        """ Switch to the HDD ISO install source
-        :param partition: name of the partition hosting the ISO
-        :type partition: string
-        :param iso_path: full path to the source ISO file
-        :type iso_path: string
-        """
-        partition = device.name
-        # the GUI source spoke also does the copy
-        old_source = copy.copy(self._data.method)
-
-        # if a different partition was used previously, unprotect it
-        if old_source.method == "harddrive" and old_source.partition != partition:
-            self._clean_hdd_iso()
-
-        # protect current device
-        if device:
-            device.protected = True
-            self._storage.config.protectedDevSpecs.append(device.name)
-
-        self._data.method.method = "harddrive"
-        self._data.method.partition = partition
-        # the / gets stripped off by payload.ISOImage
-        self._data.method.dir = "/" + iso_path
-
-        # as we already made the device protected when
-        # switching to it, we don't need to protect it here
-
-    def set_source_url(self, url=None):
-        """ Switch to install source specified by URL """
-        # clean any old HDD ISO sources
-        self._clean_hdd_iso()
-
-        self._data.method.method = "url"
-        if url is not None:
-            self._data.method.url = url
-
-    def set_source_nfs(self, opts=None):
-        """ Switch to NFS install source """
-        # clean any old HDD ISO sources
-        self._clean_hdd_iso()
-
-        self._data.method.method = "nfs"
-        if opts is not None:
-            self._data.method.opts = opts
-
-    def set_source_cdrom(self):
-        """ Switch to cdrom install source """
-        # clean any old HDD ISO sources
-        self._clean_hdd_iso()
-
-        self._data.method.method = "cdrom"
-
-    def set_source_closest_mirror(self):
-        """ Switch to the closest mirror install source """
-        # clean any old HDD ISO sources
-        self._clean_hdd_iso()
-
-        self._data.method.method = None
-
 class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
     """ Spoke used to customize the install source repo. """
-    title = _("Installation source")
-    category = "software"
+    title = N_("Installation source")
+    category = SoftwareCategory
 
-    _protocols = (_("Closest mirror"), "http://", "https://", "ftp://", "nfs")
+    _protocols = (N_("Closest mirror"), "http://", "https://", "ftp://", "nfs")
 
     # default to 'closest mirror', as done in the GUI
     _selection = 1
 
     def __init__(self, app, data, storage, payload, instclass):
         EditTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        SourceSwitchHandler.__init__(self, data, storage)
+        SourceSwitchHandler.__init__(self)
         self._ready = False
         self.errors = []
         self._cdrom = None
@@ -152,10 +71,10 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
 
         threadMgr.add(AnacondaThread(name=THREAD_SOURCE_WATCHER,
                                      target=self._initialize))
+        payloadMgr.addListener(payloadMgr.STATE_ERROR, self._payload_error)
 
     def _initialize(self):
         """ Private initialize. """
-        threadMgr.wait(THREAD_STORAGE)
         threadMgr.wait(THREAD_PAYLOAD)
         # If we've previously set up to use a CD/DVD method, the media has
         # already been mounted by payload.setup.  We can't try to mount it
@@ -167,6 +86,9 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
             self._cdrom = opticalInstallMedia(self.storage.devicetree)
 
         self._ready = True
+
+    def _payload_error(self):
+        self.errors.append(payloadMgr.error)
 
     def _repo_status(self):
         """ Return a string describing repo url or lack of one. """
@@ -184,6 +106,10 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
             return _("Closest mirror")
         else:
             return _("Nothing selected")
+
+    @property
+    def showable(self):
+        return isinstance(self.payload, PackagePayload)
 
     @property
     def status(self):
@@ -205,7 +131,7 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
 
     @property
     def completed(self):
-        if flags.automatedInstall and (not self.data.method.method or not self.payload.baseRepo):
+        if flags.automatedInstall and self.ready and not self.payload.baseRepo:
             return False
         else:
             return not self.errors and self.ready and (self.data.method.method or self.payload.baseRepo)
@@ -214,11 +140,10 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
         EditTUISpoke.refresh(self, args)
 
         threadMgr.wait(THREAD_PAYLOAD)
-        threadMgr.wait(THREAD_PAYLOAD_MD)
 
         _methods = [_("CD/DVD"), _("local ISO file"), _("Network")]
         if args == 3:
-            text = [TextWidget(p) for p in self._protocols]
+            text = [TextWidget(_(p)) for p in self._protocols]
         else:
             self._window += [TextWidget(_("Choose an installation source type."))]
             text = [TextWidget(m) for m in _methods]
@@ -294,34 +219,11 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
                 self.app.switch_screen(self, num)
         return INPUT_PROCESSED
 
-    def getRepoMetadata(self):
-        """ Pull down yum repo metadata """
-        try:
-            self.payload.updateBaseRepo(fallback=False, checkmount=False)
-        except (OSError, PayloadError) as err:
-            LOG.error("Error: %s", err)
-            self.errors.append(_("Failed to set up installation source"))
-        else:
-            self.payload.gatherRepoMetadata()
-            self.payload.release()
-            if not self.payload.baseRepo:
-                self.errors.append(_("Error downloading package metadata"))
-            else:
-                try:
-                    # pylint: disable-msg=W0104
-                    self.payload.environments
-                    # pylint: disable-msg=W0104
-                    self.payload.groups
-                    self.errors = []
-                except MetadataError:
-                    self.errors.append(_("No installation source available"))
-
     @property
     def ready(self):
         """ Check if the spoke is ready. """
         return (self._ready and
-                not threadMgr.get(THREAD_PAYLOAD_MD) and
-                not threadMgr.get(THREAD_SOFTWARE_WATCHER) and
+                not threadMgr.get(THREAD_PAYLOAD) and
                 not threadMgr.get(THREAD_CHECK_SOFTWARE))
 
     def apply(self):
@@ -331,21 +233,21 @@ class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
         if flags.askmethod:
             flags.askmethod = False
 
-        threadMgr.add(AnacondaThread(name=THREAD_PAYLOAD_MD,
-                                     target=self.getRepoMetadata))
+        payloadMgr.restartThread(self.storage, self.data, self.payload, self.instclass,
+                checkmount=False)
 
 class SpecifyRepoSpoke(EditTUISpoke, SourceSwitchHandler):
     """ Specify the repo URL here if closest mirror not selected. """
-    title = _("Specify Repo Options")
-    category = "software"
+    title = N_("Specify Repo Options")
+    category = SoftwareCategory
 
     edit_fields = [
-        Entry(_("Repo URL"), "url", re.compile(".*$"), True)
+        Entry(N_("Repo URL"), "url", re.compile(".*$"), True)
         ]
 
     def __init__(self, app, data, storage, payload, instclass, selection):
         EditTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        SourceSwitchHandler.__init__(self, data, storage)
+        SourceSwitchHandler.__init__(self)
         self.selection = selection
         self.args = self.data.method
 
@@ -374,20 +276,24 @@ class SpecifyRepoSpoke(EditTUISpoke, SourceSwitchHandler):
 
 class SpecifyNFSRepoSpoke(EditTUISpoke, SourceSwitchHandler):
     """ Specify server and mount opts here if NFS selected. """
-    title = _("Specify Repo Options")
-    category = "software"
+    title = N_("Specify Repo Options")
+    category = SoftwareCategory
 
     edit_fields = [
-        Entry(_("NFS <server>:/<path>"), "server", re.compile(".*$"), True),
-        Entry(_("NFS mount options"), "opts", re.compile(".*$"), True)
+        Entry(N_("<server>:/<path>"), "server", re.compile(".*$"), True),
+        Entry(N_("NFS mount options"), "opts", re.compile(".*$"), True)
     ]
 
     def __init__(self, app, data, storage, payload, instclass, selection, errors):
         EditTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        SourceSwitchHandler.__init__(self, data, storage)
+        SourceSwitchHandler.__init__(self)
         self.selection = selection
-        self.args = self.data.method
         self.errors = errors
+
+        nfs = self.data.method
+        self.args = DataHolder(server="", opts=nfs.opts or "")
+        if nfs.method == "nfs" and nfs.server and nfs.dir:
+            self.args.server = "%s:%s" % (nfs.server, nfs.dir)
 
     def refresh(self, args=None):
         """ Refresh window. """
@@ -417,8 +323,8 @@ class SpecifyNFSRepoSpoke(EditTUISpoke, SourceSwitchHandler):
 
 class SelectDeviceSpoke(NormalTUISpoke):
     """ Select device containing the install source ISO file. """
-    title = _("Select device containing the ISO file")
-    category = "source"
+    title = N_("Select device containing the ISO file")
+    category = SoftwareCategory
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
@@ -498,14 +404,18 @@ class SelectDeviceSpoke(NormalTUISpoke):
             # we don't have the disk for the given number
             return key
 
+    # Override Spoke.apply
+    def apply(self):
+        pass
+
 class SelectISOSpoke(NormalTUISpoke, SourceSwitchHandler):
     """ Select an ISO to use as install source. """
-    title = _("Select an ISO to use as install source")
-    category = "source"
+    title = N_("Select an ISO to use as install source")
+    category = SoftwareCategory
 
     def __init__(self, app, data, storage, payload, instclass, device):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        SourceSwitchHandler.__init__(self, data, storage)
+        SourceSwitchHandler.__init__(self)
         self.selection = None
         self.args = self.data.method
         self._device = device

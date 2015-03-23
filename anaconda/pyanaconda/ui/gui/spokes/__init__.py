@@ -20,95 +20,41 @@
 #                    Martin Sivak <msivak@redhat.com>
 
 from pyanaconda.ui import common
-from pyanaconda.ui.common import collect
 from pyanaconda.ui.gui import GUIObject
 import os.path
+from pyanaconda import ihelp
 
-__all__ = ["StandaloneSpoke", "NormalSpoke", "PersonalizationSpoke",
-           "collect_spokes"]
+__all__ = ["StandaloneSpoke", "NormalSpoke"]
 
-class Spoke(GUIObject):
-    def __init__(self, data):
+# Inherit abstract methods from common.StandaloneSpoke
+# pylint: disable=abstract-method
+class StandaloneSpoke(GUIObject, common.StandaloneSpoke):
+    def __init__(self, data, storage, payload, instclass):
         GUIObject.__init__(self, data)
+        common.StandaloneSpoke.__init__(self, storage, payload, instclass)
 
-    def apply(self):
-        """Apply the selections made on this Spoke to the object's preset
-           data object.  This method must be provided by every subclass.
-        """
-        raise NotImplementedError
+        # Add a continue-clicked handler to save the data before leaving the window
+        self.window.connect("continue-clicked", self._on_continue_clicked)
 
-    @property
-    def completed(self):
-        """Has this spoke been visited and completed?  If not, a special warning
-           icon will be shown on the Hub beside the spoke, and a highlighted
-           message will be shown at the bottom of the Hub.  Installation will not
-           be allowed to proceed until all spokes are complete.
-        """
-        return False
-
-    def execute(self):
-        """Cause the data object to take effect on the target system.  This will
-           usually be as simple as calling one or more of the execute methods on
-           the data object.  This method does not need to be provided by all
-           subclasses.
-
-           This method will be called in two different places:  (1) Immediately
-           after initialize on kickstart installs.  (2) Immediately after apply
-           in all cases.
-        """
-        pass
-
-class StandaloneSpoke(Spoke, common.StandaloneSpoke):
-    def __init__(self, data, storage, payload, instclass):
-        Spoke.__init__(self, data)
-        common.StandaloneSpoke.__init__(self, data, storage, payload, instclass)
-
-    def _on_continue_clicked(self, cb):
+    def _on_continue_clicked(self, win, user_data=None):
         self.apply()
-        cb()
 
-    def register_event_cb(self, event, cb):
-        if event == "continue":
-            self.window.connect("continue-clicked", lambda *args: self._on_continue_clicked(cb))
-        elif event == "quit":
-            self.window.connect("quit-clicked", lambda *args: cb())
-
-class NormalSpoke(Spoke, common.NormalSpoke):
+# Inherit abstract methods from common.NormalSpoke
+# pylint: disable=abstract-method
+class NormalSpoke(GUIObject, common.NormalSpoke):
     def __init__(self, data, storage, payload, instclass):
-        Spoke.__init__(self, data)
-        common.NormalSpoke.__init__(self, data, storage, payload, instclass)
+        GUIObject.__init__(self, data)
+        common.NormalSpoke.__init__(self, storage, payload, instclass)
+
+        # Add a help handler
+        self.window.connect_after("help-button-clicked", self._on_help_clicked)
+
+    def _on_help_clicked(self, window):
+        # the help button has been clicked, start the yelp viewer with
+        # content for the current spoke
+        ihelp.start_yelp(ihelp.get_help_path(self.helpFile, self.instclass))
 
     def on_back_clicked(self, window):
-        from gi.repository import Gtk
-
-        # Look for failed checks
-        failed_check = next(self.failed_checks, None)
-        if failed_check:
-            # Set the focus to the first failed check and stay in the spoke
-            failed_check.editable.grab_focus()
-            return
-
-        self.window.hide()
-        Gtk.main_quit()
-
-class PersonalizationSpoke(Spoke, common.PersonalizationSpoke):
-    def __init__(self, data, storage, payload, instclass):
-        Spoke.__init__(self, data)
-        common.PersonalizationSpoke.__init__(self, data, storage, payload, instclass)
-
-def collect_spokes(mask_paths, category):
-    """Return a list of all spoke subclasses that should appear for a given
-       category. Look for them in files imported as module_path % basename(f)
-
-       :param mask_paths: list of mask, path tuples to search for classes
-       :type mask_paths: list of (mask, path)
-
-       :return: list of Spoke classes belonging to category
-       :rtype: list of Spoke classes
-
-    """
-    spokes = []
-    for mask, path in mask_paths:
-        spokes.extend(collect(mask, path, lambda obj: hasattr(obj, "category") and obj.category != None and obj.category.__name__ == category))
-        
-    return spokes
+        # Notify the hub that we're finished.
+        # The hub will be the current-action of the main window.
+        self.main_window.current_action.spoke_done(self)

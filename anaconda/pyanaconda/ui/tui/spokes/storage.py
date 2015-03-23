@@ -1,6 +1,6 @@
 # Text storage configuration spoke classes
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2014  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -22,22 +22,27 @@
 # which has the same license and authored by David Lehman <dlehman@redhat.com>
 #
 
-from pyanaconda.ui.lib.disks import getDisks, size_str
+from pyanaconda.ui.lib.disks import getDisks, applyDiskSelection
+from pyanaconda.ui.categories.system import SystemCategory
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, CheckboxWidget
+from pyanaconda.ui.tui.tuiobject import YesNoDialog
+from pyanaconda.storage_utils import AUTOPART_CHOICES, sanity_check, SanityError, SanityWarning
 
-from pykickstart.constants import AUTOPART_TYPE_LVM, AUTOPART_TYPE_BTRFS, AUTOPART_TYPE_PLAIN
+from blivet import arch
 from blivet.size import Size
-from blivet.errors import StorageError
+from blivet.errors import StorageError, DasdFormatError
+from blivet.devices import DASDDevice, FcoeDiskDevice, iScsiDiskDevice, MultipathDevice, ZFCPDiskDevice
+from blivet.devicelibs.dasd import format_dasd, make_unformatted_dasd_list
 from pyanaconda.flags import flags
-from pyanaconda.kickstart import doKickstartStorage
+from pyanaconda.kickstart import doKickstartStorage, resetCustomStorageData
 from pyanaconda.threads import threadMgr, AnacondaThread
-from pyanaconda.constants import THREAD_STORAGE, THREAD_STORAGE_WATCHER
+from pyanaconda.constants import THREAD_STORAGE, THREAD_STORAGE_WATCHER, THREAD_DASDFMT, DEFAULT_AUTOPART_TYPE
 from pyanaconda.constants_text import INPUT_PROCESSED
-from pyanaconda.i18n import _, P_
+from pyanaconda.i18n import _, P_, N_
 from pyanaconda.bootloader import BootLoaderError
 
-from pykickstart.constants import CLEARPART_TYPE_ALL, CLEARPART_TYPE_LINUX, CLEARPART_TYPE_NONE
+from pykickstart.constants import CLEARPART_TYPE_ALL, CLEARPART_TYPE_LINUX, CLEARPART_TYPE_NONE, AUTOPART_TYPE_LVM
 from pykickstart.errors import KickstartValueError
 
 from collections import OrderedDict
@@ -47,9 +52,9 @@ log = logging.getLogger("anaconda")
 
 __all__ = ["StorageSpoke", "AutoPartSpoke"]
 
-CLEARALL = _("Use All Space")
-CLEARLINUX = _("Replace Existing Linux system(s)")
-CLEARNONE = _("Use Free Space")
+CLEARALL = N_("Use All Space")
+CLEARLINUX = N_("Replace Existing Linux system(s)")
+CLEARNONE = N_("Use Free Space")
 
 PARTTYPES = {CLEARALL: CLEARPART_TYPE_ALL, CLEARLINUX: CLEARPART_TYPE_LINUX,
              CLEARNONE: CLEARPART_TYPE_NONE}
@@ -59,14 +64,15 @@ class StorageSpoke(NormalTUISpoke):
     Storage spoke where users proceed to customize storage features such
     as disk selection, partitioning, and fs type.
     """
-    title = _("Installation Destination")
-    category = "system"
+    title = N_("Installation Destination")
+    category = SystemCategory
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
 
         self._ready = False
         self.selected_disks = self.data.ignoredisk.onlyuse[:]
+        self.selection = None
 
         self.autopart = None
         self.clearPartType = None
@@ -77,6 +83,13 @@ class StorageSpoke(NormalTUISpoke):
         self.disks = []
         self.errors = []
         self.warnings = []
+
+        if self.data.zerombr.zerombr and arch.isS390():
+            # if zerombr is specified in a ks file and there are unformatted
+            # dasds, automatically format them
+            to_format = make_unformatted_dasd_list(self.selected_disks)
+            if to_format:
+                self.run_dasdfmt(to_format)
 
         if not flags.automatedInstall:
             # default to using autopart for interactive installs
@@ -92,7 +105,7 @@ class StorageSpoke(NormalTUISpoke):
     def ready(self):
         # By default, the storage spoke is not ready.  We have to wait until
         # storageInitialize is done.
-        return self._ready and not threadMgr.get(THREAD_STORAGE_WATCHER)
+        return self._ready and not (threadMgr.get(THREAD_STORAGE_WATCHER) or threadMgr.get(THREAD_DASDFMT))
 
     @property
     def mandatory(self):
@@ -142,7 +155,7 @@ class StorageSpoke(NormalTUISpoke):
         """ Update the summary based on the UI. """
         count = 0
         capacity = 0
-        free = Size(bytes=0)
+        free = Size(0)
 
         # pass in our disk list so hidden disks' free space is available
         free_space = self.storage.getFreeSpace(disks=self.disks)
@@ -155,7 +168,7 @@ class StorageSpoke(NormalTUISpoke):
 
         summary = (P_(("%d disk selected; %s capacity; %s free ..."),
                       ("%d disks selected; %s capacity; %s free ..."),
-                      count) % (count, str(Size(en_spec="%f MB" % capacity)), free))
+                      count) % (count, str(Size(capacity)), free))
 
         if len(self.disks) == 0:
             summary = _("No disks detected.  Please shut down the computer, connect at least one disk, and restart to complete installation.")
@@ -188,26 +201,84 @@ class StorageSpoke(NormalTUISpoke):
 
         # loop through the disks and present them.
         for disk in self.disks:
-            size = size_str(disk.size)
-            c = CheckboxWidget(title="%i) %s: %s (%s)" % (self.disks.index(disk) + 1,
-                                                 disk.model, size, disk.name),
+            disk_info = self._format_disk_info(disk)
+            c = CheckboxWidget(title="%i) %s" % (self.disks.index(disk) + 1, disk_info),
                                completed=(disk.name in self.selected_disks))
+            self._window += [c, ""]
+
+        # if we have more than one disk, present an option to just
+        # select all disks
+        if len(self.disks) > 1:
+            c = CheckboxWidget(title="%i) %s" % (len(self.disks) + 1, _("Select all")),
+                                completed=(self.selection == len(self.disks)))
+
             self._window += [c, ""]
 
         self._window += [TextWidget(message), ""]
 
         return True
 
+    def _select_all_disks(self):
+        """ Mark all disks as selected for use in partitioning. """
+        for disk in self.disks:
+            if disk.name not in self.selected_disks:
+                self._update_disk_list(disk)
+
+    def _format_disk_info(self, disk):
+        """ Some specialized disks are difficult to identify in the storage
+            spoke, so add and return extra identifying information about them.
+
+            Since this is going to be ugly to do within the confines of the
+            CheckboxWidget, pre-format the display string right here.
+        """
+        # show this info for all disks
+        format_str = "%s: %s (%s)" % (disk.model, disk.size, disk.name)
+
+        disk_attrs = []
+        # now check for/add info about special disks
+        if (isinstance(disk, MultipathDevice) or isinstance(disk, iScsiDiskDevice) or isinstance(disk, FcoeDiskDevice)):
+            if hasattr(disk, "wwid"):
+                disk_attrs.append(disk.wwid)
+        elif isinstance(disk, DASDDevice):
+            if hasattr(disk, "busid"):
+                disk_attrs.append(disk.busid)
+        elif isinstance (disk, ZFCPDiskDevice):
+            if hasattr(disk, "fcp_lun"):
+                disk_attrs.append(disk.fcp_lun)
+            if hasattr(disk, "wwpn"):
+                disk_attrs.append(disk.wwpn)
+            if hasattr(disk, "hba_id"):
+                disk_attrs.append(disk.hba_id)
+
+        # now append all additional attributes to our string
+        for attr in disk_attrs:
+            format_str += ", %s" % attr
+
+        return format_str
+
     def input(self, args, key):
         """Grab the disk choice and update things"""
 
         try:
             keyid = int(key) - 1
-            self._update_disk_list(self.disks[keyid])
+            self.selection = keyid
+            if len(self.disks) > 1 and keyid == len(self.disks):
+                self._select_all_disks()
+            else:
+                self._update_disk_list(self.disks[keyid])
             return INPUT_PROCESSED
         except (ValueError, IndexError):
             if key.lower() == "c":
                 if self.selected_disks:
+                    # check selected disks to see if we have any unformatted DASDs
+                    # if we're on s390x, since they need to be formatted before we
+                    # can use them.
+                    if arch.isS390():
+                        to_format = make_unformatted_dasd_list(self.selected_disks)
+                        if to_format:
+                            self.run_dasdfmt(to_format)
+                            return None
+
                     newspoke = AutoPartSpoke(self.app, self.data, self.storage,
                                              self.payload, self.instclass)
                     self.app.switch_screen_modal(newspoke)
@@ -217,6 +288,43 @@ class StorageSpoke(NormalTUISpoke):
                 return INPUT_PROCESSED
             else:
                 return key
+
+    def run_dasdfmt(self, to_format):
+        """
+        This generates the list of DASDs requiring dasdfmt and runs dasdfmt
+        against them.
+        """
+        # if the storage thread is running, wait on it to complete before taking
+        # any further actions on devices; most likely to occur if user has
+        # zerombr in their ks file
+        threadMgr.wait(THREAD_STORAGE)
+
+        # ask user to verify they want to format if zerombr not in ks file
+        if not self.data.zerombr.zerombr:
+            # prepare our msg strings; copied directly from dasdfmt.glade
+            summary = _("The following unformatted DASDs have been detected on your system. You can choose to format them now with dasdfmt or cancel to leave them unformatted. Unformatted DASDs can not be used during installation.\n\n")
+
+            warntext = _("Warning: All storage changes made using the installer will be lost when you choose to format.\n\nProceed to run dasdfmt?\n")
+
+            displaytext = summary + "\n".join("/dev/" + d for d in to_format) + "\n" + warntext
+
+            # now show actual prompt; note -- in cmdline mode, auto-answer for
+            # this is 'no', so unformatted DASDs will remain so unless zerombr
+            # is added to the ks file
+            question_window = YesNoDialog(self._app, displaytext)
+            self._app.switch_screen_modal(question_window)
+            if not question_window.answer:
+                # no? well fine then, back to the storage spoke with you;
+                return None
+
+        for disk in to_format:
+            try:
+                print(_("Formatting /dev/%s. This may take a moment.") % disk)
+                format_dasd(disk)
+            except DasdFormatError as err:
+                # Log errors if formatting fails, but don't halt the installer
+                log.error(str(err))
+                continue
 
     def apply(self):
         self.autopart = self.data.autopart.autopart
@@ -260,31 +368,36 @@ class StorageSpoke(NormalTUISpoke):
             doKickstartStorage(self.storage, self.data, self.instclass)
         except (StorageError, KickstartValueError) as e:
             log.error("storage configuration failed: %s", e)
-            print _("storage configuration failed: %s") % e
+            print(_("storage configuration failed: %s") % e)
             self.errors = [str(e)]
             self.data.bootloader.bootDrive = ""
             self.data.clearpart.type = CLEARPART_TYPE_ALL
             self.data.clearpart.initAll = False
             self.storage.config.update(self.data)
-            self.storage.autoPartType = self.data.clearpart.type
+            self.storage.autoPartType = self.data.autopart.type
             self.storage.reset()
-            self._ready = True
+            # now set ksdata back to the user's specified config
+            applyDiskSelection(self.storage, self.data, self.selected_disks)
         except BootLoaderError as e:
             log.error("BootLoader setup failed: %s", e)
-            print _("storage configuration failed: %s") % e
+            print(_("storage configuration failed: %s") % e)
             self.errors = [str(e)]
             self.data.bootloader.bootDrive = ""
-            self._ready = True
         else:
             print(_("Checking storage configuration..."))
-            (self.errors, self.warnings) = self.storage.sanityCheck()
-            self._ready = True
+            exns = sanity_check(self.storage)
+            errors = [exn.message for exn in exns if isinstance(exn, SanityError)]
+            warnings = [exn.message for exn in exns if isinstance(exn, SanityWarning)]
+            (self.errors, self.warnings) = (errors, warnings)
             for e in self.errors:
                 log.error(e)
-                print e
+                print(e)
             for w in self.warnings:
-                log.warn(w)
-                print w
+                log.warning(w)
+                print(w)
+        finally:
+            resetCustomStorageData(self.data)
+            self._ready = True
 
     def initialize(self):
         NormalTUISpoke.initialize(self)
@@ -314,8 +427,8 @@ class StorageSpoke(NormalTUISpoke):
 
 class AutoPartSpoke(NormalTUISpoke):
     """ Autopartitioning options are presented here. """
-    title = _("Autopartitioning Options")
-    category = "system"
+    title = N_("Autopartitioning Options")
+    category = SystemCategory
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
@@ -335,9 +448,8 @@ class AutoPartSpoke(NormalTUISpoke):
             # Default to clearing everything.
             self.clearPartType = CLEARPART_TYPE_ALL
 
-        for parttype in self.parttypelist:
-            c = CheckboxWidget(title="%i) %s" % (self.parttypelist.index(parttype) + 1,
-                                                 parttype),
+        for i, parttype in enumerate(self.parttypelist):
+            c = CheckboxWidget(title="%i) %s" % (i + 1, _(parttype)),
                                completed=(PARTTYPES[parttype] == self.clearPartType))
             self._window += [c, ""]
 
@@ -380,16 +492,17 @@ class AutoPartSpoke(NormalTUISpoke):
 
 class PartitionSchemeSpoke(NormalTUISpoke):
     """ Spoke to select what partitioning scheme to use on disk(s). """
-    title = _("Partition Scheme Options")
-    category = "system"
-
-    # set default FS to LVM, for consistency with graphical behavior
-    _selection = 1
+    title = N_("Partition Scheme Options")
+    category = SystemCategory
 
     def __init__(self, app, data, storage, payload, instclass):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
-        self.partschemes = OrderedDict([("Standard Partition", AUTOPART_TYPE_PLAIN),
-                        ("LVM", AUTOPART_TYPE_LVM), ("BTRFS", AUTOPART_TYPE_BTRFS)])
+        self.partschemes = OrderedDict()
+        pre_select = self.data.autopart.type or DEFAULT_AUTOPART_TYPE
+        for i, item in enumerate(AUTOPART_CHOICES):
+            self.partschemes[item[0]] = item[1]
+            if item[1] == pre_select:
+                self._selection = i
 
     @property
     def indirect(self):
@@ -399,10 +512,8 @@ class PartitionSchemeSpoke(NormalTUISpoke):
         NormalTUISpoke.refresh(self, args)
 
         schemelist = self.partschemes.keys()
-        for sch in schemelist:
-            box = CheckboxWidget(title="%i) %s" %(schemelist.index(sch) \
-                                 + 1, sch), completed=(schemelist.index(sch) \
-                                 == self._selection))
+        for i, sch in enumerate(schemelist):
+            box = CheckboxWidget(title="%i) %s" %(i + 1, _(sch)), completed=(i == self._selection))
             self._window += [box, ""]
 
         message = _("Select a partition scheme configuration.")
@@ -430,10 +541,4 @@ class PartitionSchemeSpoke(NormalTUISpoke):
         """ Apply our selections. """
 
         schemelist = self.partschemes.values()
-        try:
-            self.data.autopart.type = schemelist[self._selection]
-        except IndexError:
-            # we shouldn't ever see this, but just in case, don't crash.
-            # when autopart.type is detected as None in AutoPartSpoke.apply(),
-            # it'll automatically just be set to LVM
-            pass
+        self.data.autopart.type = schemelist[self._selection]

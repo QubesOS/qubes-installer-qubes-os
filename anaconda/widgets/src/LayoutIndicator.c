@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013  Red Hat, Inc.
+ * Copyright (C) 2013-2014 Red Hat, Inc.
  *
  * Some parts of this code were inspired by the xfce4-xkb-plugin's sources.
  *
@@ -19,6 +19,7 @@
  * Author: Vratislav Podzimek <vpodzime@redhat.com>
  */
 
+#include <atk/atk.h>
 #include <glib.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
@@ -59,7 +60,9 @@ struct _AnacondaLayoutIndicatorPrivate {
     GdkCursor *cursor;
     XklConfigRec *config_rec;
     gulong state_changed_handler_id;
+    gboolean state_changed_handler_id_set;
     gulong config_changed_handler_id;
+    gboolean config_changed_handler_id_set;
 };
 
 G_DEFINE_TYPE(AnacondaLayoutIndicator, anaconda_layout_indicator, GTK_TYPE_EVENT_BOX)
@@ -136,6 +139,7 @@ GtkWidget *anaconda_layout_indicator_new() {
 }
 
 static void anaconda_layout_indicator_init(AnacondaLayoutIndicator *self) {
+    AtkObject *atk;
     GdkDisplay *display;
     GdkRGBA background_color = { 0.0, 0.0, 0.0, 0.0 };
     AnacondaLayoutIndicatorClass *klass = ANACONDA_LAYOUT_INDICATOR_GET_CLASS(self);
@@ -198,9 +202,11 @@ static void anaconda_layout_indicator_init(AnacondaLayoutIndicator *self) {
     self->priv->state_changed_handler_id = g_signal_connect(klass->engine, "X-state-changed",
                                                               G_CALLBACK(x_state_changed),
                                                               g_object_ref(self));
+    self->priv->state_changed_handler_id_set = TRUE;
     self->priv->config_changed_handler_id = g_signal_connect(klass->engine, "X-config-changed",
                                                              G_CALLBACK(x_config_changed),
                                                              g_object_ref(self));
+    self->priv->config_changed_handler_id_set = TRUE;
 
     /* init layout attribute with the current layout */
     self->priv->layout = get_current_layout(klass->engine, self->priv->config_rec);
@@ -211,7 +217,9 @@ static void anaconda_layout_indicator_init(AnacondaLayoutIndicator *self) {
     gtk_label_set_max_width_chars(self->priv->layout_label, DEFAULT_LABEL_MAX_CHAR_WIDTH);
     gtk_label_set_width_chars(self->priv->layout_label, DEFAULT_LABEL_MAX_CHAR_WIDTH);
     gtk_label_set_ellipsize(self->priv->layout_label, PANGO_ELLIPSIZE_END);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(self->priv->layout_label), 0.0, 0.5);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
     /* initialize the label with the current layout name */
     anaconda_layout_indicator_refresh_ui_elements(self);
@@ -224,13 +232,17 @@ static void anaconda_layout_indicator_init(AnacondaLayoutIndicator *self) {
     self->priv->main_box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4));
     gtk_box_pack_start(self->priv->main_box, self->priv->icon, FALSE, FALSE, 0);
     gtk_box_pack_end(self->priv->main_box, GTK_WIDGET(self->priv->layout_label), FALSE, FALSE, 0);
-    gtk_widget_set_margin_left(GTK_WIDGET(self->priv->main_box), 4);
-    gtk_widget_set_margin_right(GTK_WIDGET(self->priv->main_box), 4);
+    gtk_widget_set_margin_start(GTK_WIDGET(self->priv->main_box), 4);
+    gtk_widget_set_margin_end(GTK_WIDGET(self->priv->main_box), 4);
     gtk_widget_set_margin_top(GTK_WIDGET(self->priv->main_box), 3);
     gtk_widget_set_margin_bottom(GTK_WIDGET(self->priv->main_box), 3);
 
     /* add box to the main container (self) */
     gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(self->priv->main_box));
+
+    atk = gtk_widget_get_accessible(GTK_WIDGET(self));
+    atk_object_set_name(atk, "Keyboard Layout");
+    atk_object_set_description(atk, self->priv->layout);
 }
 
 static void anaconda_layout_indicator_dispose(GObject *object) {
@@ -238,8 +250,17 @@ static void anaconda_layout_indicator_dispose(GObject *object) {
     AnacondaLayoutIndicatorClass *klass = ANACONDA_LAYOUT_INDICATOR_GET_CLASS(self);
 
     /* disconnect signals (XklEngine will outlive us) */
-    g_signal_handler_disconnect(klass->engine, self->priv->state_changed_handler_id);
-    g_signal_handler_disconnect(klass->engine, self->priv->config_changed_handler_id);
+    if (self->priv->state_changed_handler_id_set)
+    {
+        g_signal_handler_disconnect(klass->engine, self->priv->state_changed_handler_id);
+        self->priv->state_changed_handler_id_set = FALSE;
+    }
+
+    if (self->priv->config_changed_handler_id_set)
+    {
+        g_signal_handler_disconnect(klass->engine, self->priv->config_changed_handler_id);
+        self->priv->config_changed_handler_id_set = FALSE;
+    }
 
     /* unref all objects we reference (may be called multiple times) */
     if (self->priv->layout_label) {
@@ -258,6 +279,8 @@ static void anaconda_layout_indicator_dispose(GObject *object) {
         g_free(self->priv->layout);
         self->priv->layout = NULL;
     }
+
+    G_OBJECT_CLASS(anaconda_layout_indicator_parent_class)->dispose(object);
 }
 
 static void anaconda_layout_indicator_realize(GtkWidget *widget, gpointer data) {
@@ -322,10 +345,14 @@ static void anaconda_layout_indicator_refresh_ui_elements(AnacondaLayoutIndicato
 }
 
 static void anaconda_layout_indicator_refresh_layout(AnacondaLayoutIndicator *self) {
+    AtkObject *atk;
     AnacondaLayoutIndicatorClass *klass = ANACONDA_LAYOUT_INDICATOR_GET_CLASS(self);
 
     g_free(self->priv->layout);
     self->priv->layout = get_current_layout(klass->engine, self->priv->config_rec);
+
+    atk = gtk_widget_get_accessible(GTK_WIDGET(self));
+    atk_object_set_description(atk, self->priv->layout);
 
     anaconda_layout_indicator_refresh_ui_elements(self);
 }

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # anaconda: The Red Hat Linux Installation program
 #
 # Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
@@ -30,11 +28,14 @@
 
 import os
 import sys
-from pyanaconda.constants import ROOT_PATH
+import stat
+from glob import glob
 from tempfile import mkstemp
+import threading
 
 from pyanaconda.bootloader import get_bootloader
 from pyanaconda import constants
+from pyanaconda import iutil
 from pyanaconda import addons
 
 import logging
@@ -50,7 +51,6 @@ class Anaconda(object):
         self.desktop = desktop.Desktop()
         self.dir = None
         self.displayMode = None
-        self.extraModules = []
         self.id = None
         self._instClass = None
         self._intf = None
@@ -64,7 +64,6 @@ class Anaconda(object):
         self.proxyUsername = None
         self.proxyPassword = None
         self.reIPLMessage = None
-        self.rescue = False
         self.rescue_mount = True
         self.rootParts = None
 
@@ -75,6 +74,15 @@ class Anaconda(object):
 
         # *sigh* we still need to be able to write this out
         self.xdriver = None
+
+        # Data for inhibiting the screensaver
+        self.dbus_session_connection = None
+        self.dbus_inhibit_id = None
+
+        # This is used to synchronize Gtk.main calls between the graphical
+        # interface and error dialogs. Whoever gets to their initialization code
+        # first will lock gui_initializing
+        self.gui_initialized = threading.Lock()
 
     @property
     def bootloader(self):
@@ -113,14 +121,21 @@ class Anaconda(object):
             if not klass:
                 from pyanaconda.flags import flags
 
-                if flags.livecdInstall:
+                if self.ksdata.ostreesetup.seen:
+                    from pyanaconda.packaging.rpmostreepayload import RPMOSTreePayload
+                    klass = RPMOSTreePayload
+                elif flags.livecdInstall:
                     from pyanaconda.packaging.livepayload import LiveImagePayload
                     klass = LiveImagePayload
                 elif self.ksdata.method.method == "liveimg":
                     from pyanaconda.packaging.livepayload import LiveImageKSPayload
                     klass = LiveImageKSPayload
                 elif flags.dnf:
-                    from pyanaconda.packaging.dnfpayload import DNFPayload as klass
+                    try:
+                        from pyanaconda.packaging.dnfpayload import DNFPayload
+                        klass = DNFPayload
+                    except ImportError:
+                        log.critical('Importing DNF  failed.', exc_info=True)
                 else:
                     from pyanaconda.packaging.yumpayload import YumPayload
                     klass = YumPayload
@@ -131,7 +146,6 @@ class Anaconda(object):
 
     @property
     def protected(self):
-        import stat
         specs = []
         if os.path.exists("/run/initramfs/livedev") and \
            stat.S_ISBLK(os.stat("/run/initramfs/livedev")[stat.ST_MODE]):
@@ -142,6 +156,10 @@ class Anaconda(object):
 
         if self.stage2 and self.stage2.startswith("hd:"):
             specs.append(self.stage2[3:].split(":", 3)[0])
+
+        # zRAM swap devices need to be protected
+        for zram_dev in glob("/dev/zram*"):
+            specs.append(zram_dev)
 
         return specs
 
@@ -179,8 +197,8 @@ class Anaconda(object):
         dump_text = exn.traceback_and_object_dump(self)
         dump_text += threads
         dump_text = dump_text.encode("utf-8")
-        os.write(fd, dump_text)
-        os.close(fd)
+        iutil.eintr_retry_call(os.write, fd, dump_text)
+        iutil.eintr_retry_call(os.close, fd)
 
         # append to a given file
         with open("/tmp/anaconda-tb-all.log", "a+") as f:
@@ -194,7 +212,7 @@ class Anaconda(object):
         if self.displayMode == 'g':
             from pyanaconda.ui.gui import GraphicalUserInterface
             self._intf = GraphicalUserInterface(self.storage, self.payload,
-                                                self.instClass)
+                                                self.instClass, gui_lock=self.gui_initialized)
 
             # needs to be refreshed now we know if gui or tui will take place
             addon_paths = addons.collect_addon_paths(constants.ADDON_PATHS,
@@ -219,9 +237,9 @@ class Anaconda(object):
         if self.xdriver is None:
             return
         if root is None:
-            root = ROOT_PATH
+            root = iutil.getSysroot()
         if not os.path.isdir("%s/etc/X11" %(root,)):
-            os.makedirs("%s/etc/X11" %(root,), mode=0755)
+            os.makedirs("%s/etc/X11" %(root,), mode=0o755)
         f = open("%s/etc/X11/xorg.conf" %(root,), 'w')
         f.write('Section "Device"\n\tIdentifier "Videocard0"\n\tDriver "%s"\nEndSection\n' % self.xdriver)
         f.close()

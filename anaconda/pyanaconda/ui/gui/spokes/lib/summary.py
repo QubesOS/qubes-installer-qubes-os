@@ -20,6 +20,7 @@
 #
 
 from pyanaconda.ui.gui import GUIObject
+from pyanaconda.ui.gui.utils import escape_markup
 
 from blivet.deviceaction import ACTION_TYPE_DESTROY, ACTION_TYPE_RESIZE, ACTION_OBJECT_FORMAT
 
@@ -34,15 +35,17 @@ class ActionSummaryDialog(GUIObject):
         GUIObject.__init__(self, data)
         self._store = self.builder.get_object("actionStore")
 
-    # pylint: disable-msg=W0221
+    # pylint: disable=arguments-differ
     def initialize(self, actions):
         for (i, action) in enumerate(actions, start=1):
             mountpoint = ""
 
             if action.type in [ACTION_TYPE_DESTROY, ACTION_TYPE_RESIZE]:
-                typeString = """<span foreground='red'>%s</span>""" % action.typeDesc.title()
+                typeString = """<span foreground='red'>%s</span>""" % \
+                        escape_markup(action.typeDesc.title())
             else:
-                typeString = """<span foreground='green'>%s</span>""" % action.typeDesc.title()
+                typeString = """<span foreground='green'>%s</span>""" % \
+                        escape_markup(action.typeDesc.title())
                 if action.obj == ACTION_OBJECT_FORMAT:
                     mountpoint = getattr(action.device.format, "mountpoint", "")
 
@@ -52,7 +55,7 @@ class ActionSummaryDialog(GUIObject):
                                 action.device.name,
                                 mountpoint])
 
-    # pylint: disable-msg=W0221
+    # pylint: disable=arguments-differ
     def refresh(self, actions):
         GUIObject.refresh(self)
 

@@ -18,6 +18,7 @@
 # Author: Chris Lumens <clumens@redhat.com>
 from mock import Mock
 import unittest
+import os
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -38,6 +39,7 @@ class BaseTestCase(unittest.TestCase):
 # F10 version of a command, make sure anaconda >= F10 uses the F10 version.
 class CommandVersionTestCase(BaseTestCase):
     def commands_test(self):
+        """Test that anaconda uses the right versions of kickstart commands"""
         for (commandName, commandObj) in self._commandMap.iteritems():
             pykickstartClass = self.handler.commands[commandName].__class__
             self.assertIsInstance(commandObj(), pykickstartClass)
@@ -45,8 +47,33 @@ class CommandVersionTestCase(BaseTestCase):
 # Do the same thing as CommandVersionTestCase, but for data objects.
 class DataVersionTestCase(BaseTestCase):
     def data_test(self):
+        """Test that anaconda uses the right versions of kickstart data"""
         for (dataName, dataObj) in self._dataMap.iteritems():
             # pykickstart does not expose data objects as a mapping the way
             # it does command objects.
             pykickstartClass = eval("self.handler.%s" % dataName)
             self.assertIsInstance(dataObj(), pykickstartClass)
+
+# Copy the commands tests but with the command map from dracut/parse-kickstart
+class DracutCommandVersionTestCase(CommandVersionTestCase):
+    def setUp(self):
+        CommandVersionTestCase.setUp(self)
+
+        # top_srcdir should have been set by nosetests.sh. If it wasn't, the KeyError
+        # will fail the test.
+        parse_kickstart_path = os.path.join(os.environ['top_srcdir'], 'dracut', 'parse-kickstart')
+
+        import tempfile
+        with tempfile.NamedTemporaryFile() as parse_temp:
+            # Compile the file manually to a tempfile so that the import doesn't automatically
+            # crud up the source directory with parse-kickstartc
+            import py_compile
+            parse_temp = tempfile.NamedTemporaryFile()
+            py_compile.compile(parse_kickstart_path, parse_temp.name)
+
+            # Use imp to pretend that hyphens are ok for module names
+            import imp
+            parse_module = imp.load_module('parse_kickstart', parse_temp.file,
+                    parse_temp.name, ('', 'r', imp.PY_COMPILED))
+
+        self._commandMap = parse_module.dracutCmds

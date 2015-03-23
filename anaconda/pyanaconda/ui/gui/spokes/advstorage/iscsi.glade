@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.3 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
+  <object class="GtkListStore" id="nodeStore">
+    <columns>
+      <!-- column-name nodeSelected -->
+      <column type="gboolean"/>
+      <!-- column-name nodeNotLoggedIn -->
+      <column type="gboolean"/>
+      <!-- column-name nodeName -->
+      <column type="gchararray"/>
+      <!-- column-name nodeIface -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkTreeModelFilter" id="nodeStoreFiltered">
+    <property name="child_model">nodeStore</property>
+  </object>
   <object class="GtkDialog" id="iscsiDialog">
     <property name="can_focus">False</property>
     <property name="border_width">6</property>
     <property name="modal">True</property>
+    <property name="default_width">600</property>
     <property name="type_hint">dialog</property>
     <property name="decorated">False</property>
     <child internal-child="vbox">
@@ -18,11 +35,11 @@
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="cancelButton">
-                <property name="label">gtk-cancel</property>
+                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">_Cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -32,12 +49,12 @@
             </child>
             <child>
               <object class="GtkButton" id="okButton">
-                <property name="label">gtk-ok</property>
+                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">_OK</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -100,7 +117,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
                         <property name="width">3</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -115,7 +131,6 @@
                         <property name="left_attach">1</property>
                         <property name="top_attach">1</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -123,15 +138,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">_Target IP Address:</property>
+                        <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">_Target IP Address:</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">targetEntry</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -146,7 +159,6 @@
                         <property name="left_attach">1</property>
                         <property name="top_attach">2</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -154,15 +166,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">iSCSI _Initiator Name:</property>
+                        <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">iSCSI _Initiator Name:</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">initiatorEntry</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">2</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -171,8 +181,6 @@
                         <property name="can_focus">False</property>
                         <property name="hexpand">True</property>
                         <property name="active">0</property>
-                        <property name="entry_text_column">0</property>
-                        <property name="id_column">1</property>
                         <items>
                           <item translatable="yes">No credentials (discovery authentication disabled)</item>
                           <item translatable="yes">CHAP pair</item>
@@ -184,7 +192,6 @@
                         <property name="left_attach">1</property>
                         <property name="top_attach">4</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -192,15 +199,13 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">_Discovery Authentication Type:</property>
+                        <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">_Discovery Authentication Type:</property>
                         <property name="use_underline">True</property>
                         <property name="mnemonic_widget">authTypeCombo</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">4</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -215,21 +220,17 @@
                       <packing>
                         <property name="left_attach">2</property>
                         <property name="top_attach">3</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkImage" id="image1">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-info</property>
+                        <property name="icon_name">dialog-information</property>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">3</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -258,15 +259,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CHAP _Username:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|CHAP">CHAP _Username:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">chapUsernameEntry</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -274,15 +273,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CHAP _Password:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|CHAP">CHAP _Password:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">chapPasswordEntry</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">1</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -296,8 +293,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -312,8 +307,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">1</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                           </object>
@@ -341,8 +334,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -357,8 +348,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">1</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -372,8 +361,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">2</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -388,8 +375,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">3</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -397,15 +382,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CHAP _Username:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Reverse CHAP">CHAP _Username:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">rchapUsernameEntry</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -413,15 +396,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CHAP _Password:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Reverse CHAP">CHAP _Password:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">rchapPasswordEntry</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">1</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -429,15 +410,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">Reverse CHAP User_name:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Reverse CHAP">Reverse CHAP User_name:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">rchapReverseUsername</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">2</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -445,15 +424,13 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">Reverse CHAP Pass_word:</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Reverse CHAP">Reverse CHAP Pass_word:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">rchapReversePassword</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">3</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                           </object>
@@ -469,7 +446,6 @@
                         <property name="left_attach">1</property>
                         <property name="top_attach">5</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -481,7 +457,7 @@
                         <property name="show_border">False</property>
                         <child>
                           <object class="GtkButton" id="startButton">
-                            <property name="label" translatable="yes">_Start Discovery</property>
+                            <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Start">_Start Discovery</property>
                             <property name="visible">True</property>
                             <property name="sensitive">False</property>
                             <property name="can_focus">True</property>
@@ -546,13 +522,11 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">1</property>
-                                <property name="stock">gtk-dialog-error</property>
+                                <property name="icon_name">dialog-error</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -560,14 +534,14 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">&lt;b&gt;Discovery login rejected.&lt;/b&gt;</property>
-                                <property name="use_markup">True</property>
+                                <property name="label" translatable="yes">Discovery login rejected.</property>
+                                <attributes>
+                                  <attribute name="weight" value="bold"/>
+                                </attributes>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">0</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -581,8 +555,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">1</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -595,13 +567,11 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">2</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkButton" id="retryButton">
-                                <property name="label" translatable="yes">_Retry Discovery</property>
+                                <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure|Retry">_Retry Discovery</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -613,8 +583,6 @@
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="top_attach">3</property>
-                                <property name="width">1</property>
-                                <property name="height">1</property>
                               </packing>
                             </child>
                             <child>
@@ -639,12 +607,11 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">7</property>
                         <property name="width">3</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkCheckButton" id="bindCheckbutton">
-                        <property name="label" translatable="yes">_Bind targets to network interfaces</property>
+                        <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Configure">_Bind targets to network interfaces</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
@@ -656,7 +623,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">6</property>
                         <property name="width">3</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -680,7 +646,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">The following nodes were discovered using the iSCSI initiator &lt;b&gt;%(initiatorName)s&lt;/b&gt; using the target IP address &lt;b&gt;%(targetAddress)s&lt;/b&gt;.  Please select which nodes you wish to log into:</property>
+                        <property name="label">The following nodes were discovered using the iSCSI initiator &lt;b&gt;%(initiatorName)s&lt;/b&gt; using the target IP address &lt;b&gt;%(targetAddress)s&lt;/b&gt;.  Please select which nodes you wish to log into:</property>
                         <property name="use_markup">True</property>
                         <property name="wrap">True</property>
                       </object>
@@ -688,7 +654,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -748,7 +713,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">1</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -762,23 +726,19 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="xalign">0</property>
-                            <property name="label" translatable="yes">_Node login authentication type:</property>
+                            <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login">_Node login authentication type:</property>
                             <property name="use_underline">True</property>
                             <property name="mnemonic_widget">loginAuthTypeCombo</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
                             <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="loginAuthTypeCombo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="entry_text_column">0</property>
-                            <property name="id_column">1</property>
                             <items>
                               <item translatable="yes">No credentials (discovery authentication disabled)</item>
                               <item translatable="yes">CHAP pair</item>
@@ -790,8 +750,6 @@
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="top_attach">0</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
                           </packing>
                         </child>
                         <child>
@@ -820,15 +778,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">CHAP _Username:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|CHAP">CHAP _Username:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginChapUsernameEntry</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -836,15 +792,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">CHAP _Password:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|CHAP">CHAP _Password:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginChapPasswordEntry</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -853,14 +807,11 @@
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -868,15 +819,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
+                                    <property name="visibility">False</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">1</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -899,14 +848,11 @@
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -914,15 +860,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
+                                    <property name="visibility">False</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">1</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -931,14 +875,11 @@
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">2</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -946,15 +887,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
+                                    <property name="visibility">False</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="invisible_char_set">True</property>
                                     <signal name="changed" handler="on_login_field_changed" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">3</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -962,15 +901,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">CHAP _Username:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Reverse CHAP">CHAP _Username:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginRchapUsernameEntry</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -978,15 +915,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">CHAP _Password:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Reverse CHAP">CHAP _Password:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginRchapPasswordEntry</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -994,15 +929,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">_Reverse CHAP Username:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Reverse CHAP">_Reverse CHAP Username:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginRchapReverseUsername</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">2</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1010,15 +943,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Reverse CHAP Pass_word:</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Reverse CHAP">Reverse CHAP Pass_word:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">loginRchapReversePassword</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">3</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1045,8 +976,6 @@
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="top_attach">1</property>
-                            <property name="width">1</property>
-                            <property name="height">1</property>
                           </packing>
                         </child>
                         <child>
@@ -1062,7 +991,7 @@
                                 <property name="spacing">6</property>
                                 <child>
                                   <object class="GtkButton" id="loginButton">
-                                    <property name="label" translatable="yes">_Log In</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Login">_Log In</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -1106,13 +1035,11 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">1</property>
-                                    <property name="stock">gtk-dialog-error</property>
+                                    <property name="icon_name">dialog-error</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1120,14 +1047,14 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">&lt;b&gt;Node login failed.&lt;/b&gt;</property>
-                                    <property name="use_markup">True</property>
+                                    <property name="label" translatable="yes">Node login failed.</property>
+                                    <attributes>
+                                      <attribute name="weight" value="bold"/>
+                                    </attributes>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1141,8 +1068,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">1</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1155,13 +1080,11 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">2</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="retryLoginButton">
-                                    <property name="label" translatable="yes">Retry _Log In</property>
+                                    <property name="label" translatable="yes" context="GUI|Advanced Storage|iSCSI|Login|Retry">Retry _Log In</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -1173,8 +1096,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">3</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1205,7 +1126,6 @@
                             <property name="left_attach">0</property>
                             <property name="top_attach">2</property>
                             <property name="width">2</property>
-                            <property name="height">1</property>
                           </packing>
                         </child>
                         <child>
@@ -1216,7 +1136,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">2</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                   </object>
@@ -1253,20 +1172,5 @@
       <action-widget response="0">cancelButton</action-widget>
       <action-widget response="1">okButton</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkListStore" id="nodeStore">
-    <columns>
-      <!-- column-name nodeSelected -->
-      <column type="gboolean"/>
-      <!-- column-name nodeNotLoggedIn -->
-      <column type="gboolean"/>
-      <!-- column-name nodeName -->
-      <column type="gchararray"/>
-      <!-- column-name nodeIface -->
-      <column type="gchararray"/>
-    </columns>
-  </object>
-  <object class="GtkTreeModelFilter" id="nodeStoreFiltered">
-    <property name="child_model">nodeStore</property>
   </object>
 </interface>

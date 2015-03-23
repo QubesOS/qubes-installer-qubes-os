@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.1 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.2"/>
   <object class="GtkListStore" id="actionStore">
     <columns>
       <!-- column-name actionOrder -->
@@ -36,7 +37,7 @@
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="summaryCancelButton">
-                <property name="label" translatable="yes">_Cancel &amp; Return to Custom Partitioning</property>
+                <property name="label" translatable="yes" context="GUI|Summary Dialog">_Cancel &amp; Return to Custom Partitioning</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -51,7 +52,7 @@
             </child>
             <child>
               <object class="GtkButton" id="summaryAcceptButton">
-                <property name="label" translatable="yes">_Accept Changes</property>
+                <property name="label" translatable="yes" context="GUI|Summary Dialog">_Accept Changes</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>

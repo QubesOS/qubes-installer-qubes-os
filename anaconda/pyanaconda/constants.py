@@ -19,16 +19,16 @@
 # Author(s): Erik Troan <ewt@redhat.com>
 #
 
+import string
 from pyanaconda.i18n import N_
 
-SELINUX_DEFAULT = 1
+# Use -1 to indicate that the selinux configuration is unset
+SELINUX_DEFAULT = -1
 
 # where to look for 3rd party addons
 ADDON_PATHS = ["/usr/share/anaconda/addons"]
 
-# pull in kickstart constants as well
-# pylint: disable-msg=W0401
-from pykickstart.constants import *
+from pykickstart.constants import AUTOPART_TYPE_LVM
 
 # common string needs to be easy to change
 from pyanaconda import product
@@ -51,7 +51,6 @@ DD_RPMS = "/tmp/DD-*"
 TRANSLATIONS_UPDATE_DIR="/tmp/updates/po"
 
 ANACONDA_CLEANUP = "anaconda-cleanup"
-ROOT_PATH = "/mnt/sysimage"
 MOUNT_DIR = "/mnt/install"
 DRACUT_REPODIR = "/run/install/repo"
 DRACUT_ISODIR = "/run/install/source"
@@ -91,7 +90,7 @@ THREAD_CHECK_STORAGE = "AnaCheckStorageThread"
 THREAD_CUSTOM_STORAGE_INIT = "AnaCustomStorageInit"
 THREAD_WAIT_FOR_CONNECTING_NM = "AnaWaitForConnectingNMThread"
 THREAD_PAYLOAD = "AnaPayloadThread"
-THREAD_PAYLOAD_MD = "AnaPayloadMDThread"
+THREAD_PAYLOAD_RESTART = "AnaPayloadRestartThread"
 THREAD_INPUT_BASENAME = "AnaInputThread"
 THREAD_SYNC_TIME_BASENAME = "AnaSyncTime"
 THREAD_EXCEPTION_HANDLING_TEST = "AnaExceptionHandlingTest"
@@ -107,7 +106,9 @@ THREAD_ISCSI_LOGIN = "AnaIscsiLoginThread"
 THREAD_GEOLOCATION_REFRESH = "AnaGeolocationRefreshThread"
 THREAD_DATE_TIME = "AnaDateTimeThread"
 THREAD_TIME_INIT = "AnaTimeInitThread"
-THREAD_XKL_WRAPPER_INIT = "AnaXklWrapperInitThread"
+THREAD_DASDFMT = "AnaDasdfmtThread"
+THREAD_KEYBOARD_INIT = "AnaKeyboardThread"
+THREAD_ADD_LAYOUTS_INIT = "AnaAddLayoutsInitThread"
 
 # Geolocation constants
 
@@ -140,5 +141,27 @@ PASSWORD_WEAK = N_("The password you have provided is weak. You will have to pre
 PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s. You will have to press Done twice to confirm it.")
 PASSWORD_WEAK_CONFIRM = N_("You have provided a weak password. Press Done again to use anyway.")
 PASSWORD_WEAK_CONFIRM_WITH_ERROR = N_("You have provided a weak password: %s. Press Done again to use anyway.")
+PASSWORD_ASCII = N_("The password you have provided contains non-ASCII characters. You may not be able to switch between keyboard layouts to login. Press Done to continue.")
 
 PASSWORD_STRENGTH_DESC = [N_("Empty"), N_("Weak"), N_("Fair"), N_("Good"), N_("Strong")]
+
+# the number of seconds we consider a noticeable freeze of the UI
+NOTICEABLE_FREEZE = 0.1
+
+# all ASCII characters
+PW_ASCII_CHARS = string.digits + string.ascii_letters + string.punctuation + " "
+
+# Recognizing a tarfile
+TAR_SUFFIX = (".tar", ".tbz", ".tgz", ".txz", ".tar.bz2", "tar.gz", "tar.xz")
+
+# cmdline arguments that append instead of overwrite
+CMDLINE_APPEND = ["modprobe.blacklist"]
+
+DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM
+
+import logging
+LOGLVL_LOCK = logging.DEBUG-1
+
+# for how long (in seconds) we try to wait for enough entropy for LUKS
+# keep this a multiple of 60 (minutes)
+MAX_ENTROPY_WAIT = 10 * 60

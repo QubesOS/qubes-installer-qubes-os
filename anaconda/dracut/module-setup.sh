@@ -32,6 +32,7 @@ install() {
     inst_hook pre-trigger 50 "$moddir/kickstart-genrules.sh"
     inst_hook pre-trigger 50 "$moddir/updates-genrules.sh"
     inst_hook initqueue/settled 00 "$moddir/anaconda-ks-sendheaders.sh"
+    inst_hook initqueue/online 00 "$moddir/anaconda-ifcfg.sh"
     inst_hook initqueue/online 80 "$moddir/anaconda-netroot.sh"
     inst "$moddir/anaconda-diskroot" "/sbin/anaconda-diskroot"
     inst_hook pre-pivot 50 "$moddir/anaconda-copy-ks.sh"
@@ -45,13 +46,14 @@ install() {
     inst "$moddir/parse-kickstart" "/sbin/parse-kickstart"
     # Driver Update Disks
     inst_hook cmdline 29 "$moddir/parse-anaconda-dd.sh"
-    inst_hook initqueue/online 10 "$moddir/fetch-driver-net.sh"
+    inst_hook initqueue/online 20 "$moddir/fetch-driver-net.sh"
     inst_hook pre-trigger 40 "$moddir/driver-updates.sh"
     inst_hook pre-pivot 10 "$moddir/driver-updates-net.sh"
     inst_hook pre-pivot 50 "$moddir/anaconda-depmod.sh"
     inst "$moddir/driver-updates" "/bin/driver-updates"
     inst_simple "$moddir/driver-updates@.service" "/etc/systemd/system/driver-updates@.service"
-    inst_simple "$moddir/driver-updates-net@.service" "/etc/systemd/system/driver-updates-net@.service"
+    # rpm configuration file (needed by dd_extract)
+    inst "/usr/lib/rpm/rpmrc"
     # python deps for parse-kickstart. DOUBLE WOOOO
     $moddir/python-deps $moddir/parse-kickstart $moddir/driver-updates | while read dep; do
         case "$dep" in

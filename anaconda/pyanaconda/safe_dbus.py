@@ -20,12 +20,11 @@
 
 """Module providing thread-safe and mainloop-safe DBus operations."""
 
+import os
 from gi.repository import GLib, Gio
 from pyanaconda.constants import DEFAULT_DBUS_TIMEOUT
 
 DBUS_PROPS_IFACE = "org.freedesktop.DBus.Properties"
-DBUS_SYSTEM_BUS_ADDR = Gio.dbus_address_get_for_bus_sync(Gio.BusType.SYSTEM,
-                                                         None)
 
 class SafeDBusError(Exception):
     """Class for exceptions defined in this module."""
@@ -42,8 +41,58 @@ class DBusPropertyError(DBusCallError):
 
     pass
 
-def dbus_call_safe_sync(service, obj_path, iface, method, args,
-                        connection=None):
+def get_new_system_connection():
+    """Return a new connection to the system bus."""
+
+    return Gio.DBusConnection.new_for_address_sync(
+        Gio.dbus_address_get_for_bus_sync(Gio.BusType.SYSTEM, None),
+        Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT|
+        Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
+        None, None)
+
+def get_new_session_connection():
+    """
+    Get a connection handle for the per-user-login-session message bus.
+
+    !!! RUN THIS EARLY !!! like, before any other threads start. Connections to
+    the session bus must be made with the effective UID of the login user,
+    which in live installs is not the UID of anaconda. This means we need to
+    call seteuid in this method, and doing that after threads have started will
+    probably do something weird.
+
+    Live installs use consolehelper to run as root, which sets the original
+    UID in $USERHELPER_UID.
+
+    :return: the session connection handle
+    :rtype: Gio.DBusConnection
+    :raise DBusCallError: if some DBus related error appears
+    :raise OSError: if unable to set the effective UID
+    """
+
+    old_euid = None
+    if "USERHELPER_UID" in os.environ:
+        old_euid = os.geteuid()
+        os.seteuid(int(os.environ["USERHELPER_UID"]))
+
+    try:
+        connection = Gio.DBusConnection.new_for_address_sync(
+            Gio.dbus_address_get_for_bus_sync(Gio.BusType.SESSION, None),
+            Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT|
+            Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
+            None, None)
+    except GLib.GError as gerr:
+        raise DBusCallError("Unable to connect to session bus: %s", gerr)
+    finally:
+        if old_euid is not None:
+            os.seteuid(old_euid)
+
+    if connection.is_closed():
+        raise DBusCallError("Connection is closed")
+
+    return connection
+
+def call_sync(service, obj_path, iface, method, args,
+                   connection=None):
     """
     Safely call a given method on a given object of a given service over DBus
     passing given arguments. If a connection is given, it is used, otherwise a
@@ -70,11 +119,10 @@ def dbus_call_safe_sync(service, obj_path, iface, method, args,
     """
 
     if not connection:
-        connection = Gio.DBusConnection.new_for_address_sync(
-                       DBUS_SYSTEM_BUS_ADDR,
-                       Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT|
-                       Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
-                       None, None)
+        try:
+            connection = get_new_system_connection()
+        except GLib.GError as gerr:
+            raise DBusCallError("Unable to connect to system bus: %s", gerr)
 
     if connection.is_closed():
         raise DBusCallError("Connection is closed")
@@ -88,10 +136,15 @@ def dbus_call_safe_sync(service, obj_path, iface, method, args,
                        (method, obj_path, args, gerr.message)
         raise DBusCallError(msg)
 
+    if ret is None:
+        msg = "No return from %s method on %s with %s arguments" % \
+                       (method, obj_path, args)
+        raise DBusCallError(msg)
+
     return ret.unpack()
 
-def dbus_get_property_safe_sync(service, obj_path, iface, prop_name,
-                                connection=None):
+def get_property_sync(service, obj_path, iface, prop_name,
+                      connection=None):
     """
     Get value of a given property of a given object provided by a given service.
 
@@ -116,8 +169,8 @@ def dbus_get_property_safe_sync(service, obj_path, iface, prop_name,
     """
 
     args = GLib.Variant('(ss)', (iface, prop_name))
-    ret = dbus_call_safe_sync(service, obj_path, DBUS_PROPS_IFACE, "Get", args,
-                              connection)
+    ret = call_sync(service, obj_path, DBUS_PROPS_IFACE, "Get", args,
+                    connection)
     if ret is None:
         msg = "No value for the %s object's property %s" % (obj_path, prop_name)
         raise DBusPropertyError(msg)

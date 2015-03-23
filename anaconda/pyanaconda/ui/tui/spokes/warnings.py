@@ -22,7 +22,7 @@
 from pyanaconda.ui.tui.spokes import StandaloneTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget
 from pyanaconda.ui.tui.hubs.summary import SummaryHub
-from pyanaconda.i18n import _
+from pyanaconda.i18n import N_, _
 
 from pyanaconda.iutil import is_unsupported_hw
 from pyanaconda.product import productName
@@ -33,7 +33,7 @@ log = logging.getLogger("anaconda")
 __all__ = ["WarningsSpoke"]
 
 class WarningsSpoke(StandaloneTUISpoke):
-    title = _("Warnings")
+    title = N_("Warnings")
 
     preForHub = SummaryHub
     priority = 0
@@ -46,7 +46,7 @@ class WarningsSpoke(StandaloneTUISpoke):
                           "supported hardware, please refer to "
                           "http://www.redhat.com/hardware." )
         # Does anything need to be displayed?
-        self._unsupported = productName.startswith("Red Hat Enterprise Linux") and \
+        self._unsupported = productName.startswith("Red Hat ") and \
                             is_unsupported_hw() and \
                             not self.data.unsupportedhardware.unsupported_hardware
 
@@ -61,3 +61,6 @@ class WarningsSpoke(StandaloneTUISpoke):
 
         return True
 
+    # Override Spoke.apply
+    def apply(self):
+        pass

@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.3 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
-  <!-- interface-requires AnacondaWidgets 1.0 -->
+  <requires lib="gtk+" version="3.0"/>
+  <requires lib="AnacondaWidgets" version="3.0"/>
   <object class="AnacondaHubWindow" id="summaryWindow">
-    <property name="startup_id">filler</property>
     <property name="can_focus">False</property>
-    <property name="startup_id">filler</property>
-    <property name="mnemonics_visible">False</property>
-    <property name="focus_visible">False</property>
     <property name="window_name" translatable="yes">INSTALLATION SUMMARY</property>
+    <property name="quit_button">quitButton</property>
+    <property name="continue_button">continueButton</property>
     <child internal-child="main_box">
       <object class="GtkBox" id="AnacondaHubWindow-main_box1">
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child internal-child="nav_box">
           <object class="GtkEventBox" id="AnacondaHubWindow-nav_box1">
+            <property name="can_focus">False</property>
             <child internal-child="nav_area">
               <object class="GtkGrid" id="AnacondaHubWindow-nav_area1">
                 <property name="can_focus">False</property>
+                <child>
+                  <placeholder/>
+                </child>
                 <child>
                   <placeholder/>
                 </child>
@@ -35,7 +38,6 @@
             <property name="can_focus">False</property>
             <property name="yalign">0</property>
             <property name="xscale">0.5</property>
-            <property name="yscale">1.0</property>
             <child internal-child="action_area">
               <object class="GtkBox" id="summaryWindow-actionArea">
                 <property name="can_focus">False</property>
@@ -71,16 +73,16 @@
             <property name="can_focus">False</property>
             <property name="margin_left">6</property>
             <property name="margin_right">6</property>
+            <property name="spacing">12</property>
+            <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="quitButton">
-                <property name="label" translatable="yes">_Quit</property>
+                <property name="label" translatable="yes" context="GUI|Summary">_Quit</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">start</property>
                 <property name="hexpand">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
               </object>
               <packing>
@@ -91,18 +93,20 @@
             </child>
             <child>
               <object class="GtkButton" id="continueButton">
-                <property name="label" translatable="yes">_Begin Installation</property>
+                <property name="label" translatable="yes" context="GUI|Summary">_Begin Installation</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="halign">end</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
+                <style>
+                  <class name="suggested-action"/>
+                </style>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
+                <property name="pack_type">end</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -117,13 +121,13 @@
           <object class="GtkLabel" id="label1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="xalign">1</property>
             <property name="margin_right">6</property>
             <property name="margin_bottom">6</property>
-            <property name="label" translatable="yes">We won't touch your disks until you hit this button.</property>
+            <property name="xalign">1</property>
+            <property name="label" translatable="yes">We won't touch your disks until you click 'Begin Installation'.</property>
             <attributes>
               <attribute name="font-desc" value="Cantarell Italic"/>
-              <attribute name="foreground" value="grey"/>
+              <attribute name="foreground" value="#808080808080"/>
             </attributes>
           </object>
           <packing>
@@ -132,6 +136,11 @@
             <property name="position">3</property>
           </packing>
         </child>
+      </object>
+    </child>
+    <child internal-child="accessible">
+      <object class="AtkObject" id="summaryWindow-atkobject">
+        <property name="AtkObject::accessible-name" translatable="yes">INSTALLATION SUMMARY</property>
       </object>
     </child>
   </object>

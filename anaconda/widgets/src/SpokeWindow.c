@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013  Red Hat, Inc.
+ * Copyright (C) 2011-2014  Red Hat, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,9 @@
 #include "BaseWindow.h"
 #include "SpokeWindow.h"
 #include "intl.h"
+#include "widgets-common.h"
 
+#include <atk/atk.h>
 #include <gdk/gdkkeysyms.h>
 
 /**
@@ -28,11 +30,11 @@
  * @title: AnacondaSpokeWindow
  * @short_description: Window for displaying single spokes
  *
- * A #AnacondaSpokeWindow is a top-level window that displays a single spoke
- * on the entire screen.  Examples include the keyboard and language
- * configuration screens off the first hub.
+ * A #AnacondaSpokeWindow is a widget that displays a single spoke on the
+ * screen.  Examples include the keyboard and language configuration screens
+ * off the first hub.
  *
- * The window consists of two areas:
+ * The AnacondaSpokeWindow consists of two areas:
  *
  * - A navigation area in the top of the screen, inherited from #AnacondaBaseWindow
  *   and augmented with a button in the upper left corner.
@@ -40,10 +42,6 @@
  * - An action area in the rest of the screen, taking up a majority of the
  *   space.  This is where widgets will be added and the user will do things.
  */
-
-enum {
-    PROP_BUTTON_LABEL = 1
-};
 
 #define DEFAULT_BUTTON_LABEL _("_Done")
 
@@ -60,37 +58,13 @@ struct _AnacondaSpokeWindowPrivate {
 
 G_DEFINE_TYPE(AnacondaSpokeWindow, anaconda_spoke_window, ANACONDA_TYPE_BASE_WINDOW)
 
-static void anaconda_spoke_window_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
-static void anaconda_spoke_window_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
-
-static void anaconda_spoke_window_realize(GtkWidget *widget, gpointer user_data);
 static void anaconda_spoke_window_button_clicked(GtkButton *button,
                                                  AnacondaSpokeWindow *win);
 
 static void anaconda_spoke_window_class_init(AnacondaSpokeWindowClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
 
-    object_class->set_property = anaconda_spoke_window_set_property;
-    object_class->get_property = anaconda_spoke_window_get_property;
-
     klass->button_clicked = NULL;
-
-    /**
-     * AnacondaSpokeWindow:button-label:
-     *
-     * The :button-label string is the text used to label the button displayed
-     * in the upper lefthand of the window.  By default, this button says Done,
-     * but it could be changed to anything appropriate.
-     *
-     * Since: 1.0
-     */
-    g_object_class_install_property(object_class,
-                                    PROP_BUTTON_LABEL,
-                                    g_param_spec_string("button-label",
-                                                        P_("Button Label"),
-                                                        P_("Label to appear on the upper left button"),
-                                                        DEFAULT_BUTTON_LABEL,
-                                                        G_PARAM_READWRITE));
 
     /**
      * AnacondaSpokeWindow::button-clicked:
@@ -130,16 +104,13 @@ GtkWidget *anaconda_spoke_window_new() {
 }
 
 static void anaconda_spoke_window_init(AnacondaSpokeWindow *win) {
+    AtkObject *atk;
     GtkWidget *nav_area;
+    GtkStyleContext *context;
 
     win->priv = G_TYPE_INSTANCE_GET_PRIVATE(win,
                                             ANACONDA_TYPE_SPOKE_WINDOW,
                                             AnacondaSpokeWindowPrivate);
-
-    g_signal_connect(win, "map", G_CALLBACK(anaconda_spoke_window_realize), NULL);
-
-    /* Set some default properties. */
-    gtk_window_set_modal(GTK_WINDOW(win), TRUE);
 
     /* Create the button. */
     win->priv->button = gtk_button_new_with_mnemonic(DEFAULT_BUTTON_LABEL);
@@ -147,6 +118,13 @@ static void anaconda_spoke_window_init(AnacondaSpokeWindow *win) {
     gtk_widget_set_vexpand(win->priv->button, FALSE);
     gtk_widget_set_valign(win->priv->button, GTK_ALIGN_END);
     gtk_widget_set_margin_bottom(win->priv->button, 6);
+
+    atk = gtk_widget_get_accessible(win->priv->button);
+    atk_object_set_name(atk, DEFAULT_BUTTON_LABEL);
+
+    /* Set 'Done' button to blue 'suggested-action' style class */
+    context = gtk_widget_get_style_context(win->priv->button);
+    gtk_style_context_add_class(context, "suggested-action");
 
     /* Hook up some signals for that button.  The signal handlers here will
      * just raise our own custom signals for the whole window.
@@ -159,78 +137,7 @@ static void anaconda_spoke_window_init(AnacondaSpokeWindow *win) {
     gtk_grid_attach(GTK_GRID(nav_area), win->priv->button, 0, 1, 1, 2);
 }
 
-static void anaconda_spoke_window_realize(GtkWidget *widget, gpointer user_data) {
-    GtkAccelGroup *accel_group;
-    GError *error;
-    GdkPixbuf *pixbuf;
-    cairo_pattern_t *pattern;
-    cairo_surface_t *surface;
-    cairo_t *cr;
-
-    AnacondaSpokeWindow *window = ANACONDA_SPOKE_WINDOW(widget);
-
-    /* Set the background gradient in the header.  If we fail to load the
-     * background for any reason, just print an error message and display the
-     * header without an image.
-     */
-    error = NULL;
-    pixbuf = gdk_pixbuf_new_from_file("/usr/share/anaconda/pixmaps/anaconda_spoke_header.png", &error);
-    if (!pixbuf) {
-        fprintf(stderr, "could not load header background: %s\n", error->message);
-        g_error_free(error);
-    } else {
-        GtkWidget *nav_box = anaconda_base_window_get_nav_area_background_window(ANACONDA_BASE_WINDOW(window));
-        gtk_widget_set_size_request(nav_box, -1, gdk_pixbuf_get_height (pixbuf));
-
-        surface = gdk_window_create_similar_surface(gtk_widget_get_window(nav_box), CAIRO_CONTENT_COLOR_ALPHA,
-                                                    gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf));
-        cr = cairo_create(surface);
-
-        gdk_cairo_set_source_pixbuf(cr, pixbuf, 0, 0);
-        cairo_paint(cr);
-        cairo_destroy(cr);
-        pattern = cairo_pattern_create_for_surface(surface);
-        cairo_surface_destroy(surface);
-
-        cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
-        gdk_window_set_background_pattern(gtk_widget_get_window(nav_box), pattern);
-    }
-
-    /* Pressing F12 should send you back to the hub, similar to how the old UI worked. */
-    accel_group = gtk_accel_group_new();
-    gtk_window_add_accel_group(GTK_WINDOW(window), accel_group);
-    gtk_widget_add_accelerator(window->priv->button,
-                               "clicked",
-                               accel_group,
-                               GDK_KEY_F12,
-                               0,
-                               0);
-}
-
 static void anaconda_spoke_window_button_clicked(GtkButton *button,
                                                  AnacondaSpokeWindow *win) {
     g_signal_emit(win, window_signals[SIGNAL_BUTTON_CLICKED], 0);
-}
-
-static void anaconda_spoke_window_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec) {
-    AnacondaSpokeWindow *widget = ANACONDA_SPOKE_WINDOW(object);
-    AnacondaSpokeWindowPrivate *priv = widget->priv;
-
-    switch(prop_id) {
-        case PROP_BUTTON_LABEL:
-            g_value_set_string (value, gtk_button_get_label(GTK_BUTTON(priv->button)));
-            break;
-    }
-}
-
-static void anaconda_spoke_window_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec) {
-    AnacondaSpokeWindow *widget = ANACONDA_SPOKE_WINDOW(object);
-    AnacondaSpokeWindowPrivate *priv = widget->priv;
-
-    switch(prop_id) {
-        case PROP_BUTTON_LABEL:
-            gtk_button_set_label(GTK_BUTTON(priv->button), g_value_get_string(value));
-            gtk_button_set_use_underline(GTK_BUTTON(priv->button), TRUE);
-            break;
-    }
 }

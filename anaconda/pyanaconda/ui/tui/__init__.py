@@ -79,7 +79,7 @@ class TextUserInterface(ui.UserInterface):
                         as final (True) or development
                         (False) version.
         :type isFinal: bool
-        
+
         :param quitMessage: The text to be used in quit
                             dialog question. It should not
                             be translated to allow for change
@@ -97,19 +97,22 @@ class TextUserInterface(ui.UserInterface):
         self.isFinal = isFinal
         self.quitMessage = quitMessage
 
-    basemask = "pyanaconda.ui.tui"
+    basemask = "pyanaconda.ui"
     basepath = os.path.dirname(__file__)
-    updatepath = "/tmp/updates/pyanaconda/ui/tui"
-    sitepackages = [os.path.join(dir, "pyanaconda", "ui", "tui")
+    updatepath = "/tmp/updates/pyanaconda/ui"
+    sitepackages = [os.path.join(dir, "pyanaconda", "ui")
                     for dir in site.getsitepackages()]
     pathlist = set([updatepath, basepath] + sitepackages)
 
     paths = ui.UserInterface.paths + {
-            "spokes": [(basemask + ".spokes.%s",
-                        os.path.join(path, "spokes"))
+            "categories": [(basemask + ".categories.%s",
+                        os.path.join(path, "categories"))
                         for path in pathlist],
-            "hubs": [(basemask + ".hubs.%s",
-                      os.path.join(path, "hubs"))
+            "spokes": [(basemask + ".tui.spokes.%s",
+                        os.path.join(path, "tui/spokes"))
+                        for path in pathlist],
+            "hubs": [(basemask + ".tui.hubs.%s",
+                      os.path.join(path, "tui/hubs"))
                       for path in pathlist]
             }
 
@@ -162,6 +165,7 @@ class TextUserInterface(ui.UserInterface):
 
             if hasattr(obj, "set_path"):
                 obj.set_path("spokes", self.paths["spokes"])
+                obj.set_path("categories", self.paths["categories"])
 
             should_schedule = obj.setup(self.ENVIRONMENT)
 

@@ -1,6 +1,6 @@
 # Common classes for user interface
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2014  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -23,28 +23,17 @@
 import os
 import imp
 import inspect
-import copy
 import sys
 import types
 
+from abc import ABCMeta, abstractproperty
+
 from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON
 from pyanaconda.errors import RemovedModuleError
-from pykickstart.constants import FIRSTBOOT_RECONFIG
+from pykickstart.constants import FIRSTBOOT_RECONFIG, DISPLAY_MODE_TEXT
 
 import logging
 log = logging.getLogger("anaconda")
-
-class PathDict(dict):
-    """Dictionary class supporting + operator"""
-    def __add__(self, ext):
-        new_dict = copy.copy(self)
-        for key, value in ext.iteritems():
-            try:
-                new_dict[key].extend(value)
-            except KeyError:
-                new_dict[key] = value[:]
-
-        return new_dict
 
 class UIObject(object):
     """This is the base class from which all other UI classes are derived.  It
@@ -113,13 +102,6 @@ class UIObject(object):
         pass
 
     @property
-    def window(self):
-        """Return an object with show_all and hide methods that is to be used
-           to display this UI object.
-        """
-        raise TypeError("UIObject.window has to be overriden")
-
-    @property
     def data(self):
         return self._data
 
@@ -177,7 +159,7 @@ class FirstbootOnlySpokeMixIn(object):
         else:
             return False
 
-class Spoke(UIObject):
+class Spoke(object):
     """A Spoke is a single configuration screen.  There are several different
        places where a Spoke can be displayed, each of which will have its own
        unique class.  A Spoke is typically used when an element in the Hub is
@@ -204,11 +186,14 @@ class Spoke(UIObject):
                      corresponding to this Spoke instance.  If no title is
                      given, the default from SpokeSelector will be used.
     """
+
+    __metaclass__ = ABCMeta
+
     category = None
     icon = None
     title = None
 
-    def __init__(self, data, storage, payload, instclass):
+    def __init__(self, storage, payload, instclass):
         """Create a new Spoke instance.
 
            The arguments this base class accepts defines the API that spokes
@@ -218,7 +203,9 @@ class Spoke(UIObject):
 
            data         -- An instance of a pykickstart Handler object.  The
                            Spoke uses this to populate its UI with defaults
-                           and to pass results back after it has run.
+                           and to pass results back after it has run. The data
+                           property must be implemented by classes inherting
+                           from Spoke.
            storage      -- An instance of storage.Storage.  This is useful for
                            determining what storage devices are present and how
                            they are configured.
@@ -230,16 +217,20 @@ class Spoke(UIObject):
                            installation information like default package
                            selections and default partitioning.
         """
-        if self.__class__ is Spoke:
-            raise TypeError("Spoke is an abstract class")
-
-        UIObject.__init__(self, data)
-        self.storage = storage
+        self._storage = storage
         self.payload = payload
         self.instclass = instclass
         self.applyOnSkip = False
 
-        self._visitedSinceApplied = True
+        self.visitedSinceApplied = True
+
+    @abstractproperty
+    def data(self):
+        pass
+
+    @property
+    def storage(self):
+        return self._storage
 
     @classmethod
     def should_run(cls, environment, data):
@@ -283,8 +274,25 @@ class Spoke(UIObject):
            spoke, and a highlighted message will be shown at the bottom of the
            Hub.  Installation will not be allowed to proceed until all mandatory
            spokes are complete.
+
+           WARNING: This can be called before the spoke is finished initializing
+           if the spoke starts a thread. It should make sure it doesn't access
+           things until they are completely setup.
         """
         return False
+
+    @property
+    def sensitive(self):
+        """May the user click on this spoke's selector and be taken to the spoke?
+           This is different from the showable property.  A spoke that is not
+           sensitive will still be shown on the hub, but the user may not enter it.
+           This is also different from the ready property.  A spoke that is not
+           ready may not be entered, but the spoke may become ready in the future.
+           A spoke that is not sensitive will likely not become so.
+
+           Most spokes will not want to override this method.
+        """
+        return True
 
     @property
     def mandatory(self):
@@ -307,9 +315,6 @@ class Spoke(UIObject):
         """
         pass
 
-    def initialize(self):
-        UIObject.initialize(self)
-
     @property
     def status(self):
         """Given the current status of whatever this Spoke configures, return
@@ -329,6 +334,24 @@ class Spoke(UIObject):
         """
         raise NotImplementedError
 
+    def entry_logger(self):
+        """Log immediately before this spoke is about to be displayed on the
+           screen.  Subclasses may override this method if they want to log
+           more specific information, but an overridden method should finish
+           by calling this method so the entry will be logged.
+        """
+        log.debug("Entered spoke: %s", self.__class__.__name__)
+
+    def exit_logger(self):
+        """Log when a user leaves the spoke.  Subclasses may override this
+           method if they want to log more specific information, but an
+           overridden method should finish by calling this method so the
+           exit will be logged.
+        """
+        log.debug("Left spoke: %s", self.__class__.__name__)
+
+# Inherit abstract methods from Spoke
+# pylint: disable=abstract-method
 class NormalSpoke(Spoke):
     """A NormalSpoke is a Spoke subclass that is displayed when the user
        selects something on a Hub.  This is what most Spokes in anaconda will
@@ -340,12 +363,9 @@ class NormalSpoke(Spoke):
        installing, how to get back to the Hub) at the top of the screen.
     """
 
-    def __init__(self, data, storage, payload, instclass):
+    def __init__(self, storage, payload, instclass):
         """Create a NormalSpoke instance."""
-        if self.__class__ is NormalSpoke:
-            raise TypeError("NormalSpoke is an abstract class")
-
-        Spoke.__init__(self, data, storage, payload, instclass)
+        Spoke.__init__(self, storage, payload, instclass)
         self.selector = None
 
     @property
@@ -378,7 +398,9 @@ class NormalSpoke(Spoke):
         """
         return True
 
-class StandaloneSpoke(NormalSpoke):
+# Inherit abstract methods from NormalSpoke
+# pylint: disable=abstract-method
+class StandaloneSpoke(Spoke):
     """A StandaloneSpoke is a Spoke subclass that is displayed apart from any
        Hub.  It is suitable to be used as a Welcome screen.
 
@@ -404,34 +426,21 @@ class StandaloneSpoke(NormalSpoke):
     preForHub = None
     postForHub = None
 
-    def __init__(self, data, storage, payload, instclass):
+    def __init__(self, storage, payload, instclass):
         """Create a StandaloneSpoke instance."""
-        if self.__class__ is StandaloneSpoke:
-            raise TypeError("StandaloneSpoke is an abstract class")
-
         if self.preForHub and self.postForHub:
             raise AttributeError("StandaloneSpoke instance %s may not have both preForHub and postForHub set" % self)
 
-        NormalSpoke.__init__(self, data, storage, payload, instclass)
+        Spoke.__init__(self, storage, payload, instclass)
 
-class PersonalizationSpoke(Spoke):
-    """A PersonalizationSpoke is a Spoke subclass that is displayed when the
-       user selects something on the Hub during package installation.
+    # Standalone spokes are not part of a hub, and thus have no status.
+    # Provide a concrete implementation of status here so that subclasses
+    # don't need one.
+    @property
+    def status(self):
+        return None
 
-       From a layout perspective, a PersonalizationSpoke takes up the middle
-       of the screen therefore hiding the Hub but leaving its action area
-       displayed.  This allows the user to continue seeing package installation
-       progress being made.  The PersonalizationSpoke also provides the same
-       basic navigation information at the top of the screen as a NormalSpoke.
-    """
-    def __init__(self, data, storage, payload, instclass):
-        """Create a PersonalizationSpoke instance."""
-        if self.__class__ is PersonalizationSpoke:
-            raise TypeError("PersonalizationSpoke is an abstract class")
-
-        Spoke.__init__(self, data, storage, payload, instclass)
-
-class Hub(UIObject):
+class Hub(object):
     """A Hub is an overview UI screen.  A Hub consists of one or more grids of
        configuration options that the user may choose from.  Each grid is
        provided by a SpokeCategory, and each option is provided by a Spoke.
@@ -453,7 +462,9 @@ class Hub(UIObject):
        additional standalone screens either before or after them.
     """
 
-    def __init__(self, data, storage, payload, instclass):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, storage, payload, instclass):
         """Create a new Hub instance.
 
            The arguments this base class accepts defines the API that Hubs
@@ -463,7 +474,9 @@ class Hub(UIObject):
 
            data         -- An instance of a pykickstart Handler object.  The
                            Hub uses this to populate its UI with defaults
-                           and to pass results back after it has run.
+                           and to pass results back after it has run. The data
+                           property must be implemented by classes inheriting
+                           from Hub.
            storage      -- An instance of storage.Storage.  This is useful for
                            determining what storage devices are present and how
                            they are configured.
@@ -475,9 +488,7 @@ class Hub(UIObject):
                            installation information like default package
                            selections and default partitioning.
         """
-        UIObject.__init__(self, data)
-
-        self.storage = storage
+        self._storage = storage
         self.payload = payload
         self.instclass = instclass
 
@@ -487,11 +498,51 @@ class Hub(UIObject):
         # spokes for which environments this hub should collect?
         self._environs = [ANACONDA_ENVIRON]
 
+    @abstractproperty
+    def data(self):
+        pass
+
+    @property
+    def storage(self):
+        return self._storage
+
     def set_path(self, path_id, paths):
         """Update the paths attribute with list of tuples in the form (module
            name format string, directory name)"""
         self.paths[path_id] = paths
-        
+
+    def entry_logger(self):
+        """Log immediately before this hub is about to be displayed on the
+           screen.  Subclasses may override this method if they want to log
+           more specific information, but an overridden method should finish
+           by calling this method so the entry will be logged.
+
+           Note that due to how the GUI flows, hubs are only entered once -
+           when they are initially displayed.  Going to a spoke from a hub
+           and then coming back to the hub does not count as exiting and
+           entering.
+        """
+        log.debug("Entered hub: %s", self.__class__.__name__)
+
+    def _collectCategoriesAndSpokes(self):
+        """This method is provided so that is can be overridden in a subclass
+           by a custom collect method.
+           One example of such usage is the Initial Setup application.
+        """
+        return collectCategoriesAndSpokes(self.paths, self.__class__, self.data.displaymode.displayMode)
+
+    def exit_logger(self):
+        """Log when a user leaves the hub.  Subclasses may override this
+           method if they want to log more specific information, but an
+           overridden method should finish by calling this method so the
+           exit will be logged.
+
+           Note that due to how the GUI flows, hubs are not exited when the
+           user selects a spoke from the hub.  They are only exited when the
+           continue or quit button is clicked on the hub.
+        """
+        log.debug("Left hub: %s", self.__class__.__name__)
+
 def collect(module_pattern, path, pred):
     """Traverse the directory (given by path), import all files as a module
        module_pattern % filename and find all classes within that match
@@ -517,7 +568,7 @@ def collect(module_pattern, path, pred):
     # when the directory "path" does not exist
     except OSError:
         return []
-    
+
     for module_file in contents:
         if (not module_file.endswith(".py")) and \
            (not module_file.endswith(".so")):
@@ -533,6 +584,7 @@ def collect(module_pattern, path, pred):
 
         mod_info = None
         module = None
+        module_path = None
 
         try:
             imp.acquire_lock()
@@ -580,7 +632,7 @@ def collect(module_pattern, path, pred):
 
             # restore the extension dot eaten by split
             loaded_ext = "." + loaded_ext
-            
+
             # do not collect classes when the module is already imported
             # from different path than we are traversing
             # this condition checks the module name without file extension
@@ -602,10 +654,10 @@ def collect(module_pattern, path, pred):
             continue
 
         except ImportError as imperr:
-            if "pyanaconda" in module_path:
+            if module_path and "pyanaconda" in module_path:
                 # failure when importing our own module:
                 raise
-            log.error("Failed to import module in collect: %s", imperr)
+            log.error("Failed to import module %s from path %s in collect: %s", mod_name, module_path, imperr)
             continue
         finally:
             imp.release_lock()
@@ -622,9 +674,62 @@ def collect(module_pattern, path, pred):
             members = [(name, getattr(module, name))
                        for name in module.__all__
                        if p(getattr(module, name))]
-        
+
         for (name, val) in members:
             retval.append(val)
 
     return retval
 
+def collect_spokes(mask_paths, category):
+    """Return a list of all spoke subclasses that should appear for a given
+       category. Look for them in files imported as module_path % basename(f)
+
+       :param mask_paths: list of mask, path tuples to search for classes
+       :type mask_paths: list of (mask, path)
+
+       :return: list of Spoke classes belonging to category
+       :rtype: list of Spoke classes
+
+    """
+    spokes = []
+    for mask, path in mask_paths:
+        spokes.extend(collect(mask, path,
+                      lambda obj: hasattr(obj, "category") and obj.category is not None and obj.category.__name__ == category))
+
+    return spokes
+
+def collect_categories(mask_paths, displaymode):
+    """Return a list of all category subclasses. Look for them in modules
+       imported as module_mask % basename(f) where f is name of all files in path.
+    """
+    categories = []
+    if displaymode == DISPLAY_MODE_TEXT:
+        for mask, path in mask_paths:
+            categories.extend(collect(mask, path, lambda obj: getattr(obj, "displayOnHubTUI", None) is not None))
+    else:
+        for mask, path in mask_paths:
+            categories.extend(collect(mask, path, lambda obj: getattr(obj, "displayOnHubGUI", None) is not None))
+
+    return categories
+
+def collectCategoriesAndSpokes(paths, klass, displaymode):
+    """collects categories and spokes to be displayed on this Hub
+
+       :param paths: dictionary mapping categories, spokes, and hubs to their
+       their respective search path(s)
+       :return: dictionary mapping category class to list of spoke classes
+       :rtype: dictionary[category class] -> [ list of spoke classes ]
+    """
+    ret = {}
+    # Collect all the categories this hub displays, then collect all the
+    # spokes belonging to all those categories.
+    if displaymode == DISPLAY_MODE_TEXT:
+        categories = sorted(filter(lambda c: c.displayOnHubTUI == klass.__name__, collect_categories(paths["categories"], displaymode)),
+                            key=lambda c: c.sortOrder)
+    else:
+        categories = sorted(filter(lambda c: c.displayOnHubGUI == klass.__name__, collect_categories(paths["categories"], displaymode)),
+                            key=lambda c: c.sortOrder)
+    for c in categories:
+        ret[c] = collect_spokes(paths["spokes"], c.__name__)
+
+    return ret

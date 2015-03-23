@@ -24,13 +24,18 @@ from gi.repository import Gkbd, Gdk, Gtk
 
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
-from pyanaconda.ui.gui.categories.localization import LocalizationCategory
-from pyanaconda.ui.gui.utils import enlightbox, gtk_call_once, timed_action
+from pyanaconda.ui.categories.localization import LocalizationCategory
+from pyanaconda.ui.gui.utils import gtk_call_once, escape_markup, gtk_batch_map, timed_action
+from pyanaconda.ui.gui.utils import override_cell_property
+from pyanaconda.ui.gui.xkl_wrapper import XklWrapper, XklWrapperError
 from pyanaconda import keyboard
 from pyanaconda import flags
-from pyanaconda.i18n import _, N_
-from pyanaconda.constants import DEFAULT_KEYBOARD
-from pyanaconda.iutil import strip_accents, have_word_match
+from pyanaconda.i18n import _, N_, CN_
+from pyanaconda.constants import DEFAULT_KEYBOARD, THREAD_KEYBOARD_INIT, THREAD_ADD_LAYOUTS_INIT
+from pyanaconda.ui.communication import hubQ
+from pyanaconda.iutil import strip_accents
+from pyanaconda.threads import threadMgr, AnacondaThread
+from pyanaconda.iutil import have_word_match
 
 import locale as locale_mod
 
@@ -42,15 +47,16 @@ __all__ = ["KeyboardSpoke"]
 # %s will be replaced by key combination like Alt+Shift
 LAYOUT_SWITCHING_INFO = N_("%s to switch layouts.")
 
+ADD_LAYOUTS_INITIALIZE_THREAD = "AnaAddLayoutsInitializeThread"
+
 def _show_layout(column, renderer, model, itr, wrapper):
-    value = wrapper.get_layout_variant_description(model[itr][0])
-    renderer.set_property("text", value)
+    return wrapper.get_layout_variant_description(model[itr][0])
 
 def _show_description(column, renderer, model, itr, wrapper):
     value = wrapper.get_switch_opt_description(model[itr][0])
     if model[itr][1]:
-        value = "<b>%s</b>" % value
-    renderer.set_property("markup", value)
+        value = "<b>%s</b>" % escape_markup(value)
+    return value
 
 class AddLayoutDialog(GUIObject):
     builderObjects = ["addLayoutDialog", "newLayoutStore",
@@ -60,7 +66,7 @@ class AddLayoutDialog(GUIObject):
 
     def __init__(self, *args):
         GUIObject.__init__(self, *args)
-        self._xkl_wrapper = keyboard.XklWrapper.get_instance()
+        self._xkl_wrapper = XklWrapper.get_instance()
         self._chosen_layouts = []
 
     def matches_entry(self, model, itr, user_data=None):
@@ -73,10 +79,10 @@ class AddLayoutDialog(GUIObject):
         eng_value = self._xkl_wrapper.get_layout_variant_description(value, xlated=False)
         xlated_value = self._xkl_wrapper.get_layout_variant_description(value)
         translit_value = strip_accents(xlated_value).lower()
-        translit_text = strip_accents(unicode(entry_text, "utf-8")).lower()
+        entry_text = unicode(entry_text, "utf-8").lower()
 
         return have_word_match(entry_text, eng_value) or have_word_match(entry_text, xlated_value) \
-            or have_word_match(translit_text, translit_value)
+            or have_word_match(entry_text, translit_value)
 
     def compare_layouts(self, model, itr1, itr2, user_data=None):
         """
@@ -93,6 +99,8 @@ class AddLayoutDialog(GUIObject):
         return locale_mod.strcoll(show_str1, show_str2)
 
     def refresh(self):
+        selected = self._newLayoutSelection.count_selected_rows()
+        self._confirmAddButton.set_sensitive(selected)
         self._entry.grab_focus()
 
     def initialize(self):
@@ -101,22 +109,26 @@ class AddLayoutDialog(GUIObject):
         self._entry = self.builder.get_object("addLayoutEntry")
         layoutColumn = self.builder.get_object("newLayoutColumn")
         layoutRenderer = self.builder.get_object("newLayoutRenderer")
-        layoutColumn.set_cell_data_func(layoutRenderer, _show_layout,
-                                            self._xkl_wrapper)
+        override_cell_property(layoutColumn, layoutRenderer, "text", _show_layout,
+                               self._xkl_wrapper)
         self._treeModelFilter = self.builder.get_object("newLayoutStoreFilter")
         self._treeModelFilter.set_visible_func(self.matches_entry, None)
         self._treeModelSort = self.builder.get_object("newLayoutStoreSort")
         self._treeModelSort.set_default_sort_func(self.compare_layouts, None)
 
-        self._store = self.builder.get_object("newLayoutStore")
-        for layout in self._xkl_wrapper.get_available_layouts():
-            self._addLayout(self._store, layout)
-
         self._confirmAddButton = self.builder.get_object("confirmAddButton")
-
         self._newLayoutSelection = self.builder.get_object("newLayoutSelection")
-        selected = self._newLayoutSelection.count_selected_rows()
-        self._confirmAddButton.set_sensitive(selected)
+
+        self._store = self.builder.get_object("newLayoutStore")
+        threadMgr.add(AnacondaThread(name=THREAD_ADD_LAYOUTS_INIT,
+                                     target=self._initialize))
+
+    def _initialize(self):
+        gtk_batch_map(self._addLayout, self._xkl_wrapper.get_available_layouts(),
+                      args=(self._store,), batch_size=20)
+
+    def wait_initialize(self):
+        threadMgr.wait(THREAD_ADD_LAYOUTS_INIT)
 
     def run(self):
         self.window.show()
@@ -159,7 +171,7 @@ class AddLayoutDialog(GUIObject):
         # let the other actions happen as well
         return False
 
-    def _addLayout(self, store, name):
+    def _addLayout(self, name, store):
         store.append([name])
 
 
@@ -173,7 +185,7 @@ class ConfigureSwitchingDialog(GUIObject):
 
     def __init__(self, *args):
         GUIObject.__init__(self, *args)
-        self._xkl_wrapper = keyboard.XklWrapper.get_instance()
+        self._xkl_wrapper = XklWrapper.get_instance()
 
         self._switchingOptsStore = self.builder.get_object("switchingOptsStore")
 
@@ -181,7 +193,7 @@ class ConfigureSwitchingDialog(GUIObject):
         # we want to display "Alt + Shift" rather than "grp:alt_shift_toggle"
         descColumn = self.builder.get_object("descColumn")
         descRenderer = self.builder.get_object("descRenderer")
-        descColumn.set_cell_data_func(descRenderer, _show_description,
+        override_cell_property(descColumn, descRenderer, "markup", _show_description,
                                             self._xkl_wrapper)
 
         self._switchingOptsSort = self.builder.get_object("switchingOptsSort")
@@ -252,18 +264,20 @@ class KeyboardSpoke(NormalSpoke):
                       "layoutTestBuffer"]
     mainWidgetName = "keyboardWindow"
     uiFile = "spokes/keyboard.glade"
+    helpFile = "KeyboardSpoke.xml"
 
     category = LocalizationCategory
 
     icon = "input-keyboard-symbolic"
-    title = N_("_KEYBOARD")
+    title = CN_("GUI|Spoke", "_KEYBOARD")
 
     def __init__(self, *args):
         NormalSpoke.__init__(self, *args)
         self._remove_last_attempt = False
         self._confirmed = False
-        self._xkl_wrapper = keyboard.XklWrapper.get_instance()
+        self._xkl_wrapper = XklWrapper.get_instance()
         self._add_dialog = None
+        self._ready = False
 
         self._upButton = self.builder.get_object("upButton")
         self._downButton = self.builder.get_object("downButton")
@@ -285,9 +299,12 @@ class KeyboardSpoke(NormalSpoke):
     def completed(self):
         if flags.flags.automatedInstall and not self.data.keyboard.seen:
             return False
-        elif not self._confirmed and self._xkl_wrapper.get_current_layout() != self.data.keyboard.x_layouts[0]:
+        elif not self._confirmed and \
+                self._xkl_wrapper.get_current_layout() != self.data.keyboard.x_layouts[0] and \
+                not flags.flags.usevnc:
             # the currently activated layout is a different one from the
-            # installed system's default
+            # installed system's default. Ignore VNC, since VNC keymaps are
+            # weird and more on the client side.
             return False
         else:
             return True
@@ -299,8 +316,14 @@ class KeyboardSpoke(NormalSpoke):
                         for row in self._store)
         return ", ".join(descriptions)
 
+    @property
+    def ready(self):
+        return self._ready and threadMgr.get(ADD_LAYOUTS_INITIALIZE_THREAD) is None
+
     def initialize(self):
         NormalSpoke.initialize(self)
+        self._add_dialog = AddLayoutDialog(self.data)
+        self._add_dialog.initialize()
 
         if flags.can_touch_runtime_system("hide runtime keyboard configuration "
                                           "warning", touch_live=True):
@@ -310,11 +333,13 @@ class KeyboardSpoke(NormalSpoke):
         # 'language (description)'.
         layoutColumn = self.builder.get_object("layoutColumn")
         layoutRenderer = self.builder.get_object("layoutRenderer")
-        layoutColumn.set_cell_data_func(layoutRenderer, _show_layout,
+        override_cell_property(layoutColumn, layoutRenderer, "text", _show_layout,
                                             self._xkl_wrapper)
 
         self._store = self.builder.get_object("addedLayoutStore")
         self._add_data_layouts()
+
+        self._selection = self.builder.get_object("layoutSelection")
 
         self._switching_dialog = ConfigureSwitchingDialog(self.data)
         self._switching_dialog.initialize()
@@ -336,6 +361,17 @@ class KeyboardSpoke(NormalSpoke):
 
             for widget in widgets:
                 widget.set_sensitive(False)
+
+        hubQ.send_not_ready(self.__class__.__name__)
+        hubQ.send_message(self.__class__.__name__,
+                          _("Getting list of layouts..."))
+        threadMgr.add(AnacondaThread(name=THREAD_KEYBOARD_INIT,
+                                     target=self._wait_ready))
+
+    def _wait_ready(self):
+        self._add_dialog.wait_initialize()
+        self._ready = True
+        hubQ.send_ready(self.__class__.__name__, False)
 
     def refresh(self):
         NormalSpoke.refresh(self)
@@ -388,13 +424,9 @@ class KeyboardSpoke(NormalSpoke):
 
     # Signal handlers.
     def on_add_clicked(self, button):
-        if not self._add_dialog:
-            self._add_dialog = AddLayoutDialog(self.data)
-            self._add_dialog.initialize()
-
         self._add_dialog.refresh()
 
-        with enlightbox(self.window, self._add_dialog.window):
+        with self.main_window.enlightbox(self._add_dialog.window):
             response = self._add_dialog.run()
 
         if response == 1:
@@ -414,19 +446,24 @@ class KeyboardSpoke(NormalSpoke):
                     self._removeLayout(self._store, itr)
                 self._remove_last_attempt = False
 
+            # Update the selection information
+            self._selection.emit("changed")
+
     def on_remove_clicked(self, button):
-        selection = self.builder.get_object("layoutSelection")
-        if not selection.count_selected_rows():
+        if not self._selection.count_selected_rows():
             return
 
-        (store, itr) = selection.get_selected()
+        (store, itr) = self._selection.get_selected()
         itr2 = store.get_iter_first()
         #if the first item is selected, try to select the next one
         if store[itr][0] == store[itr2][0]:
             itr2 = store.iter_next(itr2)
             if itr2: #next one existing
-                selection.select_iter(itr2)
+                self._selection.select_iter(itr2)
                 self._removeLayout(store, itr)
+                # Re-emit the selection changed signal now that the backing store is updated
+                # in order to update the first/last/only-based button sensitivities
+                self._selection.emit("changed")
                 return
 
             #nothing left, run AddLayout dialog to replace the current layout
@@ -445,14 +482,13 @@ class KeyboardSpoke(NormalSpoke):
             itr3 = store.iter_next(itr3)
 
         self._removeLayout(store, itr)
-        selection.select_iter(itr2)
+        self._selection.select_iter(itr2)
 
     def on_up_clicked(self, button):
-        selection = self.builder.get_object("layoutSelection")
-        if not selection.count_selected_rows():
+        if not self._selection.count_selected_rows():
             return
 
-        (store, cur) = selection.get_selected()
+        (store, cur) = self._selection.get_selected()
         prev = store.iter_previous(cur)
         if not prev:
             return
@@ -465,14 +501,13 @@ class KeyboardSpoke(NormalSpoke):
             #layout is first in the list (set as default), activate it
             self._xkl_wrapper.activate_default_layout()
 
-        selection.emit("changed")
+        self._selection.emit("changed")
 
     def on_down_clicked(self, button):
-        selection = self.builder.get_object("layoutSelection")
-        if not selection.count_selected_rows():
+        if not self._selection.count_selected_rows():
             return
 
-        (store, cur) = selection.get_selected()
+        (store, cur) = self._selection.get_selected()
 
         #if default layout (first in the list) changes we need to activate it
         activate_default = not store.iter_previous(cur)
@@ -488,11 +523,10 @@ class KeyboardSpoke(NormalSpoke):
         if activate_default:
             self._xkl_wrapper.activate_default_layout()
 
-        selection.emit("changed")
+        self._selection.emit("changed")
 
     def on_preview_clicked(self, button):
-        selection = self.builder.get_object("layoutSelection")
-        (store, cur) = selection.get_selected()
+        (store, cur) = self._selection.get_selected()
         layout_row = store[cur]
         if not layout_row:
             return
@@ -509,7 +543,7 @@ class KeyboardSpoke(NormalSpoke):
                                                lay_var_spec)
         dialog.set_size_request(750, 350)
         dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
-        with enlightbox(self.window, dialog):
+        with self.main_window.enlightbox(dialog):
             dialog.show_all()
             dialog.run()
 
@@ -529,22 +563,27 @@ class KeyboardSpoke(NormalSpoke):
         self._removeButton.set_sensitive(True)
         self._previewButton.set_sensitive(True)
 
-        # Disable the Up button if the top row's selected, and disable the
-        # Down button if the bottom row's selected.
-        if selected[0].get_indices() == [0]:
+        # If only one row is available, disable both the Up and Down button
+        if len(store) == 1:
             self._upButton.set_sensitive(False)
-            self._downButton.set_sensitive(True)
-        elif selected[0].get_indices() == [len(store)-1]:
-            self._upButton.set_sensitive(True)
             self._downButton.set_sensitive(False)
         else:
-            self._upButton.set_sensitive(True)
-            self._downButton.set_sensitive(True)
+            # Disable the Up button if the top row's selected, and disable the
+            # Down button if the bottom row's selected.
+            if selected[0].get_indices() == [0]:
+                self._upButton.set_sensitive(False)
+                self._downButton.set_sensitive(True)
+            elif selected[0].get_indices() == [len(store)-1]:
+                self._upButton.set_sensitive(True)
+                self._downButton.set_sensitive(False)
+            else:
+                self._upButton.set_sensitive(True)
+                self._downButton.set_sensitive(True)
 
     def on_options_clicked(self, *args):
         self._switching_dialog.refresh()
 
-        with enlightbox(self.window, self._switching_dialog.window):
+        with self.main_window.enlightbox(self._switching_dialog.window):
             response = self._switching_dialog.run()
 
         if response != 1:
@@ -570,7 +609,7 @@ class KeyboardSpoke(NormalSpoke):
             try:
                 self._addLayout(self._store, layout)
                 valid_layouts += layout
-            except keyboard.XklWrapperError:
+            except XklWrapperError:
                 log.error("Failed to add layout '%s'", layout)
 
         if not valid_layouts:

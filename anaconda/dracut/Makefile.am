@@ -17,7 +17,7 @@
 #
 # Author: Will Woods <wwoods@redhat.com>
 
-dracutdir = /usr/lib/dracut/modules.d/80$(PACKAGE_NAME)
+dracutdir = $(prefix)/lib/dracut/modules.d/80$(PACKAGE_NAME)
 dist_dracut_SCRIPTS = module-setup.sh \
                       python-deps \
 		      anaconda-lib.sh \
@@ -33,6 +33,7 @@ dist_dracut_SCRIPTS = module-setup.sh \
 		      anaconda-diskroot \
 		      anaconda-copy-ks.sh \
 		      anaconda-copy-cmdline.sh \
+		      anaconda-ifcfg.sh \
 		      fetch-kickstart-net.sh \
 		      fetch-kickstart-disk \
 		      fetch-updates-disk \
@@ -43,7 +44,6 @@ dist_dracut_SCRIPTS = module-setup.sh \
 		      parse-anaconda-dd.sh \
 		      fetch-driver-net.sh \
 		      driver-updates@.service \
-		      driver-updates-net@.service \
 		      driver-updates.sh \
 		      driver-updates-net.sh \
 		      anaconda-depmod.sh \

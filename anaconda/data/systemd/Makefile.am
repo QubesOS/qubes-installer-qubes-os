@@ -21,12 +21,14 @@ systemddir = $(prefix)/lib/systemd/system
 generatordir = $(prefix)/lib/systemd/system-generators
 
 dist_systemd_DATA = anaconda.service \
+		    anaconda-noshell.service \
 		    anaconda-direct.service \
 		    anaconda.target \
 		    anaconda-tmux@.service \
 		    anaconda-shell@.service \
 		    instperf.service \
-		    anaconda-sshd.service
+		    anaconda-sshd.service \
+		    zram.service
 
 dist_generator_SCRIPTS = anaconda-generator
 

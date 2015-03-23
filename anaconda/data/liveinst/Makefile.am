@@ -25,8 +25,12 @@ dist_sbin_SCRIPTS  = liveinst
 desktopdir         = $(datadir)/applications
 desktop_DATA       = liveinst.desktop
 
-xinitdir           = /etc/X11/xinit/xinitrc.d
+xinitdir           = $(sysconfdir)/X11/xinit/xinitrc.d
 dist_xinit_SCRIPTS = zz-liveinst.sh
+
+install-exec-local:
+	$(MKDIR_P) $(DESTDIR)$(bindir)
+	$(LN_S) consolehelper $(DESTDIR)$(bindir)/liveinst
 endif
 
 EXTRA_DIST = README liveinst.desktop.in
@@ -37,15 +41,7 @@ MAINTAINERCLEANFILES = Makefile.in
 
 @INTLTOOL_DESKTOP_RULE@
 
-install-exec-local:
-	mkdir -p $(DESTDIR)$(bindir)
-	ln -s consolehelper $(DESTDIR)$(bindir)/liveinst
-
-uninstall-local:
-	rm -f $(DESTDIR)$(bindir)/liveinst
-	for d in $(DESTDIR)$(bindir) ; do
-		while [ ! -z "$$d" ]; do \
-			rmdir $$d 2>/dev/null ; \
-			d="`dirname $$d`" ; \
-		done ; \
-	done
+# Files generated for gettext need to be included in the distribution
+EXTRA_DIST += $(srcdir)/liveinst.desktop.in.h
+$(srcdir)/liveinst.desktop.in.h: $(srcdir)/liveinst.desktop.in
+	@$(MAKE) -C $(top_builddir)/po $(abs_top_srcdir)/$(subdir)/$$(basename $@)

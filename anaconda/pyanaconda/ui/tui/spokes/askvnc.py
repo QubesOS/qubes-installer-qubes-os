@@ -21,12 +21,13 @@
 
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
+from pyanaconda.ui.tui.tuiobject import YesNoDialog
 from pyanaconda.constants import USEVNC, USETEXT
 from pyanaconda.constants_text import INPUT_PROCESSED
-from pyanaconda.i18n import _
+from pyanaconda.i18n import N_, _
 from pyanaconda.ui.communication import hubQ
 from pyanaconda.ui.tui import exception_msg_handler
-import getpass
+import getpass, subprocess
 import sys
 
 def exception_msg_handler_and_exit(event, data):
@@ -35,8 +36,7 @@ def exception_msg_handler_and_exit(event, data):
     sys.exit(1)
 
 class AskVNCSpoke(NormalTUISpoke):
-    title = _("VNC")
-    category = "vnc"
+    title = N_("VNC")
 
     # This spoke is kinda standalone, not meant to be used with a hub
     # We pass in some fake data just to make our parents happy
@@ -84,32 +84,35 @@ class AskVNCSpoke(NormalTUISpoke):
 
         try:
             keyid = int(key) - 1
-        except ValueError:
-            return key
+            if 0 <= keyid < len(self._choices):
+                choice = self._choices[keyid]
+                if choice == _(USETEXT):
+                    self._usevnc = False
+                else:
+                    self._usevnc = True
+                    newspoke = VNCPassSpoke(self.app, self.data, self.storage,
+                                            self.payload, self.instclass)
+                    self.app.switch_screen_modal(newspoke)
 
-        if 0 <= keyid < len(self._choices):
-            choice = self._choices[keyid]
-        else:
+                self.apply()
+                self.close()
             return INPUT_PROCESSED
+        except ValueError:
+            pass
 
-        if choice == _(USETEXT):
-            self._usevnc = False
+        if key.lower() == _('q'):
+            d = YesNoDialog(self.app, _(self.app.quit_message))
+            self.app.switch_screen_modal(d)
+            if d.answer:
+                subprocess.Popen(["systemctl", "--no-wall", "reboot"])
         else:
-            self._usevnc = True
-            newspoke = VNCPassSpoke(self.app, self.data, self.storage,
-                                    self.payload, self.instclass)
-            self.app.switch_screen_modal(newspoke)
-
-        self.apply()
-        self.close()
-        return INPUT_PROCESSED
+            return key
 
     def apply(self):
         self.data.vnc.enabled = self._usevnc
 
 class VNCPassSpoke(NormalTUISpoke):
-    title = _("VNC Password")
-    category = "vnc"
+    title = N_("VNC Password")
 
     def __init__(self, app, data, storage, payload, instclass, message=None):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
@@ -117,8 +120,8 @@ class VNCPassSpoke(NormalTUISpoke):
         if message:
             self._message = message
         else:
-            self._message = _("Please provide VNC password. You will have to type it twice. \n"
-                              "Leave blank for no password")
+            self._message = _("Please provide VNC password (must be six to eight characters long).\n"
+                              "You will have to type it twice. Leave blank for no password")
 
     @property
     def indirect(self):
@@ -140,11 +143,15 @@ class VNCPassSpoke(NormalTUISpoke):
         p2 = getpass.getpass(_("Password (confirm): "))
 
         if p1 != p2:
-            print _("Passwords do not match!")
+            print(_("Passwords do not match!"))
             return None
         elif 0 < len(p1) < 6:
-            print _("The password must be at least "
-                    "six characters long.")
+            print(_("The password must be at least "
+                    "six characters long."))
+            return None
+        elif len(p1) > 8:
+            print(_("The password cannot be more than "
+                    "eight characters long."))
             return None
         else:
             self._password = p1

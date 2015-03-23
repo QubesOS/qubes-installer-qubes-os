@@ -20,7 +20,7 @@
 import selinux
 import shlex
 import glob
-from pyanaconda.constants import SELINUX_DEFAULT
+from pyanaconda.constants import SELINUX_DEFAULT, CMDLINE_APPEND
 from collections import OrderedDict
 
 import logging
@@ -29,7 +29,7 @@ log = logging.getLogger("anaconda")
 # A lot of effort, but it only allows a limited set of flags to be referenced
 class Flags(object):
     def __setattr__(self, attr, val):
-        # pylint: disable-msg=E1101
+        # pylint: disable=no-member
         if attr not in self.__dict__ and not self._in_init:
             raise AttributeError(attr)
         else:
@@ -44,19 +44,14 @@ class Flags(object):
 
     def __init__(self, read_cmdline=True):
         self.__dict__['_in_init'] = True
-        self.livecdInstall = 0
-        self.dlabel = 0
-        self.ibft = 1
-        self.iscsi = 0
-        self.usevnc = 0
+        self.livecdInstall = False
+        self.ibft = True
+        self.usevnc = False
         self.vncquestion = True
-        self.mpath = 1
-        self.dmraid = 1
+        self.mpath = True
+        self.dmraid = True
         self.selinux = SELINUX_DEFAULT
-        self.debug = 0
-        self.targetarch = None
-        self.useIPv4 = True
-        self.useIPv6 = True
+        self.debug = False
         self.armPlatform = None
         self.preexisting_x11 = False
         self.noverifyssl = False
@@ -66,12 +61,15 @@ class Flags(object):
         self.askmethod = False
         self.eject = True
         self.extlinux = False
+        self.nombr = False
         self.gpt = False
         self.leavebootorder = False
         self.testing = False
         self.dnf = False
+        self.mpathFriendlyNames = True
         # ksprompt is whether or not to prompt for missing ksdata
         self.ksprompt = True
+        self.rescue_mode = False
         # parse the boot commandline
         self.cmdline = BootArgs()
         # Lock it down: no more creating new flags!
@@ -80,23 +78,12 @@ class Flags(object):
             self.read_cmdline()
 
     def read_cmdline(self):
-        for f in ("selinux", "debug", "leavebootorder", "testing"):
+        for f in ("selinux", "debug", "leavebootorder", "testing", "extlinux",
+                  "nombr", "gpt", "dnf"):
             self.set_cmdline_bool(f)
-
-        if "rpmarch" in self.cmdline:
-            self.targetarch = self.cmdline.get("rpmarch")
 
         if not selinux.is_selinux_enabled():
             self.selinux = 0
-
-        if "extlinux" in self.cmdline:
-            self.extlinux = True
-
-        if "gpt" in self.cmdline:
-            self.gpt = True
-
-        if "dnf" in self.cmdline:
-            self.dnf = True
 
 cmdline_files = ['/proc/cmdline', '/run/install/cmdline',
                  '/run/install/cmdline.d/*.conf', '/etc/cmdline']
@@ -154,14 +141,28 @@ class BootArgs(OrderedDict):
 
         lst = shlex.split(cmdline)
 
+        # options might have the inst. prefix (used to differentiate
+        # boot options for the installer from other boot options)
+        inst_prefix = "inst."
+
         for i in lst:
+            # drop the inst. prefix (if found), so that getbool() works
+            # consistently for both "foo=0" and "inst.foo=0"
+            if i.startswith(inst_prefix):
+                i = i[len(inst_prefix):]
+
             if "=" in i:
                 (key, val) = i.split("=", 1)
             else:
                 key = i
                 val = None
 
-            self[key] = val
+            # Some duplicate args create a space separated string
+            if key in CMDLINE_APPEND and self.get(key, None):
+                if val:
+                    self[key] = self[key] + " " + val
+            else:
+                self[key] = val
 
     def getbool(self, arg, default=False):
         """
@@ -210,6 +211,5 @@ def can_touch_runtime_system(msg, touch_live=False):
 
     return True
 
-global flags
 flags = Flags()
 

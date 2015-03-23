@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.1 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
-  <!-- interface-requires AnacondaWidgets 1.0 -->
+  <requires lib="gtk+" version="3.0"/>
+  <requires lib="AnacondaWidgets" version="1.0"/>
   <object class="GtkListStore" id="diskStore">
     <columns>
       <!-- column-name diskVisible -->
@@ -38,12 +39,22 @@
       <column type="gchararray"/>
     </columns>
   </object>
+  <object class="GtkTreeModelFilter" id="multipathModel">
+    <property name="child_model">diskStore</property>
+  </object>
+  <object class="GtkTreeModelFilter" id="otherModel">
+    <property name="child_model">diskStore</property>
+  </object>
+  <object class="GtkTreeModelFilter" id="searchModel">
+    <property name="child_model">diskStore</property>
+  </object>
+  <object class="GtkTreeModelFilter" id="zModel">
+    <property name="child_model">diskStore</property>
+  </object>
   <object class="AnacondaSpokeWindow" id="filterWindow">
-    <property name="startup_id">filler</property>
     <property name="can_focus">False</property>
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
-    <property name="startup_id">filler</property>
     <property name="window_name" translatable="yes">INSTALLATION DESTINATION</property>
     <signal name="button-clicked" handler="on_back_clicked" swapped="no"/>
     <child internal-child="main_box">
@@ -53,7 +64,6 @@
         <property name="spacing">6</property>
         <child internal-child="nav_box">
           <object class="GtkEventBox" id="AnacondaSpokeWindow-nav_box1">
-            <property name="app_paintable">True</property>
             <property name="can_focus">False</property>
             <child internal-child="nav_area">
               <object class="GtkGrid" id="AnacondaSpokeWindow-nav_area1">
@@ -98,6 +108,7 @@
                       <object class="GtkScrolledWindow" id="searchScrolledWindow">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkViewport" id="viewport1">
                             <property name="visible">True</property>
@@ -123,7 +134,6 @@
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
                                     <property name="width">5</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -131,23 +141,19 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Search _By:</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search">Search _By:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">searchTypeCombo</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkComboBoxText" id="searchTypeCombo">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="entry_text_column">0</property>
-                                    <property name="id_column">1</property>
                                     <items>
                                       <item translatable="yes">None</item>
                                       <item translatable="yes">Port / Target / LUN #</item>
@@ -158,8 +164,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -168,6 +172,7 @@
                                     <property name="can_focus">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="show_tabs">False</property>
+                                    <property name="show_border">False</property>
                                     <child>
                                       <object class="GtkLabel" id="label11">
                                         <property name="visible">True</property>
@@ -189,7 +194,7 @@
                                           <object class="GtkLabel" id="label13">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">_Port:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search|Port Target LUN">_Port:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">searchPortCombo</property>
                                           </object>
@@ -203,8 +208,6 @@
                                           <object class="GtkComboBoxText" id="searchPortCombo">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="entry_text_column">0</property>
-                                            <property name="id_column">1</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -216,7 +219,7 @@
                                           <object class="GtkLabel" id="label14">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">_Target:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search|Port Target LUN">_Target:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">searchTargetEntry</property>
                                           </object>
@@ -242,7 +245,7 @@
                                           <object class="GtkLabel" id="label15">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">_LUN:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search|Port Target LUN">_LUN:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">searchLUNEntry</property>
                                           </object>
@@ -282,7 +285,7 @@
                                           <object class="GtkLabel" id="label18">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">_WWID:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search|WWID">_WWID:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">searchWWIDEntry</property>
                                           </object>
@@ -323,8 +326,6 @@
                                   <packing>
                                     <property name="left_attach">2</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -337,6 +338,9 @@
                                     <property name="rules_hint">True</property>
                                     <property name="enable_search">False</property>
                                     <property name="enable_tree_lines">True</property>
+                                    <child internal-child="selection">
+                                      <object class="GtkTreeSelection" id="treeview-selection1"/>
+                                    </child>
                                     <child>
                                       <object class="GtkTreeViewColumn" id="searchSelectedCol">
                                         <child>
@@ -468,39 +472,34 @@
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">2</property>
                                     <property name="width">5</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="searchClearButton">
-                                    <property name="label">gtk-clear</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search">_Clear</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_clear_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">4</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="searchFindButton">
-                                    <property name="label">gtk-find</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Search">_Find</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_find_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">3</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -513,7 +512,7 @@
                       <object class="GtkLabel" id="searchLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Search</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">Searc_h</property>
                         <property name="use_underline">True</property>
                       </object>
                       <packing>
@@ -524,6 +523,7 @@
                       <object class="GtkScrolledWindow" id="multipathScrolledWindow">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkViewport" id="viewport2">
                             <property name="visible">True</property>
@@ -543,23 +543,19 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">_Filter By:</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath">Filter _By:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">multipathTypeCombo</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkComboBoxText" id="multipathTypeCombo">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="entry_text_column">0</property>
-                                    <property name="id_column">1</property>
                                     <items>
                                       <item translatable="yes">None</item>
                                       <item translatable="yes">Vendor</item>
@@ -571,8 +567,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -582,6 +576,7 @@
                                     <property name="no_show_all">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="show_tabs">False</property>
+                                    <property name="show_border">False</property>
                                     <child>
                                       <object class="GtkLabel" id="label5">
                                         <property name="visible">True</property>
@@ -601,7 +596,7 @@
                                           <object class="GtkLabel" id="label7">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices From:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath|Vendor">Show Only _Devices From:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">multipathVendorCombo</property>
                                           </object>
@@ -615,8 +610,6 @@
                                           <object class="GtkComboBoxText" id="multipathVendorCombo">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="entry_text_column">0</property>
-                                            <property name="id_column">1</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -641,7 +634,7 @@
                                           <object class="GtkLabel" id="label16">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices With:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath|Interconnect">Show Only _Devices With:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">multipathInterconnectCombo</property>
                                           </object>
@@ -655,8 +648,6 @@
                                           <object class="GtkComboBoxText" id="multipathInterconnectCombo">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="entry_text_column">0</property>
-                                            <property name="id_column">1</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -681,7 +672,7 @@
                                           <object class="GtkLabel" id="label17">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices Containing:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath|WWID">Show Only _Devices Containing:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">multipathWWIDEntry</property>
                                           </object>
@@ -716,8 +707,6 @@
                                   <packing>
                                     <property name="left_attach">2</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -730,6 +719,9 @@
                                     <property name="rules_hint">True</property>
                                     <property name="enable_search">False</property>
                                     <property name="enable_tree_lines">True</property>
+                                    <child internal-child="selection">
+                                      <object class="GtkTreeSelection" id="treeview-selection2"/>
+                                    </child>
                                     <child>
                                       <object class="GtkTreeViewColumn" id="multipathSelectedCol">
                                         <child>
@@ -820,39 +812,34 @@
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
                                     <property name="width">5</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="multipathClearButton">
-                                    <property name="label">gtk-clear</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath">_Clear</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_clear_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">4</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="multipathFindButton">
-                                    <property name="label">gtk-find</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Multipath">_Find</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_find_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">3</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -868,7 +855,7 @@
                       <object class="GtkLabel" id="multipathLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Multipath Devices</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">_Multipath Devices</property>
                         <property name="use_underline">True</property>
                       </object>
                       <packing>
@@ -880,6 +867,7 @@
                       <object class="GtkScrolledWindow" id="otherScrolledWindow">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkViewport" id="viewport4">
                             <property name="visible">True</property>
@@ -899,23 +887,19 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">_Filter By:</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other">Filter _By:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">multipathTypeCombo</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkComboBoxText" id="otherTypeCombo">
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
-                                    <property name="entry_text_column">0</property>
-                                    <property name="id_column">1</property>
                                     <items>
                                       <item translatable="yes">None</item>
                                       <item translatable="yes">Vendor</item>
@@ -927,8 +911,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -938,6 +920,7 @@
                                     <property name="no_show_all">True</property>
                                     <property name="hexpand">True</property>
                                     <property name="show_tabs">False</property>
+                                    <property name="show_border">False</property>
                                     <child>
                                       <object class="GtkLabel" id="label8">
                                         <property name="visible">True</property>
@@ -957,7 +940,7 @@
                                           <object class="GtkLabel" id="label12">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices From:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other|Vendor">Show Only _Devices From:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">otherVendorCombo</property>
                                           </object>
@@ -971,8 +954,6 @@
                                           <object class="GtkComboBoxText" id="otherVendorCombo">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="entry_text_column">0</property>
-                                            <property name="id_column">1</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -997,7 +978,7 @@
                                           <object class="GtkLabel" id="label20">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices With:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other|Interconnect">Show Only _Devices With:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">otherInterconnectCombo</property>
                                           </object>
@@ -1011,8 +992,6 @@
                                           <object class="GtkComboBoxText" id="otherInterconnectCombo">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="entry_text_column">0</property>
-                                            <property name="id_column">1</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -1037,7 +1016,7 @@
                                           <object class="GtkLabel" id="label21">
                                             <property name="visible">True</property>
                                             <property name="can_focus">False</property>
-                                            <property name="label" translatable="yes">Show Only _Devices Containing:</property>
+                                            <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other|ID">Show Only _Devices Containing:</property>
                                             <property name="use_underline">True</property>
                                             <property name="mnemonic_widget">otherIDEntry</property>
                                           </object>
@@ -1053,7 +1032,6 @@
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">●</property>
                                             <property name="width_chars">30</property>
-                                            <property name="invisible_char_set">True</property>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -1073,8 +1051,6 @@
                                   <packing>
                                     <property name="left_attach">2</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1089,6 +1065,9 @@
                                     <property name="enable_search">False</property>
                                     <property name="search_column">0</property>
                                     <property name="enable_tree_lines">True</property>
+                                    <child internal-child="selection">
+                                      <object class="GtkTreeSelection" id="treeview-selection3"/>
+                                    </child>
                                     <child>
                                       <object class="GtkTreeViewColumn" id="otherSelectedCol">
                                         <child>
@@ -1165,39 +1144,34 @@
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
                                     <property name="width">5</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="otherClearButton">
-                                    <property name="label">gtk-clear</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other">_Clear</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_clear_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">4</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="otherFindButton">
-                                    <property name="label">gtk-find</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|Other">_Find</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                     <signal name="clicked" handler="on_find_clicked" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">3</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1213,7 +1187,7 @@
                       <object class="GtkLabel" id="otherLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_Other SAN Devices</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">_Other SAN Devices</property>
                         <property name="use_underline">True</property>
                       </object>
                       <packing>
@@ -1222,31 +1196,10 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label9">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Nothing here yet.</property>
-                      </object>
-                      <packing>
-                        <property name="position">3</property>
-                      </packing>
-                    </child>
-                    <child type="tab">
-                      <object class="GtkLabel" id="label4">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Firmware _RAID</property>
-                        <property name="use_underline">True</property>
-                      </object>
-                      <packing>
-                        <property name="position">3</property>
-                        <property name="tab_fill">False</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkScrolledWindow" id="zScrolledWindow">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="shadow_type">in</property>
                         <child>
                           <object class="GtkViewport" id="viewport3">
                             <property name="visible">True</property>
@@ -1266,15 +1219,13 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">_Filter By:</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|zSeries">_Filter By:</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">zFilterCombo</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1282,20 +1233,18 @@
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">label</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|zSeries">_Label</property>
                                     <property name="use_underline">True</property>
                                     <property name="mnemonic_widget">zFilterEntry</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">2</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="zGoButton">
-                                    <property name="label" translatable="yes">_Go</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|zSeries">_Go</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
@@ -1304,23 +1253,19 @@
                                   <packing>
                                     <property name="left_attach">4</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="zClearButton">
-                                    <property name="label">gtk-clear</property>
+                                    <property name="label" translatable="yes" context="GUI|Installation Destination|Filter|zSeries">_Clear</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <property name="use_stock">True</property>
+                                    <property name="use_underline">True</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">5</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1333,8 +1278,6 @@
                                   <packing>
                                     <property name="left_attach">3</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1346,8 +1289,6 @@
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="top_attach">0</property>
-                                    <property name="width">1</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -1360,6 +1301,9 @@
                                     <property name="rules_hint">True</property>
                                     <property name="enable_search">False</property>
                                     <property name="enable_tree_lines">True</property>
+                                    <child internal-child="selection">
+                                      <object class="GtkTreeSelection" id="treeview-selection4"/>
+                                    </child>
                                     <child>
                                       <object class="GtkTreeViewColumn" id="zSelectedCol">
                                         <child>
@@ -1449,7 +1393,6 @@
                                     <property name="left_attach">0</property>
                                     <property name="top_attach">1</property>
                                     <property name="width">6</property>
-                                    <property name="height">1</property>
                                   </packing>
                                 </child>
                               </object>
@@ -1465,7 +1408,7 @@
                       <object class="GtkLabel" id="zLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">_zSeries Devices</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">_zSeries Devices</property>
                         <property name="use_underline">True</property>
                       </object>
                       <packing>
@@ -1488,7 +1431,7 @@
                     <property name="layout_style">end</property>
                     <child>
                       <object class="GtkButton" id="addZFCPButton">
-                        <property name="label" translatable="yes">_Add ZFCP LUN...</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">_Add ZFCP LUN...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1502,8 +1445,23 @@
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkButton" id="addDASDButton">
+                        <property name="label" translatable="yes">Add EC_KD DASD...</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_underline">True</property>
+                        <signal name="clicked" handler="on_add_dasd_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkButton" id="addISCSIButton">
-                        <property name="label" translatable="yes">Add _iSCSI Target...</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">Add _iSCSI Target...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1513,12 +1471,12 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
-                        <property name="position">1</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkButton" id="addFCOEButton">
-                        <property name="label" translatable="yes">Add FCo_E SAN...</property>
+                        <property name="label" translatable="yes" context="GUI|Installation Destination|Filter">Add FCo_E SAN...</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
@@ -1528,7 +1486,7 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
-                        <property name="position">2</property>
+                        <property name="position">3</property>
                       </packing>
                     </child>
                   </object>
@@ -1540,7 +1498,6 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="summary_button">
-                    <property name="label" translatable="yes">summary</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -1550,6 +1507,18 @@
                     <property name="focus_on_click">False</property>
                     <property name="xalign">0</property>
                     <signal name="clicked" handler="on_summary_clicked" swapped="no"/>
+                    <child>
+                      <object class="GtkLabel" id="summary_button_label">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" context="GUI|Installation Destination|Filter">%d _storage devices selected</property>
+                        <property name="use_underline">True</property>
+                        <attributes>
+                          <attribute name="underline" value="True"/>
+                          <attribute name="foreground" value="#00000000ffff"/>
+                        </attributes>
+                      </object>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -1568,20 +1537,5 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkTreeModelFilter" id="multipathModel">
-    <property name="child_model">diskStore</property>
-  </object>
-  <object class="GtkTreeModelFilter" id="otherModel">
-    <property name="child_model">diskStore</property>
-  </object>
-  <object class="GtkTreeModelFilter" id="raidModel">
-    <property name="child_model">diskStore</property>
-  </object>
-  <object class="GtkTreeModelFilter" id="searchModel">
-    <property name="child_model">diskStore</property>
-  </object>
-  <object class="GtkTreeModelFilter" id="zModel">
-    <property name="child_model">diskStore</property>
   </object>
 </interface>

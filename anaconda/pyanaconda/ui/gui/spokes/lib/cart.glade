@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.3 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
   <object class="GtkListStore" id="disk_store">
     <columns>
       <!-- column-name isBootDisk -->
@@ -28,7 +29,6 @@
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <property name="decorated">False</property>
-    <property name="mnemonics_visible">False</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox1">
         <property name="can_focus">False</property>
@@ -40,14 +40,13 @@
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="close_button">
-                <property name="label" translatable="yes">_Close</property>
+                <property name="label" translatable="yes" context="GUI|Selected Disks Dialog">_Close</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="has_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="halign">end</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_close_clicked" swapped="no"/>
               </object>
@@ -98,19 +97,19 @@
                     <property name="can_focus">True</property>
                     <property name="model">disk_store</property>
                     <child internal-child="selection">
-                        <object class="GtkTreeSelection" id="disk_selection">
-                            <signal name="changed" handler="on_selection_changed" swapped="no"/>
-                        </object>
+                      <object class="GtkTreeSelection" id="disk_selection">
+                        <signal name="changed" handler="on_selection_changed" swapped="no"/>
+                      </object>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="boot_column">
                         <property name="title" translatable="yes">Boot</property>
                         <child>
-                          <object class="GtkCellRendererPixbuf" id="boot_renderer">
-                            <property name="stock_id">gtk-apply</property>
+                          <object class="GtkCellRendererToggle" id="boot_renderer">
+                            <property name="activatable">False</property>
                           </object>
                           <attributes>
-                            <attribute name="visible">0</attribute>
+                            <attribute name="active">0</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -181,12 +180,11 @@
                 <property name="spacing">12</property>
                 <child>
                   <object class="GtkButton" id="set_as_boot_button">
-                    <property name="label" translatable="yes">_Set as Boot Device</property>
+                    <property name="label" translatable="yes" context="GUI|Selected Disks Dialog">_Set as Boot Device</property>
                     <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
                     <signal name="clicked" handler="on_set_as_boot_clicked" swapped="no"/>
                   </object>
@@ -198,13 +196,12 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="remove_button">
-                    <property name="label" translatable="yes">_Remove</property>
+                    <property name="label" translatable="yes" context="GUI|Selected Disks Dialog">_Remove</property>
                     <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">start</property>
-                    <property name="use_action_appearance">False</property>
                     <property name="use_underline">True</property>
                     <signal name="clicked" handler="on_remove_clicked" swapped="no"/>
                   </object>
@@ -227,7 +224,6 @@
                 <property name="can_focus">False</property>
                 <property name="xalign">0</property>
                 <property name="label" translatable="yes">Disk summary goes here</property>
-                <property name="use_markup">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>

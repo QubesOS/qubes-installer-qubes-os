@@ -80,15 +80,15 @@ class VncServer:
         """Set the vnc server password. Output to file. """
 
         r, w = os.pipe()
-        os.write(w, "%s\n" % self.password)
+        iutil.eintr_retry_call(os.write, w, "%s\n" % self.password)
 
         with open(self.pw_file, "w") as pw_file:
             # the -f option makes sure vncpasswd does not ask for the password again
             rc = iutil.execWithRedirect("vncpasswd", ["-f"],
-                                        stdin=r, stdout=pw_file)
+                    stdin=r, stdout=pw_file, binary_output=True, log_output=False)
 
-            os.close(r)
-            os.close(w)
+            iutil.eintr_retry_call(os.close, r)
+            iutil.eintr_retry_call(os.close, w)
 
         return rc
 
@@ -137,7 +137,7 @@ class VncServer:
 
     def openlogfile(self):
         try:
-            fd = os.open(self.log_file, os.O_RDWR | os.O_CREAT)
+            fd = iutil.eintr_retry_call(os.open, self.log_file, os.O_RDWR | os.O_CREAT)
         except OSError as e:
             sys.stderr.write("error opening %s: %s\n", (self.log_file, e))
             fd = None
@@ -148,7 +148,7 @@ class VncServer:
         """Attempt to connect to self.vncconnecthost"""
 
         maxTries = 10
-        self.log.info(_("Attempting to connect to vnc client on host %s...") % (self.vncconnecthost,))
+        self.log.info(_("Attempting to connect to vnc client on host %s..."), self.vncconnecthost)
 
         if self.vncconnectport != "":
             hostarg = self.vncconnecthost + ":" + self.vncconnectport
@@ -173,7 +173,7 @@ class VncServer:
                 sys.exit(1)
         self.log.error(P_("Giving up attempting to connect after %d try!\n",
                           "Giving up attempting to connect after %d tries!\n",
-                          maxTries) % (maxTries,))
+                          maxTries), maxTries)
         return False
 
     def VNCListen(self):
@@ -182,11 +182,11 @@ class VncServer:
         We dont really have to do anything for the server to listen :)
         """
         if self.connxinfo != None:
-            self.log.info(_("Please manually connect your vnc client to %s to begin the install.") % (self.connxinfo,))
+            self.log.info(_("Please manually connect your vnc client to %s to begin the install."), self.connxinfo)
         else:
             self.log.info(_("Please manually connect your vnc client to <IP ADDRESS>:%s "
                             "to begin the install. Switch to the shell (Ctrl-B 2) and "
-                            "run 'ip addr' to find the <IP ADDRESS>.") % (self.display,))
+                            "run 'ip addr' to find the <IP ADDRESS>."), self.display)
 
     def startServer(self):
         self.log.info(_("Starting VNC..."))
@@ -199,7 +199,7 @@ class VncServer:
             stdoutLog.critical("Could not initialize the VNC server: %s", e)
             sys.exit(1)
 
-        if self.password and len(self.password) < 6:
+        if self.password and (len(self.password) < 6 or len(self.password) > 8):
             self.changeVNCPasswdWindow()
 
         if not self.password:
@@ -262,12 +262,12 @@ class VncServer:
     def changeVNCPasswdWindow(self):
         """ Change the password to a sane parameter.
 
-        We ask user to input a password that len(password) > 6
-        or password == ''.
+        We ask user to input a password that (len(password) > 6
+        and len(password) <= 8) or password == ''.
         """
 
-        message = _("VNC password provided was not at least 6 characters long.\n"
-                    "Please enter a new one.  Leave blank for no password.")
+        message = _("VNC password must be six to eight characters long.\n"
+                    "Please enter a new one, or leave blank for no password.")
         app = App("VNC PASSWORD")
         spoke = VNCPassSpoke(app, self.anaconda.ksdata, None, None, None,
                              message)

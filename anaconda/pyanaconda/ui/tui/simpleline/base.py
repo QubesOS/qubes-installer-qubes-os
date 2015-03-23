@@ -25,10 +25,11 @@ import sys
 import Queue
 import getpass
 import threading
+import functools
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.ui.communication import hubQ
 from pyanaconda import constants
-from pyanaconda.i18n import _, N_
+from pyanaconda.i18n import _, N_, C_
 
 RAW_INPUT_LOCK = threading.Lock()
 
@@ -90,9 +91,6 @@ class App(object):
             self.queue = queue
         else:
             self.queue = Queue.Queue()
-
-        # ensure unique thread names
-        self._in_thread_counter = 0
 
         # event handlers
         # key: event id
@@ -158,8 +156,12 @@ class App(object):
                 return
             else:
                 # lock acquired, we can run raw_input
-                data = raw_input()
-                RAW_INPUT_LOCK.release()
+                try:
+                    data = raw_input()
+                except EOFError:
+                    data = ""
+                finally:
+                    RAW_INPUT_LOCK.release()
 
         queue.put((hubQ.HUB_CODE_INPUT, [data]))
 
@@ -281,7 +283,7 @@ class App(object):
             # get the widget tree from the screen and show it in the screen
             try:
                 input_needed = screen.refresh(args)
-                screen.window.show_all()
+                screen.show_all()
                 self._redraw = False
             except ExitMainLoop:
                 raise
@@ -313,7 +315,7 @@ class App(object):
         # ask for redraw by default
         self._redraw = True
 
-        # inital state
+        # initial state
         last_screen = None
         error_counter = 0
 
@@ -325,7 +327,7 @@ class App(object):
             # if redraw is needed, separate the content on the screen from the
             # stuff we are about to display now
             if self._redraw:
-                print self._spacer
+                print(self._spacer)
 
             try:
                 # draw the screen if redraw is needed or the screen changed
@@ -408,10 +410,7 @@ class App(object):
         """This method reads one input from user. Its basic form has only one
         line, but we might need to override it for more complex apps or testing."""
 
-        thread_name = "%s%d" % (constants.THREAD_INPUT_BASENAME,
-                                self._in_thread_counter)
-        self._in_thread_counter += 1
-        input_thread = AnacondaThread(name=thread_name,
+        input_thread = AnacondaThread(prefix=constants.THREAD_INPUT_BASENAME,
                                       target=self._thread_input,
                                       args=(self.queue, prompt, hidden))
         input_thread.daemon = True
@@ -448,19 +447,19 @@ class App(object):
 
         # global refresh command
         # TRANSLATORS: 'r' to refresh
-        if self._screens and (key == _('r')):
+        if self._screens and (key == C_('TUI|Spoke Navigation', 'r')):
             self._do_redraw()
             return True
 
         # global close command
         # TRANSLATORS: 'c' to continue
-        if self._screens and (key == _('c')):
+        if self._screens and (key == C_('TUI|Spoke Navigation', 'c')):
             self.close_screen()
             return True
 
         # global quit command
         # TRANSLATORS: 'q' to quit
-        elif self._screens and (key == _('q')):
+        elif self._screens and (key == C_('TUI|Spoke Navigation', 'q')):
             if self.quit_question:
                 d = self.quit_question(self, _(self.quit_message))
                 self.switch_screen_modal(d)
@@ -533,13 +532,8 @@ class UIScreen(object):
         :rtype: True|False
         """
 
-        self._window = [self.title, u""]
+        self._window = [_(self.title), u""]
         return True
-
-    @property
-    def window(self):
-        """Return reference to the window instance. In TUI, just return self."""
-        return self
 
     def _print_long_widget(self, widget):
         """Prints a long widget (possibly longer than the screen height) with
@@ -556,7 +550,7 @@ class UIScreen(object):
 
         if num_lines < self._screen_height - 2:
             # widget plus prompt are shorter than screen height, just print the widget
-            print u"\n".join(lines)
+            print(u"\n".join(lines))
             return
 
         # long widget, print it in steps and prompt user to continue
@@ -566,12 +560,12 @@ class UIScreen(object):
                 # enough space to print the rest of the widget plus regular
                 # prompt (2 lines)
                 for line in lines[pos:]:
-                    print line
+                    print(line)
                 pos += self._screen_height - 1
             else:
                 # print part with a prompt to continue
                 for line in lines[pos:(pos + self._screen_height - 2)]:
-                    print line
+                    print(line)
                 self._app.raw_input(_("Press ENTER to continue"))
                 pos += self._screen_height - 1
 
@@ -581,13 +575,14 @@ class UIScreen(object):
 
         for w in self._window:
             if hasattr(w, "render"):
-                # pylint: disable-msg=E1101
                 w.render(self.app.width)
             if isinstance(w, Widget):
                 self._print_long_widget(w)
+            elif type(w) == str:
+                print(w.decode("utf-8"))
             else:
                 # not a widget, just print its unicode representation
-                print unicode(w)
+                print(unicode(w))
     show = show_all
 
     def hide(self):
@@ -658,7 +653,7 @@ class Widget(object):
     def width(self):
         """The current width of the internal buffer
            (id of the first empty column)."""
-        return reduce(lambda acc,l: max(acc, len(l)), self._buffer, 0)
+        return functools.reduce(lambda acc, l: max(acc, len(l)), self._buffer, 0)
 
     def clear(self):
         """Clears this widgets buffer and resets cursor."""
@@ -773,11 +768,12 @@ class Widget(object):
         if not text:
             return
 
-        try:
-            text = text.decode("utf-8")
-        except UnicodeDecodeError as e:
-            raise ValueError("Unable to decode string %s" %
-                    str(e.object).decode("utf-8", "replace"))
+        if isinstance(text, str):
+            try:
+                text = text.decode("utf-8")
+            except UnicodeDecodeError as e:
+                raise ValueError("Unable to decode string %s" %
+                                 str(e.object).decode("utf-8", "replace"))
 
         if row is None:
             row = self._cursor[0]
@@ -829,7 +825,7 @@ class Widget(object):
 if __name__ == "__main__":
     class HelloWorld(UIScreen):
         def show(self, args = None):
-            print """Hello World\nquit by typing 'quit'"""
+            print("""Hello World\nquit by typing 'quit'""")
             return True
 
     a = App("Hello World")

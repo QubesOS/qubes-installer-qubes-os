@@ -24,14 +24,13 @@ import os
 from gi.repository import GLib
 
 from pyanaconda.flags import flags
-from pyanaconda.i18n import _
+from pyanaconda.i18n import _, C_
 from pyanaconda.product import distributionText
 
 from pyanaconda.ui import common
 from pyanaconda.ui.gui import GUIObject
-from pyanaconda.ui.gui.categories import collect_categories
-from pyanaconda.ui.gui.spokes import StandaloneSpoke, collect_spokes
-from pyanaconda.ui.gui.utils import gtk_call_once
+from pyanaconda.ui.gui.spokes import StandaloneSpoke
+from pyanaconda.ui.gui.utils import gtk_call_once, escape_markup
 from pyanaconda.constants import ANACONDA_ENVIRON
 
 import logging
@@ -82,7 +81,7 @@ class Hub(GUIObject, common.Hub):
                            selections and default partitioning.
         """
         GUIObject.__init__(self, data)
-        common.Hub.__init__(self, data, storage, payload, instclass)
+        common.Hub.__init__(self, storage, payload, instclass)
 
         # enable the autoContinue feature if we are in kickstart
         # mode, but if the user interacts with the hub, it will be
@@ -96,54 +95,6 @@ class Hub(GUIObject, common.Hub):
 
         self._checker = None
 
-    def _runSpoke(self, action):
-        from gi.repository import Gtk
-
-        # This duplicates code in widgets/src/BaseWindow.c, but we want to make sure
-        # maximize gets called every time a spoke is displayed to prevent the 25%
-        # UI from showing up.
-        action.window.maximize()
-        action.window.set_property("expand", True)
-
-        action.refresh()
-
-        action.window.set_transient_for(self.window)
-        action.window.show_all()
-
-        # Start a recursive main loop for this spoke, which will prevent
-        # signals from going to the underlying (but still displayed) Hub and
-        # prevent the user from switching away.  It's up to the spoke's back
-        # button handler to kill its own layer of main loop.
-        Gtk.main()
-        action.window.set_transient_for(None)
-
-        action._visitedSinceApplied = True
-
-        # Don't take _visitedSinceApplied into account here.  It will always be
-        # True from the line above.
-        if action.changed and (not action.skipTo or (action.skipTo and action.applyOnSkip)):
-            action.apply()
-            action.execute()
-            action._visitedSinceApplied = False
-
-    def _collectCategoriesAndSpokes(self):
-        """collects categories and spokes to be displayed on this Hub
-
-           :return: dictionary mapping category class to list of spoke classes
-           :rtype: dictionary[category class] -> [ list of spoke classes ]
-        """
-
-        ret = {}
-
-        # Collect all the categories this hub displays, then collect all the
-        # spokes belonging to all those categories.
-        categories = sorted(filter(lambda c: c.displayOnHub == self.__class__, collect_categories(self.paths["categories"])),
-                            key=lambda c: c.sortOrder)
-        for c in categories:
-            ret[c] = collect_spokes(self.paths["spokes"], c.__name__)
-
-        return ret
-
     def _createBox(self):
         from gi.repository import Gtk, AnacondaWidgets
         from pyanaconda.ui.gui.utils import setViewportBackground
@@ -151,11 +102,8 @@ class Hub(GUIObject, common.Hub):
         cats_and_spokes = self._collectCategoriesAndSpokes()
         categories = cats_and_spokes.keys()
 
-        grid = Gtk.Grid()
-        grid.set_row_spacing(6)
-        grid.set_column_spacing(6)
-        grid.set_column_homogeneous(True)
-        grid.set_margin_bottom(12)
+        grid = Gtk.Grid(row_spacing=6, column_spacing=6, column_homogeneous=True,
+                        margin_bottom=12)
 
         row = 0
 
@@ -197,7 +145,8 @@ class Hub(GUIObject, common.Hub):
                     spoke.initialize()
                     continue
 
-                spoke.selector = AnacondaWidgets.SpokeSelector(_(spoke.title), spoke.icon)
+                spoke.selector = AnacondaWidgets.SpokeSelector(C_("GUI|Spoke", spoke.title),
+                        spoke.icon)
 
                 # Set all selectors to insensitive before initialize runs.  The call to
                 # _updateCompleteness later will take care of setting it straight.
@@ -209,26 +158,23 @@ class Hub(GUIObject, common.Hub):
 
                 # Set some default values on the associated selector that
                 # affect its display on the hub.
-                self._updateCompleteness(spoke)
+                self._updateCompleteness(spoke, update_continue=False)
                 spoke.selector.connect("button-press-event", self._on_spoke_clicked, spoke)
                 spoke.selector.connect("key-release-event", self._on_spoke_clicked, spoke)
 
                 # If this is a kickstart install, attempt to execute any provided ksdata now.
                 if flags.automatedInstall and spoke.ready and spoke.changed and \
-                   spoke._visitedSinceApplied:
+                   spoke.visitedSinceApplied:
                     spoke.execute()
-                    spoke._visitedSinceApplied = False
+                    spoke.visitedSinceApplied = False
 
                 selectors.append(spoke.selector)
 
             if not selectors:
                 continue
 
-            label = Gtk.Label("<span font-desc=\"Sans 14\">%s</span>" % _(obj.title))
-            label.set_use_markup(True)
-            label.set_halign(Gtk.Align.START)
-            label.set_margin_top(12)
-            label.set_margin_bottom(12)
+            label = Gtk.Label(label="<span font-desc=\"Sans 14\">%s</span>" % escape_markup(_(obj.title)),
+                              use_markup=True, halign=Gtk.Align.START, margin_top=12, margin_bottom=12)
             grid.attach(label, 0, row, 2, 1)
             row += 1
 
@@ -252,11 +198,12 @@ class Hub(GUIObject, common.Hub):
         spokeArea.add(viewport)
 
         setViewportBackground(viewport)
+        self._updateContinue()
 
     def _updateCompleteness(self, spoke, update_continue=True):
-        spoke.selector.set_sensitive(spoke.ready)
+        spoke.selector.set_sensitive(spoke.sensitive and spoke.ready)
         spoke.selector.set_property("status", spoke.status)
-        spoke.selector.set_tooltip_markup(GLib.markup_escape_text(spoke.status))
+        spoke.selector.set_tooltip_markup(escape_markup(spoke.status))
         spoke.selector.set_incomplete(not spoke.completed and spoke.mandatory)
         self._handleCompleteness(spoke, update_continue)
 
@@ -293,10 +240,7 @@ class Hub(GUIObject, common.Hub):
         return len(self._incompleteSpokes) == 0 and len(self._notReadySpokes) == 0 and getattr(self._checker, "success", True)
 
     def _updateContinueButton(self):
-        if not self.continueButton:
-            return
-
-        self.continueButton.set_sensitive(self.continuePossible)
+        self.window.set_may_continue(self.continuePossible)
 
     def _update_spokes(self):
         from pyanaconda.ui.communication import hubQ
@@ -304,10 +248,10 @@ class Hub(GUIObject, common.Hub):
 
         q = hubQ.q
 
-        if not self._spokes and self.continueButton:
+        if not self._spokes and self.window.get_may_continue():
             # no spokes, move on
             log.info("no spokes available on %s, continuing automatically", self)
-            gtk_call_once(self.continueButton.emit, "clicked")
+            gtk_call_once(self.window.emit, "continue-clicked")
 
         click_continue = False
         # Grab all messages that may have appeared since last time this method ran.
@@ -350,9 +294,9 @@ class Hub(GUIObject, common.Hub):
                     # _createBox skipped.  Now that it's become ready, do it.  Note
                     # that we also provide a way to skip this processing (see comments
                     # communication.py) to prevent getting caught in a loop.
-                    if not args[1] and spoke.changed and spoke._visitedSinceApplied:
+                    if not args[1] and spoke.changed and spoke.visitedSinceApplied:
                         spoke.execute()
-                        spoke._visitedSinceApplied = False
+                        spoke.visitedSinceApplied = False
 
                     if self.continuePossible:
                         if self._inSpoke:
@@ -367,10 +311,10 @@ class Hub(GUIObject, common.Hub):
             q.task_done()
 
         # queue is now empty, should continue be clicked?
-        if self._autoContinue and click_continue and self.continueButton:
+        if self._autoContinue and click_continue and self.window.get_may_continue():
             # enqueue the emit to the Gtk message queue
             log.info("_autoContinue clicking continue button")
-            gtk_call_once(self.continueButton.emit, "clicked")
+            gtk_call_once(self.window.emit, "continue-clicked")
 
         return True
 
@@ -380,21 +324,7 @@ class Hub(GUIObject, common.Hub):
 
         GLib.timeout_add(100, self._update_spokes)
 
-    @property
-    def continueButton(self):
-        return None
-
-    @property
-    def quitButton(self):
-        return None
-
     ### SIGNAL HANDLERS
-
-    def register_event_cb(self, event, cb):
-        if event == "continue" and self.continueButton:
-            self.continueButton.connect("clicked", lambda *args: cb())
-        elif event == "quit" and self.quitButton:
-            self.quitButton.connect("clicked", lambda *args: cb())
 
     def _on_spoke_clicked(self, selector, event, spoke):
         from gi.repository import Gdk
@@ -419,9 +349,25 @@ class Hub(GUIObject, common.Hub):
         # autoContinue feature and wait for the user to explicitly state
         # that he is done configuring by pressing the continue button.
         self._autoContinue = False
-        
+
+        # Enter the spoke
         self._inSpoke = True
-        self._runSpoke(spoke)
+        spoke.entry_logger()
+        spoke.refresh()
+        self.main_window.enterSpoke(spoke)
+
+    def spoke_done(self, spoke):
+        spoke.visitedSinceApplied = True
+
+        # Don't take visitedSinceApplied into account here.  It will always be
+        # True from the line above.
+        if spoke.changed and (not spoke.skipTo or (spoke.skipTo and spoke.applyOnSkip)):
+            spoke.apply()
+            spoke.execute()
+            spoke.visitedSinceApplied = False
+
+        spoke.exit_logger()
+
         self._inSpoke = False
 
         # Now update the selector with the current status and completeness.
@@ -440,5 +386,7 @@ class Hub(GUIObject, common.Hub):
             spoke.skipTo = None
 
             self._on_spoke_clicked(self._spokes[dest].selector, None, self._spokes[dest])
-
+        # Otherwise, switch back to the hub (that's us!)
+        else:
+            self.main_window.returnToHub()
 

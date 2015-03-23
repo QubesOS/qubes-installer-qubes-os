@@ -20,12 +20,11 @@
 #                    Chris Lumens <clumens@redhat.com>
 #
 
-from blivet.devices import MultipathDevice, iScsiDiskDevice
-from blivet.size import Size
+from blivet.devices import MultipathDevice, iScsiDiskDevice, FcoeDiskDevice
 
 from pyanaconda.flags import flags
 
-__all__ = ["FakeDiskLabel", "FakeDisk", "getDisks", "isLocalDisk", "size_str"]
+__all__ = ["FakeDiskLabel", "FakeDisk", "getDisks", "isLocalDisk"]
 
 class FakeDiskLabel(object):
     def __init__(self, free=0):
@@ -50,14 +49,24 @@ class FakeDisk(object):
 def getDisks(devicetree, fake=False):
     if not fake:
         devices = devicetree.devices
-        if not flags.imageInstall:
+        if flags.imageInstall:
+            hidden_images = [d for d in devicetree._hidden \
+                             if d.name in devicetree.diskImages]
+            devices += hidden_images
+        else:
             devices += devicetree._hidden
 
-        disks = [d for d in devices if d.isDisk and
-                                       d.size > 0 and
-                                       not d.format.hidden and
-                                       not (d.protected and
-                                            d.removable)]
+        disks = []
+        for d in devices:
+            if d.isDisk and not d.format.hidden and not d.protected:
+                # unformatted DASDs are detected with a size of 0, but they should
+                # still show up as valid disks if this function is called, since we
+                # can still use them; anaconda will know how to handle them, so they
+                # don't need to be ignored anymore
+                if d.type == "dasd":
+                    disks.append(d)
+                elif d.size > 0 and d.mediaPresent:
+                    disks.append(d)
     else:
         disks = []
         disks.append(FakeDisk("sda", size=300000, free=10000, serial="00001",
@@ -68,15 +77,18 @@ def getDisks(devicetree, fake=False):
                               vendor="SanDisk", model="Cruzer", serial="00003"))
 
     # Remove duplicate names from the list.
-    return sorted(list(set(disks)), key=lambda d: d.name)
+    return sorted(set(disks), key=lambda d: d.name)
 
 def isLocalDisk(disk):
-    return not isinstance(disk, MultipathDevice) and not isinstance(disk, iScsiDiskDevice)
+    return (not isinstance(disk, MultipathDevice)
+            and not isinstance(disk, iScsiDiskDevice)
+            and not isinstance(disk, FcoeDiskDevice))
 
-def size_str(mb):
-    if isinstance(mb, Size):
-        size = mb
-    else:
-        size = Size(en_spec="%f mb" % mb)
+def applyDiskSelection(storage, data, use_names):
+    onlyuse = use_names[:]
+    for disk in (d for d in storage.disks if d.name in onlyuse):
+        onlyuse.extend(d.name for d in disk.ancestors
+                       if d.name not in onlyuse)
 
-    return str(size).upper()
+    data.ignoredisk.onlyuse = onlyuse
+    data.clearpart.drives = use_names[:]

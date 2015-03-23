@@ -18,15 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os
 import sys
 import parted
-import _ped
 
 def main(argv):
     lst = set()
 
-    for dev in filter(lambda d: d.type != parted.DEVICE_DM, parted.getAllDevices()):
+    for dev in filter(lambda d: d.type != parted.DEVICE_DM and not d.path.startswith("/dev/sr"), parted.getAllDevices()):
         if dev.path.startswith("/dev/"):
             path = dev.path[5:]
         else:
@@ -37,7 +35,7 @@ def main(argv):
     lst = list(lst)
     lst.sort()
     for dev, size in lst:
-        print dev, size
+        print(dev, size)
 
 if __name__ == "__main__":
     main(sys.argv)

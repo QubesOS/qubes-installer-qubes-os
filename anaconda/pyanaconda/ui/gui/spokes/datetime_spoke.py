@@ -22,18 +22,20 @@
 import logging
 log = logging.getLogger("anaconda")
 
-from gi.repository import GLib, Gtk, Gdk
+from gi.repository import GLib, Gdk, Gtk, TimezoneMap
 
 from pyanaconda.ui.communication import hubQ
 from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
-from pyanaconda.ui.gui.categories.localization import LocalizationCategory
-from pyanaconda.ui.gui.utils import enlightbox, gtk_action_nowait, gtk_call_once
+from pyanaconda.ui.categories.localization import LocalizationCategory
+from pyanaconda.ui.gui.utils import gtk_action_nowait, gtk_call_once, override_cell_property
+from pyanaconda.ui.gui.helpers import GUIDialogInputCheckHandler
+from pyanaconda.ui.helpers import InputCheck
 
-from pyanaconda.i18n import _, N_
+from pyanaconda.i18n import _, CN_
 from pyanaconda.timezone import NTP_SERVICE, get_all_regions_and_timezones, is_valid_timezone
-from pyanaconda.localization import get_xlated_timezone
+from pyanaconda.localization import get_xlated_timezone, resolve_date_format
 from pyanaconda import iutil
 from pyanaconda import isys
 from pyanaconda import network
@@ -111,16 +113,35 @@ def _compare_cities(city_xlated1, city_xlated2):
         # compare prefixes
         return locale_mod.strcoll(prefix1, prefix2)
 
-class NTPconfigDialog(GUIObject):
+def _new_date_field_box(store):
+    """
+    Creates new date field box (a combobox and a label in a horizontal box) for
+    a given store.
+
+    """
+
+    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+    suffix_label = Gtk.Label()
+    renderer = Gtk.CellRendererText()
+    combo = Gtk.ComboBox(model=store)
+    combo.pack_start(renderer, False)
+
+    # idx is column 0, string we want to show is 1
+    combo.add_attribute(renderer, "text", 1)
+
+    box.pack_start(combo, False, False, 0)
+    box.pack_start(suffix_label, False, False, 0)
+
+    return (box, combo, suffix_label)
+
+class NTPconfigDialog(GUIObject, GUIDialogInputCheckHandler):
     builderObjects = ["ntpConfigDialog", "addImage", "serversStore"]
     mainWidgetName = "ntpConfigDialog"
     uiFile = "spokes/datetime_spoke.glade"
 
     def __init__(self, *args):
         GUIObject.__init__(self, *args)
-
-        #used to ensure uniqueness of the threads' names
-        self._threads_counter = 0
+        GUIDialogInputCheckHandler.__init__(self)
 
         #epoch is increased when serversStore is repopulated
         self._epoch = 0
@@ -151,21 +172,28 @@ class NTPconfigDialog(GUIObject):
         value = model[itr][1]
 
         if value == SERVER_QUERY:
-            renderer.set_property("stock-id", "gtk-dialog-question")
+            return "dialog-question"
         elif value == SERVER_OK:
-            renderer.set_property("stock-id", "gtk-yes")
+            return "emblem-default"
         else:
-            renderer.set_property("stock-id", "gtk-no")
+            return "dialog-error"
 
     def initialize(self):
         self.window.set_size_request(500, 400)
 
         workingColumn = self.builder.get_object("workingColumn")
         workingRenderer = self.builder.get_object("workingRenderer")
-        workingColumn.set_cell_data_func(workingRenderer, self._render_working)
+        override_cell_property(workingColumn, workingRenderer, "icon-name",
+                self._render_working)
 
         self._serverEntry = self.builder.get_object("serverEntry")
         self._serversStore = self.builder.get_object("serversStore")
+
+        self._addButton = self.builder.get_object("addButton")
+
+        # Validate the server entry box
+        self._serverCheck = self.add_check(self._serverEntry, self._validateServer)
+        self._serverCheck.update_check_status()
 
         self._initialize_store_from_config()
 
@@ -181,6 +209,27 @@ class NTPconfigDialog(GUIObject):
                     self._add_server(server)
             except ntp.NTPconfigError:
                 log.warning("Failed to load NTP servers configuration")
+
+    def _validateServer(self, inputcheck):
+        server = self.get_input(inputcheck.input_obj)
+
+        # If not set, fail the check to keep the button insensitive, but don't
+        # display an error
+        if not server:
+            return InputCheck.CHECK_SILENT
+
+        (valid, error) = network.sanityCheckHostname(server)
+        if not valid:
+            return "'%s' is not a valid hostname: %s" % (server, error)
+        else:
+            return InputCheck.CHECK_OK
+
+    def set_status(self, inputcheck):
+        # Use GUIDialogInputCheckHandler to set the error message
+        GUIDialogInputCheckHandler.set_status(self, inputcheck)
+
+        # Set the sensitivity of the add button based on the result
+        self._addButton.set_sensitive(inputcheck.check_status == InputCheck.CHECK_OK)
 
     def refresh(self):
         self._serverEntry.grab_focus()
@@ -267,11 +316,9 @@ class NTPconfigDialog(GUIObject):
         """ Runs a new thread with _set_server_ok_nok(itr) as a taget. """
 
         self._serversStore.set_value(itr, 1, SERVER_QUERY)
-        new_thread_name = "AnaNTPserver%d" % self._threads_counter
-        threadMgr.add(AnacondaThread(name=new_thread_name,
+        threadMgr.add(AnacondaThread(prefix="AnaNTPserver",
                                      target=self._set_server_ok_nok,
                                      args=(itr, self._epoch)))
-        self._threads_counter += 1
 
     def _add_server(self, server):
         """
@@ -281,11 +328,6 @@ class NTPconfigDialog(GUIObject):
         :param server: string containing hostname
 
         """
-
-        (valid, error) = network.sanityCheckHostname(server)
-        if not valid:
-            log.error("'%s' is not a valid hostname: %s", server, error)
-            return
 
         for row in self._serversStore:
             if row[0] == server:
@@ -298,12 +340,13 @@ class NTPconfigDialog(GUIObject):
         self._refresh_server_working(itr)
 
     def on_entry_activated(self, entry, *args):
-        self._add_server(entry.get_text())
-        entry.set_text("")
+        # Check that the input check has passed
+        if self._serverCheck.check_status == InputCheck.CHECK_OK:
+            self._add_server(entry.get_text())
+            entry.set_text("")
 
     def on_add_clicked(self, *args):
-        self._add_server(self._serverEntry.get_text())
-        self._serverEntry.set_text("")
+        self._serverEntry.emit("activate")
 
     def on_use_server_toggled(self, renderer, path, *args):
         itr = self._serversStore.get_iter(path)
@@ -341,11 +384,17 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
     mainWidgetName = "datetimeWindow"
     uiFile = "spokes/datetime_spoke.glade"
+    helpFile = "DateTimeSpoke.xml"
 
     category = LocalizationCategory
 
     icon = "preferences-system-time-symbolic"
-    title = N_("DATE & _TIME")
+    title = CN_("GUI|Spoke", "DATE & _TIME")
+
+    # Hack to get libtimezonemap loaded for GtkBuilder
+    # see https://bugzilla.gnome.org/show_bug.cgi?id=712184
+    _hack = TimezoneMap.TimezoneMap()
+    del(_hack)
 
     def __init__(self, *args):
         NormalSpoke.__init__(self, *args)
@@ -353,7 +402,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         # taking values from the kickstart file?
         self._kickstarted = flags.flags.automatedInstall
 
-        self._config_dialog = None
         self._update_datetime_timer_id = None
         self._start_updating_timer_id = None
 
@@ -365,6 +413,7 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         self._regionsStore = self.builder.get_object("regions")
         self._citiesStore = self.builder.get_object("cities")
         self._tzmap = self.builder.get_object("tzmap")
+        self._dateBox = self.builder.get_object("dateBox")
 
         # we need to know it the new value is the same as previous or not
         self._old_region = None
@@ -372,9 +421,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
         self._regionCombo = self.builder.get_object("regionCombobox")
         self._cityCombo = self.builder.get_object("cityCombobox")
-        self._monthCombo = self.builder.get_object("monthCombobox")
-        self._dayCombo = self.builder.get_object("dayCombobox")
-        self._yearCombo = self.builder.get_object("yearCombobox")
 
         self._daysFilter = self.builder.get_object("daysFilter")
         self._daysFilter.set_visible_func(self.existing_date, None)
@@ -389,28 +435,56 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         self._amPmLabel = self.builder.get_object("amPmLabel")
         self._radioButton24h = self.builder.get_object("timeFormatRB")
 
+        # create widgets for displaying/configuring date
+        day_box, self._dayCombo, day_label = _new_date_field_box(self._daysFilter)
+        self._dayCombo.connect("changed", self.on_day_changed)
+        month_box, self._monthCombo, month_label = _new_date_field_box(self._monthsStore)
+        self._monthCombo.connect("changed", self.on_month_changed)
+        year_box, self._yearCombo, year_label = _new_date_field_box(self._yearsStore)
+        self._yearCombo.connect("changed", self.on_year_changed)
+
+        # get the right order for date widgets and respective formats and put
+        # widgets in place
+        widgets, formats = resolve_date_format(year_box, month_box, day_box)
+        for widget in widgets:
+            self._dateBox.pack_start(widget, False, False, 0)
+
+        self._day_format, suffix = formats[widgets.index(day_box)]
+        day_label.set_text(suffix)
+        self._month_format, suffix = formats[widgets.index(month_box)]
+        month_label.set_text(suffix)
+        self._year_format, suffix = formats[widgets.index(year_box)]
+        year_label.set_text(suffix)
+
         self._ntpSwitch = self.builder.get_object("networkTimeSwitch")
 
         self._regions_zones = get_all_regions_and_timezones()
 
-        self._months_nums = dict()
+        # Set the initial sensitivity of the AM/PM toggle based on the time-type selected
+        self._radioButton24h.emit("toggled")
+
+        if not flags.can_touch_runtime_system("modify system time and date"):
+            self._set_date_time_setting_sensitive(False)
+
+        self._config_dialog = NTPconfigDialog(self.data)
+        self._config_dialog.initialize()
 
         threadMgr.add(AnacondaThread(name=constants.THREAD_DATE_TIME,
                                      target=self._initialize))
 
     def _initialize(self):
-        for day in xrange(1, 32):
-            self.add_to_store(self._daysStore, day)
+        # a bit hacky way, but should return the translated strings
+        for i in range(1, 32):
+            day = datetime.date(2000, 1, i).strftime(self._day_format)
+            self.add_to_store_idx(self._daysStore, i, day)
 
-        for i in xrange(1, 13):
-            #a bit hacky way, but should return the translated string
-            #TODO: how to handle language change? Clear and populate again?
-            month = datetime.date(2000, i, 1).strftime('%B')
-            self.add_to_store(self._monthsStore, month)
-            self._months_nums[month] = i
+        for i in range(1, 13):
+            month = datetime.date(2000, i, 1).strftime(self._month_format)
+            self.add_to_store_idx(self._monthsStore, i, month)
 
-        for year in xrange(1990, 2051):
-            self.add_to_store(self._yearsStore, year)
+        for i in range(1990, 2051):
+            year = datetime.date(i, 1, 1).strftime(self._year_format)
+            self.add_to_store_idx(self._yearsStore, i, year)
 
         cities = set()
         xlated_regions = ((region, get_xlated_timezone(region))
@@ -423,9 +497,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         for city, xlated in sorted(cities, cmp=_compare_cities):
             self.add_to_store_xlated(self._citiesStore, city, xlated)
 
-        if self._radioButton24h.get_active():
-            self._set_amPm_part_sensitive(False)
-
         self._update_datetime_timer_id = None
         if is_valid_timezone(self.data.timezone.timezone):
             self._set_timezone(self.data.timezone.timezone)
@@ -434,12 +505,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
                         self.data.timezone.timezone, DEFAULT_TZ)
             self._set_timezone(DEFAULT_TZ)
             self.data.timezone.timezone = DEFAULT_TZ
-
-        if not flags.can_touch_runtime_system("modify system time and date"):
-            self._set_date_time_setting_sensitive(False)
-
-        self._config_dialog = NTPconfigDialog(self.data)
-        self._config_dialog.initialize()
 
         time_init_thread = threadMgr.get(constants.THREAD_TIME_INIT)
         if time_init_thread is not None:
@@ -456,10 +521,12 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
                 return _("%s timezone") % get_xlated_timezone(self.data.timezone.timezone)
             else:
                 return _("Invalid timezone")
-        elif self._tzmap.get_timezone():
-            return _("%s timezone") % get_xlated_timezone(self._tzmap.get_timezone())
         else:
-            return _("Nothing selected")
+            location = self._tzmap.get_location()
+            if location and location.get_property("zone"):
+                return _("%s timezone") % get_xlated_timezone(location.get_property("zone"))
+            else:
+                return _("Nothing selected")
 
     def apply(self):
         # we could use self._tzmap.get_timezone() here, but it returns "" if
@@ -530,6 +597,7 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
         self._ntpSwitch.set_active(ntp_working)
 
+    @gtk_action_nowait
     def _set_timezone(self, timezone):
         """
         Sets timezone to the city/region comboboxes and the timezone map.
@@ -560,10 +628,14 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
     def add_to_store(self, store, item):
         store.append([item])
 
-    def existing_date(self, model, itr, user_data=None):
-        if not itr:
+    @gtk_action_nowait
+    def add_to_store_idx(self, store, idx, item):
+        store.append([idx, item])
+
+    def existing_date(self, days_model, days_iter, user_data=None):
+        if not days_iter:
             return False
-        day = model[itr][0]
+        day = days_model[days_iter][0]
 
         #days 1-28 are in every month every year
         if day < 29:
@@ -573,16 +645,15 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         months_iter = self._monthCombo.get_active_iter()
         if not months_iter:
             return True
-        month = months_model[months_iter][0]
 
         years_model = self._yearCombo.get_model()
         years_iter = self._yearCombo.get_active_iter()
         if not years_iter:
             return True
-        year = years_model[years_iter][0]
 
         try:
-            datetime.date(year, self._months_nums[month], day)
+            datetime.date(years_model[years_iter][0],
+                          months_model[months_iter][0], day)
             return True
         except ValueError:
             return False
@@ -621,9 +692,9 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
     def _to_amPm(self, hours):
         if hours >= 12:
-            day_phase = "PM"
+            day_phase = _("PM")
         else:
-            day_phase = "AM"
+            day_phase = _("AM")
 
         new_hours = ((hours - 1) % 12) + 1
 
@@ -632,10 +703,10 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
     def _to_24h(self, hours, day_phase):
         correction = 0
 
-        if day_phase == "AM" and hours == 12:
+        if day_phase == _("AM") and hours == 12:
             correction = -12
 
-        elif day_phase == "PM" and hours != 12:
+        elif day_phase == _("PM") and hours != 12:
             correction = 12
 
         return (hours + correction) % 24
@@ -652,8 +723,7 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         self._minutesLabel.set_text("%0.2d" % now.minute)
 
         self._set_combo_selection(self._dayCombo, now.day)
-        self._set_combo_selection(self._monthCombo,
-                            datetime.date(2000, now.month, 1).strftime('%B'))
+        self._set_combo_selection(self._monthCombo, now.month)
         self._set_combo_selection(self._yearCombo, now.year)
 
         #GLib's timer is driven by the return value of the function.
@@ -671,15 +741,13 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         if not flags.can_touch_runtime_system("save system time"):
             return False
 
-        month = self._get_combo_selection(self._monthCombo)
+        month = self._get_combo_selection(self._monthCombo)[0]
         if not month:
             return False
-        month = self._months_nums[month]
 
-        year_str = self._get_combo_selection(self._yearCombo)
-        if not year_str:
+        year = self._get_combo_selection(self._yearCombo)[0]
+        if not year:
             return False
-        year = int(year_str)
 
         hours = int(self._hoursLabel.get_text())
         if not self._radioButton24h.get_active():
@@ -687,10 +755,9 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
         minutes = int(self._minutesLabel.get_text())
 
-        day = self._get_combo_selection(self._dayCombo)
+        day = self._get_combo_selection(self._dayCombo)[0]
         #day may be None if there is no such in the selected year and month
         if day:
-            day = int(day)
             isys.set_system_date_time(year, month, day, hours, minutes)
 
         #start the timer only when the spoke is shown
@@ -759,9 +826,9 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         model = combo.get_model()
         itr = combo.get_active_iter()
         if not itr or not model:
-            return None
+            return None, None
 
-        return model[itr][0]
+        return model[itr][0], model[itr][1]
 
     def _restore_old_city_region(self):
         """Restore stored "old" (or last valid) values."""
@@ -817,21 +884,13 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         minutes_str = "%0.2d" % ((minutes - 1) % 60)
         self._minutesLabel.set_text(minutes_str)
 
-    def on_up_ampm_clicked(self, *args):
+    def on_updown_ampm_clicked(self, *args):
         self._stop_and_maybe_start_time_updating()
 
-        if self._amPmLabel.get_text() == "AM":
-            self._amPmLabel.set_text("PM")
+        if self._amPmLabel.get_text() == _("AM"):
+            self._amPmLabel.set_text(_("PM"))
         else:
-            self._amPmLabel.set_text("AM")
-
-    def on_down_ampm_clicked(self, *args):
-        self._stop_and_maybe_start_time_updating()
-
-        if self._amPmLabel.get_text() == "AM":
-            self._amPmLabel.set_text("PM")
-        else:
-            self._amPmLabel.set_text("AM")
+            self._amPmLabel.set_text(_("AM"))
 
     def on_region_changed(self, combo, *args):
         """
@@ -884,12 +943,23 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
             return
 
         if region == "Etc":
-            # Etc timezones cannot be displayed on the map, so let's set the map
-            # to "" which sets it to "Europe/London" (UTC) without a city pin
-            self._tzmap.set_timezone("", no_signal=True)
+            # Etc timezones cannot be displayed on the map, so let's reset the
+            # location and manually set a highlight with no location pin.
+            self._tzmap.clear_location()
+            if city in ("GMT", "UTC"):
+                offset = 0.0
+            # The tzdb data uses POSIX-style signs for the GMT zones, which is
+            # the opposite of whatever everyone else expects. GMT+4 indicates a
+            # zone four hours west of Greenwich; i.e., four hours before. Reverse
+            # the sign to match the libtimezone map.
+            else:
+                # Take the part after "GMT"
+                offset = -float(city[3:])
+
+            self._tzmap.set_selected_offset(offset)
         else:
             # we don't want the timezone-changed signal to be emitted
-            self._tzmap.set_timezone(timezone, no_signal=True)
+            self._tzmap.set_timezone(timezone)
 
         # update "old" values
         self._old_city = city
@@ -935,7 +1005,11 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         self._stop_and_maybe_start_time_updating(interval=5)
         self._daysFilter.refilter()
 
-    def on_timezone_changed(self, tz_map, timezone):
+    def on_location_changed(self, tz_map, location):
+        if not location:
+            return
+
+        timezone = location.get_property('zone')
         if self._set_timezone(timezone):
             # timezone successfully set
             os.environ["TZ"] = timezone
@@ -1020,7 +1094,7 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
     def on_ntp_config_clicked(self, *args):
         self._config_dialog.refresh()
 
-        with enlightbox(self.window, self._config_dialog.window):
+        with self.main_window.enlightbox(self._config_dialog.window):
             response = self._config_dialog.run()
 
         if response == 1:

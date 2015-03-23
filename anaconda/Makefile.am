@@ -19,9 +19,16 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+
 SUBDIRS = data docs dracut po pyanaconda scripts tests widgets utils
 
 EXTRA_DIST = config.rpath COPYING
+
+# Files generated for gettext need to be included in the distribution
+EXTRA_DIST += $(srcdir)/anaconda.po
+$(srcdir)/anaconda.po: $(srcdir)/anaconda
+	@$(MAKE) -C $(top_builddir)/po $(abs_top_srcdir)/$(subdir)/$$(basename $@)
 
 MAINTAINERCLEANFILES = Makefile.in config.guess config.h.in config.sub \
                        depcomp install-sh ltmain.sh missing ABOUT-NLS \
@@ -31,32 +38,37 @@ MAINTAINERCLEANFILES = Makefile.in config.guess config.h.in config.sub \
 
 CLEANFILES = *~
 
-MOSTLYCLEANDIRS = m4
-
 dist_noinst_DATA      = $(PACKAGE_NAME).spec
 
 dist_sbin_SCRIPTS     = anaconda
 
 ARCHIVE_TAG   = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_RELEASE)
 
-TX_PULL_ARGS = -a --disable-overwrite
+TX_PULL_ARGS = -a -f
 TX_PUSH_ARGS = -s
+
+INSTALLATION_GUIDE_REPO_URL = git://git.fedorahosted.org/git/docs/install-guide.git
 
 tag:
 	@git tag -s -a -m "Tag as $(ARCHIVE_TAG)" $(ARCHIVE_TAG)
 	@echo "Tagged as $(ARCHIVE_TAG)"
 
 po-pull:
-	rm -f $(srcdir)/po/en@boldquot.gmo $(srcdir)/po/en@boldquot.po
-	rm -f $(srcdir)/po/en@quot.gmo $(srcdir)/po/en@quot.po
 	rpm -q transifex-client &>/dev/null || ( echo "need to run: yum install transifex-client"; exit 1 )
 	tx pull $(TX_PULL_ARGS)
 
-scratch: po-pull
+po-empty:
+	for lingua in $$(grep -v '^#' $(srcdir)/po/LINGUAS) ; do \
+		[ -f $(srcdir)/po/$$lingua.po ] || \
+		msginit -i $(srcdir)/po/$(PACKAGE_NAME).pot -o $(srcdir)/po/$$lingua.po --no-translator || \
+		exit 1 ; \
+	done
+
+scratch: po-empty get-help
 	$(MAKE) ARCHIVE_TAG=HEAD dist
 	git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
 
-scratch-bumpver: po-pull
+scratch-bumpver: po-empty get-help
 	@opts="-n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
 	if [ ! -z "$(IGNORE)" ]; then \
 		opts="$${opts} -i $(IGNORE)" ; \
@@ -67,10 +79,13 @@ scratch-bumpver: po-pull
 	if [ ! -z "$(BZDEBUG)" ]; then \
 		opts="$${opts} -d" ; \
 	fi ; \
+	if [ ! -z "$(SKIP_ACKS)" ]; then \
+		opts="$${opts} -s" ; \
+	fi ; \
 	( cd $(srcdir) && scripts/makebumpver $${opts} ) || exit 1 ; \
 	$(MAKE) -C po $(PACKAGE_NAME).pot-update ; 
 
-release:
+release: get-help
 	$(MAKE) dist && $(MAKE) tag && git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
 
 api:
@@ -86,6 +101,9 @@ bumpver: po-pull
 	fi ; \
 	if [ ! -z "$(BZDEBUG)" ]; then \
 		opts="$${opts} -d" ; \
+	fi ; \
+	if [ ! -z "$(SKIP_ACKS)" ]; then \
+		opts="$${opts} -s" ; \
 	fi ; \
 	( cd $(srcdir) && scripts/makebumpver $${opts} ) || exit 1 ; \
 	$(MAKE) -C po $(PACKAGE_NAME).pot-update && \
@@ -172,3 +190,24 @@ runglade:
 	GLADE_CATALOG_SEARCH_PATH=$(srcdir)/widgets/glade \
 	GLADE_MODULE_SEARCH_PATH=$(builddir)/widgets/src/.libs \
 	glade ${GLADE_FILE}
+
+
+# Get content for the Anaconda built-in help system by cloning the
+# installation guide git repository and running the help processing
+# script (it is part of the repository).
+# Once the help content has been generated copy it to our help folder,
+# so that it can be included in the tarball.
+# Skip the git clone if the repository already exists but run git pull
+# to make sure it is up to date. We also clone the repository
+# without history as it si rather big (>400 MB!), which is quite
+# an overkill for <100 kB of help conent. :)
+get-help:
+	if [ ! -d "install-guide" ]; then \
+		if [ -f "installation_guide_repo_url" ]; then \
+			git clone --depth=1 `cat installation_guide_repo_url` ; \
+	    else \
+			git clone --depth=1 $(INSTALLATION_GUIDE_REPO_URL) ; \
+		fi ; \
+	fi ; \
+	( cd install-guide && git pull --rebase && python prepare_anaconda_help_content.py )
+	cp -r install-guide/anaconda_help_content/* $(srcdir)/data/help

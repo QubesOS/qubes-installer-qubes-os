@@ -26,6 +26,8 @@ from gi.repository import GLib
 from pyanaconda import constants
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.ui.gui import GUIObject
+from pyanaconda.ui.gui.utils import escape_markup
+from pyanaconda.i18n import _
 from pyanaconda import nm
 
 __all__ = ["ISCSIDialog"]
@@ -141,6 +143,7 @@ class ISCSIDialog(GUIObject):
         self._initiatorEntry = self.builder.get_object("initiatorEntry")
 
         self._store = self.builder.get_object("nodeStore")
+        self._storeFilter = self.builder.get_object("nodeStoreFiltered")
 
     def refresh(self):
         self._bindCheckbox.set_active(bool(self.iscsi.ifaces))
@@ -151,7 +154,7 @@ class ISCSIDialog(GUIObject):
 
         self._loginAuthTypeCombo.set_active(0)
 
-        self.builder.get_object("nodeStoreFiltered").set_visible_column(1)
+        self._storeFilter.set_visible_column(1)
 
         self._initiatorEntry.set_text(self.iscsi.initiator)
         self._initiatorEntry.set_sensitive(not self.iscsi.initiatorSet)
@@ -264,9 +267,15 @@ class ISCSIDialog(GUIObject):
         # Now get the node discovery credentials.
         credentials = discoverMap[self._authNotebook.get_current_page()](self.builder)
 
+        discoveredLabelText = _("The following nodes were discovered using the iSCSI initiator "\
+                                "<b>%(initiatorName)s</b> using the target IP address "\
+                                "<b>%(targetAddress)s</b>.  Please select which nodes you "\
+                                "wish to log into:") % \
+                                {"initiatorName": escape_markup(credentials.initiator),
+                                 "targetAddress": escape_markup(credentials.targetIP)}
+
         discoveredLabel = self.builder.get_object("discoveredLabel")
-        discoveredLabel.set_markup(discoveredLabel.get_label() % {"initiatorName": credentials.initiator,
-                                                                  "targetAddress": credentials.targetIP})
+        discoveredLabel.set_markup(discoveredLabelText)
 
         bind = self._bindCheckbox.get_active()
 
@@ -326,7 +335,8 @@ class ISCSIDialog(GUIObject):
             return
 
         # Then, go back and mark just this row as selected.
-        itr = self._store.get_iter(path)
+        itr = self._storeFilter.get_iter(path)
+        itr = self._storeFilter.convert_iter_to_child_iter(itr)
         self._store[itr][0] = not self._store[itr][0]
 
     def _login(self, credentials):

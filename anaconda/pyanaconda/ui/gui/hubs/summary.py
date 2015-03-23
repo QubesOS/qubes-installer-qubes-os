@@ -20,7 +20,8 @@
 #
 
 from pyanaconda.ui.gui.hubs import Hub
-from pyanaconda.ui.lib.space import FileSystemSpaceChecker
+from pyanaconda.ui.lib.space import FileSystemSpaceChecker, DirInstallSpaceChecker
+from pyanaconda.flags import flags
 
 __all__ = ["SummaryHub"]
 
@@ -28,6 +29,7 @@ class SummaryHub(Hub):
     builderObjects = ["summaryWindow"]
     mainWidgetName = "summaryWindow"
     uiFile = "hubs/summary.glade"
+    helpFile = "SummaryHub.xml"
 
     def __init__(self, data, storage, payload, instclass):
         """Create a new Hub instance.
@@ -53,12 +55,8 @@ class SummaryHub(Hub):
         """
         super(SummaryHub, self).__init__(data, storage, payload, instclass)
 
-        self._checker = FileSystemSpaceChecker(storage, payload)
+        if not flags.dirInstall:
+            self._checker = FileSystemSpaceChecker(storage, payload)
+        else:
+            self._checker = DirInstallSpaceChecker(storage, payload)
 
-    @property
-    def continueButton(self):
-        return self.builder.get_object("continueButton")
-
-    @property
-    def quitButton(self):
-        return self.builder.get_object("quitButton")

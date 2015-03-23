@@ -21,10 +21,12 @@
 #include <gdk/gdk.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <pango/pango.h>
 #include <gettext.h>
 
 #include "MountpointSelector.h"
 #include "intl.h"
+#include "widgets-common.h"
 
 /**
  * SECTION: MountpointSelector
@@ -66,17 +68,16 @@ static void anaconda_mountpoint_selector_get_property(GObject *object, guint pro
 static void anaconda_mountpoint_selector_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
 
 static void anaconda_mountpoint_selector_realize(GtkWidget *widget, gpointer user_data);
-static void anaconda_mountpoint_selector_finalize(AnacondaMountpointSelector *widget);
+static void anaconda_mountpoint_selector_finalize(GObject *object);
 
-static void     anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSelector *widget);
-static gboolean anaconda_mountpoint_selector_focus_changed(GtkWidget *widget, GdkEventFocus *event, gpointer user_data);
+static void anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSelector *widget);
 
 static void anaconda_mountpoint_selector_class_init(AnacondaMountpointSelectorClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
 
     object_class->set_property = anaconda_mountpoint_selector_set_property;
     object_class->get_property = anaconda_mountpoint_selector_get_property;
-    object_class->finalize = (GObjectFinalizeFunc) anaconda_mountpoint_selector_finalize;
+    object_class->finalize = anaconda_mountpoint_selector_finalize;
 
     /**
      * AnacondaMountpointSelector:name:
@@ -167,16 +168,9 @@ static void format_name_label(AnacondaMountpointSelector *widget, const char *va
     g_free(markup);
 }
 
-/* XXX: this should be provided by the Gtk itself (#1008821) */
-static GtkTextDirection get_default_widget_direction() {
-    const char *xlated = g_dgettext("gtk30", "default:LTR");
-    if (strcmp (xlated, "default:RTL") == 0)
-        return GTK_TEXT_DIR_RTL;
-    else
-        return GTK_TEXT_DIR_LTR;
-}
-
 static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountpoint) {
+    gchar *file;
+
     mountpoint->priv = G_TYPE_INSTANCE_GET_PRIVATE(mountpoint,
                                                    ANACONDA_TYPE_MOUNTPOINT_SELECTOR,
                                                    AnacondaMountpointSelectorPrivate);
@@ -186,8 +180,6 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
      */
     gtk_widget_set_can_focus(GTK_WIDGET(mountpoint), TRUE);
     gtk_widget_add_events(GTK_WIDGET(mountpoint), GDK_FOCUS_CHANGE_MASK|GDK_KEY_RELEASE_MASK);
-    g_signal_connect(mountpoint, "focus-in-event", G_CALLBACK(anaconda_mountpoint_selector_focus_changed), NULL);
-    g_signal_connect(mountpoint, "focus-out-event", G_CALLBACK(anaconda_mountpoint_selector_focus_changed), NULL);
 
     /* Set "hand" cursor shape when over the selector */
     mountpoint->priv->cursor = gdk_cursor_new(GDK_HAND2);
@@ -196,16 +188,18 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     /* Create the grid. */
     mountpoint->priv->grid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(mountpoint->priv->grid), 12);
-    gtk_widget_set_margin_left(GTK_WIDGET(mountpoint->priv->grid), 30);
+    gtk_widget_set_margin_start(GTK_WIDGET(mountpoint->priv->grid), 30);
 
     /* Create the icon.  We don't need to check if it returned NULL since
      * gtk_image_new_from_file will just display a broken image icon in that
      * case.  That's good enough error notification.
      */
-    if (get_default_widget_direction() == GTK_TEXT_DIR_LTR)
-        mountpoint->priv->arrow = gtk_image_new_from_file("/usr/share/anaconda/pixmaps/right-arrow-icon.png");
+    if (gtk_get_locale_direction() == GTK_TEXT_DIR_LTR)
+        file = g_strdup_printf("%s/pixmaps/right-arrow-icon.png", anaconda_get_widgets_datadir());
     else
-        mountpoint->priv->arrow = gtk_image_new_from_file("/usr/share/anaconda/pixmaps/left-arrow-icon.png");
+        file = g_strdup_printf("%s/pixmaps/left-arrow-icon.png", anaconda_get_widgets_datadir());
+    mountpoint->priv->arrow = gtk_image_new_from_file(file);
+    g_free(file);
     gtk_widget_set_no_show_all(GTK_WIDGET(mountpoint->priv->arrow), TRUE);
 
     /* Set some properties. */
@@ -214,18 +208,27 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     /* Create the name label. */
     mountpoint->priv->name_label = gtk_label_new(NULL);
     format_name_label(mountpoint, _(DEFAULT_NAME));
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    /* gtk+ did a garbage job of "deprecating" GtkMisc, so keep using it for now */
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->name_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
+    gtk_label_set_ellipsize(GTK_LABEL(mountpoint->priv->name_label), PANGO_ELLIPSIZE_MIDDLE);
+    gtk_label_set_max_width_chars(GTK_LABEL(mountpoint->priv->name_label), 25);
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->name_label), TRUE);
 
     /* Create the size label. */
     mountpoint->priv->size_label = gtk_label_new(NULL);
     format_size_label(mountpoint, _(DEFAULT_SIZE));
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->size_label), 0, 0.5);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
     /* Create the mountpoint label. */
     mountpoint->priv->mountpoint_label = gtk_label_new(NULL);
     format_mountpoint_label(mountpoint, DEFAULT_MOUNTPOINT);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->mountpoint_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->mountpoint_label), TRUE);
 
     /* Add everything to the grid, add the grid to the widget. */
@@ -233,13 +236,16 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->size_label, 1, 0, 1, 2);
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->arrow, 2, 0, 1, 2);
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->name_label, 0, 1, 1, 2);
-    gtk_widget_set_margin_right(GTK_WIDGET(mountpoint->priv->grid), 12);
+    gtk_widget_set_margin_end(GTK_WIDGET(mountpoint->priv->grid), 12);
 
     gtk_container_add(GTK_CONTAINER(mountpoint), mountpoint->priv->grid);
 }
 
-static void anaconda_mountpoint_selector_finalize(AnacondaMountpointSelector *widget) {
+static void anaconda_mountpoint_selector_finalize(GObject *object) {
+    AnacondaMountpointSelector *widget = ANACONDA_MOUNTPOINT_SELECTOR(object);
     g_object_unref(widget->priv->cursor);
+
+    G_OBJECT_CLASS(anaconda_mountpoint_selector_parent_class)->finalize(object);
 }
 
 static void anaconda_mountpoint_selector_realize(GtkWidget *widget, gpointer user_data) {
@@ -288,24 +294,6 @@ static void anaconda_mountpoint_selector_set_property(GObject *object, guint pro
     }
 }
 
-static gboolean anaconda_mountpoint_selector_focus_changed(GtkWidget *widget, GdkEventFocus *event, gpointer user_data) {
-    GtkStateFlags new_state;
-
-    new_state = gtk_widget_get_state_flags(widget) & ~GTK_STATE_FOCUSED;
-    if (event->in) {
-        gtk_widget_show(GTK_WIDGET(ANACONDA_MOUNTPOINT_SELECTOR(widget)->priv->arrow));
-        new_state |= GTK_STATE_FOCUSED;
-        anaconda_mountpoint_selector_set_chosen(ANACONDA_MOUNTPOINT_SELECTOR(widget), TRUE);
-    }
-    else {
-        gtk_widget_hide(GTK_WIDGET(ANACONDA_MOUNTPOINT_SELECTOR(widget)->priv->arrow));
-        anaconda_mountpoint_selector_set_chosen(ANACONDA_MOUNTPOINT_SELECTOR(widget), FALSE);
-    }
-
-    gtk_widget_set_state_flags(widget, new_state, TRUE);
-    return FALSE;
-}
-
 static void anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSelector *widget) {
     if (widget->priv->chosen) {
         gtk_widget_set_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED, FALSE);
@@ -346,6 +334,12 @@ gboolean anaconda_mountpoint_selector_get_chosen(AnacondaMountpointSelector *wid
 void anaconda_mountpoint_selector_set_chosen(AnacondaMountpointSelector *widget, gboolean is_chosen) {
     widget->priv->chosen = is_chosen;
     anaconda_mountpoint_selector_toggle_background(widget);
-    if (is_chosen)
+
+    if (is_chosen) {
+        gtk_widget_show(GTK_WIDGET(widget->priv->arrow));
         gtk_widget_grab_focus(GTK_WIDGET(widget));
+    }
+    else {
+        gtk_widget_hide(GTK_WIDGET(widget->priv->arrow));
+    }
 }

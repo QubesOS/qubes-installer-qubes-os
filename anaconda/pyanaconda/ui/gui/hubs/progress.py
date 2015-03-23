@@ -1,6 +1,6 @@
 # Progress hub classes
 #
-# Copyright (C) 2011-2012  Red Hat, Inc.
+# Copyright (C) 2011-2013  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -28,7 +28,7 @@ import os
 import sys
 import glob
 
-from pyanaconda.i18n import _
+from pyanaconda.i18n import _, C_
 from pyanaconda.localization import find_best_locale_match
 from pyanaconda.product import productName
 from pyanaconda.flags import flags
@@ -44,6 +44,7 @@ class ProgressHub(Hub):
     builderObjects = ["progressWindow"]
     mainWidgetName = "progressWindow"
     uiFile = "hubs/progress.glade"
+    helpFile = "ProgressHub.xml"
 
     def __init__(self, data, storage, payload, instclass):
         Hub.__init__(self, data, storage, payload, instclass)
@@ -102,15 +103,19 @@ class ProgressHub(Hub):
             elif code == progressQ.PROGRESS_CODE_MESSAGE:
                 self._update_progress_message(args[0])
             elif code == progressQ.PROGRESS_CODE_COMPLETE:
-                # There shouldn't be any more progress bar updates, so return False
-                # to indicate this method should be removed from the idle loop.  Also,
-                # stop the rnotes cycling and display the finished message.
-                self._progress_bar_complete()
                 q.task_done()
+
+                # we are done, stop the progress indication
+                gtk_call_once(self._progressBar.set_fraction, 1.0)
+                gtk_call_once(self._progressLabel.set_text, _("Complete!"))
+                gtk_call_once(self._spinner.stop)
+                gtk_call_once(self._spinner.hide)
 
                 if callback:
                     callback()
 
+                # There shouldn't be any more progress bar updates, so return False
+                # to indicate this method should be removed from the idle loop.
                 return False
             elif code == progressQ.PROGRESS_CODE_QUIT:
                 sys.exit(args[0])
@@ -129,8 +134,7 @@ class ProgressHub(Hub):
 
         # kickstart install, continue automatically if reboot or shutdown selected
         if flags.automatedInstall and self.data.reboot.action in [KS_REBOOT, KS_SHUTDOWN]:
-            self.continueButton.emit("clicked")
-
+            self.window.emit("continue-clicked")
 
     def _install_done(self):
         # package installation done, check personalization spokes
@@ -144,6 +148,11 @@ class ProgressHub(Hub):
             GLib.source_remove(self._rnotes_id)
             self._progressNotebook.set_current_page(0)
 
+    def _do_globs(self, path):
+        return glob.glob(path + "/*.png") + \
+               glob.glob(path + "/*.jpg") + \
+               glob.glob(path + "/*.svg")
+
     def _get_rnotes(self):
         # We first look for rnotes in paths containing the language, then in
         # directories without the language component.  You know, just in case.
@@ -154,7 +163,7 @@ class ProgressHub(Hub):
 
         all_lang_pixmaps = []
         for path in paths:
-            all_lang_pixmaps += glob.glob(path + "*/*.png") + glob.glob(path + "*/*.jpg")
+            all_lang_pixmaps += self._do_globs(path + "/*")
 
         pixmap_langs = [pixmap.split(os.path.sep)[-2] for pixmap in all_lang_pixmaps]
         best_lang = find_best_locale_match(os.environ["LANG"], pixmap_langs)
@@ -167,14 +176,13 @@ class ProgressHub(Hub):
             # nothing found even for the default language, try non-localized rnotes
             non_localized = []
             for path in paths:
-                non_localized += glob.glob(path + "*.png") + glob.glob(path + "*.jpg")
+                non_localized += self._do_globs(path)
 
             return non_localized
 
         best_lang_pixmaps = []
         for path in paths:
-            best_lang_pixmaps += (glob.glob(path + best_lang + "/*.png") +
-                                  glob.glob(path + best_lang + "/*.jpg"))
+            best_lang_pixmaps += self._do_globs(path + best_lang)
 
         return best_lang_pixmaps
 
@@ -183,7 +191,7 @@ class ProgressHub(Hub):
         # image's filename.  Note that self._rnotesPages is an infinite list,
         # so this will cycle through the images indefinitely.
         try:
-            nxt = self._rnotesPages.next()
+            nxt = next(self._rnotesPages)
         except StopIteration:
             # there are no rnotes
             pass
@@ -200,19 +208,25 @@ class ProgressHub(Hub):
             continueText.set_text(_("%s is now successfully installed on your system and ready "
                                     "for you to use!  When you are ready, reboot your system to start using it!"))
             continueText.set_line_wrap(True)
-            self.continueButton.set_label(_("_Quit"))
+            self.window.get_continue_button().set_label(C_("GUI|Progress", "_Quit"))
 
         self._progressBar = self.builder.get_object("progressBar")
         self._progressLabel = self.builder.get_object("progressLabel")
         self._progressNotebook = self.builder.get_object("progressNotebook")
+        self._spinner = self.builder.get_object("progressSpinner")
 
         lbl = self.builder.get_object("configurationLabel")
-        lbl.set_text(lbl.get_text() % productName)
+        lbl.set_text(_("%s is now successfully installed, but some configuration still needs to be done.\n"
+            "Finish it and then click the Finish configuration button please.") %
+            productName)
 
         lbl = self.builder.get_object("rebootLabel")
-        lbl.set_text(lbl.get_text() % productName)
+        lbl.set_text(_("%s is now successfully installed and ready for you to use!\n"
+                "Go ahead and reboot to start using it!") % productName)
 
         rnotes = self._get_rnotes()
+        # Get the start of the pages we're about to add to the notebook
+        rnotes_start = self._progressNotebook.get_n_pages()
         if rnotes:
             # Add a new page in the notebook for each ransom note image.
             for f in rnotes:
@@ -221,14 +235,15 @@ class ProgressHub(Hub):
                 self._progressNotebook.append_page(img, None)
 
             # An infinite list of the page numbers containing ransom notes images.
-            self._rnotesPages = itertools.cycle(range(2, self._progressNotebook.get_n_pages()-2))
+            self._rnotesPages = itertools.cycle(range(rnotes_start,
+                self._progressNotebook.get_n_pages()))
         else:
             # Add a blank page to the notebook and we'll just cycle to that
             # over and over again.
             blank = Gtk.Box()
             blank.show()
             self._progressNotebook.append_page(blank, None)
-            self._rnotesPages = itertools.cycle([2])
+            self._rnotesPages = itertools.cycle([rnotes_start])
 
     def refresh(self):
         from pyanaconda.install import doInstall
@@ -243,13 +258,9 @@ class ProgressHub(Hub):
 
     def _updateContinueButton(self):
         if self._configurationDone:
-            self.continueButton.set_sensitive(self.continuePossible)
+            self.window.set_may_continue(self.continuePossible)
         else:
             self.builder.get_object("configureButton").set_sensitive(self.continuePossible)
-
-    @property
-    def continueButton(self):
-        return self.builder.get_object("rebootButton")
 
     def _init_progress_bar(self, steps):
         self._totalSteps = steps
@@ -272,15 +283,5 @@ class ProgressHub(Hub):
 
     @gtk_action_nowait
     def _restart_spinner(self):
-        spinner = self.builder.get_object("progressSpinner")
-        spinner.show()
-        spinner.start()
-
-    @gtk_action_nowait
-    def _progress_bar_complete(self):
-        self._progressBar.set_fraction(1.0)
-        self._progressLabel.set_text(_("Complete!"))
-
-        spinner = self.builder.get_object("progressSpinner")
-        spinner.stop()
-        spinner.hide()
+        self._spinner.show()
+        self._spinner.start()

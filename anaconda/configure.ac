@@ -20,7 +20,7 @@
 m4_define(python_required_version, 2.5)
 
 AC_PREREQ([2.63])
-AC_INIT([anaconda], [20.25.16], [anaconda-devel-list@redhat.com])
+AC_INIT([anaconda], [21.48.21], [anaconda-devel-list@redhat.com])
 AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 tar-ustar])
 
 AC_CONFIG_HEADERS([config.h])
@@ -37,6 +37,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
+AC_PROG_MKDIR_P
 
 # Check for the intltool programs
 # These checks and subsitutions are adapted IT_PROG_INTLTOOL provided in
@@ -64,64 +65,26 @@ INTLTOOL_DESKTOP_RULE='%.desktop:  %.desktop.in  $(INTLTOOL_MERGE) $(wildcard $(
 AC_SUBST(INTLTOOL_DESKTOP_RULE)
 
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.18.1])
-
-# Checks for libraries.
-AC_CHECK_LIB([X11], [XGetWindowAttributes],
-             [AC_SUBST(X11_LIBS, [-lX11])],
-             [AC_MSG_FAILURE([*** libX11 not usable.])])
-
-AC_CHECK_LIB([audit], [audit_open],
-             [AC_SUBST(AUDIT_LIBS, [-laudit])],
-             [AC_MSG_FAILURE([*** libaudit not usable.])])
-
-AC_CHECK_LIB([z], [zlibVersion],
-             [AC_SUBST(ZLIB_LIBS, [-lz])],
-             [AC_MSG_FAILURE([*** libz not usable.])])
+# Also update in gettextver in anaconda.spec.in
+AM_GNU_GETTEXT_VERSION([0.18.3])
 
 # Checks for header files.
 AC_PATH_X
-AC_FUNC_ALLOCA
-AC_HEADER_RESOLV
-AC_HEADER_MAJOR
-AC_CHECK_HEADERS([argz.h arpa/inet.h fcntl.h inttypes.h libintl.h limits.h \
-                  malloc.h netdb.h netinet/in.h stddef.h stdint.h stdlib.h \
-                  string.h strings.h sys/ioctl.h sys/mount.h sys/param.h \
-                  sys/socket.h sys/time.h sys/vfs.h syslog.h termios.h \
-                  unistd.h utime.h wchar.h],
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h],
                  [],
                  [AC_MSG_FAILURE([*** Header file $ac_header not found.])],
                  [])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_UID_T
-AC_C_INLINE
-AC_TYPE_INT32_T
-AC_TYPE_MODE_T
-AC_TYPE_OFF_T
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
-AC_CHECK_MEMBERS([struct stat.st_rdev])
-AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
 AC_TYPE_INT64_T
 
 # Checks for library functions.
-AC_FUNC_CHOWN
-AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
-AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
-AC_FUNC_MALLOC
-AC_FUNC_MMAP
-AC_FUNC_REALLOC
-AC_CHECK_FUNCS([dup2 fdatasync ftruncate getcwd gethostbyname gettimeofday \
-                lchown memmove memset mkdir mkfifo munmap realpath select \
-                setenv sethostname socket strcasecmp strchr strcspn strdup \
-                strerror strncasecmp strndup strrchr strstr strtol strtoul \
-                strverscmp uname utime wcwidth],
+AC_CHECK_FUNCS([getcwd memset mkdir strchr strdup],
                [],
                [AC_MSG_FAILURE([*** Required function $ac_func not found.])])
 
@@ -142,14 +105,6 @@ PKG_CHECK_MODULES([PYTHON], [python], [
 
 # Check for libraries we need that provide pkg-config scripts
 PKG_PROG_PKG_CONFIG([0.23])
-PKG_CHECK_MODULES([X11], [x11 >= 1.3])
-PKG_CHECK_MODULES([XCOMPOSITE], [xcomposite >= 0.4.1])
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.1])
-PKG_CHECK_MODULES([GTK_X11], [gtk+-x11-3.0 >= 3.0])
-PKG_CHECK_MODULES([GDK], [gdk-3.0])
-PKG_CHECK_MODULES([NETWORKMANAGER], [NetworkManager >= 0.7.1])
-PKG_CHECK_MODULES([LIBNL], [libnl-1 >= 1.0])
-PKG_CHECK_MODULES([LIBNM_GLIB], [libnm-glib >= 0.7.1 libnm-util >= 0.7.1])
 PKG_CHECK_MODULES([RPM], [rpm >= 4.10.0])
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 3.0.4])
 
@@ -216,7 +171,7 @@ AC_CANONICAL_BUILD
 s_arch="`echo $build_cpu | sed -e s/i.86/i386/ -e s/powerpc.*/ppc/`"
 
 AM_CONDITIONAL(IS_LIVEINST_ARCH,
-  [test x$s_arch = xppc || test x$s_arch = xi386 || test x$s_arch = xx86_64])
+  [test x$s_arch = xppc || test x$s_arch = xppc64 || test x$s_arch = xppc64le || test x$s_arch = xi386 || test x$s_arch = xx86_64])
 
 AC_CONFIG_SUBDIRS([widgets])
 
@@ -230,30 +185,18 @@ AC_CONFIG_FILES([Makefile
                  data/liveinst/console.apps/Makefile
                  data/liveinst/gnome/Makefile
                  data/liveinst/pam.d/Makefile
-                 data/pixmaps/Makefile
-                 data/icons/Makefile
-                 data/icons/hicolor/Makefile
-                 data/icons/hicolor/16x16/Makefile
-                 data/icons/hicolor/16x16/apps/Makefile
-                 data/icons/hicolor/22x22/Makefile
-                 data/icons/hicolor/22x22/apps/Makefile
-                 data/icons/hicolor/24x24/Makefile
-                 data/icons/hicolor/24x24/apps/Makefile
-                 data/icons/hicolor/32x32/Makefile
-                 data/icons/hicolor/32x32/apps/Makefile
-                 data/icons/hicolor/48x48/Makefile
-                 data/icons/hicolor/48x48/apps/Makefile
-                 data/icons/hicolor/256x256/Makefile
-                 data/icons/hicolor/256x256/apps/Makefile
                  data/systemd/Makefile
+                 data/help/Makefile
+                 data/help/en-US/Makefile
                  po/Makefile.in
                  scripts/Makefile
                  pyanaconda/Makefile
+                 pyanaconda/version.py
                  pyanaconda/isys/Makefile
                  pyanaconda/packaging/Makefile
                  pyanaconda/ui/Makefile
+                 pyanaconda/ui/categories/Makefile
                  pyanaconda/ui/lib/Makefile
-                 pyanaconda/ui/gui/categories/Makefile
                  pyanaconda/ui/gui/hubs/Makefile
                  pyanaconda/ui/gui/spokes/Makefile
                  pyanaconda/ui/gui/spokes/advstorage/Makefile

@@ -30,6 +30,7 @@ import types
 import warnings
 
 from pyanaconda.flags import flags
+from pyanaconda.constants import LOGLVL_LOCK
 
 DEFAULT_TTY_LEVEL = logging.INFO
 ENTRY_FORMAT = "%(asctime)s,%(msecs)03d %(levelname)s %(name)s: %(message)s"
@@ -49,8 +50,11 @@ ANACONDA_SYSLOG_FACILITY = SysLogHandler.LOG_LOCAL1
 from threading import Lock
 program_log_lock = Lock()
 
-logLevelMap = {"debug": logging.DEBUG, "info": logging.INFO,
-               "warning": logging.WARNING, "error": logging.ERROR,
+logLevelMap = {"lock": LOGLVL_LOCK,
+               "debug": logging.DEBUG,
+               "info": logging.INFO,
+               "warning": logging.WARNING,
+               "error": logging.ERROR,
                "critical": logging.CRITICAL}
 
 # sets autoSetLevel for the given handler
@@ -63,6 +67,11 @@ def setHandlersLevel(logr, level):
         filter (lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logr.handlers))
 
 class AnacondaSyslogHandler(SysLogHandler):
+    # syslog doesn't understand these level names
+    levelMap = { "ERR": "error",
+                 "CRIT": "critical",
+                 "LOCK": "debug"}
+
     def __init__(self,
                  address=('localhost', SYSLOG_UDP_PORT),
                  facility=SysLogHandler.LOG_USER,
@@ -76,6 +85,10 @@ class AnacondaSyslogHandler(SysLogHandler):
         SysLogHandler.emit(self, record)
         record.msg = original_msg
 
+    def mapPriority(self, level):
+        """Map the priority level to a syslog level """
+        return self.levelMap.get(level, SysLogHandler.mapPriority(self, level))
+
 class AnacondaLog:
     SYSLOG_CFGFILE  = "/etc/rsyslog.conf"
     VIRTIO_PORT = "/dev/virtio-ports/org.fedoraproject.anaconda.log.0"
@@ -87,6 +100,7 @@ class AnacondaLog:
         logging.addLevelName(logging.WARNING, "WARN")
         logging.addLevelName(logging.ERROR, "ERR")
         logging.addLevelName(logging.CRITICAL, "CRIT")
+        logging.addLevelName(LOGLVL_LOCK, "LOCK")
 
         # Create the base of the logger hierarchy.
         self.anaconda_logger = logging.getLogger("anaconda")
@@ -123,7 +137,7 @@ class AnacondaLog:
 
         # Create the packaging logger.
         packaging_logger = logging.getLogger("packaging")
-        packaging_logger.setLevel(logging.DEBUG)
+        packaging_logger.setLevel(LOGLVL_LOCK)
         self.addFileHandler(PACKAGING_LOG_FILE, packaging_logger,
                             minLevel=logging.INFO,
                             autoLevel=True)
@@ -180,7 +194,7 @@ class AnacondaLog:
     def forwardToSyslog(self, logr):
         """Forward everything that goes in the logger to the syslog daemon.
         """
-        if flags.imageInstall:
+        if flags.imageInstall or flags.dirInstall:
             # don't clutter up the system logs when doing an image install
             return
 
@@ -191,7 +205,7 @@ class AnacondaLog:
         syslogHandler.setLevel(logging.DEBUG)
         logr.addHandler(syslogHandler)
 
-    # pylint: disable-msg=W0622
+    # pylint: disable=redefined-builtin
     def showwarning(self, message, category, filename, lineno,
                       file=sys.stderr, line=None):
         """ Make sure messages sent through python's warnings module get logged.
@@ -199,7 +213,7 @@ class AnacondaLog:
             The warnings mechanism is used by some libraries we use,
             notably pykickstart.
         """
-        self.anaconda_logger.warning("%s" % warnings.formatwarning(
+        self.anaconda_logger.warning("%s", warnings.formatwarning(
                 message, category, filename, lineno, line))
 
     def restartSyslog(self):

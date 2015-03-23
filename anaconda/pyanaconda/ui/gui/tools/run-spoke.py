@@ -16,7 +16,7 @@ import os.path
 
 # Check command line arguments
 if len(sys.argv)<2:
-    print "Usage: $0 <spoke module name> [<spoke widget class>]"
+    print("Usage: $0 <spoke module name> [<spoke widget class>]")
     sys.exit(1)
 
 # This is a hack to make sure the AnacondaWidgets library gets loaded
@@ -54,7 +54,7 @@ elif os.path.basename(sys.argv[0]) == "run-hub.py":
     spokeText = "hub"
     SpokeText = "Hub"
 else:
-    print "You have to run this command as run-spoke.py or run-hub.py."
+    print("You have to run this command as run-spoke.py or run-hub.py.")
     sys.exit(1)
 
 # Set default spoke class
@@ -82,11 +82,11 @@ if not spokeClass:
     try:
         spokeClass = getattr(spokeModule, spokeClassName)
     except KeyError:
-        print "%s %s could not be found in %s" % (SpokeText, spokeClassName, spokeModuleName)
+        print("%s %s could not be found in %s" % (SpokeText, spokeClassName, spokeModuleName))
         sys.exit(1)
 
 
-print "Running %s %s from %s" % (spokeText, spokeClass, spokeModule)
+print("Running %s %s from %s" % (spokeText, spokeClass, spokeModule))
 
 ksdata = makeVersion()
 storage = Blivet(ksdata=ksdata)
@@ -96,14 +96,15 @@ instclass = DefaultInstall()
 payload = YumPayload(ksdata)
 payload.setup(storage)
 
+from pyanaconda.ui.gui.spokes import StandaloneSpoke
 spoke = spokeClass(ksdata, storage, payload, instclass)
-if hasattr(spoke, "register_event_cb"):
-    spoke.register_event_cb("continue", Gtk.main_quit)
-    spoke.register_event_cb("quit", Gtk.main_quit)
+if isinstance(spoke, StandaloneSpoke):
+    spoke.window.connect_after("continue-clicked", Gtk.main_quit)
+    spoke.window.connect("quit-clicked", Gtk.main_quit)
 
 if hasattr(spoke, "set_path"):
     spoke.set_path("categories", [
-        ("pyanaconda.ui.gui.categories.%s",
+        ("pyanaconda.ui.categories.%s",
          os.path.join(os.path.dirname(__file__),"..", "categories"))
          ])
     spoke.set_path("spokes", [
@@ -114,7 +115,7 @@ if hasattr(spoke, "set_path"):
 spoke.initialize()
     
 if not spoke.showable:
-    print "This %s is not showable, but I'll continue anyway." % spokeText
+    print("This %s is not showable, but I'll continue anyway." % spokeText)
 
 spoke.refresh()
 spoke.window.set_beta(True)
@@ -124,7 +125,7 @@ spoke.window.show_all()
 Gtk.main()
 
 if hasattr(spoke, "status"):
-    print "%s status:\n%s\n" % (SpokeText, spoke.status)
+    print("%s status:\n%s\n" % (SpokeText, spoke.status))
 if hasattr(spoke, "completed"):
-    print "%s completed:\n%s\n" % (SpokeText, spoke.completed)
-print "%s kickstart fragment:\n%s" % (SpokeText, ksdata)
+    print("%s completed:\n%s\n" % (SpokeText, spoke.completed))
+print("%s kickstart fragment:\n%s" % (SpokeText, ksdata))

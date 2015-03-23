@@ -39,6 +39,7 @@ except ImportError:
     exit(1)
 
 RPM_FOLDER_NAME = os.path.expanduser("~/.anaconda_updates_rpm_cache")
+RPM_RELEASE_DIR_TEMPLATE = "for_%s"
 KOJI_BASE_URL = "http://kojipkgs.fedoraproject.org//packages/" \
                 "%(toplevel_name)s/%(toplevel_version)s/%(release)s/%(arch)s/%(rpm_name)s"
 
@@ -138,7 +139,7 @@ def get_req_tuple(pkg_tuple, version_request):
     return (name, version_request, (epoch, version, release))
 
 
-def check_package_version(filename, package):
+def check_package_version(filename, package, check_release_id=True):
     """Check if package described by filename complies with the required
     version and the version request operator
 
@@ -155,33 +156,44 @@ def check_package_version(filename, package):
     filename = os.path.basename(filename)
     # split the name into components
     pkg_tuple = get_pkg_tuple(filename)
-    # get release ids for request and the package
-    request_release = package.req_tuple[2][2]
-    package_release = pkg_tuple[4]
-    # rangeCheck actually ignores different release ids,
-    # so we need to do it here
-    if request_release != package_release:
-        return False
-    else:
-        return bool(miscutils.rangeCheck(package.req_tuple, pkg_tuple))
+    if check_release_id:
+        # get release ids for request and the package
+        # and strip it from any build/git garbage
+        request_release = package.req_tuple[2][2].rsplit(".", 1).pop()
+        package_release = pkg_tuple[4].rsplit(".", 1).pop()
+        # rangeCheck actually ignores different release ids,
+        # so we need to do it here
+        if request_release != package_release:
+            return False
+    return bool(miscutils.rangeCheck(package.req_tuple, pkg_tuple))
 
 def doGitDiff(tag, args=None):
     if args is None:
         args=[]
-    proc = subprocess.Popen(['git', 'diff', '--name-status', tag] + args,
+    cmd = ['git', 'diff', '--name-status', tag] + args
+    proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE).communicate()
+                            stderr=subprocess.PIPE)
+    output = proc.communicate()
 
-    lines = proc[0].split('\n')
+    if proc.returncode:
+        raise RuntimeError("Error running %s: %s" % (" ".join(cmd), output[1]))
+
+    lines = output[0].split('\n')
     return lines
 
 def doGitContentDiff(tag, args=None):
     if args is None:
         args = []
-    proc = subprocess.Popen(['git', 'diff', tag] + args,
+    cmd = ['git', 'diff', tag] + args
+    proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE).communicate()
-    lines = proc[0].split('\n')
+                            stderr=subprocess.PIPE)
+    output = proc.communicate()
+    if proc.returncode:
+        raise RuntimeError("Error running %s: %s" % (" ".join(cmd), output[1]))
+
+    lines = output[0].split('\n')
     return lines
 
 def download_to_file(url, path):
@@ -190,6 +202,10 @@ def download_to_file(url, path):
     or None if the download fails for some reason
     """
     try:
+        # try to make sure the folder for the download exists
+        download_folder = os.path.split(path)[0]
+        if not os.access(download_folder, os.W_OK):
+            os.makedirs(download_folder)
         result = urllib.urlretrieve(url, path)
         # return the storage path
         return result[0]
@@ -217,7 +233,12 @@ def copyUpdatedFiles(tag, updates, cwd):
     if not tmpupdates.endswith("/run/install/updates"):
         tmpupdates = os.path.join(tmpupdates, "run/install/updates")
 
-    lines = doGitDiff(tag)
+    try:
+        lines = doGitDiff(tag)
+    except RuntimeError as e:
+        print("ERROR: %s" % e)
+        return
+
     for line in lines:
         fields = line.split()
 
@@ -227,15 +248,21 @@ def copyUpdatedFiles(tag, updates, cwd):
         status = fields[0]
         gitfile = fields[1]
 
-        if status == "D":
-            if gitfile.startswith('pyanaconda/'):
+        # R is followed by a number that doesn't matter to us.
+        if status == "D" or status[0] == "R":
+            if gitfile.startswith('pyanaconda/') and gitfile.endswith(".py"):
                 # deleted python module, write out a stub raising RemovedModuleError
                 file_path = os.path.join(tmpupdates, gitfile)
+                if not os.path.exists(os.path.dirname(file_path)):
+                    os.makedirs(os.path.dirname(file_path))
                 with open(file_path, "w") as fobj:
                     fobj.write('from pyanaconda.errors import RemovedModuleError\n')
                     fobj.write('raise RemovedModuleError("This module no longer exists!")\n')
 
-            continue
+            if status == "D":
+                continue
+            elif status[0] == "R":
+                gitfile = fields[2]
 
         if gitfile.endswith('.spec.in') or (gitfile.find('Makefile') != -1) or \
            gitfile.endswith('.c') or gitfile.endswith('.h') or \
@@ -261,26 +288,34 @@ def copyUpdatedFiles(tag, updates, cwd):
             install_to_dir(gitfile, "usr/sbin")
         elif gitfile.endswith('.service') or gitfile.endswith(".target"):
             # same for systemd services
-            install_to_dir(gitfile, "lib/systemd/system")
+            install_to_dir(gitfile, "usr/lib/systemd/system")
         elif gitfile.endswith('/anaconda-generator'):
             # yeah, this should probably be more clever..
-            install_to_dir(gitfile, "lib/systemd/system-generators")
+            install_to_dir(gitfile, "usr/lib/systemd/system-generators")
         elif gitfile == "data/tmux.conf":
             install_to_dir(gitfile, "usr/share/anaconda")
         elif gitfile == "data/anaconda-gtk.css":
-            install_to_dir(gitfile, "usr/share/anaconda")
+            install_to_dir(gitfile, "run/install/updates")
         elif gitfile == "data/interactive-defaults.ks":
+            install_to_dir(gitfile, "usr/share/anaconda")
+        elif gitfile == "data/anaconda_options.txt":
             install_to_dir(gitfile, "usr/share/anaconda")
         elif gitfile == "data/liveinst/liveinst":
             install_to_dir(gitfile, "usr/sbin")
         elif gitfile.startswith("data/pixmaps"):
             install_to_dir(gitfile, "usr/share/anaconda/pixmaps")
+        elif gitfile.startswith("widgets/data/pixmaps"):
+            install_to_dir(gitfile, "usr/share/anaconda/pixmaps")
         elif gitfile.startswith("data/ui/"):
             install_to_dir(gitfile, "usr/share/anaconda/ui")
         elif gitfile.startswith("data/post-scripts/"):
             install_to_dir(gitfile, "usr/share/anaconda/post-scripts")
-        elif gitfile.endswith("anaconda-yum"):
+        elif any(gitfile.endswith(libexec_script) for libexec_script in \
+                 ("anaconda-yum", "zramswapon", "zramswapoff", "zram-stats")):
             install_to_dir(gitfile, "usr/libexec/anaconda")
+        elif gitfile.endswith("AnacondaWidgets.py"):
+            import gi
+            install_to_dir(gitfile, gi._overridesdir[1:])
         elif gitfile.find('/') != -1:
             fields = gitfile.split('/')
             subdir = fields[0]
@@ -296,7 +331,11 @@ def copyUpdatedFiles(tag, updates, cwd):
             install_to_dir(gitfile, tmpupdates)
 
 def _compilableChanged(tag, compilable):
-    lines = doGitDiff(tag, [compilable])
+    try:
+        lines = doGitDiff(tag, [compilable])
+    except RuntimeError as e:
+        print("ERROR: %s" % e)
+        return
 
     for line in lines:
         fields = line.split()
@@ -357,10 +396,10 @@ def copyUpdatedIsys(updates, srcdir, builddir):
 def copyUpdatedWidgets(updates, srcdir, builddir):
     os.chdir(srcdir)
 
-    if os.path.isdir("/lib64"):
-        libdir = "/lib64/"
+    if os.path.isdir("/usr/lib64"):
+        libdir = "/usr/lib64/"
     else:
-        libdir = "/lib/"
+        libdir = "/usr/lib/"
 
     if not os.path.isdir(updates + libdir):
         os.makedirs(updates + libdir)
@@ -372,17 +411,39 @@ def copyUpdatedWidgets(updates, srcdir, builddir):
 
     os.system('make -C %s' % builddir)
 
-    files = ["libAnacondaWidgets.so", "libAnacondaWidgets.so.1", "libAnacondaWidgets.so.1.0.0"]
-    for f in files:
-        path = os.path.normpath(builddir + "/widgets/src/.libs/" + f)
+    libglob = os.path.normpath(builddir + "/widgets/src/.libs") + "/libAnacondaWidgets.so*"
+    for path in glob.glob(libglob):
         if os.path.islink(path) and not os.path.exists(updates + libdir + os.path.basename(path)):
             os.symlink(os.readlink(path), updates + libdir + os.path.basename(path))
         elif os.path.isfile(path):
             shutil.copy2(path, updates + libdir)
 
-    typelib = os.path.realpath(builddir + "/widgets/src/AnacondaWidgets-1.0.typelib")
-    if os.path.isfile(typelib):
-        shutil.copy2(typelib, updates + libdir + "girepository-1.0")
+    typeglob = os.path.realpath(builddir + "/widgets/src") + "/AnacondaWidgets-*.typelib"
+    for typelib in glob.glob(typeglob):
+        if os.path.isfile(typelib):
+            shutil.copy2(typelib, updates + libdir + "girepository-1.0")
+
+def copyTranslations(updates, srcdir, builddir):
+    localedir = "/usr/share/locale/"
+
+    # Ensure all the message files are up to date
+    if os.system('make -C %s/po' % builddir) != 0:
+        sys.exit(1)
+
+    # From here gettext puts everything in $srcdir
+    # For each language in LINGUAS, install srcdir/<lang>.gmo as
+    # /usr/share/locale/$language/LC_MESSAGES/anaconda.mo
+    with open(srcdir + '/po/LINGUAS') as linguas:
+        for line in linguas.readlines():
+            if line.startswith('#'):
+                continue
+
+            for lang in line.strip().split(" "):
+                if not os.path.isdir(updates + localedir + lang + "/LC_MESSAGES"):
+                    os.makedirs(updates + localedir + lang + "/LC_MESSAGES")
+
+                shutil.copy2(srcdir + "/po/" + lang + ".gmo",
+                        updates + localedir + lang + "/LC_MESSAGES/anaconda.mo")
 
 def addRpms(updates_path, add_rpms):
     """Add content one or more RPM packages to the updates image
@@ -418,7 +479,12 @@ def check_for_new_packages(tag, arch, added_rpms, specfile_path):
 
     Package = namedtuple("Package", "name version version_request req_tuple")
 
-    diff = doGitContentDiff(tag, ["anaconda.spec.in"])
+    try:
+        diff = doGitContentDiff(tag, ["anaconda.spec.in"])
+    except RuntimeError as e:
+        print("ERROR: %s" % e)
+        return
+
     new_requires = filter(lambda x: x.startswith("+Requires:"), diff)
     new_defines = filter(lambda x: x.startswith("+%define"), diff)
     with open(specfile_path) as f:
@@ -501,6 +567,10 @@ def check_for_new_packages(tag, arch, added_rpms, specfile_path):
         else:
             version = ""
 
+        # skip requires of our own packages
+        if version == "%{version}-%{release}":
+            continue
+
         # handle version variables (%{package-namever})
         if version.startswith("%"):
             # drop the %{ prefix and ver} suffix
@@ -566,9 +636,13 @@ def remove_local_packages(packages, arch, release_id, added_rpms):
     """Remove locally available RPMs from the list of needed packages,
     return locally unavailable packages and paths to relevant locally
     available RPMs for inclusion"""
+    current_release_dir = RPM_RELEASE_DIR_TEMPLATE % release_id
     # list all package names and version for the RPMs already in cache
     folder_glob = os.path.join(RPM_FOLDER_NAME, "*.rpm")
     folder_glob = os.path.abspath(folder_glob)
+    release_folder_glob = os.path.join(RPM_FOLDER_NAME, current_release_dir, "*.rpm")
+    release_folder_glob = os.path.abspath(release_folder_glob)
+
     include_rpms = []
     skipped_packages = []
 
@@ -592,7 +666,11 @@ def remove_local_packages(packages, arch, release_id, added_rpms):
     # currently specified architecture
     allowed = ("noarch.rpm", "%s.rpm" % arch)
     relevant_rpms = [x for x in glob.glob(folder_glob) if x.endswith(allowed)]
-
+    # also add any RPMS from the current release folder
+    # (has RPMs from older releases that were not yet rebuilt
+    # for the current release)
+    relevant_rpms.extend(x for x in glob.glob(release_folder_glob)
+                         if x.endswith(allowed))
     # iterate over all relevant cached RPMs and check if they are needed
     for rpm_path in relevant_rpms:
         proc = subprocess.Popen(['rpm', '-qp', '--queryformat',
@@ -604,10 +682,17 @@ def remove_local_packages(packages, arch, release_id, added_rpms):
             continue
         name, version, release = proc_output[0].split()
         # get the build number and release id
-        build_id, package_release_id = release.split(".", 1)
-        # skip cached RPMs that have different release id
-        if package_release_id != release_id:
-            continue
+        build_id, package_release_id = release.rsplit(".", 1)
+
+        # If a package is stored in the for_<release id>
+        # subfolder, we don't check its release id,
+        # because it is a package that has not been rebuilt
+        # for a new release but it still the latest version.
+        # If a package is not stored in a for_<release id> subfolder,
+        # we check the release id to filter out old cached packages.
+        if not os.path.split(rpm_path)[0].endswith(current_release_dir):
+            if package_release_id != release_id:
+                continue
         # add the build id to the version string
         version_build = "%s-%s" % (version, build_id)
         # check if the package is needed
@@ -687,9 +772,9 @@ def get_rpm_from_Koji_thread(package, fedora_number, arch,
     # if there is a version-request, just get all package version for the given
     # release and filter them afterwards
     if package.version_request:
-        package_glob = "%s-*.fc%d.*.rpm" % (package.name, fedora_number)
+        package_glob = "%s-*.fc*.*.rpm" % (package.name)
     else:
-        package_glob = "%s-%s.fc%d.*.rpm" % (package.name, version, fedora_number)
+        package_glob = "%s-%s.fc*.*.rpm" % (package.name, version)
 
     # get the current thread, so output can be prefixed by thread number
     prefix = "thread %s:" % threading.current_thread().name
@@ -716,10 +801,43 @@ def get_rpm_from_Koji_thread(package, fedora_number, arch,
         filtered_results = []
         for result in results:
             # check if the version complies with the version request
-            if check_package_version(result['name'], package):
+            if check_package_version(result['name'], package,
+                                     check_release_id=False):
                 filtered_results.append(result)
         # replace results with filtered results
         results = filtered_results
+
+    # the response from Koji has multiple release ids;
+    # packages that were not updated in the given release might
+    # have an older release id, but will still be valid for the
+    # given Fedora release
+    # therefore we go back from the current release id,
+    # until we either find a package or run out of release ids
+    # Example:
+    # foo-0.1.fc19.x86_64.rpm could be the latest RPM for
+    # Fedora 19, 20 & 21, if foo was not updated since the 0.1 release
+
+    def is_in_release(result, release_number):
+        pkg_tuple = get_pkg_tuple(result["name"])
+        # there could be stuff like 16.git20131003.fc20,
+        # so we spit by all dots and get the last one
+        release_id = pkg_tuple[4].split(".").pop()
+        return release_id == "fc%d" % release_number
+
+    suitable_results = []
+    release_number_override = None
+    for release_number in range(fedora_number, 0, -1):
+        suitable_results = [x for x in results if is_in_release(x, release_number)]
+        if suitable_results:
+            if release_number != fedora_number:
+                release_number_override = release_number
+            break
+
+    results = suitable_results
+    if results and release_number_override:
+        with print_lock:
+            print("%s %s not found in fc%d, getting package from fc%d" %
+                 (prefix, package.name, fedora_number, release_number_override))
 
     if results:  # any packages left ?
         # as the newest packages are on the bottom of the
@@ -748,8 +866,17 @@ def get_rpm_from_Koji_thread(package, fedora_number, arch,
         url = KOJI_BASE_URL % package_metadata
         # simple, isn't it ? :)
 
-        # append the RPM cache folder to the filename
-        download_path = os.path.join(RPM_FOLDER_NAME, rpm_name)
+        # build RPM storage path
+        release_dir = ""
+        if release_number_override:
+            # Using package from older release, store it in a sub-folder
+            # so that it is not downloaded again each time.
+            release_id = "fc%d" % fedora_number
+            release_dir = RPM_RELEASE_DIR_TEMPLATE % release_id
+        # if a package from and older release is used, the release subfolder is
+        # added to the storage path, otherwise the package is downloaded to the
+        # main folder
+        download_path = os.path.join(RPM_FOLDER_NAME, release_dir, rpm_name)
         # check if the download was successful
         storage_path = download_to_file(url, download_path)
         if storage_path is not None:
@@ -789,6 +916,9 @@ def main():
 
     parser.add_argument('-o', '--offset', action='store', type=int, default=0,
                         help='make image from (latest_tag - OFFSET) to HEAD')
+
+    parser.add_argument('-p', '--po', action='store_true',
+                        help='update translations')
 
     # -a/--add can be both used multiple times and multiple paths can be
     # passed to a single -a/--add option, all provided paths will be then added
@@ -844,6 +974,9 @@ def main():
 
         if widgetsChanged(args.tag):
             copyUpdatedWidgets(updates, cwd, builddir)
+
+    if args.po:
+        copyTranslations(updates, cwd, builddir)
 
     if args.add_rpms:
         # as using -a or --add mutltiple times

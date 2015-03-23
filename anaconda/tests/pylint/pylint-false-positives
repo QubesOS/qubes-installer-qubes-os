@@ -1,15 +1,9 @@
-^F0401:[ 0-9]*,[0-9]*: : Unable to import 'gi.repository.AnacondaWidgets'
-^E0611:[ 0-9]*,[0-9]*: No name '.*' in module 'gi.repository'$
-^E0611:[ 0-9]*,[0-9]*:.*: No name '.*' in module 'gi.repository'$
-^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'add' member$
-^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'remove' member$
-^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'set_.*' member$
-^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'show_all' member$
-^W0402:[ 0-9]*,[0-9]*: Uses of a deprecated module 'string'$
-^W0402:[ 0-9]*,[0-9]*:.*: Uses of a deprecated module 'string'$
+^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'get_property' member$
+^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'set_property' member$
+^E0611:[ 0-9]*,[0-9]*: No name 'GLib' in module 'gi.repository'$
+^E0611:[ 0-9]*,[0-9]*:.*: No name 'GLib' in module 'gi.repository'$
 ^E0611:[ 0-9]*,[0-9]*: No name '_isys' in module 'pyanaconda'$
 ^E0611:[ 0-9]*,[0-9]*:.*: No name '_isys' in module 'pyanaconda'$
-^E1101:[ 0-9]*,[0-9]*:.*: Instance of '.*' has no 'anaconda' member$
-^E1101:[ 0-9]*,[0-9]*:Anaconda\.backend: Instance of 'DefaultInstall' has no 'getBackend' member$
-^dm.c: [ 0-9]*,[0-9]*: not running as root returning empty list$
-Note this last line must never end with a newline
+^E0712:[ 0-9]*,[0-9]*:.*: Catching an exception which doesn't inherit from BaseException: GError$
+gi/module.py:[0-9]*: Warning: g_hash_table_insert_internal: assertion 'hash_table != NULL' failed$
+^  g_type = info\.get_g_type\(\)$

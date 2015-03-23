@@ -22,9 +22,9 @@
 
 from gi.repository import Gtk
 
-from pyanaconda.i18n import _, P_
-from pyanaconda.ui.lib.disks import size_str
+from pyanaconda.i18n import C_, P_
 from pyanaconda.ui.gui import GUIObject
+from pyanaconda.ui.gui.utils import escape_markup
 from blivet.size import Size
 
 __all__ = ["SelectedDisksDialog"]
@@ -52,15 +52,15 @@ class SelectedDisksDialog(GUIObject):
         self._set_button = self.builder.get_object("set_as_boot_button")
         self._remove_button = self.builder.get_object("remove_button")
 
-    # pylint: disable-msg=W0221
+    # pylint: disable=arguments-differ
     def initialize(self, disks, free, showRemove=True, setBoot=True):
         self._previousID = None
 
         for disk in disks:
             self._store.append([False,
                                 "%s (%s)" % (disk.description, disk.serial),
-                                size_str(disk.size),
-                                size_str(free[disk.name][0]),
+                                str(disk.size),
+                                str(free[disk.name][0]),
                                 disk.name,
                                 disk.id])
         self.disks = disks[:]
@@ -97,7 +97,7 @@ class SelectedDisksDialog(GUIObject):
                 row[IS_BOOT_COL] = True
                 break
 
-    # pylint: disable-msg=W0221
+    # pylint: disable=arguments-differ
     def refresh(self, disks, free, showRemove=True, setBoot=True):
         super(SelectedDisksDialog, self).refresh()
 
@@ -120,21 +120,21 @@ class SelectedDisksDialog(GUIObject):
 
     def _update_summary(self):
         count = 0
-        size = 0
-        free = 0
+        size = Size(0)
+        free = Size(0)
         for row in self._store:
             count += 1
-            size += Size(spec=row[SIZE_COL])
-            free += Size(spec=row[FREE_SPACE_COL])
+            size += Size(row[SIZE_COL])
+            free += Size(row[FREE_SPACE_COL])
 
-        size = str(Size(bytes=long(size))).upper()
-        free = str(Size(bytes=long(free))).upper()
-
+        # pylint: disable=unescaped-markup
         text = P_("<b>%(count)d disk; %(size)s capacity; %(free)s free space</b> "
                    "(unpartitioned and in filesystems)",
                   "<b>%(count)d disks; %(size)s capacity; %(free)s free space</b> "
                    "(unpartitioned and in filesystems)",
-                   count) % {"count" : count, "size" : size, "free" : free}
+                   count) % {"count" : count,
+                             "size" : escape_markup(size),
+                             "free" : escape_markup(free)}
         self._summary_label.set_markup(text)
 
     # signal handlers
@@ -186,9 +186,11 @@ class SelectedDisksDialog(GUIObject):
 
     def _toggle_button_text(self, row):
         if row[IS_BOOT_COL]:
-            self._set_button.set_label(_("_Do not install bootloader"))
+            self._set_button.set_label(C_("GUI|Selected Disks Dialog",
+                "_Do not install bootloader"))
         else:
-            self._set_button.set_label(_("_Set as Boot Device"))
+            self._set_button.set_label(C_("GUI|Selected Disks Dialog",
+                "_Set as Boot Device"))
 
     def on_selection_changed(self, *args):
         itr = self._selection.get_selected()[1]

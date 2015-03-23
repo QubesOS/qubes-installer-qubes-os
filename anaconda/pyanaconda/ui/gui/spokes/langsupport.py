@@ -20,11 +20,12 @@
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-from gi.repository import Pango
+from gi.repository import Pango, Gdk
 from pyanaconda.flags import flags
-from pyanaconda.i18n import N_
+from pyanaconda.i18n import CN_
 from pyanaconda.ui.gui.spokes import NormalSpoke
-from pyanaconda.ui.gui.categories.localization import LocalizationCategory
+from pyanaconda.ui.gui.utils import escape_markup, override_cell_property
+from pyanaconda.ui.categories.localization import LocalizationCategory
 from pyanaconda.ui.gui.spokes.lib.lang_locale_handler import LangLocaleHandler
 from pyanaconda import localization
 
@@ -35,15 +36,22 @@ log = logging.getLogger("anaconda")
 
 __all__ = ["LangsupportSpoke"]
 
+# #fdfbc0
+# Sure would be nice if gdk_rgba_parse returned a new object instead of
+# modifying an existing one.
+_HIGHLIGHT_COLOR = Gdk.RGBA(red=0.992157, green=0.984314, blue=0.752941, alpha=1.0)
+
 class LangsupportSpoke(LangLocaleHandler, NormalSpoke):
     builderObjects = ["languageStore", "languageStoreFilter", "localeStore", "langsupportWindow"]
     mainWidgetName = "langsupportWindow"
+    focusWidgetName = "languageEntry"
     uiFile = "spokes/langsupport.glade"
+    helpFile = "LangSupportSpoke.xml"
 
     category = LocalizationCategory
 
     icon = "accessories-character-map-symbolic"
-    title = N_("_LANGUAGE SUPPORT")
+    title = CN_("GUI|Spoke", "_LANGUAGE SUPPORT")
 
     def __init__(self, *args, **kwargs):
         NormalSpoke.__init__(self, *args, **kwargs)
@@ -66,14 +74,27 @@ class LangsupportSpoke(LangLocaleHandler, NormalSpoke):
         # mark selected locales and languages with selected locales bold
         localeNativeColumn = self.builder.get_object("localeNativeName")
         localeNativeNameRenderer = self.builder.get_object("localeNativeNameRenderer")
-        localeNativeColumn.set_cell_data_func(localeNativeNameRenderer,
-                                              self._mark_selected_locale_bold)
+        override_cell_property(localeNativeColumn, localeNativeNameRenderer,
+                "weight", self._mark_selected_locale_bold)
 
         for col, rend in [("nativeName", "nativeNameRenderer"),
                           ("englishName", "englishNameRenderer")]:
             column = self.builder.get_object(col)
             renderer = self.builder.get_object(rend)
-            column.set_cell_data_func(renderer, self._mark_selected_language_bold)
+            override_cell_property(column, renderer, "weight", self._mark_selected_language_bold)
+
+        # If a language has selected locales, highlight every column so that
+        # the row appears highlighted
+        for col in self._langView.get_columns():
+            for rend in col.get_cells():
+                override_cell_property(col, rend, "cell-background-rgba",
+                        self._highlight_selected_language)
+
+        # and also set an icon so that we don't depend on a color to convey information
+        highlightedColumn = self.builder.get_object("highlighted")
+        highlightedRenderer = self.builder.get_object("highlightedRenderer")
+        override_cell_property(highlightedColumn, highlightedRenderer,
+                "icon-name", self._render_lang_highlighted)
 
     def apply(self):
         # store only additional langsupport locales
@@ -108,11 +129,14 @@ class LangsupportSpoke(LangLocaleHandler, NormalSpoke):
         return True
 
     def _add_language(self, store, native, english, lang):
-        native_span = '<span lang="%s">%s</span>' % (lang, native)
+        native_span = '<span lang="%s">%s</span>' % \
+                (escape_markup(lang), escape_markup(native))
         store.append([native_span, english, lang])
 
     def _add_locale(self, store, native, locale):
-        native_span = '<span lang="%s">%s</span>' % (re.sub(r'\..*', '', locale), native)
+        native_span = '<span lang="%s">%s</span>' % \
+                (escape_markup(re.sub(r'\..*', '', locale)),
+                 escape_markup(native))
 
         # native, locale, selected, additional
         store.append([native_span, locale, locale in self._selected_locales,
@@ -120,16 +144,31 @@ class LangsupportSpoke(LangLocaleHandler, NormalSpoke):
 
     def _mark_selected_locale_bold(self, column, renderer, model, itr, user_data=None):
         if model[itr][2]:
-            renderer.set_property("weight", Pango.Weight.BOLD.real)
+            return Pango.Weight.BOLD.real
         else:
-            renderer.set_property("weight", Pango.Weight.NORMAL.real)
+            return Pango.Weight.NORMAL.real
+
+    def _is_lang_selected(self, lang):
+        lang_locales = set(localization.get_language_locales(lang))
+        return not lang_locales.isdisjoint(self._selected_locales)
 
     def _mark_selected_language_bold(self, column, renderer, model, itr, user_data=None):
-        lang_locales = set(localization.get_language_locales(model[itr][2]))
-        if not lang_locales.isdisjoint(self._selected_locales):
-            renderer.set_property("weight", Pango.Weight.BOLD.real)
+        if self._is_lang_selected(model[itr][2]):
+            return Pango.Weight.BOLD.real
         else:
-            renderer.set_property("weight", Pango.Weight.NORMAL.real)
+            return Pango.Weight.NORMAL.real
+
+    def _highlight_selected_language(self, column, renderer, model, itr, user_data=None):
+        if self._is_lang_selected(model[itr][2]):
+            return _HIGHLIGHT_COLOR
+        else:
+            return None
+
+    def _render_lang_highlighted(self, column, renderer, model, itr, user_data=None):
+        if self._is_lang_selected(model[itr][2]):
+            return "emblem-ok-symbolic"
+        else:
+            return None
 
     # Signal handlers.
     def on_locale_toggled(self, renderer, path):

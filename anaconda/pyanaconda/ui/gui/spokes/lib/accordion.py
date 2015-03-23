@@ -1,7 +1,7 @@
 # vim: set fileencoding=utf-8
 # Mountpoint selector accordion and page classes
 #
-# Copyright (C) 2012  Red Hat, Inc.
+# Copyright (C) 2012-2014 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -20,23 +20,25 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from blivet.size import Size
 
 from pyanaconda.i18n import _
 from pyanaconda.product import productName, productVersion
+from pyanaconda.ui.gui.utils import escape_markup, really_hide, really_show
+from pyanaconda.constants import DEFAULT_AUTOPART_TYPE
+from pyanaconda.storage_utils import AUTOPART_CHOICES
 
 from gi.repository.AnacondaWidgets import MountpointSelector
 from gi.repository import Gtk
 
 __all__ = ["DATA_DEVICE", "SYSTEM_DEVICE",
-           "selectorFromDevice",
+           "newSelectorFromDevice", "updateSelectorFromDevice",
            "Accordion",
            "Page", "UnknownPage", "CreateNewPage"]
 
 DATA_DEVICE = 0
 SYSTEM_DEVICE = 1
 
-def selectorFromDevice(device, selector=None, mountpoint=""):
+def updateSelectorFromDevice(selector, device, mountpoint=""):
     """Create a MountpointSelector from a Device object template.  This
        method should be used whenever constructing a new selector, or when
        setting a bunch of attributes on an existing selector.  For just
@@ -58,17 +60,16 @@ def selectorFromDevice(device, selector=None, mountpoint=""):
     else:
         mp = _("Unknown")
 
-    size = Size(en_spec="%f MB" % device.size)
+    selector.props.name = device.name
+    selector.props.size = str(device.size)
+    selector.props.mountpoint = mp
+    selector.device = device
 
-    if not selector:
-        selector = MountpointSelector(device.name, str(size).upper(), mp)
-        selector._root = None
-    else:
-        selector.props.name = device.name
-        selector.props.size = str(size).upper()
-        selector.props.mountpoint = mp
+def newSelectorFromDevice(device, mountpoint=""):
+    selector = MountpointSelector(device.name, str(device.size))
+    selector._root = None
+    updateSelectorFromDevice(selector, device, mountpoint)
 
-    selector._device = device
     return selector
 
 # An Accordion is a box that goes on the left side of the custom partitioning spoke.  It
@@ -80,11 +81,10 @@ class Accordion(Gtk.Box):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._expanders = []
 
-    def addPage(self, contents, cb=None):
-        label = Gtk.Label()
-        label.set_markup("""<span size='large' weight='bold' fgcolor='black'>%s</span>""" % contents.pageTitle)
-        label.set_alignment(0, 0.5)
-        label.set_line_wrap(True)
+    def addPage(self, contents, cb):
+        label = Gtk.Label(label="""<span size='large' weight='bold' fgcolor='black'>%s</span>""" %
+                          escape_markup(contents.pageTitle), use_markup=True,
+                          xalign=0, yalign=0.5, wrap=True)
 
         expander = Gtk.Expander()
         expander.set_label_widget(label)
@@ -154,7 +154,11 @@ class Page(Gtk.Box):
 
         # Create the Data label and a box to store all its members in.
         self._dataBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._dataBox.add(self._make_category_label(_("DATA")))
+        self._dataLabel = self._make_category_label(_("DATA"))
+        really_hide(self._dataLabel)
+        self._dataBox.add(self._dataLabel)
+        self._dataBox.connect("add", self._onDataAdded)
+        self._dataBox.connect("remove", self._onDataRemoved)
         self.add(self._dataBox)
 
         # Create the System label and a box to store all its members in.
@@ -167,18 +171,21 @@ class Page(Gtk.Box):
 
     def _make_category_label(self, name):
         label = Gtk.Label()
-        label.set_markup("""<span fgcolor='dark grey' size='large' weight='bold'>%s</span>""" % name)
+        label.set_markup("""<span fgcolor='dark grey' size='large' weight='bold'>%s</span>""" %
+                escape_markup(name))
         label.set_halign(Gtk.Align.START)
         label.set_margin_left(24)
         return label
 
     def addSelector(self, device, cb, mountpoint=""):
-        selector = selectorFromDevice(device, mountpoint=mountpoint)
+        selector = newSelectorFromDevice(device, mountpoint=mountpoint)
         selector.connect("button-press-event", self._onSelectorClicked, cb)
         selector.connect("key-release-event", self._onSelectorClicked, cb)
+        selector.connect("focus-in-event", self._onSelectorFocusIn, cb)
         selector.set_margin_bottom(6)
         self.members.append(selector)
 
+        # pylint: disable=no-member
         if self._mountpointType(selector.props.mountpoint) == DATA_DEVICE:
             self._dataBox.add(selector)
         else:
@@ -215,16 +222,30 @@ class Page(Gtk.Box):
         # show the details for the newly selected object.
         cb(selector)
 
+    def _onSelectorFocusIn(self, selector, event, cb):
+        # could be simple lambda, but this way it looks more similar to the
+        # _onSelectorClicked
+        cb(selector)
+
+    def _onDataAdded(self, container, widget):
+        really_show(self._dataLabel)
+
+    def _onDataRemoved(self, container, widget):
+        # This runs before widget is removed from container, so if it's the last
+        # item then the container will still not be empty.
+        if len(container.get_children()) == 1:
+            really_hide(self._dataLabel)
+
 class UnknownPage(Page):
     def __init__(self, title):
         # For this type of page, there's only one place to store members.
-        # pylint: disable-msg=W0231
+        # pylint: disable=super-init-not-called,non-parent-init-called
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.members = []
         self.pageTitle = title
 
     def addSelector(self, device, cb, mountpoint=""):
-        selector = selectorFromDevice(device, mountpoint=mountpoint)
+        selector = newSelectorFromDevice(device, mountpoint=mountpoint)
         selector.connect("button-press-event", self._onSelectorClicked, cb)
         selector.connect("key-release-event", self._onSelectorClicked, cb)
 
@@ -242,8 +263,8 @@ class UnknownPage(Page):
 # of this class will be packed into the Accordion first and then when the new installation
 # is created, it will be removed and replaced with a Page for it.
 class CreateNewPage(Page):
-    def __init__(self, title, cb, partitionsToReuse=True):
-        # pylint: disable-msg=W0231
+    def __init__(self, title, createClickedCB, autopartTypeChangedCB, partitionsToReuse=True):
+        # pylint: disable=super-init-not-called,non-parent-init-called
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.members = []
         self.pageTitle = title
@@ -254,49 +275,67 @@ class CreateNewPage(Page):
         self._createBox.set_column_spacing(6)
         self._createBox.set_margin_left(16)
 
-        label = Gtk.Label(_("You haven't created any mount points for your "
+        label = Gtk.Label(label=_("You haven't created any mount points for your "
                             "%(product)s %(version)s installation yet.  "
-                            "You can:") % {"product" : productName, "version" : productVersion})
-        label.set_line_wrap(True)
-        label.set_alignment(0, 0.5)
+                            "You can:") % {"product" : productName, "version" : productVersion},
+                            wrap=True, xalign=0, yalign=0.5)
         self._createBox.attach(label, 0, 0, 2, 1)
 
-        dot = Gtk.Label("•")
-        dot.set_hexpand(False)
+        dot = Gtk.Label(label="•", xalign=0.5, yalign=0.4, hexpand=False)
         self._createBox.attach(dot, 0, 1, 1, 1)
 
-        self._createNewButton = Gtk.LinkButton("", label=_("_Click here to create them automatically."))
+        self._createNewButton = Gtk.LinkButton(uri="", label=_("_Click here to create them automatically."))
         label = self._createNewButton.get_children()[0]
         label.set_alignment(0, 0.5)
         label.set_hexpand(True)
         label.set_line_wrap(True)
         label.set_use_underline(True)
 
+        # Create this now to pass into the callback.  It will be populated later
+        # on in this method.
+        store = Gtk.ListStore(str, int)
+        combo = Gtk.ComboBox(model=store)
+        cellrendr = Gtk.CellRendererText()
+        combo.pack_start(cellrendr, True)
+        combo.add_attribute(cellrendr, "text", 0)
+        combo.connect("changed", autopartTypeChangedCB)
+
         self._createNewButton.set_has_tooltip(False)
         self._createNewButton.set_halign(Gtk.Align.START)
-        self._createNewButton.connect("clicked", cb)
+        self._createNewButton.connect("clicked", createClickedCB, combo)
         self._createNewButton.connect("activate-link", lambda *args: Gtk.true())
         self._createBox.attach(self._createNewButton, 1, 1, 1, 1)
 
-        dot = Gtk.Label("•")
-        dot.set_hexpand(False)
+        dot = Gtk.Label(label="•", xalign=0.5, yalign=0, hexpand=False)
         self._createBox.attach(dot, 0, 2, 1, 1)
 
-        label = Gtk.Label(_("Create new mount points by clicking the '+' button."))
-        label.set_alignment(0, 0.5)
-        label.set_hexpand(True)
-        label.set_line_wrap(True)
+        label = Gtk.Label(label=_("Create new mount points by clicking the '+' button."),
+                          xalign=0, yalign=0.5, hexpand=True, wrap=True)
         self._createBox.attach(label, 1, 2, 1, 1)
 
         if partitionsToReuse:
-            dot = Gtk.Label("•")
-            dot.set_hexpand(False)
+            dot = Gtk.Label(label="•", xalign=0.5, yalign=0, hexpand=False)
             self._createBox.attach(dot, 0, 3, 1, 1)
 
-            label = Gtk.Label(_("Or, assign new mount points to existing partitions after selecting them below."))
-            label.set_alignment(0, 0.5)
-            label.set_hexpand(True)
-            label.set_line_wrap(True)
+            label = Gtk.Label(label=_("Or, assign new mount points to existing "
+                                      "partitions after selecting them below."),
+                              xalign=0, yalign=0.5, hexpand=True, wrap=True)
             self._createBox.attach(label, 1, 3, 1, 1)
+
+        label = Gtk.Label(label=_("_New mount points will use the following partitioning scheme:"),
+                          xalign=0, yalign=0.5, wrap=True, use_underline=True)
+        self._createBox.attach(label, 0, 4, 2, 1)
+        label.set_mnemonic_widget(combo)
+
+        for item in (AUTOPART_CHOICES):
+            itr = store.append([_(item[0]), item[1]])
+            if item[1] == DEFAULT_AUTOPART_TYPE:
+                default = itr
+
+        combo.set_margin_left(18)
+        combo.set_margin_right(18)
+        combo.set_hexpand(False)
+        combo.set_active_iter(default)
+        self._createBox.attach(combo, 0, 5, 2, 1)
 
         self.add(self._createBox)

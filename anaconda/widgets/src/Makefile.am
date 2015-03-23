@@ -32,9 +32,9 @@ GISOURCES = BaseWindow.c \
 	 SpokeSelector.c \
 	 SpokeWindow.c \
 	 StandaloneWindow.c \
-	 TimezoneMap.c \
 	 LayoutIndicator.c \
-	 Lightbox.c
+	 BaseStandalone.c \
+	 widgets-common.c
 
 GIHDRS = BaseWindow.h \
 	 DiskOverview.h \
@@ -43,13 +43,13 @@ GIHDRS = BaseWindow.h \
 	 SpokeSelector.h \
 	 SpokeWindow.h \
 	 StandaloneWindow.h \
-	 TimezoneMap.h \
 	 LayoutIndicator.h \
-	 Lightbox.h
+	 BaseStandalone.h \
+	 widgets-common.h
 
-NONGISOURCES = tz.c
+NONGISOURCES =
 
-NONGIHDRS = tz.h
+NONGIHDRS =
 
 SOURCES = $(GISOURCES) $(NONGISOURCES)
 
@@ -65,7 +65,7 @@ libAnacondaWidgets_la_CFLAGS = $(GTK_CFLAGS) $(GLADEUI_CFLAGS) $(LIBXKLAVIER_CFL
 			       -DWIDGETS_DATADIR=$(WIDGETSDATA)\
 			       -DTZMAP_DATADIR=$(TZMAPDATA)
 libAnacondaWidgets_la_LIBADD = $(GTK_LIBS) $(GLADEUI_LIBS) $(LIBXKLAVIER_LIBS)
-libAnacondaWidgets_la_LDFLAGS = $(LTLIBINTL) -version-info 1:0:0
+libAnacondaWidgets_la_LDFLAGS = $(LTLIBINTL) -version-info 3:0:1
 libAnacondaWidgets_la_SOURCES = $(SOURCES) $(HDRS) \
 	  glade-adaptor.c
 
@@ -75,18 +75,18 @@ lib_include_HEADERS = $(HDRS)
 MAINTAINERCLEANFILES = gettext.h
 
 if HAVE_INTROSPECTION
-AnacondaWidgets-1.0.gir: libAnacondaWidgets.la
+AnacondaWidgets-3.0.gir: libAnacondaWidgets.la
 
-AnacondaWidgets_1_0_gir_FILES = $(GISOURCES) $(GIHDRS)
-AnacondaWidgets_1_0_gir_LIBS = libAnacondaWidgets.la
-AnacondaWidgets_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=Anaconda --symbol-prefix=anaconda
-AnacondaWidgets_1_0_gir_INCLUDES = Gtk-3.0 Xkl-1.0
+AnacondaWidgets_3_0_gir_FILES = $(GISOURCES) $(GIHDRS)
+AnacondaWidgets_3_0_gir_LIBS = libAnacondaWidgets.la
+AnacondaWidgets_3_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=Anaconda --symbol-prefix=anaconda
+AnacondaWidgets_3_0_gir_INCLUDES = Gtk-3.0 Xkl-1.0
 
-INTROSPECTION_GIRS = AnacondaWidgets-1.0.gir
+INTROSPECTION_GIRS = AnacondaWidgets-3.0.gir
 
 typelibdir = $(libdir)/girepository-1.0
 typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
-CLEANFILES = AnacondaWidgets-1.0.gir $(typelib_DATA)
+CLEANFILES = AnacondaWidgets-3.0.gir $(typelib_DATA)
 MAINTAINERCLEANFILES += Makefile.in
 endif

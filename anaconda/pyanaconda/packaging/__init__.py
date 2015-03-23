@@ -27,20 +27,27 @@
         - document all methods
 
 """
-
+from __future__ import print_function
 import os, sys
 from urlgrabber.grabber import URLGrabber
 from urlgrabber.grabber import URLGrabError
 import ConfigParser
 import shutil
 import time
+from glob import glob
+import re
+import threading
 
 if __name__ == "__main__":
     from pyanaconda import anaconda_log
     anaconda_log.init()
 
-from pyanaconda.constants import ROOT_PATH, DRACUT_ISODIR, DRACUT_REPODIR, GROUP_ALL, GROUP_DEFAULT, GROUP_REQUIRED, DD_ALL, DD_FIRMWARE, DD_RPMS, INSTALL_TREE, ISO_DIR, THREAD_STORAGE, THREAD_WAIT_FOR_CONNECTING_NM
+from pyanaconda.constants import DRACUT_ISODIR, DRACUT_REPODIR, DD_ALL, DD_FIRMWARE, DD_RPMS, INSTALL_TREE, ISO_DIR
+from pyanaconda.constants import THREAD_STORAGE, THREAD_WAIT_FOR_CONNECTING_NM, THREAD_PAYLOAD
+from pyanaconda.constants import THREAD_PAYLOAD_RESTART
+from pykickstart.constants import GROUP_ALL, GROUP_DEFAULT, GROUP_REQUIRED
 from pyanaconda.flags import flags
+from pyanaconda.i18n import _, N_
 
 from pyanaconda import iutil
 from pyanaconda import isys
@@ -48,6 +55,8 @@ from pyanaconda.image import findFirstIsoImage
 from pyanaconda.image import mountImage
 from pyanaconda.image import opticalInstallMedia
 from pyanaconda.iutil import ProxyString, ProxyStringError
+from pyanaconda.regexes import VERSION_DIGITS
+from pyanaconda.threads import threadMgr, AnacondaThread
 
 from pykickstart.parser import Group
 
@@ -58,7 +67,6 @@ from blivet.errors import StorageError
 import blivet.util
 import blivet.arch
 from blivet.platform import platform
-#from pyanaconda.progress import progress
 
 from pyanaconda.product import productName, productVersion
 import urlgrabber
@@ -90,10 +98,17 @@ class ImageDirectoryMountError(PayloadSetupError):
 
 # software selection
 class NoSuchGroup(PayloadError):
-    pass
+    def __init__(self, group, adding=True, required=False):
+        PayloadError.__init__(self, group)
+        self.group = group
+        self.adding = adding
+        self.required = required
 
 class NoSuchPackage(PayloadError):
-    pass
+    def __init__(self, package, required=False):
+        PayloadError.__init__(self, package)
+        self.package = package
+        self.required = required
 
 class DependencyError(PayloadError):
     pass
@@ -107,15 +122,26 @@ class Payload(object):
     def __init__(self, data):
         """ data is a kickstart.AnacondaKSHandler class
         """
+        if self.__class__ is Payload:
+            raise TypeError("Payload is an abstract class")
+
         self.data = data
         self.storage = None
+        self.instclass = None
         self._kernelVersionList = []
+        self._rescueVersionList = []
         self._createdInitrds = False
         self.txID = None
 
-    def setup(self, storage):
+    def setup(self, storage, instClass):
         """ Do any payload-specific setup. """
         self.storage = storage
+        self.instclass = instClass
+
+    def unsetup(self):
+        """ Invalidate a previously setup paylaod. """
+        self.storage = None
+        self.instclass = None
 
     def preStorage(self):
         """ Do any payload-specific work necessary before writing the storage
@@ -134,14 +160,15 @@ class Payload(object):
         """ Reset the instance, not including ksdata. """
         pass
 
+    def prepareMountTargets(self, storage):
+        """Run when physical storage is mounted, but other mount points may
+        not exist.  Used by the RPMOSTreePayload subclass. 
+        """
+        pass
+
     ###
     ### METHODS FOR WORKING WITH REPOSITORIES
     ###
-    @property
-    def repos(self):
-        """A list of repo identifiers, not objects themselves."""
-        raise NotImplementedError()
-
     @property
     def addOns(self):
         """ A list of addon repo identifiers. """
@@ -160,10 +187,6 @@ class Payload(object):
            sense for those payloads that do not support this concept.
         """
         return True
-
-    def getRepo(self, repo_id):
-        """ Return the package repo object. """
-        raise NotImplementedError()
 
     def isRepoEnabled(self, repo_id):
         """ Return True if repo is enabled. """
@@ -248,45 +271,10 @@ class Payload(object):
             repo.enabled = False
 
     ###
-    ### METHODS FOR WORKING WITH ENVIRONMENTS
-    ###
-    @property
-    def environments(self):
-        raise NotImplementedError()
-
-    def environmentSelected(self, environmentid):
-        raise NotImplementedError()
-
-    def environmentHasOption(self, environmentid, grpid):
-        raise NotImplementedError()
-
-    def environmentOptionIsDefault(self, environmentid, grpid):
-        raise NotImplementedError()
-
-    def environmentDescription(self, environmentid):
-        raise NotImplementedError()
-
-    def selectEnvironment(self, environmentid):
-        raise NotImplementedError()
-
-    def deselectEnvironment(self, environmentid):
-        raise NotImplementedError()
-
-    def environmentGroups(self, environmentid):
-        raise NotImplementedError()
-
-    ###
     ### METHODS FOR WORKING WITH GROUPS
     ###
-    @property
-    def groups(self):
-        raise NotImplementedError()
-
     def languageGroups(self):
         return []
-
-    def groupDescription(self, groupid):
-        raise NotImplementedError()
 
     def groupSelected(self, groupid):
         return Group(groupid) in self.data.packages.groupList
@@ -328,10 +316,6 @@ class Payload(object):
     ###
     ### METHODS FOR WORKING WITH PACKAGES
     ###
-    @property
-    def packages(self):
-        raise NotImplementedError()
-
     def packageSelected(self, pkgid):
         return pkgid in self.data.packages.packageList
 
@@ -363,6 +347,26 @@ class Payload(object):
 
         self.data.packages.excludedList.append(pkgid)
 
+    def _updateKernelVersionList(self):
+        try:
+            import yum
+        except ImportError:
+            cmpfunc = cmp
+        else:
+            cmpfunc = yum.rpmUtils.miscutils.compareVerOnly
+
+        files = glob(iutil.getSysroot() + "/boot/vmlinuz-*")
+        files.extend(glob(iutil.getSysroot() + "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir))
+
+        versions = sorted((f.split("/")[-1][8:] for f in files if os.path.isfile(f)), cmp=cmpfunc)
+        log.debug("kernel versions: %s", versions)
+
+        # Store regular and rescue kernels separately
+        self._kernelVersionList = (
+                [v for v in versions if "-rescue-" not in v],
+                [v for v in versions if "-rescue-" in v]
+                )
+
     ###
     ### METHODS FOR QUERYING STATE
     ###
@@ -374,25 +378,15 @@ class Payload(object):
     @property
     def kernelVersionList(self):
         if not self._kernelVersionList:
-            import glob
-            try:
-                import yum
-            except ImportError:
-                cmpfunc = cmp
-            else:
-                cmpfunc = yum.rpmUtils.miscutils.compareVerOnly
+            self._updateKernelVersionList()
 
-            files = glob.glob(ROOT_PATH + "/boot/vmlinuz-*")
-            files.extend(glob.glob(ROOT_PATH + "/boot/efi/EFI/redhat/vmlinuz-*"))
-            # strip off everything up to and including vmlinuz- to get versions
-            # Ignore rescue kernels
-            versions = [f.split("/")[-1][8:] for f in files if os.path.isfile(f) \
-                        and "-rescue-" not in f]
-            versions.sort(cmp=cmpfunc)
-            log.debug("kernel versions: %s", versions)
-            self._kernelVersionList = versions
+        return self._kernelVersionList[0]
 
-        return self._kernelVersionList
+    @property
+    def rescueKernelList(self):
+        # do re-scan if looking for rescue kernel
+        self._updateKernelVersionList()
+        return self._kernelVersionList[1]
 
     ##
     ## METHODS FOR TREE VERIFICATION
@@ -446,7 +440,10 @@ class Payload(object):
 
     def _getReleaseVersion(self, url):
         """ Return the release version of the tree at the specified URL. """
-        version = productVersion.split("-")[0]
+        try:
+            version = re.match(VERSION_DIGITS, productVersion).group(1)
+        except AttributeError:
+            version = "rawhide"
 
         log.debug("getting release version from tree at %s (%s)", url, version)
 
@@ -460,7 +457,9 @@ class Payload(object):
             c.read(treeinfo)
             try:
                 # Trim off any -Alpha or -Beta
-                version = c.get("general", "version").split("-")[0]
+                version = re.match(VERSION_DIGITS, c.get("general", "version")).group(1)
+            except AttributeError:
+                version = "rawhide"
             except ConfigParser.Error:
                 pass
 
@@ -540,31 +539,45 @@ class Payload(object):
     ###
     def preInstall(self, packages=None, groups=None):
         """ Perform pre-installation tasks. """
-        iutil.mkdirChain(ROOT_PATH + "/root")
+        iutil.mkdirChain(iutil.getSysroot() + "/root")
+
+        self._writeModuleBlacklist()
 
     def install(self):
         """ Install the payload. """
         raise NotImplementedError()
 
-    def _copyDriverDiskFiles(self):
-        import glob
+    def _writeModuleBlacklist(self):
+        """ Copy modules from modprobe.blacklist=<module> on cmdline to
+            /etc/modprobe.d/anaconda-blacklist.conf so that modules will
+            continue to be blacklisted when the system boots.
+        """
+        if "modprobe.blacklist" not in flags.cmdline:
+            return
 
+        iutil.mkdirChain(iutil.getSysroot() + "/etc/modprobe.d")
+        with open(iutil.getSysroot() + "/etc/modprobe.d/anaconda-blacklist.conf", "w") as f:
+            f.write("# Module blacklists written by anaconda\n")
+            for module in flags.cmdline["modprobe.blacklist"].split():
+                f.write("blacklist %s\n" % module)
+
+    def _copyDriverDiskFiles(self):
         # Multiple driver disks may be loaded, so we need to glob for all
         # the firmware files in the common DD firmware directory
-        for f in glob.glob(DD_FIRMWARE+"/*"):
+        for f in glob(DD_FIRMWARE+"/*"):
             try:
-                shutil.copyfile(f, "%s/lib/firmware/" % ROOT_PATH)
+                shutil.copyfile(f, "%s/lib/firmware/" % iutil.getSysroot())
             except IOError as e:
                 log.error("Could not copy firmware file %s: %s", f, e.strerror)
 
         #copy RPMS
-        for d in glob.glob(DD_RPMS):
-            shutil.copytree(d, ROOT_PATH + "/root/" + os.path.basename(d))
+        for d in glob(DD_RPMS):
+            shutil.copytree(d, iutil.getSysroot() + "/root/" + os.path.basename(d))
 
         #copy modules and firmware into root's home directory
         if os.path.exists(DD_ALL):
             try:
-                shutil.copytree(DD_ALL, ROOT_PATH + "/root/DD")
+                shutil.copytree(DD_ALL, iutil.getSysroot() + "/root/DD")
             except IOError as e:
                 log.error("failed to copy driver disk files: %s", e.strerror)
                 # XXX TODO: real error handling, as this is probably going to
@@ -585,15 +598,25 @@ class Payload(object):
 
         for kernel in self.kernelVersionList:
             log.info("recreating initrd for %s", kernel)
-            iutil.execWithRedirect("kernel-install",
-                                   ["add", kernel, "/boot/vmlinuz-%s" % kernel],
-                                   root=ROOT_PATH)
+            if not flags.imageInstall:
+                iutil.execInSysroot("new-kernel-pkg",
+                                    ["--mkinitrd", "--dracut",
+                                    "--depmod", "--update", kernel])
+            else:
+                # hostonly is not sensible for disk image installations
+                # using /dev/disk/by-uuid/ is necessary due to disk image naming
+                iutil.execInSysroot("dracut",
+                                    ["-N",
+                                     "--persistent-policy", "by-uuid",
+                                     "-f", "/boot/initramfs-%s.img" % kernel,
+                                    kernel])
+
         self._createdInitrds = True
 
 
     def _setDefaultBootTarget(self):
         """ Set the default systemd target for the system. """
-        if not os.path.exists(ROOT_PATH + "/etc/systemd/system"):
+        if not os.path.exists(iutil.getSysroot() + "/etc/systemd/system"):
             log.error("systemd is not installed -- can't set default target")
             return
 
@@ -606,7 +629,7 @@ class Payload(object):
         except ImportError:
             log.info("failed to import rpm -- not adjusting default runlevel")
         else:
-            ts = rpm.TransactionSet(ROOT_PATH)
+            ts = rpm.TransactionSet(iutil.getSysroot())
 
             # XXX one day this might need to account for anaconda's display mode
             if ts.dbMatch("provides", 'service(graphical-login)').count() and \
@@ -624,7 +647,7 @@ class Payload(object):
             pass
         else:
             iutil.resetRpmDb()
-            ts = rpm.TransactionSet(ROOT_PATH)
+            ts = rpm.TransactionSet(iutil.getSysroot())
 
             # Only add "rhgb quiet" on non-s390, non-serial installs
             if iutil.isConsoleOnVirtualTerminal() and \
@@ -645,23 +668,84 @@ class Payload(object):
 
         self._copyDriverDiskFiles()
 
+# Inherit abstract methods from Payload
+# pylint: disable=abstract-method
 class ImagePayload(Payload):
     """ An ImagePayload installs an OS image to the target system. """
-    pass
 
+    def __init__(self, data):
+        if self.__class__ is ImagePayload:
+            raise TypeError("ImagePayload is an abstract class")
+
+        Payload.__init__(self, data)
+
+# Inherit abstract methods from ImagePayload
+# pylint: disable=abstract-method
 class ArchivePayload(ImagePayload):
     """ An ArchivePayload unpacks source archives onto the target system. """
-    pass
+
+    def __init__(self, data):
+        if self.__class__ is ArchivePayload:
+            raise TypeError("ArchivePayload is an abstract class")
+
+        ImagePayload.__init__(self, data)
 
 class PackagePayload(Payload):
     """ A PackagePayload installs a set of packages onto the target system. """
 
+    DEFAULT_REPOS = [productName.split('-')[0].lower(), "rawhide"]
+
     def __init__(self, data):
+        if self.__class__ is PackagePayload:
+            raise TypeError("PackagePayload is an abstract class")
+
         super(PackagePayload, self).__init__(data)
         self.install_device = None
+        self._rpm_macros = []
+
+        self.requiredPackages = []
+        self.requiredGroups = []
+
+        # Used to determine which add-ons to display for each environment.
+        # The dictionary keys are environment IDs. The dictionary values are two-tuples
+        # consisting of lists of add-on group IDs. The first list is the add-ons specific
+        # to the environment, and the second list is the other add-ons possible for the
+        # environment.
+        self._environmentAddons = {}
+
+    def preInstall(self, packages=None, groups=None):
+        super(PackagePayload, self).preInstall()
+
+        # Set rpm-specific options
+
+        # nofsync speeds things up at the risk of rpmdb data loss in a crash.
+        # But if we crash mid-install you're boned anyway, so who cares?
+        self.rpmMacros.append(('__dbi_htconfig', 'hash nofsync %{__dbi_other} %{__dbi_perms}'))
+
+        if self.data.packages.excludeDocs:
+            self.rpmMacros.append(('_excludedocs', '1'))
+
+        if self.data.packages.instLangs is not None:
+            # Use nil if instLangs is empty
+            self.rpmMacros.append(('_install_langs', self.data.packages.instLangs or '%{nil}'))
+
+        if flags.selinux:
+            for d in ["/tmp/updates",
+                      "/etc/selinux/targeted/contexts/files",
+                      "/etc/security/selinux/src/policy",
+                      "/etc/security/selinux"]:
+                f = d + "/file_contexts"
+                if os.access(f, os.R_OK):
+                    self.rpmMacros.append(('__file_context_path', f))
+                    break
+        else:
+            self.rpmMacros.append(('__file_context_path', '%{nil}'))
 
     @property
     def kernelPackages(self):
+        if "kernel" in self.data.packages.excludedList:
+            return []
+
         kernels = ["kernel"]
 
         if isys.isPaeAvailable():
@@ -676,6 +760,15 @@ class PackagePayload(Payload):
                 kernels.insert(0, "kernel-lpae")
 
         return kernels
+
+    @property
+    def rpmMacros(self):
+        """A list of (name, value) pairs to define as macros in the rpm transaction."""
+        return self._rpm_macros
+
+    @rpmMacros.setter
+    def rpmMacros(self, value):
+        self._rpm_macros = value
 
     def reset(self, root=None, releasever=None):
         # cdrom: install_device.teardown (INSTALL_TREE)
@@ -882,16 +975,316 @@ class PackagePayload(Payload):
 
         return url, mirrorlist, sslverify
 
-def payloadInitialize(storage, ksdata, payload):
-    from pyanaconda.threads import threadMgr
+    ###
+    ### METHODS FOR WORKING WITH REPOSITORIES
+    ###
+    @property
+    def repos(self):
+        """A list of repo identifiers, not objects themselves."""
+        raise NotImplementedError()
 
-    threadMgr.wait(THREAD_STORAGE)
+    def addDriverRepos(self):
+        """ Add driver repositories and packages
+        """
+        # Drivers are loaded by anaconda-dracut, their repos are copied
+        # into /run/install/DD-X where X is a number starting at 1. The list of
+        # packages that were selected is in /run/install/dd_packages
 
-    # FIXME: condition for cases where we don't want network
-    # (set and use payload.needsNetwork ?)
-    threadMgr.wait(THREAD_WAIT_FOR_CONNECTING_NM)
+        # Add repositories
+        dir_num = 0
+        while True:
+            dir_num += 1
+            repo = "/run/install/DD-%d/" % dir_num
+            if not os.path.isdir(repo):
+                break
 
-    payload.setup(storage)
+            # Drivers are under /<arch>/ or /DD-net/
+            if os.path.isdir(repo+"DD-net"):
+                repo += "DD-net"
+            elif os.path.isdir(repo+blivet.arch.getArch()):
+                repo += blivet.arch.getArch()
+            else:
+                log.debug("No driver repo in %s", repo)
+                continue
+
+            # Run createrepo if there are rpms and no repodata
+            if not os.path.isdir(repo+"/repodata"):
+                rpms = glob(repo+"/*rpm")
+                if not rpms:
+                    continue
+                log.info("Running createrepo on %s", repo)
+                iutil.execWithRedirect("createrepo_c", [repo])
+
+            ks_repo = self.data.RepoData(name="DD-%d" % dir_num,
+                                         baseurl="file://"+repo,
+                                         enabled=True)
+            self.addRepo(ks_repo)
+
+        # Add packages
+        if not os.path.exists("/run/install/dd_packages"):
+            return
+        with open("/run/install/dd_packages", "r") as f:
+            for line in f:
+                package = line.strip()
+                if package not in self.requiredPackages:
+                    self.requiredPackages.append(package)
+        log.debug("required packages = %s", self.requiredPackages)
+
+    ###
+    ### METHODS FOR WORKING WITH ENVIRONMENTS
+    ###
+    @property
+    def environments(self):
+        raise NotImplementedError()
+
+    def environmentHasOption(self, environmentid, grpid):
+        raise NotImplementedError()
+
+    def environmentOptionIsDefault(self, environmentid, grpid):
+        raise NotImplementedError()
+
+    def environmentDescription(self, environmentid):
+        raise NotImplementedError()
+
+    def selectEnvironment(self, environmentid):
+        raise NotImplementedError()
+
+    def environmentGroups(self, environmentid):
+        raise NotImplementedError()
+
+    @property
+    def environmentAddons(self):
+        return self._environmentAddons
+
+    def _isGroupVisible(self, grp):
+        raise NotImplementedError()
+
+    def _groupHasInstallableMembers(self, grp):
+        raise NotImplementedError()
+
+    def _refreshEnvironmentAddons(self):
+        log.info("Refreshing environmentAddons")
+        self._environmentAddons = {}
+
+        for environment in self.environments:
+            self._environmentAddons[environment] = ([], [])
+
+            # Determine which groups are specific to this environment and which other groups
+            # are available in this environment.
+            for grp in self.groups:
+                if not self._groupHasInstallableMembers(grp):
+                    continue
+                elif self.environmentHasOption(environment, grp):
+                    self._environmentAddons[environment][0].append(grp)
+                elif self._isGroupVisible(grp):
+                    self._environmentAddons[environment][1].append(grp)
+
+    ###
+    ### METHODS FOR WORKING WITH GROUPS
+    ###
+    @property
+    def groups(self):
+        raise NotImplementedError()
+
+    def groupDescription(self, groupid):
+        raise NotImplementedError()
+
+class PayloadManager(object):
+    """Framework for starting and watching the payload thread.
+
+       This class defines several states, and events can be triggered upon
+       reaching a state. Depending on whether a state has already been reached
+       when a listener is added, the event code may be run in either the
+       calling thread or the payload thread. The event code will block the
+       payload thread regardless, so try not to run anything that takes a long
+       time.
+
+       All states except STATE_ERROR are expected to happen linearly, and adding
+       a listener for a state that has already been reached or passed will
+       immediately trigger that listener. For example, if the payload thread is
+       currently in STATE_GROUP_MD, adding a listener for STATE_NETWORK will
+       immediately run the code being added for STATE_NETWORK.
+
+       The payload thread data should be accessed using the payloadMgr object,
+       and the running thread can be accessed using threadMgr with the
+       THREAD_PAYLOAD constant, if you need to wait for it or something. The
+       thread should be started using payloadMgr.restartThread.
+    """
+
+    STATE_START = 0
+    # Waiting on storage
+    STATE_STORAGE = 1
+    # Waiting on network
+    STATE_NETWORK = 2
+    # Downloading package metadata
+    STATE_PACKAGE_MD = 3
+    # Downloading group metadata
+    STATE_GROUP_MD = 4
+    # All done
+    STATE_FINISHED = 5
+
+    # Error
+    STATE_ERROR = -1
+
+    # Error strings
+    ERROR_SETUP = N_("Failed to set up installation source")
+    ERROR_MD = N_("Error downloading package metadata")
+    ERROR_SOURCE = N_("No installation source available")
+
+    def __init__(self):
+        self._event_lock = threading.Lock()
+        self._event_listeners = {}
+        self._thread_state = self.STATE_START
+        self._error = None
+
+        # Initialize a list for each event state
+        for event_id in range(self.STATE_ERROR, self.STATE_FINISHED + 1):
+            self._event_listeners[event_id] = []
+
+    @property
+    def error(self):
+        return _(self._error)
+
+    def addListener(self, event_id, func):
+        """Add a listener for an event.
+
+           :param int event_id: The event to listen for, one of the EVENT_* constants
+           :param function func: An object to call when the event is reached
+        """
+
+        # Check that the event_id is valid
+        assert isinstance(event_id, int)
+        assert event_id <= self.STATE_FINISHED
+        assert event_id >= self.STATE_ERROR
+
+        # Add the listener inside the lock in case we need to run immediately,
+        # to make sure the listener isn't triggered twice
+        with self._event_lock:
+            self._event_listeners[event_id].append(func)
+
+            # If an error event was requested, run it if currently in an error state
+            if event_id == self.STATE_ERROR:
+                if event_id == self._thread_state:
+                    func()
+            # Otherwise, run if the requested event has already occurred
+            elif event_id <= self._thread_state:
+                func()
+
+    def restartThread(self, storage, ksdata, payload, instClass, fallback=False, checkmount=True):
+        """Start or restart the payload thread.
+
+           This method starts a new thread to restart the payload thread, so
+           this method's return is not blocked by waiting on the previous payload
+           thread. If there is already a payload thread restart pending, this method
+           has no effect.
+
+           :param blivet.Blivet storage: The blivet storage instance
+           :param kickstart.AnacondaKSHandler ksdata: The kickstart data instance
+           :param packaging.Payload payload: The payload instance
+           :param installclass.BaseInstallClass instClass: The install class instance
+           :param bool fallback: Whether to fall back to the default repo in case of error
+           :param bool checkmount: Whether to check for valid mounted media
+        """
+
+        log.debug("Restarting payload thread")
+
+        # If a restart thread is already running, don't start a new one
+        if threadMgr.get(THREAD_PAYLOAD_RESTART):
+            return
+
+        # Launch a new thread so that this method can return immediately
+        threadMgr.add(AnacondaThread(name=THREAD_PAYLOAD_RESTART, target=self._restartThread,
+            args=(storage, ksdata, payload, instClass, fallback, checkmount)))
+
+    def _restartThread(self, storage, ksdata, payload, instClass, fallback, checkmount):
+        # Wait for the old thread to finish
+        threadMgr.wait(THREAD_PAYLOAD)
+
+        # Start a new payload thread
+        threadMgr.add(AnacondaThread(name=THREAD_PAYLOAD, target=self._runThread,
+            args=(storage, ksdata, payload, instClass, fallback, checkmount)))
+
+    def _setState(self, event_id):
+        # Update the current state
+        log.debug("Updating payload thread state: %d", event_id)
+        with self._event_lock:
+            # Update the state within the lock to avoid a race with listeners
+            # currently being added
+            self._thread_state = event_id
+
+            # Run any listeners for the new state
+            for func in self._event_listeners[event_id]:
+                func()
+
+    def _runThread(self, storage, ksdata, payload, instClass, fallback, checkmount):
+        # This is the thread entry
+        # Set the initial state
+        self._error = None
+        self._setState(self.STATE_START)
+
+        # Wait for storage
+        self._setState(self.STATE_STORAGE)
+        threadMgr.wait(THREAD_STORAGE)
+
+        # Wait for network
+        self._setState(self.STATE_NETWORK)
+        # FIXME: condition for cases where we don't want network
+        # (set and use payload.needsNetwork ?)
+        threadMgr.wait(THREAD_WAIT_FOR_CONNECTING_NM)
+
+        self._setState(self.STATE_PACKAGE_MD)
+        payload.setup(storage, instClass)
+
+        # If this is a non-package Payload, we're done
+        if not isinstance(payload, PackagePayload):
+            self._setState(self.STATE_FINISHED)
+            return
+
+        # Keep setting up package-based repositories
+        # Download package metadata
+        try:
+            payload.updateBaseRepo(fallback=fallback, checkmount=checkmount)
+        except (OSError, PayloadError) as e:
+            log.error("PayloadError: %s", e)
+            self._error = self.ERROR_SETUP
+            self._setState(self.STATE_ERROR)
+            payload.unsetup()
+            return
+
+        # Gather the group data
+        self._setState(self.STATE_GROUP_MD)
+        payload.gatherRepoMetadata()
+        payload.release()
+
+        # Check if that failed
+        if not payload.baseRepo:
+            log.error("No base repo configured")
+            self._error = self.ERROR_MD
+            self._setState(self.STATE_ERROR)
+            payload.unsetup()
+            return
+
+        try:
+            # Grabbing the list of groups could potentially take a long time the
+            # first time (yum does a lot of magic property stuff, some of which
+            # involves side effects like network access) so go ahead and grab
+            # them now. These are properties with side-effects, just accessing
+            # them will trigger yum.
+            # pylint: disable=pointless-statement
+            payload.environments
+            # pylint: disable=pointless-statement
+            payload.groups
+        except MetadataError as e:
+            log.error("MetadataError: %s", e)
+            self._error = self.ERROR_SOURCE
+            self._setState(self.STATE_ERROR)
+            payload.unsetup()
+            return
+
+        self._setState(self.STATE_FINISHED)
+
+# Initialize the PayloadManager instance
+payloadMgr = PayloadManager()
 
 def show_groups(payload):
     #repo = ksdata.RepoData(name="anaconda", baseurl="http://cannonball/install/rawhide/os/")
@@ -908,21 +1301,21 @@ def show_groups(payload):
 
     import pprint
 
-    print "==== DESKTOPS ===="
+    print("==== DESKTOPS ====")
     pprint.pprint(desktops)
-    print "==== ADDONS ===="
+    print("==== ADDONS ====")
     pprint.pprint(addons)
 
-    print payload.groups
+    print(payload.groups)
 
 def print_txmbrs(payload, f=None):
     if f is None:
         f = sys.stdout
 
-    print >> f, "###########"
+    print("###########", file=f)
     for txmbr in payload._yum.tsInfo.getMembers():
-        print >> f, txmbr
-    print >> f, "###########"
+        print(txmbr, file=f)
+    print("###########", file=f)
 
 def write_txmbrs(payload, filename):
     if os.path.exists(filename):

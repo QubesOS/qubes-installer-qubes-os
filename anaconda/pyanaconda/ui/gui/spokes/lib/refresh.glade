@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.18.3 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
+  <requires lib="gtk+" version="3.0"/>
   <object class="GtkDialog" id="refreshDialog">
     <property name="can_focus">False</property>
     <property name="border_width">6</property>
@@ -21,11 +22,11 @@
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="refreshCancelButton">
-                <property name="label">gtk-cancel</property>
+                <property name="label" translatable="yes" context="GUI|Refresh Dialog|Rescan">_Cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -35,12 +36,12 @@
             </child>
             <child>
               <object class="GtkButton" id="refreshOKButton">
-                <property name="label">gtk-ok</property>
+                <property name="label" translatable="yes" context="GUI|Refresh Dialog|Rescan">_OK</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -101,8 +102,8 @@
                   <object class="GtkImage" id="image1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="stock">gtk-dialog-warning</property>
-                    <property name="icon-size">2</property>
+                    <property name="icon_name">dialog-warning</property>
+                    <property name="icon_size">2</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -136,9 +137,10 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="show_tabs">False</property>
+                <property name="show_border">False</property>
                 <child>
                   <object class="GtkButton" id="rescanButton">
-                    <property name="label" translatable="yes">_Rescan Disks</property>
+                    <property name="label" translatable="yes" context="GUI|Refresh Dialog|Rescan">_Rescan Disks</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -201,8 +203,6 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -214,8 +214,6 @@
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -233,7 +231,6 @@ installation options while this scan completes.</property>
                         <property name="left_attach">0</property>
                         <property name="top_attach">1</property>
                         <property name="width">2</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                   </object>
@@ -254,14 +251,14 @@ installation options while this scan completes.</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">&lt;b&gt;Disk rescan complete.&lt;/b&gt;</property>
-                        <property name="use_markup">True</property>
+                        <property name="label" translatable="yes">Disk rescan complete.</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                        </attributes>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
@@ -275,20 +272,17 @@ installation options while this scan completes.</property>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="top_attach">1</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkImage" id="image2">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="stock">gtk-apply</property>
+                        <property name="icon_name">emblem-ok-symbolic</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
-                        <property name="width">1</property>
                         <property name="height">2</property>
                       </packing>
                     </child>

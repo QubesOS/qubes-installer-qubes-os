@@ -29,12 +29,16 @@ import subprocess
 import unicodedata
 import string
 import types
+import re
 from threading import Thread
 from Queue import Queue, Empty
+from urllib import quote, unquote
 
 from pyanaconda.flags import flags
-from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, ROOT_PATH, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW
-from pyanaconda.regexes import PROXY_URL_PARSE
+from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW
+from pyanaconda.regexes import URL_PARSE
+
+from pyanaconda.i18n import _
 
 import logging
 log = logging.getLogger("anaconda")
@@ -45,25 +49,77 @@ from pyanaconda.anaconda_log import program_log_lock
 def augmentEnv():
     env = os.environ.copy()
     env.update({"LC_ALL": "C",
-                "ANA_INSTALL_PATH": ROOT_PATH
+                "ANA_INSTALL_PATH": getSysroot()
                })
     return env
 
-def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None):
+_root_path = "/mnt/sysimage"
+
+def getTargetPhysicalRoot():
+    """Returns the path to the "physical" storage root, traditionally /mnt/sysimage.
+
+    This may be distinct from the sysroot, which could be a
+    chroot-type subdirectory of the physical root.  This is used for
+    example by all OSTree-based installations.
+    """
+
+    # We always use the traditional /mnt/sysimage - the physical OS
+    # target is never mounted anywhere else.  This API call just
+    # allows us to have a clean "git grep ROOT_PATH" in other parts of
+    # the code.
+    return _root_path
+
+def setTargetPhysicalRoot(path):
+    """Change the physical root path
+
+    :param string path: Path to use instead of /mnt/sysimage/
+    """
+    global _root_path
+    _root_path = path
+
+_sysroot = _root_path
+
+def getSysroot():
+    """Returns the path to the target OS installation.
+
+    For ordinary package-based installations, this is the same as the
+    target root.
+    """
+    return _sysroot
+
+def setSysroot(path):
+    """Change the OS root path.
+       :param path: The new OS root path
+
+    This should only be used by Payload subclasses which install operating
+    systems to non-default roots.
+    """
+    global _sysroot
+    _sysroot = path
+
+def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None, log_output=True, binary_output=False):
     """ Run an external program, log the output and return it to the caller
         :param argv: The command to run and argument
         :param root: The directory to chroot to before running command.
         :param stdin: The file object to read stdin from.
         :param stdout: Optional file object to write stdout and stderr to.
         :param env_prune: environment variable to remove before execution
+        :param log_output: whether to log the output of command
+        :param binary_output: whether to treat the output of command as binary data
         :return: The return code of the command and the output
     """
     if env_prune is None:
         env_prune = []
 
+    # Transparently redirect callers requesting root=_root_path to the
+    # configured system root.
+    target_root = root
+    if target_root == _root_path:
+        target_root = getSysroot()
+
     def chroot():
-        if root and root != '/':
-            os.chroot(root)
+        if target_root and target_root != '/':
+            os.chroot(target_root)
             os.chdir("/")
 
     with program_log_lock:
@@ -80,13 +136,21 @@ def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None):
                                     stderr=subprocess.STDOUT,
                                     preexec_fn=chroot, cwd=root, env=env)
 
-            out = proc.communicate()[0]
-            if out:
-                for line in out.splitlines():
-                    program_log.info(line)
+            output_string = proc.communicate()[0]
+            if output_string:
+                if binary_output:
+                    output_lines = [output_string]
+                else:
+                    if output_string[-1] != "\n":
+                        output_string = output_string + "\n"
+                    output_lines = output_string.splitlines(True)
+
+                for line in output_lines:
+                    if log_output:
+                        program_log.info(line.strip())
+
                     if stdout:
                         stdout.write(line)
-                        stdout.write("\n")
 
         except OSError as e:
             program_log.error("Error running %s: %s", argv[0], e.strerror)
@@ -94,10 +158,20 @@ def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None):
 
         program_log.debug("Return code: %d", proc.returncode)
 
-    return (proc.returncode, out)
+    return (proc.returncode, output_string)
+
+def execInSysroot(command, argv, stdin=None):
+    """ Run an external program in the target root.
+        :param command: The command to run
+        :param argv: The argument list
+        :param stdin: The file object to read stdin from.
+        :return: The return code of the command
+    """
+
+    return execWithRedirect(command, argv, stdin=stdin, root=getSysroot())
 
 def execWithRedirect(command, argv, stdin=None, stdout=None,
-                     root='/', env_prune=None):
+                     root='/', env_prune=None, log_output=True, binary_output=False):
     """ Run an external program and redirect the output to a file.
         :param command: The command to run
         :param argv: The argument list
@@ -105,6 +179,8 @@ def execWithRedirect(command, argv, stdin=None, stdout=None,
         :param stdout: Optional file object to redirect stdout and stderr to.
         :param root: The directory to chroot to before running command.
         :param env_prune: environment variable to remove before execution
+        :param log_output: whether to log the output of command
+        :param binary_output: whether to treat the output of command as binary data
         :return: The return code of the command
     """
     if flags.testing:
@@ -113,14 +189,16 @@ def execWithRedirect(command, argv, stdin=None, stdout=None,
         return 0
 
     argv = [command] + argv
-    return _run_program(argv, stdin=stdin, stdout=stdout, root=root, env_prune=env_prune)[0]
+    return _run_program(argv, stdin=stdin, stdout=stdout, root=root, env_prune=env_prune,
+            log_output=log_output, binary_output=binary_output)[0]
 
-def execWithCapture(command, argv, stdin=None, root='/'):
+def execWithCapture(command, argv, stdin=None, root='/', log_output=True):
     """ Run an external program and capture standard out and err.
         :param command: The command to run
         :param argv: The argument list
         :param stdin: The file object to read stdin from.
         :param root: The directory to chroot to before running command.
+        :param log_output: Whether to log the output of command
         :return: The output of the command
     """
     if flags.testing:
@@ -129,7 +207,7 @@ def execWithCapture(command, argv, stdin=None, root='/'):
         return ""
 
     argv = [command] + argv
-    return _run_program(argv, stdin=stdin, root=root)[1]
+    return _run_program(argv, stdin=stdin, root=root, log_output=log_output)[1]
 
 def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
     """ Execute an external command and return the line output of the command
@@ -190,6 +268,8 @@ def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
             q.task_done()
         except Empty:
             if proc.poll() is not None:
+                if os.WIFSIGNALED(proc.returncode):
+                    raise OSError("process '%s' was killed" % argv)
                 break
     q.join()
 
@@ -249,7 +329,7 @@ def mkdirChain(directory):
     """
 
     try:
-        os.makedirs(directory, 0755)
+        os.makedirs(directory, 0o755)
     except OSError as e:
         try:
             if e.errno == errno.EEXIST and stat.S_ISDIR(os.stat(directory).st_mode):
@@ -280,22 +360,6 @@ def isConsoleOnVirtualTerminal(dev="console"):
     consoletype = console.rstrip('0123456789') # remove the number
     return consoletype == 'tty'
 
-def strip_markup(text):
-    if text.find("<") == -1:
-        return text
-    r = ""
-    inTag = False
-    for c in text:
-        if c == ">" and inTag:
-            inTag = False
-            continue
-        elif c == "<" and not inTag:
-            inTag = True
-            continue
-        elif not inTag:
-            r += c
-    return r.encode("utf-8")
-
 def reIPL(ipldev):
     try:
         rc = execWithRedirect("chreipl", ["node", "/dev/" + ipldev])
@@ -310,7 +374,7 @@ def reIPL(ipldev):
         log.info("reIPL configuration successful")
 
 def resetRpmDb():
-    for rpmfile in glob.glob("%s/var/lib/rpm/__db.*" % ROOT_PATH):
+    for rpmfile in glob.glob("%s/var/lib/rpm/__db.*" % getSysroot()):
         try:
             os.unlink(rpmfile)
         except OSError as e:
@@ -363,7 +427,7 @@ def fork_orphan():
             os._exit(0)
         return 0
     # the original process waits for the intermediate child
-    os.waitpid(intermediate, 0)
+    eintr_retry_call(os.waitpid, intermediate, 0)
     return 1
 
 def _run_systemctl(command, service):
@@ -413,7 +477,7 @@ def dracut_eject(device):
 
         f.write("eject %s\n" % (device,))
         f.close()
-        os.chmod(DRACUT_SHUTDOWN_EJECT, 0755)
+        eintr_retry_call(os.chmod, DRACUT_SHUTDOWN_EJECT, 0o755)
         log.info("Wrote dracut shutdown eject hook for %s", device)
     except (IOError, OSError) as e:
         log.error("Error writing dracut shutdown eject hook for %s: %s", device, e)
@@ -474,7 +538,7 @@ class ProxyString(object):
         if url:
             self.parse_url()
         elif not host:
-            raise ProxyStringError("No host url")
+            raise ProxyStringError(_("No host url"))
         else:
             self.parse_components()
 
@@ -483,39 +547,35 @@ class ProxyString(object):
         """
         # NOTE: If this changes, update tests/regex/proxy.py
         #
-        # proxy=[protocol://][username[:password]@]host[:port][path]
-        # groups
+        # proxy=[protocol://][username[:password]@]host[:port][path][?query][#fragment]
+        # groups (both named and numbered)
         # 1 = protocol
-        # 2 = username:password@
-        # 3 = username
-        # 4 = password
-        # 5 = hostname
-        # 6 = port
-        # 7 = extra
-        m = PROXY_URL_PARSE.match(self.url)
+        # 2 = username
+        # 3 = password
+        # 4 = host
+        # 5 = port
+        # 6 = path
+        # 7 = query
+        # 8 = fragment
+        m = URL_PARSE.match(self.url)
         if not m:
-            raise ProxyStringError("malformed url, cannot parse it.")
+            raise ProxyStringError(_("malformed URL, cannot parse it."))
 
         # If no protocol was given default to http.
-        if m.group(1):
-            self.protocol = m.group(1)
+        self.protocol = m.group("protocol") or "http://"
+
+        if m.group("username"):
+            self.username = unquote(m.group("username"))
+
+        if m.group("password"):
+            self.password = unquote(m.group("password"))
+
+        if m.group("host"):
+            self.host = m.group("host")
+            if m.group("port"):
+                self.port = m.group("port")
         else:
-            self.protocol = "http://"
-
-        if m.group(3):
-            self.username = m.group(3)
-
-        if m.group(4):
-            # Skip the leading colon
-            self.password = m.group(4)[1:]
-
-        if m.group(5):
-            self.host = m.group(5)
-            if m.group(6):
-                # Skip the leading colon
-                self.port = m.group(6)[1:]
-        else:
-            raise ProxyStringError("url has no host component")
+            raise ProxyStringError(_("URL has no host component"))
 
         self.parse_components()
 
@@ -523,8 +583,8 @@ class ProxyString(object):
         """ Parse the components of a proxy url into url and noauth_url
         """
         if self.username or self.password:
-            self.proxy_auth = "%s:%s@" % (self.username or "",
-                                          self.password or "")
+            self.proxy_auth = "%s:%s@" % (quote(self.username) or "",
+                                          quote(self.password) or "")
 
         self.url = self.protocol + self.proxy_auth + self.host + ":" + self.port
         self.noauth_url = self.protocol + self.host + ":" + self.port
@@ -678,11 +738,11 @@ def chown_dir_tree(root, uid, gid, from_uid_only=None, from_gid_only=None):
             return
 
         # UID and GID matching or not required
-        os.chown(path, uid, gid)
+        eintr_retry_call(os.chown, path, uid, gid)
 
     if not from_uid_only and not from_gid_only:
         # the easy way
-        dir_tree_map(root, lambda path: os.chown(path, uid, gid))
+        dir_tree_map(root, lambda path: eintr_retry_call(os.chown, path, uid, gid))
     else:
         # conditional chown
         dir_tree_map(root, lambda path: conditional_chown(path, uid, gid,
@@ -763,6 +823,13 @@ def upcase_first_letter(text):
     else:
         return text[0].upper() + text[1:]
 
+def get_mount_paths(devnode):
+    '''given a device node, return a list of all active mountpoints.'''
+    devno = os.stat(devnode).st_rdev
+    majmin = "%d:%d" % (os.major(devno),os.minor(devno))
+    mountinfo = (line.split() for line in open("/proc/self/mountinfo"))
+    return [info[4] for info in mountinfo if info[2] == majmin]
+
 def have_word_match(str1, str2):
     """Tells if all words from str1 exist in str2 or not."""
 
@@ -777,8 +844,70 @@ def have_word_match(str1, str2):
         # non-empty string cannot be found in an empty string
         return False
 
+    # Convert both arguments to unicode if not already
+    if isinstance(str1, str):
+        str1 = str1.decode('utf-8')
+    if isinstance(str2, str):
+        str2 = str2.decode('utf-8')
+
     str1 = str1.lower()
     str1_words = str1.split()
     str2 = str2.lower()
 
     return all(word in str2 for word in str1_words)
+
+class DataHolder(dict):
+    """ A dict that lets you also access keys using dot notation. """
+    def __init__(self, **kwargs):
+        """ kwargs are set as keys for the dict. """
+        dict.__init__(self)
+
+        for attr, value in kwargs.items():
+            self[attr] = value
+
+    def __getattr__(self, attr):
+        return self[attr]
+
+    def __setattr__(self, attr, value):
+        self[attr] = value
+
+    def copy(self):
+        return DataHolder(**dict.copy(self))
+
+def xprogressive_delay():
+    """ A delay generator, the delay starts short and gets longer
+        as the internal counter increases.
+        For example for 10 retries, the delay will increases from
+        0.5 to 256 seconds.
+
+        :param int retry_number: retry counter
+        :returns float: time to wait in seconds
+    """
+    counter = 1
+    while True:
+        yield 0.25*(2**counter)
+        counter += 1
+
+def persistent_root_image():
+    """:returns: whether we are running from a persistent (not in RAM) root.img"""
+
+    for line in execReadlines("losetup", ["--list"]):
+        # if there is an active loop device for a curl-fetched file that has
+        # been deleted, it means we run from a non-persistent root image
+        # EXAMPLE line:
+        # /dev/loop0  0 0 0 1 /tmp/curl_fetch_url0/my_comps_squashfs.img (deleted)
+        if re.match(r'.*curl_fetch_url.*\(deleted\)\s*$', line):
+            return False
+
+    return True
+
+# Copied from python's subprocess.py
+def eintr_retry_call(func, *args):
+    """Retry an interruptible system call if interrupted."""
+    while True:
+        try:
+            return func(*args)
+        except (OSError, IOError) as e:
+            if e.errno == errno.EINTR:
+                continue
+            raise

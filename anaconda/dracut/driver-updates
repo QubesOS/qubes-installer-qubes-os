@@ -23,6 +23,7 @@ Driver Update Disk UI
 /tmp/dd_modules is a copy of /proc/modules at startup time
 /tmp/dd_args is a parsed list of the inst.dd= cmdline args, and may include
              'dd' or 'inst.dd' if it was specified without arguments
+/tmp/dd_args_ks is the same format, but skips processing existing OEMDRV devices.
 
 Pass a path and it will install the driver rpms from the path before checking
 for new OEMDRV devices.
@@ -41,6 +42,7 @@ import sys
 import os
 import subprocess
 import time
+import glob
 
 log = logging.getLogger("DD")
 
@@ -71,10 +73,10 @@ def run_cmd(cmd):
                 for line in out.splitlines():
                     log.debug(line)
     except OSError as e:
-        log.error("Error running %s: %s" % (cmd[0], e.strerror))
+        log.error("Error running %s: %s", cmd[0], e.strerror)
         raise
     if proc.returncode:
-        log.debug("%s returned %s" % (cmd[0], proc.returncode))
+        log.debug("%s returned %s", cmd[0], proc.returncode)
         raise RunCmdError()
     return (proc.returncode, out)
 
@@ -94,33 +96,25 @@ def oemdrv_list():
         return outlines.splitlines()
 
 
-def is_dd(dd_path):
-    """ Determine if a path is a valid DD for the current arch
-
-        :param dd_path: Path to the DD directory to test
-        :type dd_path:  string
-        :returns:       True if it is a valid DD
-        :rtype:         bool
-    """
-    arch = os.uname()[4]
-    return os.path.exists(dd_path+"/rhdd3") and \
-       not os.path.isdir(dd_path+"/rpms/%s" % arch)
-
-
 def get_dd_args():
-    """ Get the dd arguments from /tmp/dd_args
+    """ Get the dd arguments from /tmp/dd_args or /tmp/dd_args_ks
 
         :returns: List of arguments
         :rtype:   list of strings
     """
-    try:
-        dd_args = open("/tmp/dd_args", "r").readline().split()
-    except IOError:
-        return []
-
-    # skip dd args that need networking
     net_protocols = ["http", "https", "ftp", "nfs", "nfs4"]
-    return filter(lambda x: x.split(":")[0].lower() not in net_protocols, dd_args)
+    args = []
+    for dd_args_file in ["/tmp/dd_args", "/tmp/dd_args_ks"]:
+        if not os.path.exists(dd_args_file):
+            continue
+        try:
+            dd_args = open(dd_args_file, "r").readline().split()
+        except IOError:
+            return []
+
+        # skip dd args that need networking
+        args.extend(filter(lambda x: x.split(":")[0].lower() not in net_protocols, dd_args))
+    return args
 
 
 def is_interactive():
@@ -139,10 +133,13 @@ def is_interactive():
 def umount(device):
     """ Unmount the device
 
-        :param device: Device to unmount
+        :param device: Device or mountpoint to unmount
         :type device:  string
         :returns:      None
     """
+    if not device:
+        return
+
     try:
         run_cmd(["umount", device])
     except (OSError, RunCmdError):
@@ -235,7 +232,7 @@ def find_dd(mnt="/media/DD"):
         if "rhdd3" in files and "rpms" in dirs and \
           os.path.exists(root+"/rpms/"+arch):
             dd_repos.append(root+"/rpms/"+arch)
-    log.debug("Found repos - %s" % " ".join(dd_repos))
+    log.debug("Found repos - %s", " ".join(dd_repos))
     return dd_repos
 
 
@@ -255,8 +252,10 @@ def get_module_set(fname):
                     modules.update([mod_args[0]])
     return modules
 
+def to_modname(modfile):
+    return os.path.basename(modfile)[:-3].replace('-','_')
 
-def reload_modules():
+def reload_modules(newfiles):
     """ Reload new module versions from /lib/modules/<kernel>/updates/
     """
     try:
@@ -266,10 +265,15 @@ def reload_modules():
 
     # Make a list of modules added since startup
     startup_modules = get_module_set("/tmp/dd_modules")
-    startup_modules.update(["virtio_blk", "virtio_net"])
     current_modules = get_module_set("/proc/modules")
     new_modules = current_modules.difference(startup_modules)
-    log.debug("new_modules = %s" % " ".join(new_modules))
+    log.debug("new_modules = %s", " ".join(new_modules))
+
+    # And a list of modules contained in the disk we just extracted
+    dd_modules = set(to_modname(f) for f in newfiles if f.endswith(".ko"))
+    # TODO: what modules do we unload when there's new firmware?
+    log.debug("dd_modules = %s", " ".join(dd_modules))
+    new_modules.update(dd_modules)
 
     # I think we can just iterate once using modprobe -r to remove unused deps
     for module in new_modules:
@@ -373,7 +377,7 @@ def dd_extract(driver, dest_path="/updates/", kernel_ver=None):
         :type driver:     Driver object
         :param dest_path: Top directory of the destination path
         :type dest_path:  string
-        :returns:         None
+        :returns:         list of paths to extracted firmware and modules
 
         This extracts the driver's files into 'dest_path' (which defaults
         to /updates/ so that the normal live updates handling will overlay
@@ -385,11 +389,16 @@ def dd_extract(driver, dest_path="/updates/", kernel_ver=None):
     cmd = ["dd_extract", "-k", kernel_ver]
     cmd += driver.args
     cmd += ["--rpm", driver.rpm, "--directory", dest_path]
-    log.info("Extracting files from %s" % driver.rpm)
+    log.info("Extracting files from %s", driver.rpm)
+
+    # make sure the to be used directory exists
+    if not os.path.isdir(dest_path):
+        os.makedirs(dest_path)
+
     try:
         run_cmd(cmd)
     except (OSError, RunCmdError):
-        log.error("dd_extract failed, skipped %s" % driver.rpm)
+        log.error("dd_extract failed, skipped %s", driver.rpm)
         return
 
     # Create the destination directories
@@ -401,56 +410,104 @@ def dd_extract(driver, dest_path="/updates/", kernel_ver=None):
         if not os.path.exists(d):
             os.makedirs(d)
 
+    filelist = []
+
     # Copy *.ko files over to /updates/lib/modules/<kernel>/updates/
-    for root, dirs, files in os.walk(dest_path+"/lib/modules/"):
+    for root, _dirs, files in os.walk(dest_path+"/lib/modules/"):
         if root.endswith("/updates") and os.path.isdir(root):
             continue
         for f in (f for f in files if f.endswith(".ko")):
             src = root+"/"+f
+            filelist.append(src)
             copy_file(src, ko_updates)
             move_file(src, initrd_updates)
 
     # Copy the firmware updates
-    for root, dirs, files in os.walk(dest_path+"/lib/firmware/"):
+    for root, _dirs, files in os.walk(dest_path+"/lib/firmware/"):
         if root.endswith("/updates") and os.path.isdir(root):
             continue
         for f in (f for f in files):
             src = root+"/"+f
+            filelist.append(src)
             copy_file(src, firmware_updates)
             move_file(src, initrd_firmware)
 
+    # Tell our caller about the newly-extracted stuff
+    return filelist
 
-def select_drivers(drivers):
-    """ Display pages of drivers to be loaded.
 
-        :param drivers: Drivers to be selected by the user
-        :type drivers:  list of Driver objects
-        :returns:       None
+# an arbitrary value to signal refreshing the menu contents
+DoRefresh = True
+
+def selection_menu(items, title, info_func, multi_choice=True, refresh=False):
+    """ Display menu and let user select one or more choices.
+
+        :param items: list of items
+        :type items: list of objects (with the 'selected' property/attribute if
+                     multi_choice=True is used)
+        :param title: title for the menu
+        :type title: str
+        :param info_func: function providing info about items
+        :type info_func: item -> str
+        :param multi_choice: whether it is a multiple choice menu or not
+        :type multi_choice: bool
+        :returns: the selected item in case of multi_choice=False and user did
+                  selection, None otherwise
     """
+
     page_length = 20
     page = 1
-    while True:
-        # show a page of drivers
-        print("\nPage %d of %d" % (page, 1 + (len(drivers) / page_length)))
-        print("Select drivers to install")
-        for i in xrange(0, min(len(drivers), page_length)):
-            driver_idx = ((page-1) * page_length) + i
-            if drivers[driver_idx].selected:
-                selected = "x"
-            else:
-                selected = " "
-            print("%3d) [%s] %s" % (i+1, selected, drivers[driver_idx].source))
+    num_pages = len(items) / page_length
+    if len(items) % page_length > 0:
+        num_pages += 1
 
-        # Select driver to toggle, continue or change pages
-        idx = raw_input("\n# to toggle selection, 'n'-next page, 'p'-previous page or 'c'-continue: ")
-        if idx.isdigit():
-            if int(idx) < 1 or int(idx) > min(len(drivers), page_length):
-                print("Invalid selection")
-                continue
-            driver_idx = ((page-1) * page_length) + int(idx) - 1
-            drivers[driver_idx].selected = not drivers[driver_idx].selected
+    if multi_choice:
+        choice_format = "[%s]"
+    else:
+        choice_format = ""
+    format_str = "%3d) " + choice_format + " %s"
+
+    while True:
+        # show a page of items
+        print("\nPage %d of %d" % (page, num_pages))
+        print(title)
+        if page * page_length <= len(items):
+            num_items = page_length
+        else:
+            num_items = len(items) % page_length
+        for i in xrange(0, num_items):
+            item_idx = ((page-1) * page_length) + i
+            if multi_choice:
+                if items[item_idx].selected:
+                    selected = "x"
+                else:
+                    selected = " "
+                args = (i+1, selected, info_func(items[item_idx]))
+            else:
+                args = (i+1, info_func(items[item_idx]))
+            print(format_str % args)
+
+        # Select an item to toggle, continue or change pages
+        opts = ["# to select",
+                "'n'-next page",
+                "'p'-previous page",
+                "'c'-continue"]
+        if multi_choice:
+            opts[0] = "# to toggle selection"
+        if refresh:
+            opts.insert(1,"'r'-refresh")
+        idx = raw_input(''.join(['\n',
+                                ", ".join(opts[:-1]),
+                                " or ", opts[-1], ": "]))
+        if idx.isdigit() and not (int(idx) < 1 or int(idx) > num_items):
+            item_idx = ((page-1) * page_length) + int(idx) - 1
+            if multi_choice:
+                items[item_idx].selected = not items[item_idx].selected
+            else:
+                # single choice only, we can return now
+                return items[item_idx]
         elif idx.lower() == 'n':
-            if page < 1 + (len(drivers) / page_length):
+            if page < num_pages:
                 page += 1
             else:
                 print("Last page")
@@ -459,9 +516,25 @@ def select_drivers(drivers):
                 page -= 1
             else:
                 print("First page")
+        elif idx.lower() == 'r' and refresh:
+            return DoRefresh
         elif idx.lower() == 'c':
             return
+        else:
+            print("Invalid selection")
 
+def select_drivers(drivers):
+    """ Display pages of drivers to be loaded.
+
+        :param drivers: Drivers to be selected by the user
+        :type drivers:  list of Driver objects
+        :returns:       None
+    """
+    if not drivers:
+        return
+
+    selection_menu(drivers, "Select drivers to install",
+                   lambda driver: driver.source)
 
 def process_dd(dd_path):
     """ Handle installing modules, firmware, enhancements from the dd repo
@@ -471,7 +544,7 @@ def process_dd(dd_path):
         :returns:       None
     """
     drivers = dd_list(dd_path)
-    log.debug("drivers = %s" % " ".join([d.rpm for d in drivers]))
+    log.debug("drivers = %s", " ".join([d.rpm for d in drivers]))
 
     # If interactive mode or rhdd3.rules pass flag to deselect by default?
     if os.path.exists(dd_path+"/rhdd3.rules") or is_interactive():
@@ -482,19 +555,19 @@ def process_dd(dd_path):
         map(lambda d: setattr(d, "selected", True), drivers)
 
     # Copy the repository for Anaconda to use during install
-    if os.path.isdir(dd_path+"/repodata"):
-        copy_repo(dd_path, "/updates/run/install/DD-")
+    copy_repo(dd_path, "/updates/run/install/DD-")
+
+    extracted = []
 
     for driver in filter(lambda d: d.selected, drivers):
-        dd_extract(driver, "/updates/")
+        extracted += dd_extract(driver, "/updates/")
 
         # Write the package names for all modules and firmware for Anaconda
-        if os.path.isdir(dd_path+"/repodata") \
-           and ("modules" in driver.flags or "firmwares" in driver.flags):
+        if "modules" in driver.flags or "firmwares" in driver.flags:
             with open("/run/install/dd_packages", "a") as f:
                 f.write("%s\n" % driver.name)
 
-    reload_modules()
+    reload_modules(extracted)
 
 
 def select_dd(device):
@@ -512,7 +585,7 @@ def select_dd(device):
 
     dd_repos = find_dd(mnt)
     for repo in dd_repos:
-        log.info("Processing DD repo %s on %s" % (repo, device))
+        log.info("Processing DD repo %s on %s", repo, device)
         process_dd(repo)
 
     # TODO - does this need to be done before module reload?
@@ -528,48 +601,204 @@ def network_driver(dd_path):
     """
     skip_dds = set(oemdrv_list())
 
-    log.info("Processing Network Drivers from %s" % dd_path)
+    log.info("Processing Network Drivers from %s", dd_path)
+    isos = glob.glob(os.path.join(dd_path, "*.iso"))
+    for iso in isos:
+        select_dd(iso)
+
     process_dd(dd_path)
 
     # TODO: May need to add new drivers to /tmp/dd_modules to prevent them from being unloaded
 
-    # Scan for new OEMDRV devices
-    dd_scan(skip_dds)
+    # Scan for new OEMDRV devices and ignore dd_args
+    dd_scan(skip_dds, scan_dd_args=False, skip_device_menu=True)
 
+class DeviceInfo(object):
+    def __init__(self, **kwargs):
+        self.device = kwargs.get("device", None)
+        self.label = kwargs.get("label", None)
+        self.uuid = kwargs.get("uuid", None)
+        self.fs_type = kwargs.get("fs_type", None)
 
-def dd_scan(skip_dds=None):
+    def __str__(self):
+        return "%-10s %-20s %-15s %s" % (self.device or "", self.fs_type or "",
+                                        self.label or "", self.uuid or "")
+
+def parse_blkid(line):
+    """ Parse a line of output from blkid
+
+        :param line: line of output from blkid
+        :param type: string
+        :returns: {} or dict of NAME=VALUE pairs including "device"
+        :rtype: dict
+
+        blkid output cannot be trusted. labels may be missing or in a different
+        order so we parse what we get and return a dict with their values.
+    """
+    import shlex
+
+    device = {"device":None, "label":None, "uuid":None, "fs_type":None}
+    fields = shlex.split(line)
+    if len(fields) < 2 or not fields[0].startswith("/dev/"):
+        return {}
+
+    # device is in [0] and the remainder are NAME=VALUE with possible spaces
+    # Use the sda1 part of device "/dev/sda1:"
+    device['device'] = fields[0][5:-1]
+    for f in fields[1:]:
+        if "=" in f:
+            (key, val) = f.split("=", 1)
+            if key == "TYPE":
+                key = "fs_type"
+            device[key.lower()] = val
+    return device
+
+def select_iso():
+    """ Let user select device and DD ISO on it.
+
+        :returns: path to the selected ISO file and mountpoint to be unmounted
+                  or (None, None) if no ISO file is selected
+        :rtype: (str, str)
+    """
+    header = "      %-10s %-20s %-15s %s" % ("DEVICE", "TYPE", "LABEL", "UUID")
+
+    iso_dev = DoRefresh
+    while iso_dev is DoRefresh:
+        try:
+            _ret, out = run_cmd(["blkid"])
+        except (OSError, RunCmdError):
+            return (None, None)
+
+        devices = []
+        for line in out.splitlines():
+            dev = parse_blkid(line)
+            if dev:
+                devices.append(DeviceInfo(**dev))
+
+        iso_dev = selection_menu(devices,
+                                 "Driver disk device selection\n" + header,
+                                 str, multi_choice=False, refresh=True)
+
+    if not iso_dev:
+        return (None, None)
+
+    mnt = "/media/DD-search"
+    if not os.path.isdir(mnt):
+        os.makedirs(mnt)
+    if not mount_device("/dev/" + iso_dev.device, mnt):
+        print("===Cannot mount the chosen device!===\n")
+        return select_iso()
+
+    # is this device a Driver Update Disc?
+    if find_dd(mnt):
+        umount(mnt) # BLUH. unmount it first so select_dd can mount it OK
+        return ("/dev/" + iso_dev.device, None)
+
+    # maybe it's a device containing multiple DUDs - let the user pick one
+    isos = list()
+    for dir_path, _dirs, files in os.walk(mnt):
+        # trim the mount point path
+        rel_dir = dir_path[len(mnt):]
+
+        # and the starting "/" (if any)
+        if rel_dir.startswith("/"):
+            rel_dir = rel_dir[1:]
+
+        isos += (os.path.join(rel_dir, iso_file)
+                 for iso_file in files if iso_file.endswith(".iso"))
+
+    if not isos:
+        print("===No ISO files found on %s!===\n" % iso_dev.device)
+        umount(mnt)
+        return select_iso()
+    else:
+        # mount writes out some mounting information, add blank line
+        print
+
+    # let user choose the ISO file
+    dd_iso = selection_menu(isos, "Choose driver disk ISO file",
+                            lambda iso_file: iso_file,
+                            multi_choice=False)
+
+    if not dd_iso:
+        return (None, None)
+
+    return (os.path.join(mnt, dd_iso), "/media/DD-search")
+
+def dd_scan(skip_dds=None, scan_dd_args=True, skip_device_menu=False):
     """ Scan the system for OEMDRV devices and and specified by dd=/dev/<device>
 
-        :param skip_dds: devices to skip when checking for OEMDRV label
-        :type skip_dds:  set()
-        :returns:        None
+        :param skip_dds:     devices to skip when checking for OEMDRV label
+        :type skip_dds:      set()
+        :param scan_dd_args: Scan devices passed in /tmp/dd_args or dd_args_ks
+        :type scan_dd_args:  bool
+        :returns:            None
     """
-    if skip_dds:
-        dd_finished = skip_dds
-        dd_todo = set(oemdrv_list()).difference(dd_finished)
-        if dd_todo:
-            log.info("Found new OEMDRV device(s) - %s" % ", ".join(dd_todo))
-    else:
-        dd_finished = set()
-        dd_todo = set(oemdrv_list())
+    dd_todo = set(oemdrv_list())
 
+    if skip_dds is None:
+        skip_dds = set()
+
+    if skip_dds:
+        dd_todo.difference_update(skip_dds)
+        if dd_todo:
+            log.info("Found new OEMDRV device(s) - %s", ", ".join(dd_todo))
+
+    if scan_dd_args:
         # Add the user specified devices
         dd_devs = get_dd_args()
         dd_devs = [dev for dev in dd_devs if dev not in ("dd", "inst.dd")]
         dd_todo.update(dd_devs)
-        log.info("Checking devices %s" % ", ".join(dd_todo))
+        log.info("Checking devices %s", ", ".join(dd_todo))
 
     # Process each Driver Disk, checking for new disks after each one
+    dd_finished = dd_load(dd_todo, skip_dds=skip_dds)
+    skip_dds.update(dd_finished)
+
+    # Skip interactive selection of an iso if OEMDRV was found
+    if skip_dds or skip_device_menu or not is_interactive():
+        return
+
+    # Handle interactive driver selection
+    mount_point = None
+    while True:
+        iso, mount_point = select_iso()
+        if iso:
+            if iso in skip_dds:
+                skip_dds.remove(iso)
+            dd_load(set([iso]), skip_dds=skip_dds)
+            # NOTE: we intentionally do not add the newly-loaded device to
+            # skip_dds - the user might (e.g.) swap DVDs and use /dev/sr0 twice
+            umount(mount_point)
+        else:
+            break
+
+def dd_load(dd_todo, skip_dds=None):
+    """ Process each Driver Disk, checking for new disks after each one.
+        Return the set of devices that loaded stuff from.
+
+        :param dd_todo:     devices to load drivers from
+        :type dd_todo:      set
+        :param skip_dds:    devices to skip when checking for OEMDRV label
+        :type skip_dds:     set
+        :returns:           set of devices that have been loaded
+    """
+    if skip_dds is None:
+        skip_dds = set()
+
+    dd_finished = set()
     while dd_todo:
         device = dd_todo.pop()
-        log.info("Checking device %s" % device)
+        if device in skip_dds:
+            continue
+        log.info("Checking device %s", device)
         select_dd(device)
-        dd_finished.update([device])
+        dd_finished.add(device)
         new_oemdrv = set(oemdrv_list()).difference(dd_finished, dd_todo)
         if new_oemdrv:
-            log.info("Found new OEMDRV device(s) - %s" % ", ".join(new_oemdrv))
+            log.info("Found new OEMDRV device(s) - %s", ", ".join(new_oemdrv))
         dd_todo.update(new_oemdrv)
-
+    return dd_finished
 
 if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
@@ -582,7 +811,20 @@ if __name__ == '__main__':
     log.addHandler(handler)
 
     if len(sys.argv) > 1:
+        # Network driver source
         network_driver(sys.argv[1])
+    elif os.path.exists("/tmp/DD-net/"):
+        network_driver("/tmp/DD-net/")
+    elif os.path.exists("/tmp/dd_args_ks"):
+        # Kickstart driverdisk command, skip existing OEMDRV devices and
+        # process cmdline dd entries. This will process any OEMDRV that
+        # appear after loading the other drivers.
+        skip_devices = set(oemdrv_list())
+        dd_scan(skip_devices, skip_device_menu=True)
     else:
+        # Process /tmp/dd_args and OEMDRV devices
+        # Show device selection menu when inst.dd passed and no OEMDRV devices
         dd_scan()
+
+    sys.exit(0)
 

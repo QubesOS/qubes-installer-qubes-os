@@ -17,12 +17,15 @@
 #
 # Author: Martin Sivak <msivak@redhat.com>
 
-SUBDIRS = command-stubs icons liveinst pixmaps systemd post-scripts
+SUBDIRS = command-stubs liveinst systemd post-scripts help
 
 CLEANFILES = *~
 
 dist_pkgdata_DATA          = interactive-defaults.ks \
 			     tmux.conf \
 			     anaconda-gtk.css
+
+helpdir               = $(datadir)/$(PACKAGE_NAME)
+dist_help_DATA        = anaconda_options.txt
 
 MAINTAINERCLEANFILES = Makefile.in

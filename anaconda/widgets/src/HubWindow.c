@@ -17,7 +17,7 @@
  * Author: Chris Lumens <clumens@redhat.com>
  */
 
-#include "BaseWindow.h"
+#include "BaseStandalone.h"
 #include "HubWindow.h"
 #include "intl.h"
 
@@ -26,12 +26,11 @@
  * @title: AnacondaHubWindow
  * @short_description: Window for displaying a Hub
  *
- * A #AnacondaHubWindow is a top-level window that displays a hub on the
- * entire screen.  A Hub allows selection of multiple configuration spokes
- * from a single interface, as well as a place to display current configuration
- * selections.
+ * A #AnacondaHubWindow is a widget that displays a hub on the screen.  A Hub
+ * allows selection of multiple configuration spokes from a single interface,
+ * as well as a place to display current configuration selections.
  *
- * The window consists of three areas:
+ * The AnacondaHubWindow consists of three areas:
  *
  * - A navigation area in the top of the screen, inherited from #AnacondaBaseWindow.
  *
@@ -45,26 +44,44 @@
  * <refsect2 id="AnacondaHubWindow-BUILDER-UI"><title>AnacondaHubWindow as GtkBuildable</title>
  * <para>
  * The AnacondaHubWindow implementation of the #GtkBuildable interface exposes
- * the @action_area and @scrolled_window as internal children with the names
- * "action_area" and "scrolled_window".  action_area, in this case, is largely
- * there to give a box to contain both the scrolled_window and a #GtkButtonBox.
+ * the @nav_area, @action_area and @scrolled_window as internal children with the names
+ * "nav_area", "action_area" and "scrolled_window".  action_area, in this case,
+ * is largely there to give a box to contain both the scrolled_window and a
+ * #GtkButtonBox.
  * </para>
  * <example>
  * <title>A <structname>AnacondaHubWindow</structname> UI definition fragment.</title>
  * <programlisting><![CDATA[
  * <object class="AnacondaHubWindow" id="hub1">
- *     <child internal-child="action_area">
- *         <object class="GtkVBox" id="vbox1">
- *             <child internal-child="scrolled_window">
- *                 <object class="GtkScrolledWindow" id="window1">
- *                     <child>...</child>
+ *     <child internal-child="main_box">
+ *         <object class="GtkBox" id="main_box1">
+ *             <child internal-child="nav_box">
+ *                 <object class="GtkEventBox" id="nav_box1">
+ *                     <child internal-child="nav_area">
+ *                         <object class="GtkGrid" id="nav_area1">
+ *                             <child>...</child>
+ *                             <child>...</child>
+ *                         </object>
+ *                     </child>
  *                 </object>
  *             </child>
- *             <child>
- *                 <object class="GtkHButtonBox" id="buttonbox1">
- *                     <child>...</child>
+ *             <child internal-child="alignment">
+ *                 <object class="GtkAlignment" id="alignment1">
+ *                     <child internal-child="action_area">
+ *                         <object class="GtkBox" id="action_area1">
+ *                             <child internal-child="scrolled_window">
+ *                                 <object class="GtkScrolledWindow" id="scrolled_window1">
+ *                                     <child>...</child>
+ *                                 </object>
+ *                             </child>
+ *                         </object>
+ *                     </child>
  *                 </object>
  *             </child>
+ *         </object>
+ *     <child>
+ *         <object class="GtkButtonBox" id="buttonbox1">
+ *             <child>...</child>
  *         </object>
  *     </child>
  * </object>
@@ -79,7 +96,7 @@ struct _AnacondaHubWindowPrivate {
 
 static void anaconda_hub_window_buildable_init(GtkBuildableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE(AnacondaHubWindow, anaconda_hub_window, ANACONDA_TYPE_BASE_WINDOW,
+G_DEFINE_TYPE_WITH_CODE(AnacondaHubWindow, anaconda_hub_window, ANACONDA_TYPE_BASE_STANDALONE,
                         G_IMPLEMENT_INTERFACE(GTK_TYPE_BUILDABLE, anaconda_hub_window_buildable_init))
 
 static void anaconda_hub_window_class_init(AnacondaHubWindowClass *klass) {
@@ -113,8 +130,10 @@ static void anaconda_hub_window_init(AnacondaHubWindow *win) {
     gtk_box_pack_start(GTK_BOX(action_area), win->priv->scrolled_window, TRUE, TRUE, 0);
 
     /* The hub has different alignment requirements than a spoke. */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_alignment_set(GTK_ALIGNMENT(anaconda_base_window_get_alignment(ANACONDA_BASE_WINDOW(win))),
                       0.5, 0.0, 0.5, 1.0);
+G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**

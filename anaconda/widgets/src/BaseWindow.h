@@ -42,7 +42,7 @@ typedef struct _AnacondaBaseWindowPrivate AnacondaBaseWindowPrivate;
  * be directly accessed.
  */
 struct _AnacondaBaseWindow {
-    GtkWindow                  parent;
+    GtkBin                     parent;
 
     /*< private >*/
     AnacondaBaseWindowPrivate *priv;
@@ -53,14 +53,17 @@ struct _AnacondaBaseWindow {
  * @parent_class: The object class structure needs to be the first element in
  *                the widget class structure in order for the class mechanism
  *                to work correctly.  This allows a AnacondaBaseWindowClass
- *                pointer to be cast to a #GtkWindow pointer.
+ *                pointer to be cast to a #GtkBin pointer.
  * @info_bar_clicked : Function pointer called when the #AnacondaBaseWindow::info-bar-clicked
  *                     signal is emitted.
+ * @help_button_clicked: Function pointer called when the #AnacondaSpokeWindow::help-button-clicked
+ *                       signal is emitted.
  */
 struct _AnacondaBaseWindowClass {
-    GtkWindowClass parent_class;
+    GtkBinClass parent_class;
 
     void (* info_bar_clicked) (AnacondaBaseWindow *window);
+    void (* help_button_clicked) (AnacondaBaseWindow *window);
 };
 
 GType       anaconda_base_window_get_type (void);
@@ -81,6 +84,7 @@ GtkWidget  *anaconda_base_window_get_alignment     (AnacondaBaseWindow *win);
 GtkWidget  *anaconda_base_window_get_main_box      (AnacondaBaseWindow *win);
 GtkWidget  *anaconda_base_window_get_nav_area      (AnacondaBaseWindow *win);
 GtkWidget  *anaconda_base_window_get_nav_area_background_window (AnacondaBaseWindow *win);
+GtkWidget  *anaconda_base_window_get_help_button (AnacondaBaseWindow *win);
 
 G_END_DECLS
 

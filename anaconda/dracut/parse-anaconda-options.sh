@@ -108,7 +108,7 @@ warn_renamed_arg "kssendsn" "inst.ks.sendsn"
 
 # Ignore self-signed SSL certs
 warn_renamed_arg "noverifyssl" "inst.noverifyssl"
-if $(getargbool 0 noverifyssl inst.noverifyssl); then
+if getargbool 0 noverifyssl inst.noverifyssl; then
     # Tell dracut to use curl --insecure
     echo "rd.noverifyssl" >> /etc/cmdline.d/75-anaconda-options.conf
 fi
@@ -130,9 +130,6 @@ fi
 
 # for vnc bring network up in initramfs so that cmdline configuration is used
 getargbool 0 vnc inst.vnc && warn "anaconda requiring network for vnc" && set_neednet
-
-# make sure we get ifcfg for every interface that comes up
-echo 'save_netinfo $netif' > $hookdir/initqueue/online/anaconda-ifcfg.sh
 
 # Driver Update Disk
 warn_renamed_arg "dd" "inst.dd"

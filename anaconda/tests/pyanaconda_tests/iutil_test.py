@@ -174,33 +174,6 @@ class RunProgramTests(unittest.TestCase):
         # at least check if a bool is returned
         self.assertIsInstance(iutil.isConsoleOnVirtualTerminal(), bool)
 
-    def strip_markup_test(self):
-        """Test strip_markup."""
-
-        # list of tuples representing a markup and its correct parsing
-        markups = [
-            ("", ""),
-            ("a", "a"),
-            ("č", "č"),
-            ("<č>", ""),
-            ("<a>", ""),
-            ("<a><a>", ""),
-            ("<a></a>", ""),
-            ("<a>abc</a>", "abc"),
-            ("<abc", ""),  # unclosed tag
-            ("a>bc", "a>bc"),  # not a valid tag
-            ("<i><b>bold</b></i>", "bold"),  # nesting
-            ("<p><b>bold</b> <i>italic</i></p>", "bold italic"),
-            ("  <a>text</a>", "  text"),
-            (" <a> </a> ", "   "),
-            ('<span color="blue">text</span>', 'text'),
-            ("<<<<<<<<<<<<<<<", ""),
-        ]
-
-        # check if markup is parsed properly
-        for markup, output in markups:
-            self.assertEqual(iutil.strip_markup(markup), output)
-
     def parse_nfs_url_test(self):
         """Test parseNfsUrl."""
 
@@ -241,7 +214,7 @@ class RunProgramTests(unittest.TestCase):
     def vt_activate_test(self):
         """Test vtActivate."""
 
-        # pylint: disable-msg=E1101
+        # pylint: disable=no-member
 
         def raise_os_error(*args, **kwargs):
             raise OSError
@@ -255,7 +228,7 @@ class RunProgramTests(unittest.TestCase):
     def get_deep_attr_test(self):
         """Test getdeepattr."""
 
-        # pylint: disable-msg=W0201
+        # pylint: disable=attribute-defined-outside-init
 
         class O(object):
             pass
@@ -280,8 +253,8 @@ class RunProgramTests(unittest.TestCase):
     def set_deep_attr_test(self):
         """Test setdeepattr."""
 
-        # pylint: disable-msg=W0201
-        # pylint: disable-msg=E1101
+        # pylint: disable=attribute-defined-outside-init
+        # pylint: disable=no-member
 
         class O(object):
             pass
@@ -353,7 +326,7 @@ class RunProgramTests(unittest.TestCase):
     def cmp_obj_attrs_test(self):
         """Test cmp_obj_attrs."""
 
-        # pylint: disable-msg=W0201
+        # pylint: disable=attribute-defined-outside-init
 
         class O(object):
             pass
@@ -439,3 +412,29 @@ class RunProgramTests(unittest.TestCase):
         _out = "heiz\xc3\xb6lr\xc3\xbccksto\xc3\x9fabd\xc3\xa4mpfung"
         self.assertEqual(iutil.lowerASCII("Heizölrückstoßabdämpfung"), _out)
 
+    def have_word_match_test(self):
+        """Test have_word_match."""
+
+        self.assertTrue(iutil.have_word_match("word1 word2", "word1 word2 word3"))
+        self.assertTrue(iutil.have_word_match("word1 word2", "word2 word1 word3"))
+        self.assertTrue(iutil.have_word_match("word2 word1", "word3 word1 word2"))
+        self.assertTrue(iutil.have_word_match("word1", "word1 word2"))
+        self.assertTrue(iutil.have_word_match("word1 word2", "word2word1 word3"))
+        self.assertTrue(iutil.have_word_match("word2 word1", "word3 word1word2"))
+        self.assertTrue(iutil.have_word_match("word1", "word1word2"))
+        self.assertTrue(iutil.have_word_match("", "word1"))
+
+        self.assertFalse(iutil.have_word_match("word3 word1", "word1"))
+        self.assertFalse(iutil.have_word_match("word1 word3", "word1 word2"))
+        self.assertFalse(iutil.have_word_match("word3 word2", "word1 word2"))
+        self.assertFalse(iutil.have_word_match("word1word2", "word1 word2 word3"))
+        self.assertFalse(iutil.have_word_match("word1", ""))
+        self.assertFalse(iutil.have_word_match("word1", None))
+        self.assertFalse(iutil.have_word_match(None, "word1"))
+        self.assertFalse(iutil.have_word_match("", None))
+        self.assertFalse(iutil.have_word_match(None, ""))
+        self.assertFalse(iutil.have_word_match(None, None))
+
+        # Compare unicode and str and make sure nothing crashes
+        self.assertTrue(iutil.have_word_match("fête", u"fête champêtre"))
+        self.assertTrue(iutil.have_word_match(u"fête", "fête champêtre"))

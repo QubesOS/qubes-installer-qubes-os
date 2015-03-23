@@ -88,6 +88,14 @@ the space character (' ').
 This specifies the location to fetch only the installer runtime image;
 packages will be ignored. Otherwise the same as <<inst.repo,`inst.repo`>>.
 
+=== inst.dd ===
+This specifies the location for driver rpms. May be specified multiple times.
+Locations may be specified using any of the formats allowed for
+<<inst.repo,`inst.repo`>>.
+
+=== inst.multilib ===
+This sets yum's multilib_policy to "all" (as opposed to "best").
+
 [[kickstart]]
 Kickstart
 ---------
@@ -99,12 +107,14 @@ Locations may be specified using any of the formats allowed for
 
 For any format the `<path>` component defaults to `/ks.cfg` if it is omitted.
 
+For NFS kickstarts, if the `<path>` ends in `/`, `<ip>-kickstart` is added.
+
 If `inst.ks` is used without a value, the installer will look for
 `nfs:<next_server>:/<filename>`:
 
 * `<next_server>` is the DHCP "next-server" option, or the IP of the DHCP server itself,
 * `<filename>` is the DHCP "filename" option, or `/kickstart/`, and
-* if the filename given ends in `/`, `<ip>-kickstart` is added
+* if the filename given ends in `/`, `<ip>-kickstart` is added (as above)
 * example:
 ** DHCP server: `192.168.122.1`
 ** client address: `192.168.122.100`
@@ -230,6 +240,11 @@ Run the installer in graphical mode. This is the default.
 Run the installer using a limited text-based UI. Unless you're using a
 kickstart file this probably isn't a good idea; you should use VNC instead.
 
+=== inst.resolution ===
+Specify screen size for the installer. Use format nxm, where n is the
+number of horizontal pixels, m the number of vertical pixels. The lowest
+supported resolution is 800x600.
+
 [[inst.vnc]]
 === inst.vnc ===
 Run the installer GUI in a VNC session. You will need a VNC client application
@@ -271,9 +286,6 @@ the `sshpw` kickstart command.
 Debugging and Troubleshooting
 -----------------------------
 
-=== inst.mediacheck ===
-Verify the installer media before starting the install.
-
 === inst.rescue ===
 Run the rescue environment. This is useful for trying to diagnose and fix
 broken systems.
@@ -303,6 +315,8 @@ Forward logs through the named virtio port (a character device at
 `/dev/virtio-ports/<name>`). A port named `org.fedoraproject.anaconda.log.0`
 will be used by default, if found.
 
+=== inst.zram ===
+Forces/disables (on/off) usage of zRAM swap for the installation process.
 
 Deprecated Options
 ------------------
@@ -376,6 +390,9 @@ Who needs to force half-duplex 10-base-T anymore?
 This was used to debug `loader`, so it has been removed. There are plenty of
 options for debugging dracut-based initramfs - see the {dracutdebug}.
 
+=== inst.mediacheck ===
+Use the dracut option rd.live.check instead.
+
 === ks=floppy ===
 We no longer support floppy drives. Try `inst.ks=hd:<device>` instead.
 
@@ -387,8 +404,10 @@ All this option actually did was set `TERM=vt100`. The default `TERM` setting
 works fine these days, so this was no longer necessary.
 
 === noipv6  ===
-ipv6 is built into the kernel and can't be removed. You should be able to
-disable it with `ipv6.disable`, though.
+ipv6 is built into the kernel and can't be removed by anaconda.
+
+You can disable ipv6 with `ipv6.disable=1`. This setting will be carried onto
+the installed system.
 
 === upgradeany ===
 Anaconda doesn't handle upgrades anymore.

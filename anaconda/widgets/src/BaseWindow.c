@@ -18,6 +18,7 @@
  */
 
 #include <libintl.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,16 +26,18 @@
 #include "BaseWindow.h"
 #include "intl.h"
 
+ #include <atk/atk.h>
+
 /**
  * SECTION: BaseWindow
  * @title: AnacondaBaseWindow
  * @short_description: Top-level, non-resizeable window
  *
- * A #AnacondaBaseWindow is a top-level, non-resizeable window that contains
- * other widgets and serves as the base class from which all other specialized
- * Anaconda windows are derived.  It is undecorated.
+ * A #AnacondaBaseWindow is a widget that contains other widgets and serves as
+ * the base class from which all other specialized Anaconda windows are
+ * derived.
  *
- * The window consists of two areas:
+ * The AnacondaBaseWindow consists of two areas:
  *
  * - A navigation area in the top of the screen, consisting of some basic
  *   information about what is being displayed and what is being installed.
@@ -45,22 +48,41 @@
  * <refsect2 id="AnacondaBaseWindow-BUILDER-UI"><title>AnacondaBaseWindow as GtkBuildable</title>
  * <para>
  * The AnacondaBaseWindow implementation of the #GtkBuildable interface exposes
- * the @action_area as an internal child with the name "action_area".
+ * the @nav_area as an internal child with the name "nav_area" and the
+ * @action_area as an internal child with the name "action_area".
  * </para>
  * <example>
  * <title>A <structname>AnacondaBaseWindow</structname> UI definition fragment.</title>
  * <programlisting><![CDATA[
  * <object class="AnacondaBaseWindow" id="window1">
- *     <child internal-child="action_area">
- *         <object class="GtkVBox" id="vbox1">
- *             <child>
- *                 <object class="GtkLabel" id="label1">
- *                     <property name="label" translatable="yes">THIS IS ONE LABEL</property>
+ *     <child internal-child="main_box">
+ *         <object class="GtkBox" id="main_box1">
+ *             <child internal-child="nav_box">
+ *                 <object class="GtkEventBox" id="nav_box1">
+ *                     <child internal-child="nav_area">
+ *                         <object class="GtkGrid" id="nav_area1">
+ *                             <child>...</child>
+ *                             <child>...</child>
+ *                         </object>
+ *                     </child>
  *                 </object>
  *             </child>
- *             <child>
- *                 <object class="GtkLabel" id="label2">
- *                     <property name="label" translatable="yes">THIS IS ANOTHER LABEL</property>
+ *             <child internal-child="alignment">
+ *                 <object class="GtkAlignment" id="alignment1">
+ *                     <child internal-child="action_area">
+ *                         <object class="GtkBox" id="action_area1">
+ *                             <child>
+ *                                 <object class="GtkLabel" id="label1">
+ *                                     <property name="label" translatable="yes">THIS IS ONE LABEL</property>
+ *                                 </object>
+ *                             </child>
+ *                             <child>
+ *                                 <object class="GtkLabel" id="label2">
+ *                                     <property name="label" translatable="yes">THIS IS ANOTHER LABEL</property>
+ *                                 </object>
+ *                             </child>
+ *                         </object>
+ *                     </child>
  *                 </object>
  *             </child>
  *         </object>
@@ -73,6 +95,7 @@
 
 enum {
     SIGNAL_INFO_BAR_CLICKED,
+    SIGNAL_HELP_BUTTON_CLICKED,
     LAST_SIGNAL
 };
 
@@ -87,6 +110,7 @@ enum {
 #define DEFAULT_WINDOW_NAME   N_("SPOKE NAME")
 #define DEFAULT_BETA          N_("PRE-RELEASE / TESTING")
 #define LAYOUT_INDICATOR_LABEL_WIDTH 10
+#define HELP_BUTTON_LABEL N_("Help!")
 
 struct _AnacondaBaseWindowPrivate {
     gboolean    is_beta, info_shown;
@@ -95,6 +119,7 @@ struct _AnacondaBaseWindowPrivate {
     GtkWidget  *nav_box, *nav_area, *action_area;
     GtkWidget  *name_label, *distro_label, *beta_label;
     GtkWidget  *layout_indicator;
+    GtkWidget  *help_button;
 
     /* Untranslated versions of various things. */
     gchar *orig_name, *orig_distro, *orig_beta;
@@ -106,8 +131,9 @@ static void anaconda_base_window_buildable_init(GtkBuildableIface *iface);
 static void format_beta_label(AnacondaBaseWindow *window, const char *markup);
 
 static gboolean anaconda_base_window_info_bar_clicked(GtkWidget *widget, GdkEvent *event, AnacondaBaseWindow *win);
+static void anaconda_base_window_help_button_clicked(GtkButton *button, AnacondaBaseWindow *win);
 
-G_DEFINE_TYPE_WITH_CODE(AnacondaBaseWindow, anaconda_base_window, GTK_TYPE_WINDOW,
+G_DEFINE_TYPE_WITH_CODE(AnacondaBaseWindow, anaconda_base_window, GTK_TYPE_BIN,
                         G_IMPLEMENT_INTERFACE(GTK_TYPE_BUILDABLE, anaconda_base_window_buildable_init))
 
 static void anaconda_base_window_class_init(AnacondaBaseWindowClass *klass) {
@@ -151,6 +177,7 @@ static void anaconda_base_window_class_init(AnacondaBaseWindowClass *klass) {
                                                         G_PARAM_READWRITE));
 
     klass->info_bar_clicked = NULL;
+    klass->help_button_clicked = NULL;
 
     /**
      * AnacondaBaseWindow::info-bar-clicked:
@@ -170,6 +197,24 @@ static void anaconda_base_window_class_init(AnacondaBaseWindowClass *klass) {
                                                            g_cclosure_marshal_VOID__VOID,
                                                            G_TYPE_NONE, 0);
 
+    /**
+     * AnacondaBaseWindow::help-button-clicked:
+     * @window: the window that received the signal
+     *
+     * Emitted when the help button in the right corner has been activated
+     * (pressed and released). This is commonly used to open the help view with
+     * help content for the given spoke or hub
+     *
+     * Since: 3.1
+     */
+    window_signals[SIGNAL_HELP_BUTTON_CLICKED] = g_signal_new("help-button-clicked",
+                                                              G_TYPE_FROM_CLASS(object_class),
+                                                              G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
+                                                              G_STRUCT_OFFSET(AnacondaBaseWindowClass, help_button_clicked),
+                                                              NULL, NULL,
+                                                              g_cclosure_marshal_VOID__VOID,
+                                                              G_TYPE_NONE, 0);
+
     g_type_class_add_private(object_class, sizeof(AnacondaBaseWindowPrivate));
 }
 
@@ -188,6 +233,7 @@ GtkWidget *anaconda_base_window_new() {
 
 static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     char *markup;
+    AtkObject *atk;
 
     win->priv = G_TYPE_INSTANCE_GET_PRIVATE(win,
                                             ANACONDA_TYPE_BASE_WINDOW,
@@ -203,9 +249,7 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     win->priv->orig_distro = NULL;
     win->priv->orig_beta = NULL;
 
-    /* Set properties on the parent (Gtk.Window) class. */
-    gtk_window_set_decorated(GTK_WINDOW(win), FALSE);
-    gtk_window_maximize(GTK_WINDOW(win));
+    /* Set properties on the parent (Gtk.Bin) class. */
     gtk_widget_set_hexpand(GTK_WIDGET(win), TRUE);
     gtk_widget_set_vexpand(GTK_WIDGET(win), TRUE);
     gtk_container_set_border_width(GTK_CONTAINER(win), 0);
@@ -222,15 +266,16 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
      */
 
     win->priv->nav_box = gtk_event_box_new();
-    gtk_widget_set_app_paintable(win->priv->nav_box, TRUE);
+    gtk_widget_set_name(win->priv->nav_box, "nav-box");
     gtk_box_pack_start(GTK_BOX(win->priv->main_box), win->priv->nav_box, FALSE, FALSE, 0);
 
     win->priv->nav_area = gtk_grid_new();
     gtk_grid_set_row_homogeneous(GTK_GRID(win->priv->nav_area), FALSE);
     gtk_grid_set_column_homogeneous(GTK_GRID(win->priv->nav_area), FALSE);
-    gtk_widget_set_margin_left(win->priv->nav_area, 6);
-    gtk_widget_set_margin_right(win->priv->nav_area, 6);
-    gtk_widget_set_margin_top(win->priv->nav_area, 6);
+    gtk_widget_set_margin_start(win->priv->nav_area, 18);
+    gtk_widget_set_margin_end(win->priv->nav_area, 18);
+    gtk_widget_set_margin_top(win->priv->nav_area, 12);
+    gtk_widget_set_margin_bottom(win->priv->nav_area, 6);
 
     gtk_container_add(GTK_CONTAINER(win->priv->nav_box), win->priv->nav_area);
 
@@ -238,7 +283,13 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
      * to control the amount of space the Window's content takes up on the
      * screen.
      */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    /*
+     * GtkAlignment is deprecated, but getting rid of it would have severe downstream
+     * repurcusions, so put that off for as long as we can.
+     */
     win->priv->alignment = gtk_alignment_new(0.5, 0.0, 1.0, 1.0);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_box_pack_start(GTK_BOX(win->priv->main_box), win->priv->alignment, TRUE, TRUE, 0);
 
     /* The action_area goes inside the alignment and represents the main
@@ -256,7 +307,13 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", _(DEFAULT_WINDOW_NAME));
     gtk_label_set_markup(GTK_LABEL(win->priv->name_label), markup);
     g_free(markup);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+    /*
+     * GtkMisc is deprecated, but if you don't set the GtkMisc properties then they
+     * still default to everything being centered. A+ work everyone.
+     */
     gtk_misc_set_alignment(GTK_MISC(win->priv->name_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_hexpand(win->priv->name_label, TRUE);
 
     win->priv->orig_name = g_strdup(DEFAULT_WINDOW_NAME);
@@ -266,14 +323,18 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     markup = g_markup_printf_escaped("<span size='large'>%s</span>", _(DEFAULT_DISTRIBUTION));
     gtk_label_set_markup(GTK_LABEL(win->priv->distro_label), markup);
     g_free(markup);
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(win->priv->distro_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
     win->priv->orig_distro = g_strdup(DEFAULT_DISTRIBUTION);
 
     /* Create the beta label. */
     win->priv->beta_label = gtk_label_new(NULL);
     format_beta_label(win, _(DEFAULT_BETA));
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(win->priv->beta_label), 0, 0);
+G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_no_show_all(win->priv->beta_label, TRUE);
 
     win->priv->orig_beta = g_strdup(DEFAULT_BETA);
@@ -282,16 +343,34 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     win->priv->layout_indicator = anaconda_layout_indicator_new();
     anaconda_layout_indicator_set_label_width(ANACONDA_LAYOUT_INDICATOR(win->priv->layout_indicator),
                                               LAYOUT_INDICATOR_LABEL_WIDTH);
+    gtk_widget_set_name(win->priv->layout_indicator, "layout-indicator");
     gtk_widget_set_halign(win->priv->layout_indicator, GTK_ALIGN_START);
     gtk_widget_set_hexpand(win->priv->layout_indicator, FALSE);
     gtk_widget_set_margin_top(win->priv->layout_indicator, 6);
     gtk_widget_set_margin_bottom(win->priv->layout_indicator, 6);
 
+    /* Create the help button. */
+    win->priv->help_button = gtk_button_new_with_label(HELP_BUTTON_LABEL);
+    gtk_widget_set_halign(win->priv->help_button, GTK_ALIGN_END);
+    gtk_widget_set_vexpand(win->priv->help_button, FALSE);
+    gtk_widget_set_valign(win->priv->help_button, GTK_ALIGN_END);
+    gtk_widget_set_margin_bottom(win->priv->help_button, 6);
+
+    atk = gtk_widget_get_accessible(win->priv->help_button);
+    atk_object_set_name(atk, HELP_BUTTON_LABEL);
+
+    /* Hook up some signals for that button.  The signal handlers here will
+     * just raise our own custom signals for the whole window.
+     */
+    g_signal_connect(win->priv->help_button, "clicked",
+                     G_CALLBACK(anaconda_base_window_help_button_clicked), win);
+
     /* Add everything to the nav area. */
     gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->name_label, 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->distro_label, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->distro_label, 1, 0, 2, 1);
     gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->beta_label, 1, 1, 1, 1);
     gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->layout_indicator, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(win->priv->nav_area), win->priv->help_button, 2, 1, 1, 2);
 }
 
 static void anaconda_base_window_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec) {
@@ -407,6 +486,20 @@ GtkWidget *anaconda_base_window_get_action_area(AnacondaBaseWindow *win) {
  */
 GtkWidget *anaconda_base_window_get_nav_area(AnacondaBaseWindow *win) {
     return win->priv->nav_area;
+}
+
+/**
+ * anaconda_base_window_get_help_button:
+ * @win: a #AnacondaBaseWindow
+ *
+ * Returns the help button.
+ *
+ * Returns: (transfer none): the help button
+ *
+ * Since: 3.1
+ */
+GtkWidget *anaconda_base_window_get_help_button(AnacondaBaseWindow *win) {
+    return win->priv->help_button;
 }
 
 /**
@@ -547,6 +640,11 @@ void anaconda_base_window_set_warning(AnacondaBaseWindow *win, const char *msg) 
 static gboolean anaconda_base_window_info_bar_clicked(GtkWidget *wiget, GdkEvent *event, AnacondaBaseWindow *win) {
     g_signal_emit(win, window_signals[SIGNAL_INFO_BAR_CLICKED], 0);
     return FALSE;
+}
+
+static void anaconda_base_window_help_button_clicked(GtkButton *button,
+                                                     AnacondaBaseWindow *win) {
+        g_signal_emit(win, window_signals[SIGNAL_HELP_BUTTON_CLICKED], 0);
 }
 
 /**

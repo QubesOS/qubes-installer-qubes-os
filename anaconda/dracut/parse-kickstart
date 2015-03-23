@@ -1,12 +1,26 @@
 #!/usr/bin/python
 #vim: set fileencoding=utf8
-# parse-kickstart - read a kickstart file and emit equivalent dracut boot args.
-#
-# Copyright © 2012 Red Hat, Inc.
-# BLAH BLAH GPL BLAH.
+# parse-kickstart - read a kickstart file and emit equivalent dracut boot args
 #
 # Designed to run inside the dracut initramfs environment.
 # Requires python 2.7 or later.
+#
+#
+# Copyright © 2012-2014 Red Hat, Inc.
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions of
+# the GNU General Public License v.2, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY expressed or implied, including the implied warranties of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.  You should have received a copy of the
+# GNU General Public License along with this program; if not, write to the
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.  Any Red Hat trademarks that are incorporated in the
+# source code or documentation are not subject to the GNU General Public
+# License and may only be used or replicated with the express permission of
+# Red Hat, Inc.
 #
 # Authors:
 #   Will Woods <wwoods@redhat.com>
@@ -15,9 +29,12 @@ import sys, os
 import logging
 import shutil
 import uuid
+import glob
 from pykickstart.parser import KickstartParser, preprocessKickstart
+from pykickstart.sections import NullSection
 from pykickstart.version import returnClassForVersion
 from pykickstart.errors import KickstartError
+# pylint: disable=wildcard-import
 from pykickstart.constants import *
 from pykickstart import commands
 from collections import OrderedDict
@@ -42,9 +59,10 @@ def read_cmdline(f):
         lines = open(f).readlines()
     except IOError:
         lines = []
+    # pylint: disable=redefined-outer-name
     for line in lines:
         for arg in line.split():
-            k,e,v = arg.partition("=")
+            k,_e,v = arg.partition("=")
             args[k] = v
     return args
 
@@ -65,9 +83,10 @@ class HardDrive(commands.harddrive.FC3_HardDrive):
 
 class NFS(commands.nfs.FC6_NFS):
     def dracut_args(self, args, lineno, obj):
-        method="nfs:%s:%s" % (self.server, self.dir)
         if self.opts:
-            method += ":%s" % self.opts
+            method = "nfs:%s:%s:%s" % (self.opts, self.server, self.dir)
+        else:
+            method="nfs:%s:%s" % (self.server, self.dir)
 
         return "inst.repo=%s" % method
 
@@ -90,15 +109,25 @@ class MediaCheck(commands.mediacheck.FC4_MediaCheck):
 
 class DriverDisk(commands.driverdisk.F14_DriverDisk):
     def dracut_args(self, args, lineno, obj):
-        dd = self.driverdiskList[-1]
-        if dd.biospart:
-            location = "bd:%s" % dd.biospart
-        else:
-            location = dd.partition or dd.source
-        if location:
-            return "inst.driverdisk=%s" % location
+        dd_net = []
+        dd_disk = []
+        for dd in self.driverdiskList:
+            if dd.partition:
+                dd_disk.append(dd.partition)
+            elif dd.source:
+                dd_net.append("inst.dd=%s" % dd.source)
 
-class Network(commands.network.F20_Network):
+        # disk sources cannot be added to cmdline because the initial
+        # driver-update run has already finished.
+        if dd_disk:
+            with open("/tmp/dd_args_ks", "w") as f:
+                f.write(" ".join(dd_disk))
+
+        # network sources can be added to the existing cmdline, they
+        # are processed later.
+        return "\n".join(dd_net)
+
+class Network(commands.network.F21_Network):
     def dracut_args(self, args, lineno, net):
         '''
         NOTE: The first 'network' line get special treatment:
@@ -110,21 +139,17 @@ class Network(commands.network.F20_Network):
 
         # first 'network' line
         if len(self.network) == 1:
+            # Setting only hostname in kickstart
+            if not net.device and net.hostname and not self.handler.ksdevice:
+                return None
             net.activate = True
             if net.device == "link" or not net.device:
                 # NOTE: this might still be empty (e.g. 'ks=file:...')
                 # XXX FIXME: handle "link" properly?
+                log.debug("Using ksdevice %s for missing --device in first kickstart network command", self.handler.ksdevice)
                 net.device = self.handler.ksdevice
             # tell dracut to bring this device up
             netline = ksnet_to_dracut(args, lineno, net, bootdev=True)
-
-            # HACK: current dracut dies if you have BOOTIF= and ip= together.
-            # Until that gets fixed upstream, we have to defer to dracut.
-            # XXX FIXME: remove this when dracut can handle BOOTIF+ip!
-            if 'BOOTIF' in proc_cmdline:
-                # let dracut use BOOTIF to bring up the network
-                netline = None
-
         else:
             # all subsequent 'network' lines require '--device'
             if not net.device or net.device == "link":
@@ -145,7 +170,7 @@ class DisplayMode(commands.displaymode.FC3_DisplayMode):
         elif self.displayMode == DISPLAY_MODE_GRAPHICAL:
             return "inst.graphical"
 
-class Bootloader(commands.bootloader.F19_Bootloader):
+class Bootloader(commands.bootloader.F21_Bootloader):
     def dracut_args(self, args, lineno, obj):
         if self.extlinux:
             return "extlinux"
@@ -176,6 +201,9 @@ class DracutHandler(handlerclass):
         obj = handlerclass.dispatcher(self, args, lineno)
         # and execute any specified dracut_args
         cmd = args[0]
+        # the commands member is implemented by the class returned
+        # by returnClassForVersion
+        # pylint: disable=no-member
         command = self.commands[cmd]
         if hasattr(command, "dracut_args"):
             log.debug("kickstart line %u: handling %s", lineno, cmd)
@@ -199,8 +227,40 @@ def find_devname(mac):
         if thismac.lower() == mac.lower():
             return netif
 
+def s390_settings(device):
+    cfg = {
+        'SUBCHANNELS': '',
+        'NETTYPE': '',
+        'OPTIONS': ''
+        }
+
+    subchannels = []
+    for symlink in sorted(glob.glob("/sys/class/net/%s/device/cdev[0-9]*" % device)):
+        subchannels.append(os.path.basename(os.readlink(symlink)))
+    if not subchannels:
+        return cfg
+    cfg['SUBCHANNELS'] = ','.join(subchannels)
+
+    ## cat /etc/ccw.conf
+    #qeth,0.0.0900,0.0.0901,0.0.0902,layer2=0,portname=FOOBAR,portno=0
+    #
+    #SUBCHANNELS="0.0.0900,0.0.0901,0.0.0902"
+    #NETTYPE="qeth"
+    #OPTIONS="layer2=1 portname=FOOBAR portno=0"
+    with open('/etc/ccw.conf') as f:
+        # pylint: disable=redefined-outer-name
+        for line in f:
+            if cfg['SUBCHANNELS'] in line:
+                items = line.strip().split(',')
+                cfg['NETTYPE'] = items[0]
+                cfg['OPTIONS'] = " ".join(i for i in items[1:] if '=' in i)
+                break
+
+    return cfg
+
 def ksnet_to_dracut(args, lineno, net, bootdev=False):
     '''Translate the kickstart network data into dracut network data.'''
+    # pylint: disable=redefined-outer-name
     line = []
     ip=""
     autoconf=""
@@ -248,13 +308,6 @@ def ksnet_to_dracut(args, lineno, net, bootdev=False):
         if ns:
             line.append("nameserver=%s" % ns)
 
-    if net.mtu:
-        # XXX FIXME: dracut doesn't support mtu= (yet)
-        if net.device:
-            line.append("mtu=%s:%s" % (net.device, net.mtu))
-        else:
-            line.append("mtu=%s" % net.mtu)
-
     if bootdev:
         if net.device:
             line.append("bootdev=%s" % net.device)
@@ -290,6 +343,15 @@ def ksnet_to_ifcfg(net, filename=None):
     # we set real ONBOOT value in anaconda, here
     # we use it to activate devcies by NM on start
     ifcfg['ONBOOT'] = "yes" if net.activate else "no"
+
+    s390cfg = s390_settings(dev)
+    if s390cfg['SUBCHANNELS']:
+        ifcfg.pop('HWADDR')
+        ifcfg['SUBCHANNELS'] = s390cfg['SUBCHANNELS']
+    if s390cfg['NETTYPE']:
+        ifcfg['NETTYPE'] = s390cfg['NETTYPE']
+    if s390cfg['OPTIONS']:
+        ifcfg['OPTIONS'] = s390cfg['OPTIONS']
 
     # dhcp etc.
     ifcfg['BOOTPROTO'] = net.bootProto
@@ -339,7 +401,7 @@ def ksnet_to_ifcfg(net, filename=None):
             shutil.copyfile(srcpath, dstpath)
 
     if net.bondslaves:
-        ifcfg.pop('HWADDR')
+        ifcfg.pop('HWADDR', None)
         ifcfg['TYPE'] = "Bond"
         ifcfg['BONDING_MASTER'] = "yes"
         ifcfg['NAME'] = "Bond connection %s" % dev
@@ -358,17 +420,13 @@ def ksnet_to_ifcfg(net, filename=None):
                             'MASTER' : dev,
                             'HWADDR' : readsysfile("/sys/class/net/%s/address" % slave),
                           }
-            # not using NM naming conventions, following dracut so that it does not
-            # override kickstart config by generating its own ifcfg files for slaves
-            #slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
-            # FIXME - change in dracut?
-            slave_filename = "/tmp/ifcfg/ifcfg-%s" % slave
+            slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
             log.info("writing ifcfg %s for slave %s of bond %s" % (slave_filename, slave, dev))
             write_ifcfg(slave_filename, slave_ifcfg)
 
     if net.teamslaves:
 
-        ifcfg.pop('HWADDR')
+        ifcfg.pop('HWADDR', None)
         ifcfg['TYPE'] = "Team"
         ifcfg['NAME'] = "Team connection %s" % dev
         ifcfg['TEAM_CONFIG'] = "'" + net.teamconfig + "'"
@@ -386,17 +444,13 @@ def ksnet_to_ifcfg(net, filename=None):
             if cfg:
                 slave_ifcfg['TEAM_PORT_CONFIG'] = "'" + cfg + "'"
 
-            # not using NM naming conventions, following dracut so that it does not
-            # override kickstart config by generating its own ifcfg files for slaves
-            #slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
-            # FIXME - change in dracut?
-            slave_filename = "/tmp/ifcfg/ifcfg-%s" % slave
+            slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
             log.info("writing ifcfg %s for slave %s of team %s" % (slave_filename, slave, dev))
             write_ifcfg(slave_filename, slave_ifcfg)
 
     if net.vlanid:
-        interface_name = "%s.%s" % (dev, net.vlanid)
-        ifcfg.pop('HWADDR')
+        interface_name = net.interfacename or "%s.%s" % (dev, net.vlanid)
+        ifcfg.pop('HWADDR', None)
         ifcfg['TYPE'] = "Vlan"
         ifcfg['VLAN'] = "yes"
         ifcfg['VLAN_ID'] = net.vlanid
@@ -424,6 +478,7 @@ def process_kickstart(ksfile):
     handler = DracutHandler()
     handler.ksdevice = os.environ.get('ksdevice')
     parser = KickstartParser(handler, missingIncludeIsFatal=False, errorsAreFatal=False)
+    parser.registerSection(NullSection(handler, sectionOpen="%addon"))
     log.info("processing kickstart file %s", ksfile)
     processed_file = preprocessKickstart(ksfile)
     try:
@@ -440,4 +495,4 @@ if __name__ == '__main__':
     for path in sys.argv[1:]:
         outfile, output = process_kickstart(path)
         for line in filter(None, output):
-            print line
+            print(line)

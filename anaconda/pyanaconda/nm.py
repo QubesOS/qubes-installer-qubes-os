@@ -25,8 +25,11 @@ import IPy
 import struct
 import socket
 import re
+import logging
+log = logging.getLogger("anaconda")
 
 from pyanaconda.constants import DEFAULT_DBUS_TIMEOUT
+from pyanaconda.flags import flags, can_touch_runtime_system
 
 supported_device_types = [
     NetworkManager.DeviceType.ETHERNET,
@@ -48,6 +51,11 @@ class UnmanagedDeviceError(Exception):
     def __str__(self):
         return self.__repr__()
 
+class DeviceNotActiveError(Exception):
+    """Device of specified name is not active"""
+    def __str__(self):
+        return self.__repr__()
+
 class PropertyNotFoundError(ValueError):
     """Property of NM object was not found"""
     def __str__(self):
@@ -63,25 +71,42 @@ class UnknownMethodGetError(Exception):
     def __str__(self):
         return self.__repr__()
 
+# bug #1062417 e.g. for ethernet device without link
+class UnknownConnectionError(Exception):
+    """Connection is not available for the device"""
+    def __str__(self):
+        return self.__repr__()
+
 def _get_proxy(bus_type=Gio.BusType.SYSTEM,
-               flags=Gio.DBusProxyFlags.NONE,
+               proxy_flags=Gio.DBusProxyFlags.NONE,
                info=None,
                name="org.freedesktop.NetworkManager",
                object_path="/org/freedesktop/NetworkManager",
                interface_name="org.freedesktop.NetworkManager",
                cancellable=None):
-    proxy = Gio.DBusProxy.new_for_bus_sync(bus_type,
-                                           flags,
-                                           info,
-                                           name,
-                                           object_path,
-                                           interface_name,
-                                           cancellable)
+    try:
+        proxy = Gio.DBusProxy.new_for_bus_sync(bus_type,
+                                               proxy_flags,
+                                               info,
+                                               name,
+                                               object_path,
+                                               interface_name,
+                                               cancellable)
+    except GLib.GError as e:
+        if can_touch_runtime_system("raise GLib.GError", touch_live=True):
+            raise
+
+        log.error("_get_proxy failed: %s", e)
+        proxy = None
+
     return proxy
 
 def _get_property(object_path, prop, interface_name_suffix=""):
     interface_name = "org.freedesktop.NetworkManager" + interface_name_suffix
     proxy = _get_proxy(object_path=object_path, interface_name="org.freedesktop.DBus.Properties")
+    if not proxy:
+        return None
+
     try:
         prop = proxy.Get('(ss)', interface_name, prop)
     except GLib.GError as e:
@@ -100,7 +125,13 @@ def nm_state():
     :return: state of NetworkManager
     :rtype: integer
     """
-    return _get_property("/org/freedesktop/NetworkManager", "State")
+    prop = _get_property("/org/freedesktop/NetworkManager", "State")
+
+    # If this is an image/dir install assume the network is up
+    if not prop and (flags.imageInstall or flags.dirInstall):
+        return NetworkManager.State.CONNECTED_GLOBAL
+    else:
+        return prop
 
 # FIXME - use just GLOBAL? There is some connectivity checking
 # for GLOBAL in NM (nm_connectivity_get_connected), not sure if
@@ -134,6 +165,9 @@ def nm_devices():
     interfaces = []
 
     proxy = _get_proxy()
+    if not proxy:
+        return []
+
     devices = proxy.GetDevices()
     for device in devices:
         device_type = _get_property(device, "DeviceType", ".Device")
@@ -154,13 +188,21 @@ def nm_activated_devices():
     interfaces = []
 
     active_connections = _get_property("/org/freedesktop/NetworkManager", "ActiveConnections")
+    if not active_connections:
+        return []
+
     for ac in active_connections:
-        state = _get_property(ac, "State", ".Connection.Active")
+        try:
+            state = _get_property(ac, "State", ".Connection.Active")
+        except UnknownMethodGetError:
+            continue
         if state != NetworkManager.ActiveConnectionState.ACTIVATED:
             continue
         devices = _get_property(ac, "Devices", ".Connection.Active")
         for device in devices:
-            iface = _get_property(device, "Interface", ".Device")
+            iface = _get_property(device, "IpInterface", ".Device")
+            if not iface:
+                iface = _get_property(device, "Interface", ".Device")
             interfaces.append(iface)
 
     return interfaces
@@ -306,6 +348,18 @@ def nm_device_hwaddress(name):
        :raise PropertyNotFoundError: if 'HwAddress' property is not found
     """
     return nm_device_property(name, "HwAddress")
+
+def nm_device_perm_hwaddress(name):
+    """Return active hardware address of device ('HwAddress' property)
+
+       :param name: name of device
+       :type name: str
+       :return: active hardware address of device ('HwAddress' property)
+       :rtype: str
+       :raise UnknownDeviceError: if device is not found
+       :raise PropertyNotFoundError: if 'HwAddress' property is not found
+    """
+    return nm_device_property(name, "PermHwAddress")
 
 def nm_device_active_con_uuid(name):
     """Return uuid of device's active connection
@@ -486,7 +540,7 @@ def nm_hwaddr_to_device_name(hwaddr):
         :rtype: str
     """
     for device in nm_devices():
-        if nm_device_hwaddress(device).upper() == hwaddr.upper():
+        if nm_device_perm_hwaddress(device).upper() == hwaddr.upper():
             return device
     return None
 
@@ -534,7 +588,7 @@ def _device_settings(name):
         settings = _find_settings(name, 'connection', 'interface-name')
         if not settings:
             try:
-                hwaddr_str = nm_device_hwaddress(name)
+                hwaddr_str = nm_device_perm_hwaddress(name)
             except PropertyNotFoundError:
                 settings = []
             else:
@@ -697,7 +751,12 @@ def nm_disconnect_device(name):
         raise
 
     device_proxy = _get_proxy(object_path=device, interface_name="org.freedesktop.NetworkManager.Device")
-    device_proxy.Disconnect()
+    try:
+        device_proxy.Disconnect()
+    except GLib.GError as e:
+        if "org.freedesktop.NetworkManager.Device.NotActive" in e.message:
+            raise DeviceNotActiveError(name, e)
+        raise
 
 def nm_activate_device_connection(dev_name, con_uuid):
     """Activate device with specified connection.
@@ -710,6 +769,7 @@ def nm_activate_device_connection(dev_name, con_uuid):
        :raise UnmanagedDeviceError: if device is not managed by NM
                                     or unavailable
        :raise SettingsNotFoundError: if conneciton with given uuid was not found
+       :raise UnknownConnectionError: if connection is not available for the device
     """
 
     if dev_name is None:
@@ -734,6 +794,8 @@ def nm_activate_device_connection(dev_name, con_uuid):
     except GLib.GError as e:
         if "org.freedesktop.NetworkManager.UnmanagedDevice" in e.message:
             raise UnmanagedDeviceError(dev_name, e)
+        elif "org.freedesktop.NetworkManager.UnknownConnection" in e.message:
+            raise UnknownConnectionError(dev_name, e)
         raise
 
 def nm_add_connection(values):
@@ -763,6 +825,21 @@ def nm_add_connection(values):
                        interface_name="org.freedesktop.NetworkManager.Settings")
     connection = proxy.AddConnection('(a{sa{sv}})', settings)
     return connection
+
+def nm_delete_connection(uuid):
+    """Delete connection specified by uuid.
+
+       :param uuid: uuid of connection to be deleted
+       :type uuid: str
+       :return: True if connection was deleted, False if it was not found
+       :rtype: bool
+    """
+
+    settings_paths = _find_settings(uuid, "connection", "uuid")
+    if not settings_paths:
+        return False
+    proxy = _get_proxy(object_path=settings_paths[0], interface_name="org.freedesktop.NetworkManager.Settings.Connection")
+    proxy.Delete()
 
 def nm_update_settings_of_device(name, new_values):
     """Update setting of device.
@@ -830,9 +907,13 @@ def _update_settings(settings_path, new_values):
                                DEFAULT_DBUS_TIMEOUT,
                                None)
     for key1, key2, value, default_type_str in new_values:
-        new_settings = _gvariant_settings(settings, key1, key2, value, default_type_str)
+        settings = _gvariant_settings(settings, key1, key2, value, default_type_str)
 
-    proxy.Update(settings.get_type_string(), new_settings)
+    proxy.call_sync("Update",
+                    settings,
+                    Gio.DBusCallFlags.NONE,
+                    DEFAULT_DBUS_TIMEOUT,
+                    None)
 
 def _gvariant_settings(settings, updated_key1, updated_key2, value, default_type_str=None):
     """Update setting of updated_key1, updated_key2 of settings object with value.
@@ -882,7 +963,7 @@ def _gvariant_settings(settings, updated_key1, updated_key2, value, default_type
             new_settings[updated_key1] = {}
         new_settings[updated_key1][updated_key2] = GLib.Variant(type_str, value)
 
-    return new_settings
+    return GLib.Variant(settings.get_type_string(), (new_settings,))
 
 def nm_ipv6_to_dbus_ay(address):
     """Convert ipv6 address from string to list of bytes 'ay' for dbus
@@ -925,11 +1006,11 @@ def nm_dbus_int_to_ipv4(address):
     return socket.inet_ntop(socket.AF_INET, struct.pack('=L', address))
 
 def test():
-    print "NM state: %s:" % nm_state()
-    print "NM is connected: %s" % nm_is_connected()
+    print("NM state: %s:" % nm_state())
+    print("NM is connected: %s" % nm_is_connected())
 
-    print "Devices: %s" % nm_devices()
-    print "Activated devices: %s" % nm_activated_devices()
+    print("Devices: %s" % nm_devices())
+    print("Activated devices: %s" % nm_activated_devices())
 
     wireless_device = ""
 
@@ -937,108 +1018,108 @@ def test():
     devs.append("nonexisting")
     for devname in devs:
 
-        print devname
+        print(devname)
 
         try:
             devtype = nm_device_type(devname)
         except UnknownDeviceError as e:
-            print "     %s" % e
+            print("     %s" % e)
             devtype = None
         if devtype == NetworkManager.DeviceType.ETHERNET:
-            print "     type %s" % "ETHERNET"
+            print("     type %s" % "ETHERNET")
         elif devtype == NetworkManager.DeviceType.WIFI:
-            print "     type %s" % "WIFI"
+            print("     type %s" % "WIFI")
             wireless_device = devname
 
         try:
-            print "     Wifi device: %s" % nm_device_type_is_wifi(devname)
+            print("     Wifi device: %s" % nm_device_type_is_wifi(devname))
         except UnknownDeviceError as e:
-            print "     %s" % e
+            print("     %s" % e)
 
         try:
             hwaddr = nm_device_hwaddress(devname)
-            print "     HwAaddress: %s" % hwaddr
+            print("     HwAaddress: %s" % hwaddr)
         except ValueError as e:
-            print "     %s" % e
+            print("     %s" % e)
             hwaddr = ""
 
         try:
-            print "     Carrier: %s" % nm_device_carrier(devname)
+            print("     Carrier: %s" % nm_device_carrier(devname))
         except ValueError as e:
-            print "     %s" % e
+            print("     %s" % e)
 
         try:
-            print "     IP4 config: %s" % nm_device_ip_config(devname)
-            print "     IP6 config: %s" % nm_device_ip_config(devname, version=6)
-            print "     IP4 addrs: %s" % nm_device_ip_addresses(devname)
-            print "     IP6 addrs: %s" % nm_device_ip_addresses(devname, version=6)
-            print "     Udi: %s" % nm_device_property(devname, "Udi")
+            print("     IP4 config: %s" % nm_device_ip_config(devname))
+            print("     IP6 config: %s" % nm_device_ip_config(devname, version=6))
+            print("     IP4 addrs: %s" % nm_device_ip_addresses(devname))
+            print("     IP6 addrs: %s" % nm_device_ip_addresses(devname, version=6))
+            print("     Udi: %s" % nm_device_property(devname, "Udi"))
         except UnknownDeviceError as e:
-            print "     %s" % e
+            print("     %s" % e)
 
         if devname in nm_devices():
             try:
-                print "     Nonexisting: %s" % nm_device_property(devname, "Nonexisting")
+                print("     Nonexisting: %s" % nm_device_property(devname, "Nonexisting"))
             except PropertyNotFoundError as e:
-                print "     %s" % e
+                print("     %s" % e)
         try:
-            print "     Nonexisting: %s" % nm_device_property(devname, "Nonexisting")
+            print("     Nonexisting: %s" % nm_device_property(devname, "Nonexisting"))
         except ValueError as e:
-            print "     %s" % e
+            print("     %s" % e)
 
         try:
-            print "     Settings: %s" % _device_settings(devname)
+            print("     Settings: %s" % _device_settings(devname))
         except UnknownDeviceError as e:
-            print "     %s" % e
+            print("     %s" % e)
         try:
-            print "     Settings for hwaddr %s: %s" % (hwaddr, _settings_for_hwaddr(hwaddr))
+            print("     Settings for hwaddr %s: %s" % (hwaddr, _settings_for_hwaddr(hwaddr)))
         except UnknownDeviceError as e:
-            print "     %s" % e
+            print("     %s" % e)
         try:
-            print "     Setting value %s %s: %s" % ("ipv6", "method", nm_device_setting_value(devname, "ipv6", "method"))
+            print("     Setting value %s %s: %s" % ("ipv6", "method", nm_device_setting_value(devname, "ipv6", "method")))
         except ValueError as e:
-            print "     %s" % e
+            print("     %s" % e)
         try:
-            print "     Setting value %s %s: %s" % ("ipv7", "method", nm_device_setting_value(devname, "ipv7", "method"))
+            print("     Setting value %s %s: %s" % ("ipv7", "method", nm_device_setting_value(devname, "ipv7", "method")))
         except ValueError as e:
-            print "     %s" % e
+            print("     %s" % e)
 
     ssid = "Red Hat Guest"
-    print "Settings for AP %s: %s" % (ssid, _settings_for_ap(ssid))
+    print("Settings for AP %s: %s" % (ssid, _settings_for_ap(ssid)))
     ssid = "nonexisting"
-    print "Settings for AP %s: %s" % (ssid, _settings_for_ap(ssid))
+    print("Settings for AP %s: %s" % (ssid, _settings_for_ap(ssid)))
 
     devname = devs[0]
     key1 = "connection"
     key2 = "autoconnect"
     original_value = nm_device_setting_value(devname, key1, key2)
-    print "Value of setting %s %s: %s" % (key1, key2, original_value)
+    print("Value of setting %s %s: %s" % (key1, key2, original_value))
     # None means default in this case, which is true
     if original_value in (None, True):
         new_value = False
     else:
         new_value = True
 
-    print "Updating to %s" % new_value
+    print("Updating to %s" % new_value)
     nm_update_settings_of_device(devname, [[key1, key2, new_value, None]])
-    print "Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2))
+    print("Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2)))
     nm_update_settings_of_device(devname, [[key1, key2, original_value, None]])
-    print "Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2))
+    print("Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2)))
     nm_update_settings_of_device(devname, [[key1, key2, original_value, "b"]])
-    print "Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2))
+    print("Value of setting %s %s: %s" % (key1, key2, nm_device_setting_value(devname, key1, key2)))
 
     nm_update_settings_of_device(devname, [[key1, "nonexisting", new_value, None]])
     nm_update_settings_of_device(devname, [["nonexisting", "nonexisting", new_value, None]])
     try:
         nm_update_settings_of_device("nonexixting", [[key1, key2, new_value, None]])
     except UnknownDeviceError as e:
-        print "%s" % e
+        print("%s" % e)
 
     if wireless_device:
         try:
             nm_update_settings_of_device(wireless_device, [[key1, key2, new_value, None]])
         except SettingsNotFoundError as e:
-            print "%s" % e
+            print("%s" % e)
 
     #nm_update_settings_of_device(devname, [["connection", "id", "test", None]])
     #nm_update_settings_of_device(devname, [["connection", "timestamp", 11111111, None]])

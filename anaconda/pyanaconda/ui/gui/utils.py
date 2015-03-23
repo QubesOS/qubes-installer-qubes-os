@@ -21,13 +21,20 @@
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-from pyanaconda.threads import threadMgr
+from pyanaconda.threads import threadMgr, AnacondaThread
 
-from contextlib import contextmanager
-from gi.repository import Gdk, Gtk, GLib, AnacondaWidgets
+from pyanaconda.constants import NOTICEABLE_FREEZE
+from gi.repository import Gdk, Gtk, GLib
 import Queue
-import gettext
 import time
+import threading
+
+import logging
+log = logging.getLogger("anaconda")
+
+# any better idea how to create a unique, distinguishable object that cannot be
+# confused with anything else?
+TERMINATOR = object()
 
 def gtk_call_once(func, *args):
     """Wrapper for GLib.idle_add call that ensures the func is called
@@ -68,6 +75,14 @@ def gtk_action_wait(func):
 
     return _call_method
 
+def fire_gtk_action(func, *args):
+    """Run some Gtk action in the main thread and wait for it."""
+
+    @gtk_action_wait
+    def gtk_action():
+        return func(*args)
+
+    return gtk_action()
 
 def gtk_action_nowait(func):
     """Decorator method which ensures every call of the decorated function to be
@@ -93,6 +108,105 @@ def gtk_action_nowait(func):
 
     return _call_method
 
+class GtkActionList(object):
+    """Class for scheduling Gtk actions to be all run at once."""
+
+    def __init__(self):
+        self._actions = []
+
+    def add_action(self, func, *args):
+        """Add Gtk action to be run later."""
+
+        @gtk_action_wait
+        def gtk_action():
+            func(*args)
+
+        self._actions.append(gtk_action)
+
+    def fire(self):
+        """Run all scheduled Gtk actions."""
+
+        for action in self._actions:
+            action()
+
+        self._actions = []
+
+def gtk_batch_map(action, items, args=(), pre_func=None, batch_size=1):
+    """
+    Function that maps an action on items in a way that makes the action run in
+    the main thread, but without blocking the main thread for a noticeable
+    time. If a pre-processing function is given it is mapped on the items first
+    before the action happens in the main thread.
+
+    MUST NOT BE CALLED NOR WAITED FOR FROM THE MAIN THREAD.
+
+    :param action: any action that has to be done on the items in the main
+                   thread
+    :type action: (action_item, *args) -> None
+    :param items: an iterable of items that the action should be mapped on
+    :type items: iterable
+    :param args: additional arguments passed to the action function
+    :type args: tuple
+    :param pre_func: a function that is mapped on the items before they are
+                     passed to the action function
+    :type pre_func: item -> action_item
+    :param batch_size: how many items should be processed in one run in the main loop
+    :raise AssertionError: if called from the main thread
+    :return: None
+
+    """
+
+    assert(not threadMgr.in_main_thread())
+
+    def preprocess(queue):
+        if pre_func:
+            for item in items:
+                queue.put(pre_func(item))
+        else:
+            for item in items:
+                queue.put(item)
+
+        queue.put(TERMINATOR)
+
+    def process_one_batch((queue, action, done_event)):
+        tstamp_start = time.time()
+        tstamp = time.time()
+
+        # process as many batches as user shouldn't notice
+        while tstamp - tstamp_start < NOTICEABLE_FREEZE:
+            for _i in xrange(batch_size):
+                try:
+                    action_item = queue.get_nowait()
+                    if action_item is TERMINATOR:
+                        # all items processed, tell we are finished and return
+                        done_event.set()
+                        return False
+                    else:
+                        # run action on the item
+                        action(action_item, *args)
+                except Queue.Empty:
+                    # empty queue, reschedule to run later
+                    return True
+
+            tstamp = time.time()
+
+        # out of time but something left, reschedule to run again later
+        return True
+
+    item_queue = Queue.Queue()
+    done_event = threading.Event()
+
+    # we don't want to log the whole list, type and address is enough
+    log.debug("Starting applying %s on %s", action, object.__repr__(items))
+
+    # start a thread putting preprocessed items into the queue
+    threadMgr.add(AnacondaThread(prefix="AnaGtkBatchPre",
+                                 target=preprocess,
+                                 args=(item_queue,)))
+
+    GLib.idle_add(process_one_batch, (item_queue, action, done_event))
+    done_event.wait()
+    log.debug("Finished applying %s on %s", action, object.__repr__(items))
 
 def timed_action(delay=300, threshold=750, busy_cursor=True):
     """
@@ -181,18 +295,6 @@ def busyCursor():
 def unbusyCursor():
     window = Gdk.get_default_root_window()
     window.set_cursor(Gdk.Cursor(Gdk.CursorType.ARROW))
-
-@contextmanager
-def enlightbox(mainWindow, dialog):
-    # importing globally would cause a circular dependency
-    from pyanaconda.ui.gui import ANACONDA_WINDOW_GROUP
-
-    lightbox = AnacondaWidgets.Lightbox(parent_window=mainWindow)
-    ANACONDA_WINDOW_GROUP.add_window(lightbox)
-    dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
-    dialog.set_transient_for(lightbox)
-    yield
-    lightbox.destroy()
 
 def ignoreEscape(dlg):
     """Prevent a dialog from accepting the escape keybinding, which emits a
@@ -286,25 +388,6 @@ def set_treeview_selection(treeview, item, col=0):
 
     return itr
 
-def get_default_widget_direction():
-    """
-    Function to get default widget direction (RTL/LTR) for the current language
-    configuration.
-
-    XXX: this should be provided by the Gtk itself (#1008821)
-
-    :return: either Gtk.TextDirection.LTR or Gtk.TextDirection.RTL
-    :rtype: GtkTextDirection
-
-    """
-
-    # this is quite a hack, but it's exactly the same check Gtk uses internally
-    xlated = gettext.ldgettext("gtk30", "default:LTR")
-    if xlated == "default:LTR":
-        return Gtk.TextDirection.LTR
-    else:
-        return Gtk.TextDirection.RTL
-
 def setup_gtk_direction():
     """
     Set the right direction (RTL/LTR) of the Gtk widget's and their layout based
@@ -312,4 +395,52 @@ def setup_gtk_direction():
 
     """
 
-    Gtk.Widget.set_default_direction(get_default_widget_direction())
+    Gtk.Widget.set_default_direction(Gtk.get_locale_direction())
+
+def escape_markup(value):
+    """
+    Escape strings for use within Pango markup.
+
+    This function converts the value to a string before passing markup_escape_text().
+    """
+
+    if isinstance(value, unicode):
+        value = value.encode("utf-8")
+
+    return GLib.markup_escape_text(str(value))
+
+# This will be populated by override_cell_property. Keys are tuples of (column, renderer).
+# Values are a dict of the form {property-name: (property-func, property-data)}.
+_override_cell_property_map = {}
+
+def override_cell_property(tree_column, cell_renderer, propname, property_func, data=None):
+    """
+    Override a single property of a cell renderer.
+
+    property_func takes the same arguments as GtkTreeCellDataFunc:
+    (TreeViewColumn, CellRenderer, TreeModel, TreeIter, data). Instead of being
+    expected to manipulate the CellRenderer itself, this method should instead
+    return the value to which the property should be set.
+
+    This method calls set_cell_data_func on the column and renderer.
+
+    :param GtkTreeViewColumn column: the column to override
+    :param GtkCellRenderer cell_renderer: the cell renderer to override
+    :param str propname: the property to set on the renderer
+    :param function property_func: a function that returns the value of the property to set
+    :param data: Optional data to pass to property_func
+    """
+
+    def _cell_data_func(tree_column, cell_renderer, tree_model, tree_iter, _data=None):
+        overrides = _override_cell_property_map[(tree_column, cell_renderer)]
+        for property_name in overrides:
+            property_func, property_func_data = overrides[property_name]
+            property_value = property_func(tree_column, cell_renderer,
+                    tree_model, tree_iter, property_func_data)
+            cell_renderer.set_property(property_name, property_value)
+
+    if (tree_column, cell_renderer) not in _override_cell_property_map:
+        _override_cell_property_map[(tree_column, cell_renderer)] = {}
+        tree_column.set_cell_data_func(cell_renderer, _cell_data_func)
+
+    _override_cell_property_map[(tree_column, cell_renderer)][propname] = (property_func, data)

@@ -24,6 +24,8 @@ log = logging.getLogger("anaconda")
 
 import threading
 
+_WORKER_THREAD_PREFIX = "AnaWorkerThread"
+
 class ThreadManager(object):
     """A singleton class for managing threads and processes.
 
@@ -57,8 +59,9 @@ class ThreadManager(object):
                 raise KeyError("Cannot add thread '%s', a thread with the same name already running" % obj.name)
 
             self._objs[obj.name] = obj
-            self._errors[obj.name] = None
             obj.start()
+
+        return obj.name
 
     def remove(self, name):
         """Removes a thread from the list of known objects.  This should only
@@ -117,6 +120,12 @@ class ThreadManager(object):
             log.debug("Waiting for thread %s to exit", name)
             self.wait(name)
 
+        if self.any_errors:
+            thread_names = ", ".join(thread_name for thread_name in self._errors.iterkeys()
+                                     if self._errors[thread_name])
+            msg = "Unhandled errors from the following threads detected: %s" % thread_names
+            raise RuntimeError(msg)
+
     def set_error(self, name, *exc_info):
         """Set the error data for a thread
 
@@ -129,6 +138,7 @@ class ThreadManager(object):
         """
         return self._errors.get(name)
 
+    @property
     def any_errors(self):
         """Return True of there have been any errors in any threads
         """
@@ -136,10 +146,15 @@ class ThreadManager(object):
 
     def raise_if_error(self, name):
         """If a thread has failed due to an exception, raise it into the main
-           thread.
+           thread and remove it from errors.
         """
-        if self._errors.get(name):
-            raise self._errors[name][0], self._errors[name][1], self._errors[name][2]
+        if name not in self._errors:
+            # no errors found for the thread
+            return
+
+        exc_info = self._errors.pop(name)
+        if exc_info:
+            raise exc_info[0], exc_info[1], exc_info[2]
 
     def in_main_thread(self):
         """Return True if it is run in the main thread."""
@@ -179,7 +194,27 @@ class AnacondaThread(threading.Thread):
        (3) All created threads are made daemonic, which means anaconda will quit
            when the main process is killed.
     """
+
+    # class-wide dictionary ensuring unique thread names
+    _prefix_thread_counts = dict()
+
     def __init__(self, *args, **kwargs):
+        # if neither name nor prefix is given, use the worker prefix
+        if "name" not in kwargs and "prefix" not in kwargs:
+            kwargs["prefix"] = _WORKER_THREAD_PREFIX
+
+        # if prefix is specified, use it to construct new thread name
+        prefix = kwargs.pop("prefix", None)
+        if prefix:
+            thread_num = self._prefix_thread_counts.get(prefix, 0) + 1
+            self._prefix_thread_counts[prefix] = thread_num
+            kwargs["name"] = prefix + str(thread_num)
+
+        if "fatal" in kwargs:
+            self._fatal = kwargs.pop("fatal")
+        else:
+            self._fatal = True
+
         threading.Thread.__init__(self, *args, **kwargs)
         self.daemon = True
 
@@ -190,10 +225,11 @@ class AnacondaThread(threading.Thread):
         log.info("Running Thread: %s (%s)", self.name, self.ident)
         try:
             threading.Thread.run(self, *args, **kwargs)
-        # pylint: disable-msg=W0702
+        # pylint: disable=bare-except
         except:
             threadMgr.set_error(self.name, *sys.exc_info())
-            sys.excepthook(*sys.exc_info())
+            if self._fatal:
+                sys.excepthook(*sys.exc_info())
         finally:
             threadMgr.remove(self.name)
             log.info("Thread Done: %s (%s)", self.name, self.ident)
