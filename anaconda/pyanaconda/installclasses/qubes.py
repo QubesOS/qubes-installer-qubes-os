@@ -67,7 +67,7 @@ class InstallClass(BaseInstallClass):
         for autoreq in storage.autoPartitionRequests:
             if autoreq.mountpoint == "/":
                 autoreq.maxSize=None
-                autoreq.requiredSpace=24*1024
+                autoreq.requiredSpace=10*1024
             if autoreq.mountpoint == "/home":
                 storage.autoPartitionRequests.remove(autoreq)
 
