@@ -1547,7 +1547,7 @@ class GRUB2(GRUB):
             log.error("bootloader password setup failed: %s", e)
 
         # disable non-xen entries
-        os.chmod("%s/etc/grub.d/10_linux" % ROOT_PATH, 0644)
+        os.chmod("%s/etc/grub.d/10_linux" % iutil.getSysroot(), 0644)
 
         # make sure the default entry is the OS we are installing
         entry_title = "0"

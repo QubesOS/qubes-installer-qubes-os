@@ -22,11 +22,8 @@ from pyanaconda.installclass import BaseInstallClass
 from pyanaconda.constants import *
 from pyanaconda.product import *
 from pyanaconda import network
-from pyanaconda import isys
-
+from pyanaconda.i18n import N_
 import os, types
-import gettext
-_ = lambda x: gettext.ldgettext("anaconda", x)
 
 from decimal import Decimal
 
@@ -42,9 +39,18 @@ class InstallClass(BaseInstallClass):
     hidden = 0
     efi_dir = 'qubes'
 
+    _l10n_domain = "anaconda"
+
+    installUpdates = False
+
+    efi_dir = "qubes"
+
     bootloaderTimeoutDefault = 5
 
     tasks = [(N_("Minimal"), ["base", "base-x", "kde-desktop-qubes", "qubes" ]) ]
+
+    help_placeholder = "QubesPlaceholder.html"
+    help_placeholder_with_links = "QubesPlaceholderWithLinks.html"
 
     def getPackagePaths(self, uri):
         if not type(uri) == types.ListType:
