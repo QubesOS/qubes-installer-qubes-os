@@ -175,6 +175,8 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         # If the password was set by kickstart, skip this check
         if self._kickstarted:
             return InputCheck.CHECK_OK
+        if self.lock.get_active():
+            return InputCheck.CHECK_OK
 
         if not self.get_input(inputcheck.input_obj):
             if inputcheck.input_obj == self.pw:
