@@ -93,7 +93,7 @@ cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
 %%qubes		%{dist_version}
 %%dist		.qbs%{dist_version}
 %%fedora		%{fedora_base_version}
-%%qbs%{dist_version}		1
+%%qbs3		1
 %%fc%{fedora_base_version}		1
 EOF
 
