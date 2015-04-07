@@ -76,6 +76,8 @@ class moduleClass(Module):
             if testing:
                 return RESULT_SUCCESS
 
+            self.set_default_template()
+
             if self.radio_dontdoanything.get_active():
                 return RESULT_SUCCESS
 
@@ -110,6 +112,9 @@ class moduleClass(Module):
     def show_stage(self, stage):
         self.stage = stage
         self.progress.set_text(stage)
+
+    def set_default_template(self):
+        subprocess.call(['/usr/bin/qubes-prefs', '--set', 'default-template', 'fedora-21'])
 
     def configure_template(self):
         self.show_stage(_("Configuring default TemplateVM"))
