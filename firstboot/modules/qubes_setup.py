@@ -43,6 +43,7 @@ class moduleClass(Module):
         self.title = N_("Create Service VMs")
         self.icon = "qubes.png"
         self.admin = libuser.admin()
+        self.default_template = 'fedora-21'
 
     def _showErrorMessage(self, text):
         dlg = gtk.MessageDialog(None, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
@@ -83,15 +84,36 @@ class moduleClass(Module):
 
             interface.nextButton.set_sensitive(False)
 
-            self.configure_template()
-            self.create_default_netvm()
-            self.create_default_fwvm()
-            self.set_networking_type(netvm=True)
-            self.start_qubes_networking()
-            self.create_default_dvm()
+            errors = []
+
+            try:
+                self.configure_template()
+            except Exception as e:
+                errors.append((self.stage, str(e)))
+            try:
+                self.create_default_netvm()
+                self.create_default_fwvm()
+                self.set_networking_type(netvm=True)
+                self.start_qubes_networking()
+            except Exception as e:
+                errors.append((self.stage, str(e)))
+            try:
+                self.create_default_dvm()
+            except Exception as e:
+                errors.append((self.stage, str(e)))
 
             if self.radio_servicevms_and_appvms.get_active():
-                self.create_appvms()
+                try:
+                    self.create_appvms()
+                except Exception as e:
+                    errors.append((self.stage, str(e)))
+
+            if errors:
+                msg = ""
+                for (stage, error) in errors:
+                    msg += "{} failed:\n{}\n\n".format(stage, error)
+                self.stage = "firstboot"
+                raise Exception(msg)
 
             interface.nextButton.set_sensitive(True)
             return RESULT_SUCCESS
@@ -114,7 +136,7 @@ class moduleClass(Module):
         self.progress.set_text(stage)
 
     def set_default_template(self):
-        subprocess.call(['/usr/bin/qubes-prefs', '--set', 'default-template', 'fedora-21'])
+        subprocess.call(['/usr/bin/qubes-prefs', '--set', 'default-template', self.default_template])
 
     def configure_template(self):
         self.show_stage(_("Configuring default TemplateVM"))
@@ -160,16 +182,18 @@ class moduleClass(Module):
         self.show_stage(_("Creating handy AppVMs"))
         self.run_in_thread(self.do_create_appvms)
 
-    def run_command(self, command):
+    def run_command(self, command, stdin=None):
         try:
             os.setgid(self.qubes_gid)
             os.umask(0007)
-            cmd = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            cmd = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=stdin)
             out = cmd.communicate()[0]
             if cmd.returncode == 0:
                 self.process_error = None
             else:
-                self.process_error = out
+                self.process_error = "{} failed:\n{}".format(command, out)
+                # Actually only self.process_error will be visible to the user
+                raise Exception("{} failed".format(command))
         except Exception as e:
             self.process_error = str(e)
 
@@ -211,7 +235,14 @@ class moduleClass(Module):
         self.run_command(['su', '-c', '/usr/bin/qvm-create --proxy --label green %s' % self.fwvm_name, '-', self.qubes_user])
 
     def do_create_dvm(self):
-        self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
+        try:
+            self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
+        except:
+            # Kill DispVM template if still running
+            # Do not use self.run_command to not clobber process output
+            subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
+            raise
+
 
     def do_set_netvm_networking(self):
         self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', self.fwvm_name, 'netvm', self.netvm_name])
@@ -221,19 +252,19 @@ class moduleClass(Module):
         self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'dom0'])
 
     def do_start_networking(self):
-        subprocess.check_call(['/usr/sbin/service', 'qubes_netvm', 'start'])
+        self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
     def do_configure_template(self):
         for template in os.listdir('/var/lib/qubes/vm-templates'):
-            subprocess.check_call(['qvm-start', '--no-guid', template])
+            self.run_command(['qvm-start', '--no-guid', template])
             # Copy timezone setting from Dom0 to template
-            subprocess.check_call(['qvm-run', '--nogui', '--pass-io',
+            self.run_command(['qvm-run', '--nogui', '--pass-io',
                 '-u', 'root', template, 'cat > /etc/locale.conf'],
                 stdin=open('/etc/locale.conf', 'r'))
-            subprocess.check_call(['su', '-c',
+            self.run_command(['su', '-c',
                 'qvm-sync-appmenus {}'.format(template),
                 '-', self.qubes_user])
-            subprocess.check_call(['qvm-shutdown', '--wait', template])
+            self.run_command(['qvm-shutdown', '--wait', template])
 
     def do_create_appvms(self):
         self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
