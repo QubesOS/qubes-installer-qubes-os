@@ -86,10 +86,12 @@ class moduleClass(Module):
 
             errors = []
 
-            try:
-                self.configure_template()
-            except Exception as e:
-                errors.append((self.stage, str(e)))
+            for template in os.listdir('/var/lib/qubes/vm-templates'):
+                try:
+                    self.configure_template(template)
+                except Exception as e:
+                    errors.append((self.stage, str(e)))
+
             try:
                 self.create_default_netvm()
                 self.create_default_fwvm()
@@ -97,6 +99,7 @@ class moduleClass(Module):
                 self.start_qubes_networking()
             except Exception as e:
                 errors.append((self.stage, str(e)))
+
             try:
                 self.create_default_dvm()
             except Exception as e:
@@ -138,12 +141,12 @@ class moduleClass(Module):
     def set_default_template(self):
         subprocess.call(['/usr/bin/qubes-prefs', '--set', 'default-template', self.default_template])
 
-    def configure_template(self):
-        self.show_stage(_("Configuring default TemplateVM"))
-        self.run_in_thread(self.do_configure_template)
+    def configure_template(self, name):
+        self.show_stage(_("Configuring TemplateVM {}".format(name)))
+        self.run_in_thread(self.do_configure_template, args=(name,))
 
-    def run_in_thread(self, method):
-        thread = threading.Thread(target=method)
+    def run_in_thread(self, method, args = None):
+        thread = threading.Thread(target=method, args = (args if args else ()))
         thread.start()
         count = 0
         while thread.is_alive():
@@ -254,17 +257,16 @@ class moduleClass(Module):
     def do_start_networking(self):
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
-    def do_configure_template(self):
-        for template in os.listdir('/var/lib/qubes/vm-templates'):
-            self.run_command(['qvm-start', '--no-guid', template])
-            # Copy timezone setting from Dom0 to template
-            self.run_command(['qvm-run', '--nogui', '--pass-io',
-                '-u', 'root', template, 'cat > /etc/locale.conf'],
-                stdin=open('/etc/locale.conf', 'r'))
-            self.run_command(['su', '-c',
-                'qvm-sync-appmenus {}'.format(template),
-                '-', self.qubes_user])
-            self.run_command(['qvm-shutdown', '--wait', template])
+    def do_configure_template(self, template):
+        self.run_command(['qvm-start', '--no-guid', template])
+        # Copy timezone setting from Dom0 to template
+        self.run_command(['qvm-run', '--nogui', '--pass-io',
+            '-u', 'root', template, 'cat > /etc/locale.conf'],
+            stdin=open('/etc/locale.conf', 'r'))
+        self.run_command(['su', '-c',
+            'qvm-sync-appmenus {}'.format(template),
+            '-', self.qubes_user])
+        self.run_command(['qvm-shutdown', '--wait', template])
 
     def do_create_appvms(self):
         self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
