@@ -195,8 +195,7 @@ class moduleClass(Module):
                 self.process_error = None
             else:
                 self.process_error = "{} failed:\n{}".format(command, out)
-                # Actually only self.process_error will be visible to the user
-                raise Exception("{} failed".format(command))
+                raise Exception(self.process_error)
         except Exception as e:
             self.process_error = str(e)
 
