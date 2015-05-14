@@ -1,6 +1,7 @@
 po/*.mo
 src/*.pyc
 src/modules/*.pyc
+pkgs/
 installer
 *~
 build/
