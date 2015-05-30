@@ -51,7 +51,7 @@ DEVICE_TEXT_LVM = N_("LVM")
 DEVICE_TEXT_LVM_THINP = N_("LVM Thin Provisioning")
 DEVICE_TEXT_MD = N_("RAID")
 DEVICE_TEXT_PARTITION = N_("Standard Partition")
-DEVICE_TEXT_BTRFS = N_("BTRFS")
+DEVICE_TEXT_BTRFS = N_("Btrfs")
 DEVICE_TEXT_DISK = N_("Disk")
 
 DEVICE_TEXT_MAP = {DEVICE_TYPE_LVM: DEVICE_TEXT_LVM,
@@ -74,11 +74,11 @@ MOUNTPOINT_DESCRIPTIONS = {"Swap": N_("The 'swap' area on your computer is used 
                            "BIOS Boot": N_("The BIOS boot partition is required to enable booting\n"
                                            "from GPT-partitioned disks on BIOS hardware."),
                            "PReP Boot": N_("The PReP boot partition is required as part of the\n"
-                                           "bootloader configuration on some PPC platforms.")
+                                           "boot loader configuration on some PPC platforms.")
                             }
 
 AUTOPART_CHOICES = ((N_("Standard Partition"), AUTOPART_TYPE_PLAIN),
-                    (N_("BTRFS"), AUTOPART_TYPE_BTRFS),
+                    (N_("Btrfs"), AUTOPART_TYPE_BTRFS),
                     (N_("LVM"), AUTOPART_TYPE_LVM),
                     (N_("LVM Thin Provisioning"), AUTOPART_TYPE_LVM_THINP))
 
@@ -90,26 +90,30 @@ AUTOPART_DEVICE_TYPES = {AUTOPART_TYPE_LVM: DEVICE_TYPE_LVM,
 NAMED_DEVICE_TYPES = (DEVICE_TYPE_BTRFS, DEVICE_TYPE_LVM, DEVICE_TYPE_MD, DEVICE_TYPE_LVM_THINP)
 CONTAINER_DEVICE_TYPES = (DEVICE_TYPE_LVM, DEVICE_TYPE_BTRFS, DEVICE_TYPE_LVM_THINP)
 
-def size_from_input(input_str):
-    """Get size from user's input"""
+def size_from_input(input_str, units=None):
+    """ Get a Size object from an input string.
+
+        :param str input_str: a string forming some representation of a size
+        :param units: use these units if none specified in input_str
+        :type units: str or NoneType
+        :returns: a Size object corresponding to input_str
+        :rtype: :class:`blivet.size.Size` or NoneType
+
+        Units default to bytes if no units in input_str or units.
+    """
 
     if not input_str:
         # Nothing to parse
         return None
 
-    # if no unit was specified, default to MiB. Assume that a string
-    # ending with anything other than a digit has a unit suffix
+    # A string ending with a digit contains no units information.
     if re.search(r'[\d.%s]$' % locale.nl_langinfo(locale.RADIXCHAR), input_str):
-        input_str += "MiB"
+        input_str += units or ""
 
     try:
         size = Size(input_str)
     except ValueError:
         return None
-    else:
-        # Minimium size for ui-created partitions is 1MiB.
-        if size.convertTo(spec="MiB") < 1:
-            size = Size("1 MiB")
 
     return size
 
@@ -231,7 +235,7 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
         stage1 = storage.bootloader.stage1_device
         if not stage1:
             exns.append(
-               SanityError(_("No valid bootloader target device found. "
+               SanityError(_("No valid boot loader target device found. "
                             "See below for details.")))
             pe = _platform.stage1MissingError
             if pe:
@@ -334,4 +338,110 @@ def verify_LUKS_devices_have_key(storage):
        d.format.type == "luks" and \
        not d.format.exists and \
        not d.format.hasKey):
-        yield LUKSDeviceWithoutKeyError(_("LUKS device %s has no encryption key") % (dev.name,))
+        yield LUKSDeviceWithoutKeyError(_("Encryption requested for LUKS device %s but no encryption key specified for this device.") % (dev.name,))
+
+
+def bound_size(size, device, old_size):
+    """ Returns a size bounded by the maximum and minimum size for
+        the device.
+
+        :param size: the candidate size
+        :type size: :class:`blivet.size.Size`
+        :param device: the device being displayed
+        :type device: :class:`blivet.devices.StorageDevice`
+        :param old_size: the fallback size
+        :type old_size: :class:`blivet.size.Size`
+        :returns: a size to which to set the device
+        :rtype: :class:`blivet.size.Size`
+
+        If size is 0, interpreted as set size to maximum possible.
+        If no maximum size is available, reset size to old_size, but
+        log a warning.
+    """
+    max_size = device.maxSize
+    min_size = device.minSize
+    if not size:
+        if max_size:
+            log.info("No size specified, using maximum size for this device (%d).", max_size)
+            size = max_size
+        else:
+            log.warning("No size specified and no maximum size available, setting size back to original size (%d).", old_size)
+            size = old_size
+    else:
+        if max_size:
+            if size > max_size:
+                log.warning("Size specified (%d) is greater than the maximum size for this device (%d), using maximum size.", size, max_size)
+                size = max_size
+        else:
+            log.warning("Unknown upper bound on size. Using requested size (%d).", size)
+
+        if size < min_size:
+            log.warning("Size specified (%d) is less than the minimum size for this device (%d), using minimum size.", size, min_size)
+            size = min_size
+
+    return size
+
+class StorageSnapshot(object):
+    """R/W snapshot of storage (i.e. a :class:`blivet.Blivet` instance)"""
+
+    def __init__(self, storage=None):
+        """
+        Create new instance of the class
+
+        :param storage: if given, its snapshot is created
+        :type storage: :class:`blivet.Blivet`
+        """
+        if storage:
+            self._storage_snap = storage.copy()
+        else:
+            self._storage_snap = None
+
+    @property
+    def storage(self):
+        return self._storage_snap
+
+    @property
+    def created(self):
+        return bool(self._storage_snap)
+
+    def create_snapshot(self, storage):
+        """Create (and save) snapshot of storage"""
+
+        self._storage_snap = storage.copy()
+
+    def dispose_snapshot(self):
+        """
+        Dispose (unref) the snapshot
+
+        .. note::
+
+            In order to free the memory taken by the snapshot, all references
+            returned by :property:`self.storage` have to be unrefed too.
+        """
+        self._storage_snap = None
+
+    def reset_to_snapshot(self, storage, dispose=False):
+        """
+        Reset storage to snapshot (**modifies :param:`storage` in place**)
+
+        :param storage: :class:`blivet.Blivet` instance to reset to the created snapshot
+        :param bool dispose: whether to dispose the snapshot after reset or not
+        :raises ValueError: if no snapshot is available (was not created before)
+        """
+        if not self.created:
+            raise ValueError("No snapshot created, cannot reset")
+
+        # we need to create a new copy from the snapshot first -- simple
+        # assignment from the snapshot would result in snapshot being modified
+        # by further changes of 'storage'
+        new_copy = self._storage_snap.copy()
+        storage.devicetree = new_copy.devicetree
+        storage.roots = new_copy.roots
+        storage.fsset = new_copy.fsset
+
+        if dispose:
+            self.dispose_snapshot()
+
+# a snapshot of early storage as we got it from scanning disks without doing any
+# changes
+on_disk_storage = StorageSnapshot()

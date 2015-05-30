@@ -19,7 +19,8 @@
 # Author(s): Erik Troan <ewt@redhat.com>
 #
 
-import string
+# Used for digits, ascii_letters, punctuation constants
+import string # pylint: disable=deprecated-module
 from pyanaconda.i18n import N_
 
 # Use -1 to indicate that the selinux configuration is unset
@@ -51,7 +52,7 @@ DD_RPMS = "/tmp/DD-*"
 TRANSLATIONS_UPDATE_DIR="/tmp/updates/po"
 
 ANACONDA_CLEANUP = "anaconda-cleanup"
-MOUNT_DIR = "/mnt/install"
+MOUNT_DIR = "/run/install"
 DRACUT_REPODIR = "/run/install/repo"
 DRACUT_ISODIR = "/run/install/source"
 ISO_DIR = MOUNT_DIR + "/isodir"
@@ -62,7 +63,7 @@ BASE_REPO_NAME = "anaconda"
 # NOTE: this should be LANG_TERRITORY.CODESET, e.g. en_US.UTF-8
 DEFAULT_LANG = "en_US.UTF-8"
 
-DEFAULT_VC_FONT = "latarcyrheb-sun16"
+DEFAULT_VC_FONT = "eurlatgr"
 
 DEFAULT_KEYBOARD = "us"
 
@@ -133,15 +134,16 @@ FIRSTBOOT_ENVIRON = "firstboot"
 UNSUPPORTED_HW = 1 << 28
 
 # Password validation
-PASSWORD_MIN_LEN = 6
+PASSWORD_MIN_LEN = 8
 PASSWORD_EMPTY_ERROR = N_("The password is empty.")
 PASSWORD_CONFIRM_ERROR_GUI = N_("The passwords do not match.")
 PASSWORD_CONFIRM_ERROR_TUI = N_("The passwords you entered were different.  Please try again.")
-PASSWORD_WEAK = N_("The password you have provided is weak. You will have to press Done twice to confirm it.")
-PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s. You will have to press Done twice to confirm it.")
+PASSWORD_WEAK = N_("The password you have provided is weak. %s")
+PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s. %s")
 PASSWORD_WEAK_CONFIRM = N_("You have provided a weak password. Press Done again to use anyway.")
 PASSWORD_WEAK_CONFIRM_WITH_ERROR = N_("You have provided a weak password: %s. Press Done again to use anyway.")
 PASSWORD_ASCII = N_("The password you have provided contains non-ASCII characters. You may not be able to switch between keyboard layouts to login. Press Done to continue.")
+PASSWORD_DONE_TWICE = N_("You will have to press Done twice to confirm it.")
 
 PASSWORD_STRENGTH_DESC = [N_("Empty"), N_("Weak"), N_("Fair"), N_("Good"), N_("Strong")]
 
@@ -159,9 +161,22 @@ CMDLINE_APPEND = ["modprobe.blacklist"]
 
 DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM
 
+# Default to these units when reading user input when no units given
+SIZE_UNITS_DEFAULT = "MiB"
+
 import logging
 LOGLVL_LOCK = logging.DEBUG-1
+
+# Constants for reporting status to IPMI.  These are from the IPMI spec v2 rev1.1, page 512.
+IPMI_STARTED  = 0x7         # installation started
+IPMI_FINISHED = 0x8         # installation finished successfully
+IPMI_ABORTED  = 0x9         # installation finished unsuccessfully, due to some non-exn error
+IPMI_FAILED   = 0xA         # installation hit an exception
+
 
 # for how long (in seconds) we try to wait for enough entropy for LUKS
 # keep this a multiple of 60 (minutes)
 MAX_ENTROPY_WAIT = 10 * 60
+
+# X display number to use
+X_DISPLAY_NUMBER = 1

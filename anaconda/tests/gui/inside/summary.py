@@ -30,21 +30,21 @@ from . import UITestCase
 #   spoke selectors are visible.
 
 class LiveCDSummaryTestCase(UITestCase):
-    def check_quit_button(self):
-        self.click_button("Quit")
-        self.check_dialog_displayed("Quit")
-        self.click_button("No")
+    def check_quit_button(self, spoke):
+        self.click_button("Quit", node=spoke)
+        dlg = self.check_dialog_displayed("Quit")
+        self.click_button("No", node=dlg)
 
-    def check_begin_installation_button(self):
-        button = self.find("Begin Installation", "push button")
+    def check_begin_installation_button(self, spoke):
+        button = self.find("Begin Installation", "push button", node=spoke)
         self.assertIsNotNone(button, msg="Begin Installation button not found")
         self.assertTrue(button.showing, msg="Begin Installation button should be displayed")
         self.assertFalse(button.sensitive, msg="Begin Installation button should not be sensitive")
 
-    def check_shown_spoke_selectors(self):
+    def check_shown_spoke_selectors(self, spoke):
         # FIXME:  This forces English.
-        validSelectors = ["DATE & TIME", "KEYBOARD", "INSTALLATION DESTINATION", "NETWORK & HOSTNAME"]
-        selectors = self.ana.findChildren(GenericPredicate(roleName="spoke selector"))
+        validSelectors = ["TIME & DATE", "KEYBOARD", "INSTALLATION DESTINATION", "NETWORK & HOST NAME"]
+        selectors = spoke.findChildren(GenericPredicate(roleName="spoke selector"))
 
         self.assertEqual(len(selectors), len(validSelectors), msg="Incorrect number of spoke selectors shown")
 
@@ -54,7 +54,7 @@ class LiveCDSummaryTestCase(UITestCase):
         # going to change.
         # FIXME:  This encodes default information.
         for selector in selectors:
-            if selector.name == "DATE & TIME":
+            if selector.name == "TIME & DATE":
                 self.assertEqual(selector.description, "Americas/New York timezone")
             elif selector.name == "KEYBOARD":
                 self.assertEqual(selector.description, "English (US)")
@@ -64,18 +64,19 @@ class LiveCDSummaryTestCase(UITestCase):
                 # one, it selects none.
                 self.assertIn(selector.description, ["Automatic partitioning selected",
                                                      "No disks selected"])
-            elif selector.name == "NETWORK & HOSTNAME":
-                self.assertRegexpMatches(selector.description, "Wired (.+) connected")
+            elif selector.name == "NETWORK & HOST NAME":
+                self.assertTrue(selector.description.startswith("Connected:"))
             else:
                 self.fail("Invalid spoke selector shown on livecd: %s" % selector.name)
 
     def _run(self):
         # Before doing anything, verify we are on the right screen.
         doDelay(5)
-        self.check_window_displayed("INSTALLATION SUMMARY")
+        w = self.check_window_displayed("INSTALLATION SUMMARY")
 
         # And now we can check everything else on the screen.
-        self.check_quit_button()
-        self.check_begin_installation_button()
-        self.check_shown_spoke_selectors()
-        self.check_warning_bar()
+        self.check_help_button(w)
+        self.check_quit_button(w)
+        self.check_begin_installation_button(w)
+        self.check_shown_spoke_selectors(w)
+        self.check_warning_bar(node=w)

@@ -35,6 +35,7 @@ from pyanaconda.i18n import _, N_, CP_
 from pyanaconda.product import productName, productVersion, translated_new_install_name
 from pyanaconda.threads import AnacondaThread, threadMgr
 from pyanaconda.constants import THREAD_EXECUTE_STORAGE, THREAD_STORAGE, THREAD_CUSTOM_STORAGE_INIT
+from pyanaconda.constants import SIZE_UNITS_DEFAULT
 from pyanaconda.iutil import lowerASCII
 from pyanaconda.bootloader import BootLoaderError
 from pyanaconda.kickstart import refreshAutoSwapSize
@@ -45,7 +46,6 @@ from blivet.formats import device_formats
 from blivet.formats import getFormat
 from blivet.formats.fs import FS
 from blivet.size import Size
-from blivet import Root
 from blivet.devicefactory import DEVICE_TYPE_LVM
 from blivet.devicefactory import DEVICE_TYPE_BTRFS
 from blivet.devicefactory import DEVICE_TYPE_PARTITION
@@ -53,8 +53,8 @@ from blivet.devicefactory import DEVICE_TYPE_MD
 from blivet.devicefactory import DEVICE_TYPE_DISK
 from blivet.devicefactory import DEVICE_TYPE_LVM_THINP
 from blivet.devicefactory import SIZE_POLICY_AUTO
-from blivet import findExistingInstallations
-from blivet.partitioning import doAutoPartition
+from blivet.osinstall import findExistingInstallations, Root
+from blivet.autopart import doAutoPartition
 from blivet.errors import StorageError
 from blivet.errors import NoDisksError
 from blivet.errors import NotEnoughFreeSpaceError
@@ -80,14 +80,15 @@ from pyanaconda.ui.gui.spokes.lib.summary import ActionSummaryDialog
 from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import size_from_entry
 from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import validate_label, validate_mountpoint, get_raid_level
 from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import selectedRaidLevel, raidLevelSelection, defaultRaidLevel, requiresRaidSelection, containerRaidLevelsSupported, raidLevelsSupported, defaultContainerRaidLevel
-from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import get_container_type_name, RAID_NOT_ENOUGH_DISKS
+from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import get_container_type, RAID_NOT_ENOUGH_DISKS
 from pyanaconda.ui.gui.spokes.lib.custom_storage_helpers import AddDialog, ConfirmDeleteDialog, DisksDialog, ContainerDialog
 
 from pyanaconda.ui.gui.utils import setViewportBackground, fancy_set_sensitive, ignoreEscape
-from pyanaconda.ui.gui.utils import really_hide, really_show, GtkActionList, timed_action
+from pyanaconda.ui.gui.utils import really_hide, really_show, timed_action
 from pyanaconda.ui.categories.system import SystemCategory
 
 from gi.repository import Gdk, Gtk
+from gi.repository import BlockDev as blockdev
 from gi.repository.AnacondaWidgets import MountpointSelector
 
 from functools import wraps
@@ -112,6 +113,13 @@ UNRECOVERABLE_ERROR_MSG = N_("Storage configuration reset due to unrecoverable "
                              "error. Click for details.")
 
 def dev_type_from_const(dev_type_const):
+    """ Return integer corresponding to name for device type defined as
+        a constant in blivet.devicefactory.
+
+        :param str dev_type_const: the name of a DEVICE_TYPE_*
+        :returns: the corresponding integer code, if there is one
+        :rtype: int or NoneType
+    """
     return getattr(devicefactory, dev_type_const, None)
 
 def ui_storage_logged(func):
@@ -134,6 +142,12 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
     category = SystemCategory
     title = N_("MANUAL PARTITIONING")
 
+    # The maximum number of places to show when displaying a size
+    MAX_SIZE_PLACES = 2
+
+    # If the user enters a smaller size, the GUI changes it to this value
+    MIN_SIZE_ENTRY = Size("1 MiB")
+
     def __init__(self, data, storage, payload, instclass):
         StorageChecker.__init__(self, min_ram=isys.MIN_GUI_RAM)
         NormalSpoke.__init__(self, data, storage, payload, instclass)
@@ -147,10 +161,9 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         self._devices = []
         self._error = None
         self._hidden_disks = []
-        self._fs_types = []             # list of supported fstypes
+        self._fs_types = set()             # set of supported fstypes
         self._free_space = Size(0)
 
-        self._device_size_text = None
         self._device_disks = []
         self._device_container_name = None
         self._device_container_raid_level = None
@@ -201,6 +214,10 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         self._partitionsViewport = self.builder.get_object("partitionsViewport")
         self._partitionsNotebook = self.builder.get_object("partitionsNotebook")
 
+        # Connect partitionsNotebook focus events to scrolling in the parent viewport
+        partitionsNotebookViewport = self.builder.get_object("partitionsNotebookViewport")
+        self._partitionsNotebook.set_focus_vadjustment(partitionsNotebookViewport.get_vadjustment())
+
         self._whenCreateLabel = self.builder.get_object("whenCreateLabel")
 
         self._availableSpaceLabel = self.builder.get_object("availableSpaceLabel")
@@ -231,6 +248,15 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         self._containerStore = self.builder.get_object("containerStore")
         self._deviceDescLabel = self.builder.get_object("deviceDescLabel")
 
+        # Set the fixed-size properties on the volume group ComboBox renderers to
+        # False so that the "Create a new..." row can overlap with the free space
+        # on the other rows. These properties are not accessible from glade.
+        cell_area = self._containerCombo.get_area()
+        descRenderer = self.builder.get_object("descRenderer")
+        freeSpaceRenderer = self.builder.get_object("freeSpaceRenderer")
+        cell_area.cell_set_property(descRenderer, "fixed-size", False)
+        cell_area.cell_set_property(freeSpaceRenderer, "fixed-size", False)
+
         self._passphraseEntry = self.builder.get_object("passphraseEntry")
 
         # Stores
@@ -260,17 +286,19 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         self._accordion = Accordion()
         self._partitionsViewport.add(self._accordion)
 
-        # Populate the list of valid filesystem types from the format classes.
-        # Unfortunately, we have to narrow them down a little bit more because
-        # this list will include things like PVs and RAID members.
-        self._fsCombo.remove_all()
+        # Connect viewport scrolling with accordion focus events
+        self._accordion.set_focus_hadjustment(self._partitionsViewport.get_hadjustment())
+        self._accordion.set_focus_vadjustment(self._partitionsViewport.get_vadjustment())
 
         threadMgr.add(AnacondaThread(name=THREAD_CUSTOM_STORAGE_INIT, target=self._initialize))
 
     def _initialize(self):
-        self._fs_types = []
-        actions = GtkActionList()
-        for cls in device_formats.itervalues():
+        """ Populate the set of valid filesystem types from the format classes.
+
+            Restrict the set to ones that we might allow users to select.
+        """
+        _fs_types = []
+        for cls in device_formats.values():
             obj = cls()
 
             # btrfs is always handled by on_device_type_changed
@@ -280,10 +308,9 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                             (isinstance(obj, FS) or
                              obj.type in ["biosboot", "prepboot", "swap"]))
             if supported_fs:
-                actions.add_action(self._fsCombo.append_text, obj.name)
-                self._fs_types.append(obj.name)
+                _fs_types.append(obj.name)
 
-        actions.fire()
+        self._fs_types = set(_fs_types)
 
     @property
     def _clearpartDevices(self):
@@ -293,7 +320,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
     def unusedDevices(self):
         unused_devices = [d for d in self._storage_playground.unusedDevices
                                 if d.disks and d.mediaPresent and
-                                not d.partitioned and d.direct]
+                                not d.partitioned and (d.direct or d.isleaf)]
         # add incomplete VGs and MDs
         incomplete = [d for d in self._storage_playground.devicetree._devices
                             if not getattr(d, "complete", True)]
@@ -492,7 +519,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
             page = Page(root.name)
 
-            for (mountpoint, device) in root.mounts.iteritems():
+            for (mountpoint, device) in root.mounts.items():
                 if device not in self._devices or \
                    not device.disks or \
                    (root.name != translated_new_install_name() and not device.format.exists):
@@ -636,7 +663,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         elif encrypted and new_fs_type in PARTITION_ONLY_FORMAT_TYPES:
             error = _("%s cannot be encrypted") % new_fs_type
         elif mountpoint == "/" and device.format.exists and not reformat:
-            error = _("You must create a new filesystem on the root device.")
+            error = _("You must create a new file system on the root device.")
 
         if not error and \
            (raid_level is not None or requiresRaidSelection(device_type)) and \
@@ -672,7 +699,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._update_all_devices_in_selectors()
             self._error = e
             self.set_warning(_(DEVICE_CONFIGURATION_ERROR_MSG))
-            self.window.show_all()
 
             if not removed_device:
                 # nothing more to do
@@ -692,11 +718,17 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                     self.refresh()  # this calls self.clear_errors
                     self._error = e
                     self.set_warning(_(UNRECOVERABLE_ERROR_MSG))
-                    self.window.show_all()
                     return False
 
     @ui_storage_logged
-    def _revert_reformat(self, device, use_dev):
+    def _revert_reformat(self, device):
+        """ Revert reformat.
+
+            :param device: the device being displayed
+            :type device: :class:`blivet.devices.StorageDevice`
+        """
+        use_dev = device.raw_device
+
         # figure out the existing device and reset it
         if not use_dev.format.exists:
             original_device = use_dev
@@ -706,54 +738,62 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         log.debug("resetting device %s", original_device.name)
         self._storage_playground.resetDevice(original_device)
 
-    def _bound_size(self, size, device):
-        # If no size was specified, we just want to grow to the maximum.
-        # But resizeDevice doesn't take None for a value.
-        if not size:
-            size = device.maxSize
-        elif size < device.minSize:
-            size = device.minSize
-        elif size > device.maxSize:
-            size = device.maxSize
-
-        return size
-
     @ui_storage_logged
-    def _handle_size_change(self, size, old_size, device, use_dev):
+    def _handle_size_change(self, size, old_size, device):
+        """ Handle size change.
+
+            :param device: the device being displayed
+            :type device: :class:`blivet.devices.StorageDevice`
+        """
+        use_dev = device.raw_device
+
+        # If a LUKS device is being displayed, adjust the size
+        # to the appropriate size for the raw device.
+        use_size = size
+        use_old_size = old_size
+        if use_dev is not device:
+            use_size = size + crypto.LUKS_METADATA_SIZE
+            use_old_size = use_dev.size
+
         # bound size to boundaries given by the device
-        size = self._bound_size(size, device)
-        size = device.alignTargetSize(size)
+        use_size = use_dev.alignTargetSize(use_size)
+        use_size = storage_utils.bound_size(use_size, use_dev, use_old_size)
+        use_size = use_dev.alignTargetSize(use_size)
 
         # And then we need to re-check that the max size is actually
         # different from the current size.
         _changed_size = False
-        if size != device.size and size == device.currentSize:
+        if use_size != device.size and size == device.currentSize:
             # size has been set back to its original value
-            actions = self._storage_playground.devicetree.findActions(action_type="resize",
-                                                            devid=device.id)
+            actions = self._storage_playground.devicetree.findActions(
+               action_type="resize",
+               devid=use_dev.id
+            )
             for action in reversed(actions):
                 self._storage_playground.devicetree.cancelAction(action)
                 _changed_size = True
-        elif size != device.size:
-            log.debug("scheduling resize of device %s to %s", device.name, size)
+        elif use_size != use_dev.size:
+            log.debug("scheduling resize of device %s to %s", use_dev.name, use_size)
 
             try:
-                self._storage_playground.resizeDevice(device, size)
+                self._storage_playground.resizeDevice(use_dev, use_size)
             except StorageError as e:
                 log.error("failed to schedule device resize: %s", e)
-                device.size = old_size
+                use_dev.size = use_old_size
                 self._error = e
                 self.set_warning(_("Device resize request failed. "
                                    "Click for details."))
-                self.window.show_all()
             else:
                 _changed_size = True
 
         if _changed_size:
-            log.debug("new size: %s", device.size)
-            log.debug("target size: %s", device.targetSize)
+            log.debug("new size: %s", use_dev.size)
+            log.debug("target size: %s", use_dev.targetSize)
 
             # update the selector's size property
+            # The selector shows the visible disk, so it is necessary
+            # to use device and size, which are the values visible to
+            # the user.
             for s in self._accordion.allSelectors:
                 if s._device == device:
                     s.size = str(device.size)
@@ -816,7 +856,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._error = e
             self.set_warning(_("Device reformat request failed. "
                                "Click for details."))
-            self.window.show_all()
         else:
             # first, remove this selector from any old install page(s)
             new_selector = None
@@ -845,6 +884,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
             This method must never trigger a call to self._do_refresh.
         """
+
+        self.clear_errors()
 
         # check if initialized and have something to operate on
         if not self._initialized or not selector:
@@ -893,15 +934,18 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         # SIZE
         old_size = device.size
 
-        # we are interested in size human readable representation change because
-        # that's what the user sees
-        same_size = self._device_size_text == self._sizeEntry.get_text()
-        if same_size:
+        # If the size text hasn't changed at all from that displayed,
+        # assume no change intended.
+        if old_size.humanReadable(max_places=self.MAX_SIZE_PLACES) == self._sizeEntry.get_text():
             size = old_size
         else:
-            size = size_from_entry(self._sizeEntry)
+            size = size_from_entry(
+               self._sizeEntry,
+               lower_bound=self.MIN_SIZE_ENTRY,
+               units=SIZE_UNITS_DEFAULT
+            )
         changed_size = ((use_dev.resizable or not use_dev.exists) and
-                        not same_size)
+                        size != old_size)
         old_device_info["size"] = old_size
         new_device_info["size"] = size
 
@@ -928,7 +972,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         # ENCRYPTION
         old_encrypted = isinstance(device, LUKSDevice)
-        encrypted = self._encryptCheckbox.get_active()
+        encrypted = self._encryptCheckbox.get_active() and self._encryptCheckbox.is_sensitive()
         changed_encryption = (old_encrypted != encrypted)
         old_device_info["encrypted"] = old_encrypted
         new_device_info["encrypted"] = encrypted
@@ -944,7 +988,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if error:
                 self._error = error
                 self.set_warning(self._error)
-                self.window.show_all()
                 self._populate_right_side(selector)
                 return
 
@@ -966,7 +1009,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if error:
                 self._error = error
                 self.set_warning(self._error)
-                self.window.show_all()
                 self._populate_right_side(selector)
                 return
 
@@ -982,7 +1024,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         changed_raid_level = (old_device_type == device_type and
                               device_type in (DEVICE_TYPE_MD,
                                               DEVICE_TYPE_BTRFS) and
-                              old_raid_level != raid_level)
+                              old_raid_level is not raid_level)
         old_device_info["raid_level"] = old_raid_level
         new_device_info["raid_level"] = raid_level
 
@@ -994,14 +1036,13 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                                           raid_level)
         if error:
             self.set_warning(error)
-            self.window.show_all()
             self._populate_right_side(selector)
             return
 
         # If the device is a btrfs volume, the only things we can set/update
         # are mountpoint and container-wide settings.
         if device_type == DEVICE_TYPE_BTRFS and hasattr(use_dev, "subvolumes"):
-            size = 0
+            size = Size(0)
             changed_size = False
             encrypted = False
             changed_encryption = False
@@ -1092,9 +1133,10 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                    changed_container or changed_container_encrypted or
                    changed_container_raid_level or changed_container_size)
 
-        ##
-        ## Handle changes to an existing device
-        ##
+        # If something has changed but the device does not exist,
+        # there is no need to schedule actions on the device.
+        # It is only necessary to create a new device object
+        # which reflects the current choices.
         if not use_dev.exists:
             if not changed:
                 log.debug("nothing changed for new device")
@@ -1138,11 +1180,11 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         # a reformat.
         if not reformat and (not use_dev.format.exists or
                              not device.format.exists):
-            self._revert_reformat(device, use_dev)
+            self._revert_reformat(device)
 
         # Handle size change
-        if changed_size and device.resizable:
-            self._handle_size_change(size, old_size, device, use_dev)
+        if changed_size:
+            self._handle_size_change(size, old_size, device)
 
         # it's possible that reformat is active but fstype is unchanged, in
         # which case we're not going to schedule another reformat unless
@@ -1179,14 +1221,19 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         #
         if changed_name:
             self.clear_errors()
-            use_dev._name = name
-            new_name = use_dev.name
-            log.debug("changing name of %s to %s", old_name, new_name)
-            if new_name in self._storage_playground.names:
-                use_dev._name = old_name
-                self.set_info(_("Specified name %s already in use.") % new_name)
+            try:
+                use_dev.name = name
+            except ValueError as e:
+                self._error = e
+                self.set_error(_("Invalid device name: %s") % name)
             else:
-                updateSelectorFromDevice(selector, device)
+                new_name = use_dev.name
+                log.debug("changing name of %s to %s", old_name, new_name)
+                if new_name in self._storage_playground.names:
+                    use_dev.name = old_name
+                    self.set_info(_("Specified name %s already in use.") % new_name)
+                else:
+                    updateSelectorFromDevice(selector, device)
 
         self._populate_right_side(selector)
 
@@ -1219,13 +1266,28 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         map(really_show, [self._raidLevelLabel, self._raidLevelCombo])
 
-    def _get_current_device_type(self):
+    def _get_current_device_type_name(self):
+        """ Return name for type combo selection.
+
+            :returns: the corresponding name extracted from the combo
+            :rtype: str or NoneType
+        """
         itr = self._typeCombo.get_active_iter()
         if not itr:
             return None
 
         # we have the constant name in the second column of the store
-        return dev_type_from_const(self._typeStore[itr][1])
+        return self._typeStore[itr][1]
+
+    def _get_current_device_type(self):
+        """ Return integer for type combo selection.
+
+            :returns: the corresponding integer code, a constant in
+            blivet.devicefactory.
+            :rtype: int or NoneType
+        """
+        device_type_name = self._get_current_device_type_name()
+        return dev_type_from_const(device_type_name) if device_type_name else None
 
     def _update_container_info(self, use_dev):
         if hasattr(use_dev, "vg"):
@@ -1249,34 +1311,66 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
            or defaultContainerRaidLevel(devicefactory.get_device_type(use_dev))
 
     def _setup_fstype_combo(self, device):
-        # remove any fs types that aren't supported
-        remove_indices = []
-        for idx, row in enumerate(self._fsCombo.get_model()):
-            fs_type = row[0]
-            if fs_type not in self._fs_types:
-                remove_indices.append(idx)
-                continue
+        """ Setup the filesystem combo box.
 
-            if fs_type == device.format.name:
-                self._fsCombo.set_active(idx)
+            :param device: blivet.devices.Device instance
+        """
+        type_name = device.format.name
 
-        # remove items from the combobox in reversed order so that item 3
-        # doesn't become item 2 by removing item 1 etc.
-        map(self._fsCombo.remove, reversed(remove_indices))
-
-        # if the current device has unsupported formatting, add an entry for it
-        if device.format.name not in self._fs_types:
-            self._fsCombo.append_text(device.format.name)
-            self._fsCombo.set_active(len(self._fsCombo.get_model()) - 1)
-
-        # Give them a way to reset to original formatting. Whenever we add a
-        # "reformat this" widget this will need revisiting.
+        # Possibly unsupported but still required filesystem names
         if device.exists and \
            device.format.type != device.originalFormat.type and \
            device.originalFormat.type not in self._fs_types:
-            self._fsCombo.append_text(device.originalFormat.name)
+            extra_names = (type_name, device.originalFormat.name)
+        else:
+            extra_names = (type_name,)
 
-    def _setup_device_type_combo(self, device, use_dev, device_name):
+        names = list(self._fs_types.union(extra_names))
+        names.sort()
+
+        # Add all desired fileystem type names to the box, sorted alphabetically
+        self._fsCombo.remove_all()
+        for ty in names:
+            self._fsCombo.append_text(ty)
+
+        # set the active filesystem type
+        idx = next(i for i, data in enumerate(self._fsCombo.get_model()) if data[0] == type_name)
+        self._fsCombo.set_active(idx)
+
+        # do additional updating handled by other method
+        self._update_fstype_combo(devicefactory.get_device_type(device))
+
+    def _btrfs_in_typecombo(self, device):
+        """ Whether BTRFS should appear in device type combo box.
+
+            :param device: the device being displayed
+            :type device: :class:`blivet.devices.StorageDevice`
+            :rtype: bool
+            :returns: True if BTRFS should appear, otherwise False
+        """
+        device = device.raw_device
+
+        # The device is btrfs, so btrfs must be shown.
+        if device.format.type == "btrfs":
+            return True
+
+        # Return True if btrfs filesystem is both allowed and supported.
+        fmt = getFormat("btrfs")
+        return fmt.supported and fmt.formattable and \
+           device.format.type not in PARTITION_ONLY_FORMAT_TYPES + ("swap",)
+
+    def _setup_device_type_combo(self, device, device_name):
+        """ Set up device type combo.
+
+            :param device: the device
+            :type device: :class:`blivet.devices.StorageDevice`
+            :param str device_name: the device name
+
+            :returns: the device type that was decided on
+            :rtype: int (an enumeration defined in blivet.devicefactory)
+        """
+        use_dev = device.raw_device
+
         # these device types should always be listed
         should_appear = {"DEVICE_TYPE_PARTITION", "DEVICE_TYPE_LVM", "DEVICE_TYPE_LVM_THINP"}
 
@@ -1284,8 +1378,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         if (use_dev.type == "mdarray" or len(self._clearpartDevices) > 1):
             should_appear.add("DEVICE_TYPE_MD")
 
-        # if the format is swap the device type can't be btrfs
-        if use_dev.format.type not in PARTITION_ONLY_FORMAT_TYPES + ("swap",):
+        if self._btrfs_in_typecombo(device):
             should_appear.add("DEVICE_TYPE_BTRFS")
 
         # only include disk if the current device is a disk
@@ -1311,7 +1404,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         device_type = devicefactory.get_device_type(device)
 
-        for _type in self._device_name_dict.iterkeys():
+        for _type in self._device_name_dict.keys():
             if _type == device_type:
                 self._device_name_dict[_type] = device_name
                 continue
@@ -1391,8 +1484,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._labelEntry.set_text("")
         fancy_set_sensitive(self._labelEntry, True)
 
-        self._device_size_text = device.size.humanReadable(max_places=2)
-        self._sizeEntry.set_text(self._device_size_text)
+        self._sizeEntry.set_text(device.size.humanReadable(max_places=self.MAX_SIZE_PLACES))
 
         self._reformatCheckbox.set_active(not device.format.exists)
         fancy_set_sensitive(self._reformatCheckbox,
@@ -1406,12 +1498,16 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             # The encryption checkbutton should not be sensitive if there is
             # existing encryption below the leaf layer.
             self._encryptCheckbox.set_sensitive(False)
+            self._encryptCheckbox.set_active(True)
+            self._encryptCheckbox.set_tooltip_text(_("The container is encrypted."))
+        else:
+            self._encryptCheckbox.set_tooltip_text("")
 
         # Set up the filesystem type combo.
         self._setup_fstype_combo(device)
 
         # Set up the device type combo.
-        device_type = self._setup_device_type_combo(device, use_dev, device_name)
+        device_type = self._setup_device_type_combo(device, device_name)
 
         fancy_set_sensitive(self._fsCombo, self._reformatCheckbox.get_active() and
                                            device_type != DEVICE_TYPE_BTRFS)
@@ -1439,7 +1535,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         if self._sizeEntry.get_sensitive():
             self._sizeEntry.props.has_tooltip = False
         elif device.format.type == "btrfs":
-            self._sizeEntry.set_tooltip_text(_("The space available to this mountpoint can be changed by modifying the volume below."))
+            self._sizeEntry.set_tooltip_text(_("The space available to this mount point can be changed by modifying the volume below."))
         else:
             self._sizeEntry.set_tooltip_text(_("This file system may not be resized."))
 
@@ -1501,7 +1597,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         # on_info_bar_clicked requires self._error to be set, so set it to the
         # list of all errors and warnings that storage checking found.
-        self.window.show_all()
         self._error = "\n".join(self.errors + self.warnings)
 
         return self._error == ""
@@ -1512,6 +1607,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         # Save anything from the currently displayed mountpoint.
         self._save_right_side(self._current_selector)
+        self._applyButton.set_sensitive(False)
 
         # And then display the summary screen.  From there, the user will either
         # head back to the hub, or stay on the custom screen.
@@ -1606,7 +1702,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                     self.set_info(_("Added new %(type)s to existing "
                                     "container %(name)s.")
                                     % {"type" : type_str, "name" : container.name})
-                    self.window.show_all()
                     e = None
 
             # the factory's error handling has replaced all of the devices
@@ -1617,12 +1712,10 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                 self._error = e
                 self.set_error(_("Failed to add new device. Click for "
                                  "details."))
-                self.window.show_all()
         except OverflowError as e:
             log.error("invalid size set for partition")
             self._error = e
             self.set_error(_("Invalid partition size set. Use a valid integer."))
-            self.window.show_all()
 
     def on_add_clicked(self, button):
         self._save_right_side(self._current_selector)
@@ -1651,8 +1744,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         dev_info["mountpoint"] = dialog.mountpoint
         log.debug("requested size = %s  ; available space = %s", dialog.size, self._free_space)
 
-        # if no size was entered, request as much of the free space as possible
-        if dialog.size is not None and dialog.size.convertTo(spec="mb") < 1:
+        # if no requested size, or size less than 1 MB, request maximum size
+        if dialog.size is None or dialog.size < Size("1 MB"):
             dev_info["size"] = None
         else:
             dev_info["size"] = dialog.size
@@ -1731,7 +1824,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._error = e
             self.set_warning(_("Device removal request failed. Click "
                                "for details."))
-            self.window.show_all()
         else:
             if is_logical_partition:
                 self._storage_playground.removeEmptyExtendedPartitions()
@@ -1898,7 +1990,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         if not disks:
             self._error = "No disks selected. Keeping previous disk set."
             self.set_info(self._error)
-            self.window.show_all()
             return
 
         if set(disks) != self._device_disks:
@@ -1957,7 +2048,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         if not disks:
             self._error = "No disks selected. Not saving changes."
             self.set_info(self._error)
-            self.window.show_all()
             return
 
         log.debug("new container name: %s", name)
@@ -1965,7 +2055,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._error = _("Volume Group name %s is already in use. Not "
                             "saving changes.") % name
             self.set_info(self._error)
-            self.window.show_all()
             return
 
         if (set(disks) != set(self._device_disks) or
@@ -2008,6 +2097,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         log.debug("%s -> %s", container_name, self._device_container_name)
         if container_name == self._device_container_name:
+            self.on_update_settings_clicked(None)
             return
 
         log.debug("renaming container %s to %s", container_name, self._device_container_name)
@@ -2017,10 +2107,17 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                 self._storage_playground.devicetree.names.remove(container.name)
                 self._storage_playground.devicetree.names.append(self._device_container_name)
 
-            # until there's a setter for btrfs volume name
-            container._name = self._device_container_name
-            if container.format.type == "btrfs":
-                container.format.label = self._device_container_name
+            try:
+                container.name = self._device_container_name
+            except ValueError as e:
+                self._error = e
+                self.set_error(_("Invalid device name: %s") % self._device_container_name)
+                self._device_container_name = container_name
+                self.on_update_settings_clicked(None)
+                return
+            else:
+                if container.format.type == "btrfs":
+                    container.format.label = self._device_container_name
 
         container_exists = getattr(container, "exists", False)
 
@@ -2032,6 +2129,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         else:
             # no match found, just update selectors and return
             self._update_selectors()
+            self.on_update_settings_clicked(None)
             return
 
         c = self._storage_playground.devicetree.getDeviceByName(self._device_container_name)
@@ -2045,6 +2143,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         self._containerStore.remove(self._containerStore.get_iter_from_string("%s" % (idx + 1)))
 
         self._update_selectors()
+        self.on_update_settings_clicked(None)
 
     def on_container_changed(self, combo):
         ndx = combo.get_active()
@@ -2061,8 +2160,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             return
 
         device_type = self._get_current_device_type()
-        container_type = get_container_type_name(device_type).lower()
-        new_text = _(NEW_CONTAINER_TEXT) % {"container_type": container_type}
+        container_type_name = get_container_type(device_type).name.lower()
+        new_text = _(NEW_CONTAINER_TEXT) % {"container_type": container_type_name}
         create_new_container = container_name == new_text
         if create_new_container:
             # run the vg editor dialog with a default name and disk set
@@ -2220,20 +2319,17 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             log.error("doAutoPartition failed: %s", e)
             self._error = e
             self.set_error(_("No disks selected."))
-            self.window.show_all()
         except NotEnoughFreeSpaceError as e:
             # No handling should be required for this.
             log.error("doAutoPartition failed: %s", e)
             self._error = e
             self.set_error(_("Not enough free space on selected disks."))
-            self.window.show_all()
         except (StorageError, BootLoaderError) as e:
             log.error("doAutoPartition failed: %s", e)
             self._reset_storage()
             self._error = e
             self.set_error(_("Automatic partitioning failed. Click "
                              "for details."))
-            self.window.show_all()
         else:
             self._devices = self._storage_playground.devices
             # mark all new containers for automatic size management
@@ -2259,7 +2355,6 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._error = messages
             self.set_error(_("Automatic partitioning failed. Click "
                              "for details."))
-            self.window.show_all()
 
     def on_create_clicked(self, button, autopartTypeCombo):
         # Then do autopartitioning.  We do not do any clearpart first.  This is
@@ -2278,7 +2373,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
     def on_reformat_toggled(self, widget):
         active = widget.get_active()
 
-        self._encryptCheckbox.set_sensitive(active)
+        encrypt_sensitive = active
         if self._current_selector:
             device = self._current_selector.device.raw_device
 
@@ -2287,14 +2382,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if any(a.format.type == "luks" and a.format.exists for a in ancestors):
                 # The encryption checkbutton should not be sensitive if there is
                 # existing encryption below the leaf layer.
-                self._encryptCheckbox.set_sensitive(False)
+                encrypt_sensitive = False
 
         # you can't encrypt a btrfs subvolume -- only the volume/container
         device_type = self._get_current_device_type()
         if device_type == DEVICE_TYPE_BTRFS:
             self._encryptCheckbox.set_active(False)
 
-        self._encryptCheckbox.set_sensitive(device_type != DEVICE_TYPE_BTRFS)
+        self._encryptCheckbox.set_sensitive(encrypt_sensitive and device_type != DEVICE_TYPE_BTRFS)
         fancy_set_sensitive(self._fsCombo, active)
 
     def on_fs_type_changed(self, combo):
@@ -2341,8 +2436,9 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if container:
                 container_size_policy = container.size_policy
 
-        container_type_text = get_container_type_name(device_type)
-        self._containerLabel.set_text(container_type_text.title())
+        container_type = get_container_type(device_type)
+        self._containerLabel.set_text(container_type.label.title())
+        self._containerLabel.set_use_underline(True)
         self._containerStore.clear()
         if device_type == DEVICE_TYPE_BTRFS:
             containers = self._storage_playground.btrfsVolumes
@@ -2368,8 +2464,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._containerStore.append(self._container_store_row(default_container_name))
             self._containerCombo.set_active(len(self._containerStore) - 1)
 
-        self._containerStore.append(self._container_store_row(_(NEW_CONTAINER_TEXT) % {"container_type": container_type_text.lower()}))
-        self._containerCombo.set_tooltip_text(_(CONTAINER_TOOLTIP) % {"container_type": container_type_text.lower()})
+        self._containerStore.append(self._container_store_row(_(NEW_CONTAINER_TEXT) % {"container_type": container_type.name.lower()}))
+        self._containerCombo.set_tooltip_text(_(CONTAINER_TOOLTIP) % {"container_type": container_type.name.lower()})
         if default_container_name is None:
             self._containerCombo.set_active(len(self._containerStore) - 1)
 
@@ -2382,55 +2478,79 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         container_exists = getattr(container, "exists", False)
         self._modifyContainerButton.set_sensitive(not container_exists)
 
-    def _resolve_btrfs_restrictions(self, should_be_btrfs):
-        model = self._fsCombo.get_model()
-        btrfs_pos = None
-        for idx, data in enumerate(model):
-            if data[0] == "btrfs":
-                btrfs_pos = idx
+    def _update_fstype_combo(self, device_type):
+        """ Set up device type dependent portion of filesystem combo.
 
-        active_index = self._fsCombo.get_active()
-        current_fstype = self._fsCombo.get_active_text()
-        if btrfs_pos and not should_be_btrfs:
-            self._fsCombo.remove(btrfs_pos)
-            if current_fstype == "btrfs":
-                for i, row in enumerate(model):
-                    if row[0] == self.storage.defaultFSType:
-                        active_index = i
-                        break
-        elif should_be_btrfs and not btrfs_pos:
-            self._fsCombo.append_text("btrfs")
-            active_index = len(self._fsCombo.get_model()) - 1
+            :param int device_type: an int representing the device type
+
+            Generally speaking, the filesystem combo can be set up without
+            reference to the device type because the choice of filesystem
+            combo and of device type is orthogonal.
+
+            However, choice of btrfs device type requires choice of btrfs
+            filesystem type, and choice of any other device type precludes
+            choice of btrfs filesystem type.
+
+            Preconditions are:
+            * the filesystem combo contains at least the default filesystem
+            * the default filesystem is not the same as btrfs
+            * if device_type is DEVICE_TYPE_BTRFS, btrfs is supported
+
+            This method is idempotent, and must remain so.
+        """
+        # Find unique instance of btrfs in fsCombo, if any.
+        btrfs_idx = next((idx for idx, data in enumerate(self._fsCombo.get_model()) if data[0] == "btrfs"), None)
+
+        if device_type == DEVICE_TYPE_BTRFS:
+            # If no btrfs entry, add one, and select the new entry
+            if btrfs_idx is None:
+                self._fsCombo.append_text("btrfs")
+                active_index = len(self._fsCombo.get_model()) - 1
+            # Otherwise, select the already located btrfs entry
+            else:
+                active_index = btrfs_idx
+        else:
+            # Get the currently active index
+            active_index = self._fsCombo.get_active()
+
+            # If there is a btrfs entry, remove and adjust active_index
+            if btrfs_idx is not None:
+                self._fsCombo.remove(btrfs_idx)
+
+                # If btrfs previously selected, select default filesystem
+                if active_index == btrfs_idx:
+                    active_index = next(idx for idx, data in enumerate(self._fsCombo.get_model()) if data[0] == self.storage.defaultFSType)
+                # Otherwise, shift index left by one if after removed entry
+                elif active_index > btrfs_idx:
+                    active_index = active_index - 1
+            # If there is no btrfs entry, stick with user's previous choice
+            else:
+                pass
 
         self._fsCombo.set_active(active_index)
+        fancy_set_sensitive(self._fsCombo, self._reformatCheckbox.get_active() and device_type != DEVICE_TYPE_BTRFS)
 
     def on_device_type_changed(self, combo):
+        if combo is not self._typeCombo:
+            return
+
         if not self._initialized:
             return
 
-        new_type = self._get_current_device_type()
-        itr = combo.get_active_iter()
-        if not itr:
-            return
+        # The name of the device type is more informative than the numeric id
+        new_type = self._get_current_device_type_name()
+        log.debug("device_type_changed: %s", new_type)
 
-        active_dev_type = self._typeStore[itr]
-        log.debug("device_type_changed: %s %s", new_type, active_dev_type)
+        # Quit if no device type is selected.
         if new_type is None:
             return
 
-        # if device type is not btrfs we want to make sure btrfs is not in the
-        # fstype combo
-        should_be_btrfs = False
-        fs_type_sensitive = True
+        # The numeric id of the device is what is needed by blivet.
+        new_type = dev_type_from_const(new_type)
 
-        raid_level = None
-        if new_type == DEVICE_TYPE_BTRFS:
-            # add btrfs to the fstype combo and lock it in
-            test_fmt = getFormat("btrfs")
-            should_be_btrfs = test_fmt.supported and test_fmt.formattable
-            fs_type_sensitive = False
-        elif new_type == DEVICE_TYPE_MD:
-            raid_level = defaultRaidLevel(new_type)
+        # Quit if device type name is unrecognized by blivet.
+        if new_type is None:
+            return
 
         # lvm uses the RHS to set disk set. no foolish minds here.
         exists = self._current_selector and self._current_selector.device.exists
@@ -2441,17 +2561,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         # device type
         self._raidStoreFilter.refilter()
 
-        self._populate_raid(raid_level)
+        self._populate_raid(defaultRaidLevel(new_type))
         self._populate_container()
 
         fancy_set_sensitive(self._nameEntry, new_type in NAMED_DEVICE_TYPES)
         self._nameEntry.set_text(self._device_name_dict[new_type])
         fancy_set_sensitive(self._sizeEntry, new_type != DEVICE_TYPE_BTRFS)
 
-        fancy_set_sensitive(self._fsCombo, self._reformatCheckbox.get_active() and
-                                           fs_type_sensitive)
-
-        self._resolve_btrfs_restrictions(should_be_btrfs)
+        self._update_fstype_combo(new_type)
 
     def clear_errors(self):
         self._error = None
@@ -2537,7 +2654,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         try:
             device.setup()
             device.format.setup()
-        except StorageError as e:
+        except (StorageError, blockdev.CryptoError) as e:
             log.error("failed to unlock %s: %s", device.name, e)
             device.teardown(recursive=True)
             self._error = e
@@ -2545,9 +2662,11 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._passphraseEntry.set_text("")
             self.set_warning(_("Failed to unlock encrypted block device. "
                                "Click for details"))
-            self.window.show_all()
             return
 
+        # set the passphrase also to the originalFormat of the device (a
+        # different object than '.format', but the same contents)
+        device.originalFormat.passphrase = passphrase
         log.info("unlocked %s, now going to populate devicetree...", device.name)
         with ui_storage_logger():
             luks_dev = LUKSDevice(device.format.mapName,

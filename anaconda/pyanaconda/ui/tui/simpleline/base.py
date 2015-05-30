@@ -28,7 +28,7 @@ import threading
 import functools
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.ui.communication import hubQ
-from pyanaconda import constants
+from pyanaconda import constants, iutil
 from pyanaconda.i18n import _, N_, C_
 
 RAW_INPUT_LOCK = threading.Lock()
@@ -287,7 +287,7 @@ class App(object):
                 self._redraw = False
             except ExitMainLoop:
                 raise
-            except Exception:
+            except Exception:    # pylint: disable=broad-except
                 send_exception(self.queue, sys.exc_info())
                 return False
 
@@ -346,7 +346,7 @@ class App(object):
                     prompt = last_screen.prompt(self._screens[-1][1])
                 except ExitMainLoop:
                     raise
-                except Exception:
+                except Exception:    # pylint: disable=broad-except
                     send_exception(self.queue, sys.exc_info())
                     continue
 
@@ -403,7 +403,7 @@ class App(object):
                         handler(event, data)
                     except ExitMainLoop:
                         raise
-                    except Exception:
+                    except Exception:    # pylint: disable=broad-except
                         send_exception(self.queue, sys.exc_info())
 
     def raw_input(self, prompt, hidden=False):
@@ -441,7 +441,7 @@ class App(object):
                     return True
             except ExitMainLoop:
                 raise
-            except Exception:
+            except Exception:    # pylint: disable=broad-except
                 send_exception(self.queue, sys.exc_info())
                 return False
 
@@ -465,6 +465,8 @@ class App(object):
                 self.switch_screen_modal(d)
                 if d.answer:
                     raise ExitAllMainLoops()
+
+            iutil.ipmi_report(constants.IPMI_ABORTED)
             return True
 
         return False

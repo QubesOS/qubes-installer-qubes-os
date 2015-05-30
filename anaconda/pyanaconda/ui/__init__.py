@@ -22,14 +22,13 @@
 __all__ = ["UserInterface"]
 
 import copy
-import os
 from pyanaconda.ui.common import collect
 
 class PathDict(dict):
     """Dictionary class supporting + operator"""
     def __add__(self, ext):
         new_dict = copy.copy(self)
-        for key, value in ext.iteritems():
+        for key, value in ext.items():
             try:
                 new_dict[key].extend(value)
             except KeyError:
@@ -72,9 +71,6 @@ class UserInterface(object):
         from pyanaconda.errors import errorHandler
         errorHandler.ui = self
 
-
-    basepath = os.path.dirname(__file__)
-    basemask = "pyanaconda.ui"
     paths = PathDict({})
 
     @property
@@ -86,7 +82,7 @@ class UserInterface(object):
     def update_paths(cls, pathdict):
         """Receives pathdict and appends it's contents to the current
            class defined search path dictionary."""
-        for k,v in pathdict.iteritems():
+        for k,v in pathdict.items():
             cls.paths.setdefault(k, [])
             cls.paths[k].extend(v)
 
@@ -176,10 +172,10 @@ class UserInterface(object):
 
         actionClasses = []
         for hub in hubs:
-            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "preForHub", None) == hub, spokes),
+            actionClasses.extend(sorted(filter(lambda obj, h=hub: getattr(obj, "preForHub", None) == h, spokes),
                                         key=lambda obj: obj.priority))
             actionClasses.append(hub)
-            actionClasses.extend(sorted(filter(lambda obj: getattr(obj, "postForHub", None) == hub, spokes),
+            actionClasses.extend(sorted(filter(lambda obj, h=hub: getattr(obj, "postForHub", None) == h, spokes),
                                         key=lambda obj: obj.priority))
 
         return actionClasses

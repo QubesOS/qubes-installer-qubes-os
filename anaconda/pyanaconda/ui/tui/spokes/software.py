@@ -24,11 +24,12 @@ from pyanaconda.ui.categories.software import SoftwareCategory
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget, CheckboxWidget
 from pyanaconda.threads import threadMgr, AnacondaThread
-from pyanaconda.packaging import DependencyError, PackagePayload
-from pyanaconda.i18n import N_, _
+from pyanaconda.packaging import DependencyError, PackagePayload, payloadMgr
+from pyanaconda.i18n import N_, _, C_
 
 from pyanaconda.constants import THREAD_PAYLOAD
 from pyanaconda.constants import THREAD_CHECK_SOFTWARE
+from pyanaconda.constants import THREAD_SOFTWARE_WATCHER
 from pyanaconda.constants_text import INPUT_PROCESSED
 
 __all__ = ["SoftwareSpoke"]
@@ -43,8 +44,7 @@ class SoftwareSpoke(NormalTUISpoke):
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
         self.errors = []
         self._tx_id = None
-        # default to first selection (Gnome) in list of environments
-        self._selection = 0
+        self._selection = None
         self.environment = None
 
         # for detecting later whether any changes have been made
@@ -53,10 +53,52 @@ class SoftwareSpoke(NormalTUISpoke):
         # are we taking values (package list) from a kickstart file?
         self._kickstarted = flags.automatedInstall and self.data.packages.seen
 
+        # Register event listeners to update our status on payload events
+        payloadMgr.addListener(payloadMgr.STATE_START, self._payload_start)
+        payloadMgr.addListener(payloadMgr.STATE_FINISHED, self._payload_finished)
+        payloadMgr.addListener(payloadMgr.STATE_ERROR, self._payload_error)
+
+    def initialize(self):
+        # Start a thread to wait for the payload and run the first, automatic
+        # dependency check
+        super(SoftwareSpoke, self).initialize()
+        threadMgr.add(AnacondaThread(name=THREAD_SOFTWARE_WATCHER,
+            target=self._initialize))
+
+    def _initialize(self):
+        threadMgr.wait(THREAD_PAYLOAD)
+
+        if not self._kickstarted:
+            # If an environment was specified in the instclass, use that.
+            # Otherwise, select the first environment.
+            if self.payload.environments:
+                environments = self.payload.environments
+                instclass = self.payload.instclass
+
+                if instclass and instclass.defaultPackageEnvironment and \
+                        instclass.defaultPackageEnvironment in environments:
+                    self._selection = environments.index(instclass.defaultPackageEnvironment)
+                else:
+                    self._selection = 0
+
+        # Apply the initial selection
+        self._apply()
+
+    def _payload_start(self):
+        # Source is changing, invalidate the software selection and clear the
+        # errors
+        self._selection = None
+        self.errors = []
+
+    def _payload_finished(self):
+        self.environment = self.data.packages.environment
+
+    def _payload_error(self):
+        self.errors = [payloadMgr.error]
+
     @property
     def showable(self):
         return isinstance(self.payload, PackagePayload)
-
 
     @property
     def status(self):
@@ -69,14 +111,6 @@ class SoftwareSpoke(NormalTUISpoke):
             return _("Installation source not set up")
         if not self.txid_valid:
             return _("Source changed - please verify")
-
-        ## FIXME:
-        # quite ugly, but env isn't getting set to gnome (or anything) by
-        # default, and it really should be so we can maintain consistency
-        # with graphical behavior
-        if self._selection >= 0 and not self.environment \
-                and not flags.automatedInstall:
-            self.apply()
 
         if not self.environment:
             # Ks installs with %packages will have an env selected, unless
@@ -107,6 +141,8 @@ class SoftwareSpoke(NormalTUISpoke):
         """ Refresh screen. """
         NormalTUISpoke.refresh(self, args)
 
+        threadMgr.wait(THREAD_PAYLOAD)
+
         if not self.payload.baseRepo:
             message = TextWidget(_("Installation source needs to be set up first."))
             self._window.append(message)
@@ -128,7 +164,6 @@ class SoftwareSpoke(NormalTUISpoke):
             name = self.payload.environmentDescription(env)[0]
 
             displayed.append(CheckboxWidget(title="%s" % name, completed=(environments.index(env) == self._selection)))
-        print(_("Base environment"))
 
         def _prep(i, w):
             """ Do some format magic for display. """
@@ -150,7 +185,9 @@ class SoftwareSpoke(NormalTUISpoke):
         try:
             keyid = int(key) - 1
         except ValueError:
-            if key.lower() == "c" and 0 <= self._selection < len(self.payload.environments):
+            # TRANSLATORS: 'c' to continue
+            if key.lower() == C_("TUI|Spoke Navigation", "c") and \
+                    0 <= self._selection < len(self.payload.environments):
                 self.apply()
                 self.close()
                 return INPUT_PROCESSED
@@ -165,7 +202,8 @@ class SoftwareSpoke(NormalTUISpoke):
     def ready(self):
         """ If we're ready to move on. """
         return (not threadMgr.get(THREAD_PAYLOAD) and
-                not threadMgr.get(THREAD_CHECK_SOFTWARE))
+                not threadMgr.get(THREAD_CHECK_SOFTWARE) and
+                not threadMgr.get(THREAD_SOFTWARE_WATCHER))
 
     def apply(self):
         """ Apply our selections """
@@ -175,34 +213,43 @@ class SoftwareSpoke(NormalTUISpoke):
         self._kickstarted = False
         self.data.packages.seen = True
 
-        threadMgr.add(AnacondaThread(name=THREAD_CHECK_SOFTWARE,
-                                     target=self.checkSoftwareSelection))
-
     def _apply(self):
         """ Private apply. """
-        self.environment = self.payload.environments[self._selection]
-        if not self.environment:
-            return
-
-        if not self._origEnv:
-            # nothing selected before, select the environment
-            self.payload.selectEnvironment(self.environment)
-        elif self._origEnv != self.environment:
-            # environment changed, clear the list of packages and select the new
-            # one
-            self.payload.data.packages.groupList = []
-            self.payload.selectEnvironment(self.environment)
+        if 0 <= self._selection < len(self.payload.environments):
+            self.environment = self.payload.environments[self._selection]
         else:
-            # no change
+            self.environment = None
             return
 
-        self._origEnv = self.environment
+        changed = False
+
+        # Not a kickstart with packages, setup the selected environment
+        if not self._kickstarted:
+            if not self._origEnv:
+                # nothing selected before, select the environment
+                self.payload.selectEnvironment(self.environment)
+                changed = True
+            elif self._origEnv != self.environment:
+                # environment changed, clear the list of packages and select the new
+                # one
+                self.payload.data.packages.groupList = []
+                self.payload.selectEnvironment(self.environment)
+                changed = True
+
+            self._origEnv = self.environment
+
+        # Check the software selection
+        if changed:
+            threadMgr.add(AnacondaThread(name=THREAD_CHECK_SOFTWARE,
+                                         target=self.checkSoftwareSelection))
+
 
     def checkSoftwareSelection(self):
         """ Depsolving """
         try:
             self.payload.checkSoftwareSelection()
-        except DependencyError:
+        except DependencyError as e:
+            self.errors = [e.message]
             self._tx_id = None
         else:
             self._tx_id = self.payload.txID

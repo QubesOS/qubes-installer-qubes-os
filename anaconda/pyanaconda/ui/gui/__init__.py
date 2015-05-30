@@ -18,7 +18,7 @@
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
-import inspect, os, sys, time, site
+import inspect, os, sys, time, site, signal
 import meh.ui.gui
 
 from contextlib import contextmanager
@@ -26,10 +26,12 @@ from contextlib import contextmanager
 from gi.repository import Gdk, Gtk, AnacondaWidgets, Keybinder, GdkPixbuf, GLib, GObject
 
 from pyanaconda.i18n import _
-from pyanaconda import product
+from pyanaconda.constants import IPMI_ABORTED
+from pyanaconda import product, iutil
+from pyanaconda import threads
 
 from pyanaconda.ui import UserInterface, common
-from pyanaconda.ui.gui.utils import gtk_action_wait, busyCursor, unbusyCursor
+from pyanaconda.ui.gui.utils import gtk_action_wait, unbusyCursor
 from pyanaconda import ihelp
 import os.path
 
@@ -44,13 +46,11 @@ SCREENSHOT_DELAY = 1  # in seconds
 
 ANACONDA_WINDOW_GROUP = Gtk.WindowGroup()
 
-# Stylesheet priorities to use for product-specific stylesheets and our
-# missing icon overrides. The missing icon rules should be higher than
-# the regular stylesheet, applied at GTK_STYLE_PROVIDER_PRIORITY_APPLICATION,
-# and stylesheets from updates.img and product.img should be higher than that,
-# so that they can override background images and not get re-overriden by us.
-# Both should be lower than GTK_STYLE_PROVIDER_PRIORITY_USER.
-STYLE_PROVIDER_PRIORITY_MISSING_ICON = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 10
+# Stylesheet priorities to use for product-specific stylesheets.
+# installclass stylesheets should be higher than our base stylesheet, and
+# stylesheets from updates.img and product.img should be higher than that.  All
+# levels should be lower than GTK_STYLE_PROVIDER_PRIORITY_USER.
+STYLE_PROVIDER_PRIORITY_INSTALLCLASS = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 15
 STYLE_PROVIDER_PRIORITY_UPDATES = Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 20
 assert STYLE_PROVIDER_PRIORITY_UPDATES < Gtk.STYLE_PROVIDER_PRIORITY_USER
 
@@ -269,8 +269,23 @@ class ErrorDialog(GUIObject):
 class MainWindow(Gtk.Window):
     """This is a top-level, full size window containing the Anaconda screens."""
 
-    def __init__(self):
+    def __init__(self, fullscreen):
+        """Create a new anaconda main window.
+
+          :param bool fullscreen: if True, fullscreen the window, if false maximize
+        """
         Gtk.Window.__init__(self)
+
+        # Hide the titlebar when maximized if the window manager allows it.
+        # This makes anaconda look full-screenish but without covering parts
+        # needed to interact with the window manager, like the GNOME top bar.
+        self.set_hide_titlebar_when_maximized(True)
+
+        # The Anaconda and Initial Setup windows might sometimes get decorated with
+        # a titlebar which contains the __init__.py header text by default.
+        # As all Anaconda and Initial Setup usually have a very distinct title text
+        # inside the window, the titlebar text is redundant and should be disabled.
+        self.set_title("")
 
         # Treat an attempt to close the window the same as hitting quit
         self.connect("delete-event", self._on_delete_event)
@@ -292,19 +307,20 @@ class MainWindow(Gtk.Window):
         self._overlay_depth = 0
 
         # Create a stack and a list of what's been added to the stack
-        self._stack = Gtk.Stack()
+        # Double the stack transition duration since the default 200ms is too
+        # quick to get the point across
+        self._stack = Gtk.Stack(transition_duration=400)
         self._stack_contents = set()
 
         # Create an accel group for the F12 accelerators added after window transitions
         self._accel_group = Gtk.AccelGroup()
         self.add_accel_group(self._accel_group)
 
-        # Connect to window-state-event changes to catch when the user
-        # maxmizes/unmaximizes the window.
-        self.connect("window-state-event", self._on_window_state_event)
-
-        # Start the window as full screen
-        self.fullscreen()
+        # Make the window big
+        if fullscreen:
+            self.fullscreen()
+        else:
+            self.maximize()
 
         self._overlay.add(self._stack)
         self.add(self._overlay)
@@ -312,17 +328,10 @@ class MainWindow(Gtk.Window):
 
         self._current_action = None
 
-    def _on_window_state_event(self, window, event, user_data=None):
-        # If the window is being maximized, fullscreen it instead
-        if (Gdk.WindowState.MAXIMIZED & event.changed_mask) and \
-                (Gdk.WindowState.MAXIMIZED & event.new_window_state):
-            self.fullscreen()
-
-            # Return true to stop the signal handler since we're changing
-            # state mid-stream here
-            return True
-
-        return False
+        # Help button mnemonics handling
+        self._mnemonic_signal = None
+        # we have a sensible initial value, just in case
+        self._saved_help_button_label = _("Help!")
 
     def _on_delete_event(self, widget, event, user_data=None):
         # Use the quit-clicked signal on the the current standalone, even if the
@@ -340,13 +349,22 @@ class MainWindow(Gtk.Window):
         overlayed_widget.set_from_pixbuf(self._transparent_base.scale_simple(
             overlay_allocation.width, overlay_allocation.height, GdkPixbuf.InterpType.NEAREST))
 
-        # Set the allocation for the overlayed image to the full size of the GtkOverlay
-        allocation.x = 0
-        allocation.y = 0
-        allocation.width = overlay_allocation.width
-        allocation.height = overlay_allocation.height
+        # Return False to indicate that the child allocation is not yet set
+        return False
 
-        return True
+    def _on_mnemonics_visible_changed(self, window, property_type, obj):
+        # mnemonics display has been activated or deactivated,
+        # add or remove the F1 mnemonics display from the help button
+        help_button = obj.window.get_help_button()
+        if window.props.mnemonics_visible:
+            # save current label
+            old_label = help_button.get_label()
+            self._saved_help_button_label = old_label
+            # add the (F1) "mnemonics" to the help button
+            help_button.set_label("%s (F1)" % old_label)
+        else:
+            # restore the old label
+            help_button.set_label(self._saved_help_button_label)
 
     @property
     def current_action(self):
@@ -371,17 +389,20 @@ class MainWindow(Gtk.Window):
         if isinstance(child.window, AnacondaWidgets.BaseStandalone):
             child.window.add_accelerator("continue-clicked", self._accel_group,
                     Gdk.KEY_F12, 0, 0)
-            child.window.add_accelerator("help-button-clicked", self._accel_group,
-                    Gdk.KEY_F1, 0, 0)
-            child.window.add_accelerator("help-button-clicked", self._accel_group,
-                    Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK, 0)
         elif isinstance(child.window, AnacondaWidgets.SpokeWindow):
             child.window.add_accelerator("button-clicked", self._accel_group,
                     Gdk.KEY_F12, 0, 0)
-            child.window.add_accelerator("help-button-clicked", self._accel_group,
-                    Gdk.KEY_F1, 0, 0)
-            child.window.add_accelerator("help-button-clicked", self._accel_group,
-                    Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK, 0)
+
+        # Configure the help button
+        child.window.add_accelerator("help-button-clicked", self._accel_group,
+                Gdk.KEY_F1, 0, 0)
+        child.window.add_accelerator("help-button-clicked", self._accel_group,
+                Gdk.KEY_F1, Gdk.ModifierType.MOD1_MASK, 0)
+
+        # Connect to mnemonics-visible to add the (F1) mnemonic to the button label
+        if self._mnemonic_signal:
+            self.disconnect(self._mnemonic_signal)
+        self._mnemonic_signal = self.connect("notify::mnemonics-visible", self._on_mnemonics_visible_changed, child)
 
         self._stack.set_visible_child(child.window)
 
@@ -396,6 +417,9 @@ class MainWindow(Gtk.Window):
 
            :param AnacondaWidgets.BaseStandalone standalone: the new standalone action
         """
+        # Slide the old hub/standalone off of the new one
+        self._stack.set_transition_type(Gtk.StackTransitionType.UNDER_LEFT)
+
         self._current_action = standalone
         self._setVisibleChild(standalone)
 
@@ -407,10 +431,16 @@ class MainWindow(Gtk.Window):
 
            :param AnacondaWidgets.SpokeWindow spoke: a spoke to enter
         """
+        # Slide up, as if the spoke is under the hub
+        self._stack.set_transition_type(Gtk.StackTransitionType.UNDER_UP)
+
         self._setVisibleChild(spoke)
 
     def returnToHub(self):
         """Exit a spoke and return to a hub."""
+        # Slide back down over the spoke
+        self._stack.set_transition_type(Gtk.StackTransitionType.OVER_DOWN)
+
         self._setVisibleChild(self._current_action)
 
     def lightbox_on(self):
@@ -451,7 +481,7 @@ class GraphicalUserInterface(UserInterface):
     """
     def __init__(self, storage, payload, instclass,
                  distributionText = product.distributionText, isFinal = product.isFinal,
-                 quitDialog = QuitDialog, gui_lock = None):
+                 quitDialog = QuitDialog, gui_lock = None, fullscreen=False):
 
         UserInterface.__init__(self, storage, payload, instclass)
 
@@ -462,7 +492,7 @@ class GraphicalUserInterface(UserInterface):
 
         self.data = None
 
-        self.mainWindow = MainWindow()
+        self.mainWindow = MainWindow(fullscreen=fullscreen)
 
         self._distributionText = distributionText
         self._isFinal = isFinal
@@ -471,8 +501,6 @@ class GraphicalUserInterface(UserInterface):
                                     self.mainWindow.lightbox_on)
 
         ANACONDA_WINDOW_GROUP.add_window(self.mainWindow)
-        # we have a sensible initial value, just in case
-        self._saved_help_button_label = _("Help!")
 
     basemask = "pyanaconda.ui"
     basepath = os.path.dirname(__file__)
@@ -492,48 +520,6 @@ class GraphicalUserInterface(UserInterface):
                       os.path.join(path, "gui/hubs"))
                       for path in pathlist]
             }
-
-    def _assureLogoImage(self):
-        # make sure there is a logo image present,
-        # otherwise the console will get spammed by errors
-        replacement_image_path = None
-        logo_path = "/usr/share/anaconda/pixmaps/sidebar-logo.png"
-        header_path = "/usr/share/anaconda/pixmaps/anaconda_header.png"
-        sad_smiley_path = "/usr/share/icons/Adwaita/48x48/emotes/face-crying.png"
-        if not os.path.exists(logo_path):
-            # first try to replace the missing logo with the Anaconda header image
-            if os.path.exists(header_path):
-                replacement_image_path = header_path
-            # if the header image is not present, use a sad smiley from GTK icons
-            elif os.path.exists(sad_smiley_path):
-                replacement_image_path = sad_smiley_path
-
-            if replacement_image_path:
-                log.warning("logo image is missing, using a substitute")
-
-                # Add a new stylesheet overriding the background-image for .logo
-                provider = Gtk.CssProvider()
-                provider.load_from_data(".logo { background-image: url('%s'); }" % replacement_image_path)
-                Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
-                        STYLE_PROVIDER_PRIORITY_MISSING_ICON)
-            else:
-                log.warning("logo image is missing")
-
-        # Look for the top and sidebar images. If missing remove the background-image
-        topbar_path = "/usr/share/anaconda/pixmaps/topbar-bg.png"
-        sidebar_path = "/usr/share/anaconda/pixmaps/sidebar-bg.png"
-        if not os.path.exists(topbar_path):
-            provider = Gtk.CssProvider()
-            provider.load_from_data("AnacondaSpokeWindow #nav-box { background-image: none; }")
-            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
-                    STYLE_PROVIDER_PRIORITY_MISSING_ICON)
-
-        if not os.path.exists(sidebar_path):
-            provider = Gtk.CssProvider()
-            provider.load_from_data(".logo-sidebar { background-image: none; }")
-            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
-                    STYLE_PROVIDER_PRIORITY_MISSING_ICON)
-
 
     def _widgetScale(self):
         # First, check if the GDK_SCALE environment variable is already set. If so,
@@ -576,7 +562,39 @@ class GraphicalUserInterface(UserInterface):
         if monitor_height_px >= 1200 and monitor_dpi_x > 192 and monitor_dpi_y > 192:
             display.set_window_scale(2)
             # Export the scale so that Gtk programs launched by anaconda are also scaled
-            os.environ["GDK_SCALE"] = "2"
+            iutil.setenv("GDK_SCALE", "2")
+
+    def _convertSignals(self):
+        # What tends to happen when we receive a signal is that the signal will
+        # be received by the python interpreter's C handler, python will do
+        # what it needs to do to set the python handler we registered to run,
+        # the C handler returns, and then nothing happens because Gtk is
+        # holding the global interpreter lock. The signal then gets delivered
+        # to our python code when you move the mouse or something. We can get
+        # around this by doing signals the GLib way. The conversion assumes
+        # that none of our signal handlers care about the frame parameter,
+        # which is generally true.
+        #
+        # After the unix_signal_add call, signal.getsignal will tell a half
+        # truth: the method returned will still be called, by way of
+        # _signal_converter, but GLib will have replaced the actual signal
+        # handler for that signal.
+
+        # Convert everything except SIGCHLD, because that's a different can of worms
+
+        def _signal_converter(user_data):
+            (handler, signum) = user_data
+            handler(signum, None)
+
+        for signum in (s for s in range(1, signal.NSIG) if s != signal.SIGCHLD):
+            handler = signal.getsignal(signum)
+            if handler and handler not in (signal.SIG_DFL, signal.SIG_IGN):
+                # NB: if you are looking at the glib documentation you are in for
+                # some surprises because gobject-introspection is a minefield.
+                # g_unix_signal_add_full comes out as GLib.unix_signal_add, and
+                # g_unix_signal_add doesn't come out at all.
+                GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signum,
+                        _signal_converter, (handler, signum))
 
     @property
     def tty_num(self):
@@ -598,8 +616,6 @@ class GraphicalUserInterface(UserInterface):
         return isinstance(obj, StandaloneSpoke)
 
     def setup(self, data):
-        busyCursor()
-
         self._actions = self.getActionClasses(self._list_hubs())
         self.data = data
 
@@ -635,7 +651,6 @@ class GraphicalUserInterface(UserInterface):
         # Use connect_after so classes can add actions before we change screens
         obj.window.connect_after("continue-clicked", self._on_continue_clicked)
         obj.window.connect_after("help-button-clicked", self._on_help_clicked, obj)
-        self.mainWindow.connect("notify::mnemonics-visible", self._on_mnemonics_visible_changed, obj)
         obj.window.connect_after("quit-clicked", self._on_quit_clicked)
 
         return obj
@@ -655,55 +670,64 @@ class GraphicalUserInterface(UserInterface):
             log.error("Unhandled exception caught, waiting for python-meh to "\
                       "exit")
 
-            # Loop forever, meh will call sys.exit() when it's done
-            while True:
-                time.sleep(10000)
+            threads.threadMgr.wait_for_error_threads()
+            sys.exit(1)
 
-        # Apply a widget-scale to hidpi monitors
-        self._widgetScale()
+        try:
+            # Apply a widget-scale to hidpi monitors
+            self._widgetScale()
 
-        while not self._currentAction:
-            self._currentAction = self._instantiateAction(self._actions[0])
-            if not self._currentAction:
-                self._actions.pop(0)
+            while not self._currentAction:
+                self._currentAction = self._instantiateAction(self._actions[0])
+                if not self._currentAction:
+                    self._actions.pop(0)
 
-            if not self._actions:
-                return
+                if not self._actions:
+                    return
 
-        self._currentAction.initialize()
-        self._currentAction.entry_logger()
-        self._currentAction.refresh()
+            self._currentAction.initialize()
+            self._currentAction.entry_logger()
+            self._currentAction.refresh()
 
-        self._currentAction.window.set_beta(not self._isFinal)
-        self._currentAction.window.set_property("distribution", self._distributionText().upper())
+            self._currentAction.window.set_beta(not self._isFinal)
+            self._currentAction.window.set_property("distribution", self._distributionText().upper())
 
-        # Set some program-wide settings.
-        settings = Gtk.Settings.get_default()
-        settings.set_property("gtk-font-name", "Cantarell")
-        settings.set_property("gtk-icon-theme-name", "gnome")
+            # Set some program-wide settings.
+            settings = Gtk.Settings.get_default()
+            settings.set_property("gtk-font-name", "Cantarell")
+            settings.set_property("gtk-icon-theme-name", "gnome")
 
-        # Apply the application stylesheet
-        provider = Gtk.CssProvider()
-        provider.load_from_path("/usr/share/anaconda/anaconda-gtk.css")
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            # Apply the application stylesheet
+            provider = Gtk.CssProvider()
+            provider.load_from_path("/usr/share/anaconda/anaconda-gtk.css")
+            Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
-        # Look for updates to the stylesheet and apply them at a higher priority
-        for updates_dir in ("updates", "product"):
-            updates_css = "/run/install/%s/anaconda-gtk.css" % updates_dir
-            if os.path.exists(updates_css):
+            # Apply the installclass stylesheet
+            if self.instclass.stylesheet:
                 provider = Gtk.CssProvider()
-                provider.load_from_path(updates_css)
+                provider.load_from_path(self.instclass.stylesheet)
                 Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
-                        STYLE_PROVIDER_PRIORITY_UPDATES)
+                        STYLE_PROVIDER_PRIORITY_INSTALLCLASS)
 
-        # try to make sure a logo image is present
-        self._assureLogoImage()
+            # Look for updates to the stylesheet and apply them at a higher priority
+            for updates_dir in ("updates", "product"):
+                updates_css = "/run/install/%s/anaconda-gtk.css" % updates_dir
+                if os.path.exists(updates_css):
+                    provider = Gtk.CssProvider()
+                    provider.load_from_path(updates_css)
+                    Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                            STYLE_PROVIDER_PRIORITY_UPDATES)
 
-        self.mainWindow.setCurrentAction(self._currentAction)
+            self.mainWindow.setCurrentAction(self._currentAction)
 
-        # Do this at the last possible minute.
-        unbusyCursor()
+            # Do this at the last possible minute.
+            unbusyCursor()
+        # If anything went wrong before we start the Gtk main loop, release
+        # the gui lock and re-raise the exception so that meh can take over
+        except Exception:
+            self._gui_lock.release()
+            raise
 
         Gtk.main()
 
@@ -730,7 +754,7 @@ class GraphicalUserInterface(UserInterface):
 
         with self.mainWindow.enlightbox(dlg.window):
             dlg.refresh(details)
-            rc = dlg.run()
+            dlg.run()
             dlg.window.destroy()
 
     @gtk_action_wait
@@ -753,7 +777,7 @@ class GraphicalUserInterface(UserInterface):
     ### SIGNAL HANDLING METHODS
     ###
     def _on_continue_clicked(self, win, user_data=None):
-        if not win.get_may_continue():
+        if not win.get_may_continue() or win != self._currentAction.window:
             return
 
         # If we're on the last screen, clicking Continue quits.
@@ -818,20 +842,6 @@ class GraphicalUserInterface(UserInterface):
         # content for the current screen
         ihelp.start_yelp(ihelp.get_help_path(obj.helpFile, self.instclass))
 
-    def _on_mnemonics_visible_changed(self, window, property, obj):
-        # mnemonics display has been activated or deactivated,
-        # add or remove the F1 mnemonics display from the help button
-        help_button = obj.window.get_help_button()
-        if window.props.mnemonics_visible:
-            # save current label
-            old_label = help_button.get_label()
-            self._saved_help_button_label = old_label
-            # add the (F1) "mnemonics" to the help button
-            help_button.set_label("%s (F1)" % old_label)
-        else:
-            # restore the old label
-            help_button.set_label(self._saved_help_button_label)
-
     def _on_quit_clicked(self, win, userData=None):
         if not win.get_quit_button():
             return
@@ -843,6 +853,7 @@ class GraphicalUserInterface(UserInterface):
 
         if rc == 1:
             self._currentAction.exit_logger()
+            iutil.ipmi_report(IPMI_ABORTED)
             sys.exit(0)
 
 class GraphicalExceptionHandlingIface(meh.ui.gui.GraphicalIntf):

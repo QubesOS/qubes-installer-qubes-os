@@ -17,6 +17,8 @@
  * Author: Chris Lumens <clumens@redhat.com>
  */
 
+#include "config.h"
+
 #include <unistd.h>
 #include <gdk/gdk.h>
 #include <glib.h>
@@ -182,7 +184,7 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     gtk_widget_add_events(GTK_WIDGET(mountpoint), GDK_FOCUS_CHANGE_MASK|GDK_KEY_RELEASE_MASK);
 
     /* Set "hand" cursor shape when over the selector */
-    mountpoint->priv->cursor = gdk_cursor_new(GDK_HAND2);
+    mountpoint->priv->cursor = gdk_cursor_new_for_display(gdk_display_get_default(), GDK_HAND2);
     g_signal_connect(mountpoint, "realize", G_CALLBACK(anaconda_mountpoint_selector_realize), NULL);
 
     /* Create the grid. */
@@ -297,13 +299,9 @@ static void anaconda_mountpoint_selector_set_property(GObject *object, guint pro
 static void anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSelector *widget) {
     if (widget->priv->chosen) {
         gtk_widget_set_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED, FALSE);
-        gtk_widget_override_color(GTK_WIDGET(widget->priv->mountpoint_label), GTK_STATE_FLAG_SELECTED, NULL);
     }
     else {
-        GdkRGBA color;
         gtk_widget_unset_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED);
-        gdk_rgba_parse(&color, "#555555");
-        gtk_widget_override_color(GTK_WIDGET(widget->priv->mountpoint_label), GTK_STATE_FLAG_NORMAL, &color);
     }
 }
 

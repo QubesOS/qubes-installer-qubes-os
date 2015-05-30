@@ -27,13 +27,14 @@ __all__ = ["size_from_entry", "populate_mountpoint_store", "validate_label",
            "validate_mountpoint", "get_raid_level",
            "selectedRaidLevel", "raidLevelSelection",
            "defaultRaidLevel", "requiresRaidSelection", "defaultContainerRaidLevel",
-           "containerRaidLevelsSupported", "raidLevelsSupported", "get_container_type_name",
-           "AddDialog", "ConfirmDeleteDialog", "DisksDialog", "ContainerDialog",
-           "HelpDialog"]
+           "containerRaidLevelsSupported", "raidLevelsSupported", "get_container_type",
+           "AddDialog", "ConfirmDeleteDialog", "DisksDialog", "ContainerDialog"]
 
+from collections import namedtuple
 import functools
 import re
 
+from pyanaconda.constants import SIZE_UNITS_DEFAULT
 from pyanaconda.product import productName
 from pyanaconda.iutil import lowerASCII
 from pyanaconda.storage_utils import size_from_input
@@ -68,16 +69,38 @@ CONTAINER_DIALOG_TITLE = N_("CONFIGURE %(container_type)s")
 CONTAINER_DIALOG_TEXT = N_("Please create a name for this %(container_type)s "
                            "and select at least one disk below.")
 
-CONTAINER_TYPE_NAMES = {DEVICE_TYPE_LVM: N_("Volume Group"),
-                        DEVICE_TYPE_LVM_THINP: N_("Volume Group"),
-                        DEVICE_TYPE_BTRFS: N_("Volume")}
+ContainerType = namedtuple("ContainerType", ["name", "label"])
+
+CONTAINER_TYPES = {DEVICE_TYPE_LVM:       ContainerType(N_("Volume Group"), N_("_Volume Group:")),
+                   DEVICE_TYPE_LVM_THINP: ContainerType(N_("Volume Group"), N_("_Volume Group:")),
+                   DEVICE_TYPE_BTRFS:     ContainerType(N_("Volume"), N_("_Volume:"))}
 
 # These cannot be specified as mountpoints
 system_mountpoints = ["/dev", "/proc", "/run", "/sys"]
 
-def size_from_entry(entry):
+def size_from_entry(entry, lower_bound=None, units=None):
+    """ Get a Size object from an entry field.
+
+        :param lower_bound: lower bound for size returned,
+        :type lower_bound: :class:`blivet.size.Size` or NoneType
+        :param units: units to use if none obtained from entry
+        :type units: str or NoneType
+        :returns: a Size object corresponding to the text in the entry field
+        :rtype: :class:`blivet.size.Size` or NoneType
+
+        Units default to bytes if no units specified in entry or units.
+
+        Rounds up to lower_bound, if value in entry field corresponds
+        to a smaller value. The default for lower_bound is None, yielding
+        no rounding.
+    """
     size_text = entry.get_text().decode("utf-8").strip()
-    return size_from_input(size_text)
+    size = size_from_input(size_text, units=units)
+    if size is None:
+        return None
+    if lower_bound is not None and size < lower_bound:
+        return lower_bound
+    return size
 
 def populate_mountpoint_store(store, used_mountpoints):
     # sure, add whatever you want to this list. this is just a start.
@@ -99,9 +122,9 @@ def populate_mountpoint_store(store, used_mountpoints):
 
 def validate_label(label, fmt):
     """Returns a code indicating either that the given label can be set for
-       this filesystem or the reason why it can not.
+       this filesystem or the reason why it cannot.
 
-       In the case where the format can not assign a label, the empty string
+       In the case where the format cannot assign a label, the empty string
        stands for accept the default, but in the case where the format can
        assign a label the empty string represents itself.
 
@@ -110,14 +133,14 @@ def validate_label(label, fmt):
 
     """
     if fmt.exists:
-        return _("Can not relabel already existing filesystem.")
+        return _("Cannot relabel already existing file system.")
     if not fmt.labeling():
         if label == "":
             return ""
         else:
-            return _("Can not set label on filesystem.")
+            return _("Cannot set label on file system.")
     if not fmt.labelFormatOK(label):
-        return _("Unacceptable label format for filesystem.")
+        return _("Unacceptable label format for file system.")
     return ""
 
 def validate_mountpoint(mountpoint, used_mountpoints, strict=True):
@@ -129,7 +152,7 @@ def validate_mountpoint(mountpoint, used_mountpoints, strict=True):
     if mountpoint in used_mountpoints:
         return _("That mount point is already in use. Try something else?")
     elif not mountpoint:
-        return _("Please enter a valid mountpoint.")
+        return _("Please enter a valid mount point.")
     elif mountpoint in system_mountpoints:
         return _("That mount point is invalid. Try something else?")
     elif (lowerASCII(mountpoint) not in fake_mountpoints and
@@ -283,13 +306,16 @@ def containerRaidLevelsSupported(device_type):
         return get_supported_raid_levels(DEVICE_TYPE_BTRFS).intersection(supported)
     return set()
 
-def get_container_type_name(device_type):
-    return CONTAINER_TYPE_NAMES.get(device_type, _("container"))
+def get_container_type(device_type):
+    return CONTAINER_TYPES.get(device_type, ContainerType(_("container"), _("container")))
 
 class AddDialog(GUIObject):
     builderObjects = ["addDialog", "mountPointStore", "mountPointCompletion", "mountPointEntryBuffer"]
     mainWidgetName = "addDialog"
     uiFile = "spokes/lib/custom_storage_helpers.glade"
+
+    # If the user enters a smaller size, the GUI changes it to this value
+    MIN_SIZE_ENTRY = Size("1 MiB")
 
     def __init__(self, *args, **kwargs):
         self.mountpoints = kwargs.pop("mountpoints", [])
@@ -317,7 +343,11 @@ class AddDialog(GUIObject):
         if self._error:
             return
 
-        self.size = size_from_entry(self.builder.get_object("addSizeEntry"))
+        self.size = size_from_entry(
+           self.builder.get_object("addSizeEntry"),
+           lower_bound=self.MIN_SIZE_ENTRY,
+           units=SIZE_UNITS_DEFAULT
+        )
         self.window.destroy()
 
     def refresh(self):
@@ -356,7 +386,7 @@ class ConfirmDeleteDialog(GUIObject):
             rootName = rootName.replace("_", "__")
         self._removeAll.set_label(
                 C_("GUI|Custom Partitioning|Confirm Delete Dialog",
-                    "Delete _all other filesystems in the %s root as well.")
+                    "Delete _all other file systems in the %s root as well.")
                 % rootName)
         self._removeAll.set_sensitive(rootName is not None)
 
@@ -388,10 +418,10 @@ class DisksDialog(GUIObject):
         self._store = self.builder.get_object("disk_store")
         # populate the store
         for disk in self._disks:
-            self._store.append([disk.description,
+            self._store.append(["%s (%s)" % (disk.description, disk.serial),
                                 str(disk.size),
                                 str(free[disk.name][0]),
-                                disk.serial,
+                                disk.name,
                                 disk.id])
 
         treeview = self.builder.get_object("disk_view")
@@ -437,6 +467,9 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
     mainWidgetName = "container_dialog"
     uiFile = "spokes/lib/custom_storage_helpers.glade"
 
+    # If the user enters a smaller size, the GUI changes it to this value
+    MIN_SIZE_ENTRY = Size("1 MiB")
+
     def __init__(self, *args, **kwargs):
         GUIDialogInputCheckHandler.__init__(self)
 
@@ -462,11 +495,11 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         self._grabObjects()
 
         # set up the dialog labels with device-type-specific text
-        container_type = get_container_type_name(self.device_type)
-        title_text = _(CONTAINER_DIALOG_TITLE) % {"container_type": container_type.upper()}
+        container_type = get_container_type(self.device_type)
+        title_text = _(CONTAINER_DIALOG_TITLE) % {"container_type": container_type.name.upper()}
         self._title_label.set_text(title_text)
 
-        dialog_text = _(CONTAINER_DIALOG_TEXT) % {"container_type": container_type.lower()}
+        dialog_text = _(CONTAINER_DIALOG_TEXT) % {"container_type": container_type.name.lower()}
         self._dialog_label.set_text(dialog_text)
 
         # populate the dialog widgets
@@ -502,7 +535,7 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         self._populate_raid()
 
         self._original_size = self.size
-        self._original_size_text = self.size.humanReadable(max_places=None)
+        self._original_size_text = self.size.humanReadable(max_places=2)
         self._sizeEntry.set_text(self._original_size_text)
         if self.size_policy == SIZE_POLICY_AUTO:
             self._sizeCombo.set_active(0)
@@ -572,7 +605,11 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
             size = SIZE_POLICY_MAX
         elif idx == 2:
             if self._original_size_text != self._sizeEntry.get_text():
-                size = size_from_entry(self._sizeEntry)
+                size = size_from_entry(
+                   self._sizeEntry,
+                   lower_bound=self.MIN_SIZE_ENTRY,
+                   units=SIZE_UNITS_DEFAULT
+                )
                 if size is None:
                     size = SIZE_POLICY_MAX
             else:

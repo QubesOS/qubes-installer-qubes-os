@@ -21,9 +21,11 @@
 #
 
 import os
-import shutil
+import sys
 
+from pyanaconda import constants
 from pyanaconda import iutil
+from pyanaconda.flags import flags
 from pyanaconda.i18n import _
 from pyanaconda.progress import progressQ
 from gi.repository import GLib
@@ -41,6 +43,8 @@ class RPMOSTreePayload(ArchivePayload):
     """ A RPMOSTreePayload deploys a tree (possibly with layered packages) onto the target system. """
     def __init__(self, data):
         super(RPMOSTreePayload, self).__init__(data)
+        self._remoteOptions = None
+        self._sysroot_path = None
 
     @property
     def handlesBootloaderConfiguration(self):
@@ -84,7 +88,45 @@ class RPMOSTreePayload(ArchivePayload):
         else:
             progressQ.send_message("Writing objects")
 
+    def _copyBootloaderData(self):
+        # Copy bootloader data files from the deployment
+        # checkout to the target root.  See
+        # https://bugzilla.gnome.org/show_bug.cgi?id=726757 This
+        # happens once, at installation time.
+        # extlinux ships its modules directly in the RPM in /boot.
+        # For GRUB2, Anaconda installs device.map there.  We may need
+        # to add other bootloaders here though (if they can't easily
+        # be fixed to *copy* data into /boot at install time, instead
+        # of shipping it in the RPM).
+        physboot = iutil.getTargetPhysicalRoot() + '/boot'
+        ostree_boot_source = iutil.getSysroot() + '/usr/lib/ostree-boot'
+        if not os.path.isdir(ostree_boot_source):
+            ostree_boot_source = iutil.getSysroot() + '/boot'
+        for fname in os.listdir(ostree_boot_source):
+            srcpath = os.path.join(ostree_boot_source, fname)
+            destpath = os.path.join(physboot, fname)
+
+            # We're only copying directories
+            if not os.path.isdir(srcpath):
+                continue
+
+            # Special handling for EFI, as it's a mount point that's
+            # expected to already exist (so if we used copytree, we'd
+            # traceback).  If it doesn't, we're not on a UEFI system,
+            # so we don't want to copy the data.
+            if fname == 'efi' and os.path.isdir(destpath):
+                for subname in os.listdir(srcpath):
+                    sub_srcpath = os.path.join(srcpath, subname)
+                    sub_destpath = os.path.join(destpath, subname)
+                    self._safeExecWithRedirect('cp', ['-r', '-p', sub_srcpath, sub_destpath])
+            else:
+                log.info("Copying bootloader data: " + fname)
+                self._safeExecWithRedirect('cp', ['-r', '-p', srcpath, destpath])
+
     def install(self):
+        mainctx = GLib.MainContext.new()
+        mainctx.push_thread_default()
+
         cancellable = None
         from gi.repository import OSTree
         ostreesetup = self.data.ostreesetup
@@ -95,31 +137,54 @@ class RPMOSTreePayload(ArchivePayload):
             ["admin", "--sysroot=" + iutil.getTargetPhysicalRoot(),
              "init-fs", iutil.getTargetPhysicalRoot()])
 
-        repo_arg = "--repo=" + iutil.getTargetPhysicalRoot() + '/ostree/repo'
+        self._sysroot_path = Gio.File.new_for_path(iutil.getTargetPhysicalRoot())
 
-        # Set up the chosen remote
-        remote_args = [repo_arg, "remote", "add"]
+        sysroot = OSTree.Sysroot.new(self._sysroot_path)
+        sysroot.load(cancellable)
+        repo = sysroot.get_repo(None)[1]
+        # We don't support resuming from interrupted installs
+        repo.set_disable_fsync(True)
+
+        self._remoteOptions = {}
+
+        # Handle variations in pykickstart
         if ((hasattr(ostreesetup, 'noGpg') and ostreesetup.noGpg) or
             (hasattr(ostreesetup, 'nogpg') and ostreesetup.nogpg)):
-            remote_args.append("--set=gpg-verify=false")
-        remote_args.extend([ostreesetup.remote,
-                            ostreesetup.url])
-        self._safeExecWithRedirect("ostree", remote_args)
+            self._remoteOptions['gpg-verify'] = GLib.Variant('b', False)
 
-        sysroot_path = Gio.File.new_for_path(iutil.getTargetPhysicalRoot())
-        sysroot = OSTree.Sysroot.new(sysroot_path)
-        sysroot.load(cancellable)
+        if flags.noverifyssl:
+            self._remoteOptions['tls-permissive'] = GLib.Variant('b', True)
 
-        repo = sysroot.get_repo(None)[1]
-        repo.set_disable_fsync(True)
+        repo.remote_change(None, OSTree.RepoRemoteChange.ADD_IF_NOT_EXISTS,
+                           ostreesetup.remote, ostreesetup.url,
+                           GLib.Variant('a{sv}', self._remoteOptions),
+                           cancellable)
+
         progressQ.send_message(_("Starting pull of %(branchName)s from %(source)s") % \
                                {"branchName": ostreesetup.ref, "source": ostreesetup.remote})
 
         progress = OSTree.AsyncProgress.new()
         progress.connect('changed', self._pullProgressCb)
-        repo.pull(ostreesetup.remote, [ostreesetup.ref], 0, progress, cancellable)
+
+        try:
+            repo.pull(ostreesetup.remote, [ostreesetup.ref], 0, progress, cancellable)
+        except GLib.GError as e:
+            exn = PayloadInstallError("Failed to pull from repository: %s" % e)
+            log.error(str(exn))
+            if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
+                progressQ.send_quit(1)
+                iutil.ipmi_report(constants.IPMI_ABORTED)
+                sys.exit(1)
 
         progressQ.send_message(_("Preparing deployment of %s") % (ostreesetup.ref, ))
+
+        # Now that we have the data pulled, delete the remote for now.
+        # This will allow a remote configuration defined in the tree
+        # (if any) to override what's in the kickstart.  Otherwise,
+        # we'll re-add it in post.  Ideally, ostree would support a
+        # pull without adding a remote, but that would get quite
+        # complex.
+        repo.remote_delete(self.data.ostreesetup.remote, None)
 
         self._safeExecWithRedirect("ostree",
             ["admin", "--sysroot=" + iutil.getTargetPhysicalRoot(),
@@ -144,22 +209,17 @@ class RPMOSTreePayload(ArchivePayload):
         deployment_path = sysroot.get_deployment_directory(deployment)
         iutil.setSysroot(deployment_path.get_path())
 
-        # Copy specific bootloader data files from the deployment
-        # checkout to the target root.  See
-        # https://bugzilla.gnome.org/show_bug.cgi?id=726757 This
-        # happens once, at installation time.
-        # extlinux ships its modules directly in the RPM in /boot.
-        # For GRUB2, Anaconda installs device.map there.  We may need
-        # to add other bootloaders here though (if they can't easily
-        # be fixed to *copy* data into /boot at install time, instead
-        # of shipping it in the RPM).
-        physboot = iutil.getTargetPhysicalRoot() + '/boot'
-        sysboot = iutil.getSysroot() + '/boot'
-        for fname in ['extlinux', 'grub2']:
-            srcpath = os.path.join(sysboot, fname)
-            if os.path.isdir(srcpath):
-                log.info("Copying bootloader data: " + fname)
-                shutil.copytree(srcpath, os.path.join(physboot, fname))
+        try:
+            self._copyBootloaderData()
+        except (OSError, RuntimeError) as e:
+            exn = PayloadInstallError("Failed to copy bootloader data: %s" % e)
+            log.error(str(exn))
+            if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
+                progressQ.send_quit(1)
+                iutil.ipmi_report(constants.IPMI_ABORTED)
+                sys.exit(1)
+
+        mainctx.pop_thread_default()
 
     def prepareMountTargets(self, storage):
         ostreesetup = self.data.ostreesetup
@@ -194,7 +254,7 @@ class RPMOSTreePayload(ArchivePayload):
                                        ["--create", "--boot", "--root=" + iutil.getSysroot(),
                                         "--prefix=/var/" + varsubdir])
 
-    def recreateInitrds(self, force=False):
+    def recreateInitrds(self):
         # For rpmostree payloads, we're replicating an initramfs from
         # a compose server, and should never be regenerating them
         # per-machine.
@@ -203,32 +263,41 @@ class RPMOSTreePayload(ArchivePayload):
     def postInstall(self):
         super(RPMOSTreePayload, self).postInstall()
 
-        physboot = iutil.getTargetPhysicalRoot() + '/boot'
+        from gi.repository import OSTree
+        cancellable = None
 
-        # If we're using extlinux, rename extlinux.conf to
-        # syslinux.cfg, since that's what OSTree knows about.
-        # syslinux upstream supports both, but I'd say that upstream
-        # using syslinux.cfg is somewhat preferred.
-        physboot_extlinux = physboot + '/extlinux'
-        if os.path.isdir(physboot_extlinux):
-            physboot_syslinux = physboot + '/syslinux'
-            physboot_loader = physboot + '/loader'
-            assert os.path.isdir(physboot_loader)
-            orig_extlinux_conf = physboot_extlinux + '/extlinux.conf'
-            target_syslinux_cfg = physboot_loader + '/syslinux.cfg'
-            log.info("Moving %s -> %s", orig_extlinux_conf, target_syslinux_cfg)
-            os.rename(orig_extlinux_conf, target_syslinux_cfg)
-            # A compatibility bit for OSTree
-            os.mkdir(physboot_syslinux)
-            os.symlink('../loader/syslinux.cfg', physboot_syslinux + '/syslinux.cfg')
-            # And *also* tell syslinux that the config is really in /boot/loader
-            os.symlink('loader/syslinux.cfg', physboot + '/syslinux.cfg')
+        # Following up on the "remote delete" above, we removed the
+        # remote from /ostree/repo/config.  But we want it in /etc, so
+        # re-add it to /etc/ostree/remotes.d, using the sysroot path.
+        #
+        # However, we ignore the case where the remote already exists,
+        # which occurs when the content itself provides the remote
+        # config file.
+        sysroot = OSTree.Sysroot.new(self._sysroot_path)
+        sysroot.load(cancellable)
+        repo = sysroot.get_repo(None)[1]
+        repo.remote_change(Gio.File.new_for_path(iutil.getSysroot()),
+                           OSTree.RepoRemoteChange.ADD_IF_NOT_EXISTS,
+                           self.data.ostreesetup.remote, self.data.ostreesetup.url,
+                           GLib.Variant('a{sv}', self._remoteOptions),
+                           cancellable)
+
+        boot = iutil.getSysroot() + '/boot'
+
+        # If we're using GRUB2, move its config file, also with a
+        # compatibility symlink.
+        boot_grub2_cfg = boot + '/grub2/grub.cfg'
+        if os.path.isfile(boot_grub2_cfg):
+            boot_loader = boot + '/loader'
+            target_grub_cfg = boot_loader + '/grub.cfg'
+            log.info("Moving %s -> %s", boot_grub2_cfg, target_grub_cfg)
+            os.rename(boot_grub2_cfg, target_grub_cfg)
+            os.symlink('../loader/grub.cfg', boot_grub2_cfg)
 
         # OSTree owns the bootloader configuration, so here we give it
         # the argument list we computed from storage, architecture and
         # such.
-        set_kargs_args = ["admin", "--sysroot=" + iutil.getTargetPhysicalRoot(),
-                          "instutil", "set-kargs"]
+        set_kargs_args = ["admin", "instutil", "set-kargs"]
         set_kargs_args.extend(self.storage.bootloader.boot_args)
         set_kargs_args.append("root=" + self.storage.rootDevice.fstabSpec)
-        self._safeExecWithRedirect("ostree", set_kargs_args)
+        self._safeExecWithRedirect("ostree", set_kargs_args, root=iutil.getSysroot())

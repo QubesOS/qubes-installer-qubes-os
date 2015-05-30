@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #vim: set fileencoding=utf8
 # parse-kickstart - read a kickstart file and emit equivalent dracut boot args
 #
@@ -88,12 +88,26 @@ class NFS(commands.nfs.FC6_NFS):
         else:
             method="nfs:%s:%s" % (self.server, self.dir)
 
+        # Spaces on the cmdline need to be '\ '
+        method = method.replace(" ", "\\ ")
         return "inst.repo=%s" % method
 
 class URL(commands.url.F18_Url):
     def dracut_args(self, args, lineno, obj):
-        # FIXME: self.proxy, self.noverifyssl
-        return "inst.repo=%s" % self.url
+        # Spaces in the url need to be %20
+        if self.url:
+            method = self.url.replace(" ", "%20")
+        else:
+            method = None
+
+        args = ["inst.repo=%s" % method]
+
+        if self.noverifyssl:
+            args.append("rd.noverifyssl")
+        if self.proxy:
+            args.append("proxy=%s" % self.proxy)
+
+        return "\n".join(args)
 
 class Updates(commands.updates.F7_Updates):
     def dracut_args(self, args, lineno, obj):
@@ -127,7 +141,7 @@ class DriverDisk(commands.driverdisk.F14_DriverDisk):
         # are processed later.
         return "\n".join(dd_net)
 
-class Network(commands.network.F21_Network):
+class Network(commands.network.F22_Network):
     def dracut_args(self, args, lineno, net):
         '''
         NOTE: The first 'network' line get special treatment:
@@ -321,6 +335,16 @@ def ksnet_to_dracut(args, lineno, net, bootdev=False):
 
     return " ".join(line)
 
+def add_s390_settings(dev, ifcfg):
+    s390cfg = s390_settings(dev)
+    if s390cfg['SUBCHANNELS']:
+        ifcfg.pop('HWADDR', None)
+        ifcfg['SUBCHANNELS'] = s390cfg['SUBCHANNELS']
+    if s390cfg['NETTYPE']:
+        ifcfg['NETTYPE'] = s390cfg['NETTYPE']
+    if s390cfg['OPTIONS']:
+        ifcfg['OPTIONS'] = s390cfg['OPTIONS']
+
 def ksnet_to_ifcfg(net, filename=None):
     '''Write an ifcfg file for the given kickstart network config'''
     dev = net.device
@@ -329,8 +353,8 @@ def ksnet_to_ifcfg(net, filename=None):
     if not dev:
         return
     if (not os.path.isdir("/sys/class/net/%s" % dev)
-        and not net.bondslaves and not net.teamslaves):
-        log.info("can't find device %s" % dev)
+        and not net.bondslaves and not net.teamslaves and not net.bridgeslaves):
+        log.info("can't find device %s", dev)
         return
     ifcfg = dict()
     if filename is None:
@@ -338,20 +362,16 @@ def ksnet_to_ifcfg(net, filename=None):
         if not os.path.isdir("/tmp/ifcfg"):
             os.makedirs("/tmp/ifcfg")
     ifcfg['DEVICE'] = dev
-    ifcfg['HWADDR'] = readsysfile("/sys/class/net/%s/address" % dev)
+    hwaddr = readsysfile("/sys/class/net/%s/address" % dev)
+    if "ifname={0}:{1}".format(dev, hwaddr).upper() in open("/proc/cmdline").read().upper():
+        # rename by initscript's 60-net-rules on target system after switchroot
+        ifcfg['HWADDR'] = hwaddr
     ifcfg['UUID'] = str(uuid.uuid4())
     # we set real ONBOOT value in anaconda, here
     # we use it to activate devcies by NM on start
     ifcfg['ONBOOT'] = "yes" if net.activate else "no"
 
-    s390cfg = s390_settings(dev)
-    if s390cfg['SUBCHANNELS']:
-        ifcfg.pop('HWADDR')
-        ifcfg['SUBCHANNELS'] = s390cfg['SUBCHANNELS']
-    if s390cfg['NETTYPE']:
-        ifcfg['NETTYPE'] = s390cfg['NETTYPE']
-    if s390cfg['OPTIONS']:
-        ifcfg['OPTIONS'] = s390cfg['OPTIONS']
+    add_s390_settings(dev, ifcfg)
 
     # dhcp etc.
     ifcfg['BOOTPROTO'] = net.bootProto
@@ -417,11 +437,12 @@ def ksnet_to_ifcfg(net, filename=None):
                             'NAME' : "%s slave %s" % (dev, i),
                             'UUID' : str(uuid.uuid4()),
                             'ONBOOT' : "yes",
-                            'MASTER' : dev,
+                            'MASTER' : ifcfg['UUID'],
                             'HWADDR' : readsysfile("/sys/class/net/%s/address" % slave),
                           }
+            add_s390_settings(slave, slave_ifcfg)
             slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
-            log.info("writing ifcfg %s for slave %s of bond %s" % (slave_filename, slave, dev))
+            log.info("writing ifcfg %s for slave %s of bond %s", slave_filename, slave, dev)
             write_ifcfg(slave_filename, slave_ifcfg)
 
     if net.teamslaves:
@@ -445,7 +466,44 @@ def ksnet_to_ifcfg(net, filename=None):
                 slave_ifcfg['TEAM_PORT_CONFIG'] = "'" + cfg + "'"
 
             slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
-            log.info("writing ifcfg %s for slave %s of team %s" % (slave_filename, slave, dev))
+            log.info("writing ifcfg %s for slave %s of team %s", slave_filename, slave, dev)
+            write_ifcfg(slave_filename, slave_ifcfg)
+
+    if net.bridgeslaves:
+
+        ifcfg.pop('HWADDR', None)
+        ifcfg['TYPE'] = "Bridge"
+        ifcfg['NAME'] = "Bridge connection %s" % dev
+
+        options = {}
+        for opt in net.bridgeopts.split(","):
+            key, _sep, value = opt.partition("=")
+            if not value:
+                log.error("Invalid bridge option %s", opt)
+                continue
+            key = key.replace('-', '_')
+            options[key] = value
+        stp = options.pop("stp", None)
+        if stp:
+            ifcfg['STP'] = stp
+        delay = options.pop("forward_delay", None)
+        if delay:
+            ifcfg['DELAY'] = delay
+        if options:
+            keyvalues = ["%s=%s" % (key, options[key]) for key in options]
+            ifcfg['BRIDGING_OPTS'] = '"' + " ".join(keyvalues) + '"'
+
+        for i, slave in enumerate(net.bridgeslaves.split(","), 1):
+            slave_ifcfg = {
+                            'TYPE' : "Ethernet",
+                            'NAME' : "%s slave %s" % (dev, i),
+                            'UUID' : str(uuid.uuid4()),
+                            'ONBOOT' : "yes",
+                            'BRIDGE' : dev,
+                            'HWADDR' : readsysfile("/sys/class/net/%s/address" % slave),
+                          }
+            slave_filename = "/tmp/ifcfg/ifcfg-%s" % "_".join(slave_ifcfg['NAME'].split(" "))
+            log.info("writing ifcfg %s for slave %s of bridge %s", slave_filename, slave, dev)
             write_ifcfg(slave_filename, slave_ifcfg)
 
     if net.vlanid:
@@ -459,7 +517,7 @@ def ksnet_to_ifcfg(net, filename=None):
         ifcfg['PHYSDEV'] = dev
         filename = "/tmp/ifcfg/ifcfg-%s" % interface_name
 
-    log.info("writing ifcfg %s for %s" % (filename, dev))
+    log.info("writing ifcfg %s for %s", filename, dev)
     if write_ifcfg(filename, ifcfg):
         return filename
 
@@ -470,7 +528,7 @@ def write_ifcfg(filename, ifcfg):
             for k,v in ifcfg.items():
                 f.write("%s=%s\n" % (k,v))
     except IOError as e:
-        log.error("can't write %s: %s" % (filename, e))
+        log.error("can't write %s: %s", filename, e)
         return False
     return True
 
@@ -479,6 +537,7 @@ def process_kickstart(ksfile):
     handler.ksdevice = os.environ.get('ksdevice')
     parser = KickstartParser(handler, missingIncludeIsFatal=False, errorsAreFatal=False)
     parser.registerSection(NullSection(handler, sectionOpen="%addon"))
+    parser.registerSection(NullSection(handler, sectionOpen="%anaconda"))
     log.info("processing kickstart file %s", ksfile)
     processed_file = preprocessKickstart(ksfile)
     try:

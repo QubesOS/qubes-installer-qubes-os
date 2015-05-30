@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # handle-sshpw:  Code processing sshpw lines in kickstart files for the
 #                install environment.
@@ -26,6 +26,7 @@ import os
 import sys
 from pykickstart.parser import KickstartParser
 from pykickstart.version import makeVersion
+from pykickstart.sections import NullSection
 import pyanaconda.users as users
 
 ksfile = '/run/install/ks.cfg'
@@ -34,7 +35,10 @@ ksfile = '/run/install/ks.cfg'
 if not os.path.exists(ksfile):
     sys.exit()
 
-ksparser = KickstartParser(makeVersion(), missingIncludeIsFatal=False)
+handler = makeVersion()
+ksparser = KickstartParser(handler, missingIncludeIsFatal=False)
+ksparser.registerSection(NullSection(handler, sectionOpen="%addon"))
+ksparser.registerSection(NullSection(handler, sectionOpen="%anaconda"))
 ksparser.readKickstart(ksfile)
 
 # we need to have a libuser.conf that points to the installer root for
@@ -52,5 +56,3 @@ for ud in userdata:
         kwargs = ud.__dict__
         kwargs.update({"root": "/", "mkmailspool": False})
         u.createUser(ud.username, **kwargs)
-
-del(os.environ["LIBUSER_CONF"])

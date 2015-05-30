@@ -25,18 +25,18 @@ from pyanaconda.flags import flags
 from pyanaconda.i18n import _, C_, CN_
 from pyanaconda.packaging import PackagePayload, payloadMgr
 from pyanaconda.threads import threadMgr, AnacondaThread
-from pyanaconda import constants
+from pyanaconda import constants, iutil
 
 from pyanaconda.ui.communication import hubQ
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.gui.spokes.lib.detailederror import DetailedErrorDialog
-from pyanaconda.ui.gui.utils import gtk_action_wait, escape_markup
+from pyanaconda.ui.gui.utils import blockedHandler, gtk_action_wait, escape_markup
 from pyanaconda.ui.categories.software import SoftwareCategory
 
 import logging
 log = logging.getLogger("anaconda")
 
-import sys
+import sys, copy
 
 __all__ = ["SoftwareSelectionSpoke"]
 
@@ -72,6 +72,12 @@ class SoftwareSelectionSpoke(NormalSpoke):
         self._environmentListBox = self.builder.get_object("environmentListBox")
         self._addonListBox = self.builder.get_object("addonListBox")
 
+        # Connect viewport scrolling with listbox focus events
+        environmentViewport = self.builder.get_object("environmentViewport")
+        addonViewport = self.builder.get_object("addonViewport")
+        self._environmentListBox.set_focus_vadjustment(environmentViewport.get_vadjustment())
+        self._addonListBox.set_focus_vadjustment(addonViewport.get_vadjustment())
+
         # Used to store how the user has interacted with add-ons for the default add-on
         # selection logic. The dictionary keys are group IDs, and the values are selection
         # state constants. See refreshAddons for how the values are used.
@@ -105,21 +111,23 @@ class SoftwareSelectionSpoke(NormalSpoke):
         if not env:
             return
 
-        addons = self._get_selected_addons()
-        for group in addons:
-            if group not in self.selectedGroups:
-                self.selectedGroups.append(group)
+        # Not a kickstart with packages, setup the environment and groups
+        if not (flags.automatedInstall and self.data.packages.seen):
+            addons = self._get_selected_addons()
+            for group in addons:
+                if group not in self.selectedGroups:
+                    self.selectedGroups.append(group)
 
-        self._selectFlag = False
-        self.payload.data.packages.groupList = []
-        self.payload.selectEnvironment(env)
-        self.environment = env
-        for group in self.selectedGroups:
-            self.payload.selectGroup(group)
+            self._selectFlag = False
+            self.payload.data.packages.groupList = []
+            self.payload.selectEnvironment(env)
+            self.environment = env
+            for group in self.selectedGroups:
+                self.payload.selectGroup(group)
 
-        # And then save these values so we can check next time.
-        self._origAddons = addons
-        self._origEnvironment = self.environment
+            # And then save these values so we can check next time.
+            self._origAddons = addons
+            self._origEnvironment = self.environment
 
         hubQ.send_not_ready(self.__class__.__name__)
         hubQ.send_not_ready("SourceSpoke")
@@ -275,6 +283,13 @@ class SoftwareSelectionSpoke(NormalSpoke):
         if self.environment not in self.payload.environments:
             self.environment = None
 
+        # If no environment is selected, use the default from the instclass.
+        # If nothing is set in the instclass, the first environment will be
+        # selected below.
+        if not self.environment and self.payload.instclass and \
+                self.payload.instclass.defaultPackageEnvironment in self.payload.environments:
+            self.environment = self.payload.instclass.defaultPackageEnvironment
+
         firstEnvironment = True
         firstRadio = None
 
@@ -322,6 +337,12 @@ class SoftwareSelectionSpoke(NormalSpoke):
         check.set_active(selected)
         self._add_row(self._addonListBox, name, desc, check, self.on_checkbox_toggled)
 
+    @property
+    def _addSep(self):
+        """ Whether the addon list contains a separator. """
+        return len(self.payload.environmentAddons[self.environment][0]) > 0 and \
+                len(self.payload.environmentAddons[self.environment][1]) > 0
+
     def refreshAddons(self):
         if self.environment and (self.environment in self.payload.environmentAddons):
             self._clear_listbox(self._addonListBox)
@@ -336,15 +357,12 @@ class SoftwareSelectionSpoke(NormalSpoke):
             # state will be used. Otherwise, the add-on will be selected if it is a default
             # for this environment.
 
-            addSep = len(self.payload.environmentAddons[self.environment][0]) > 0 and \
-                     len(self.payload.environmentAddons[self.environment][1]) > 0
-
             for grp in self.payload.environmentAddons[self.environment][0]:
                 self._addAddon(grp)
 
             # This marks a separator in the view - only add it if there's both environment
             # specific and generic addons.
-            if addSep:
+            if self._addSep:
                 self._addonListBox.insert(Gtk.Separator(), -1)
 
             for grp in self.payload.environmentAddons[self.environment][1]:
@@ -358,9 +376,11 @@ class SoftwareSelectionSpoke(NormalSpoke):
             self.clear_info()
 
     def _allAddons(self):
-        return self.payload.environmentAddons[self.environment][0] + \
-               [""] + \
-               self.payload.environmentAddons[self.environment][1]
+        addons = copy.copy(self.payload.environmentAddons[self.environment][0])
+        if self._addSep:
+            addons.append('')
+        addons += self.payload.environmentAddons[self.environment][1]
+        return addons
 
     def _get_selected_addons(self):
         retval = []
@@ -411,9 +431,8 @@ class SoftwareSelectionSpoke(NormalSpoke):
         box = row.get_children()[0]
         button = box.get_children()[0]
 
-        button.handler_block_by_func(self.on_radio_button_toggled)
-        button.set_active(True)
-        button.handler_unblock_by_func(self.on_radio_button_toggled)
+        with blockedHandler(button, self.on_radio_button_toggled):
+            button.set_active(True)
 
         # Remove all the groups that were selected by the previously
         # selected environment.
@@ -438,9 +457,8 @@ class SoftwareSelectionSpoke(NormalSpoke):
 
         wasActive = group in self.selectedGroups
 
-        button.handler_block_by_func(self.on_checkbox_toggled)
-        button.set_active(not wasActive)
-        button.handler_unblock_by_func(self.on_checkbox_toggled)
+        with blockedHandler(button, self.on_checkbox_toggled):
+            button.set_active(not wasActive)
 
         if wasActive:
             self.selectedGroups.remove(group)
@@ -474,6 +492,7 @@ class SoftwareSelectionSpoke(NormalSpoke):
 
         if rc == 0:
             # Quit.
+            iutil.ipmi_report(constants.IPMI_ABORTED)
             sys.exit(0)
         elif rc == 1:
             # Send the user to the installation source spoke.

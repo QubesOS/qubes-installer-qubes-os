@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # pylint: disable=bad-preconf-access
 #
 # Copyright (C) 2013  Red Hat, Inc.
@@ -27,7 +27,7 @@ import rpm
 import rpmUtils
 import yum
 from urlgrabber.grabber import URLGrabError
-from pyanaconda.iutil import xprogressive_delay
+from pyanaconda.iutil import xprogressive_delay, eintr_retry_call
 
 YUM_PLUGINS = ["fastestmirror", "langpacks"]
 
@@ -82,6 +82,7 @@ def run_yum_transaction(release, arch, yum_conf, install_root, ts_file, script_l
     from yum.Errors import PackageSackError, RepoError, YumBaseError, YumRPMTransError
 
     # remove some environmental variables that can cause problems with package scripts
+    # pylint: disable=environment-modify
     env_remove = ('DISPLAY', 'DBUS_SESSION_BUS_ADDRESS')
     for k in env_remove:
         if k in os.environ:
@@ -127,7 +128,7 @@ def run_yum_transaction(release, arch, yum_conf, install_root, ts_file, script_l
         print("INFO: populate transaction set")
         xdelay = xprogressive_delay()
 
-        for retry_count in xrange(0, MAX_DOWNLOAD_RETRIES+1):
+        for retry_count in range(0, MAX_DOWNLOAD_RETRIES+1):
             # retry count == 0 -> first attempt
             # retry count > 0  -> retry
             if retry_count:
@@ -156,8 +157,8 @@ def run_yum_transaction(release, arch, yum_conf, install_root, ts_file, script_l
         yb.ts.clean()
 
         # Write scriptlet output to a file to be logged later
-        logfile = open(script_log, "w")
-        yb.ts.ts.scriptFd = logfile.fileno()
+        logfile = eintr_retry_call(os.open, script_log, os.O_WRONLY|os.O_CREAT)
+        yb.ts.ts.scriptFd = logfile
         rpm.setLogFile(logfile)
 
         # create the install callback
@@ -183,7 +184,7 @@ def run_yum_transaction(release, arch, yum_conf, install_root, ts_file, script_l
             print("INFO: transaction complete")
         finally:
             yb.ts.close()
-            logfile.close()
+            eintr_retry_call(os.close, logfile)
     except YumBaseError as e:
         print("ERROR: transaction error: %s" % e)
     finally:
@@ -214,14 +215,14 @@ class RPMCallback(object):
     def __init__(self, yb, arch, log, debug=False):
         """ :param yb: YumBase object
             :type yb: YumBase
-            :param log: script logfile
-            :type log: string
+            :param log: file-descriptor of script logfile
+            :type log: int
             :param statusQ: status communication back to other process
             :type statusQ: Queue
         """
         self.yb = yb                # yum.YumBase
         self.base_arch = arch
-        self.install_log = log      # logfile for yum script logs
+        self.install_log = log      # fd of logfile for yum script logs
         self.debug = debug
 
         self.package_file = None    # file instance (package file management)
@@ -277,7 +278,7 @@ class RPMCallback(object):
             log_msg = msg_format % (txmbr.po,
                                     self.completed_actions,
                                     self.total_actions)
-            self.install_log.write(log_msg+"\n")
+            eintr_retry_call(os.write, self.install_log, log_msg+"\n")
             print("PROGRESS_INSTALL: %s" % progress_msg)
 
         try:
@@ -292,7 +293,7 @@ class RPMCallback(object):
         exception_message = ""
         xdelay = xprogressive_delay()
 
-        for retry_count in xrange(0, MAX_DOWNLOAD_RETRIES+1):
+        for retry_count in range(0, MAX_DOWNLOAD_RETRIES+1):
             # retry count == 0 -> first attempt
             # retry count > 0  -> retry
             if retry_count and retry_message:
@@ -380,6 +381,9 @@ class RPMCallback(object):
         # display the message.
         if self.completed_actions == self.total_actions:
             print("PROGRESS_POST:")
+        elif self.completed_actions is not None and self.total_actions is not None:
+            pct = 100 * (self.completed_actions / float(self.total_actions))
+            print("PERCENT: %f" % pct)
 
     def cpio_error(self, amount, total, key, data):
         name = self._get_txmbr(key)[0]

@@ -55,6 +55,11 @@ class CmdlineError(Exception):
 class RemovedModuleError(ImportError):
     pass
 
+class PasswordCryptError(Exception):
+    def __init__(self, algo):
+        Exception.__init__(self)
+        self.algo = algo
+
 class ZIPLError(Exception):
     pass
 
@@ -122,20 +127,11 @@ class ErrorHandler(object):
         self.ui.showError(message)
         return ERROR_RAISE
 
-    def _dirtyFSHandler(self, exn):
-        message = _("The following file systems for your Linux system were "
-                    "not unmounted cleanly.  Would you like to mount them "
-                    "anyway?\n%s") % exn.devices
-        if self.ui.showYesNoQuestion(message):
-            return ERROR_CONTINUE
-        else:
-            return ERROR_RAISE
-
     def _fstabTypeMismatchHandler(self, exn):
         # FIXME: include the two types in the message instead of including
         #        the raw exception text
         message = _("There is an entry in your /etc/fstab file that contains "
-                    "an invalid or incorrect filesystem type:\n\n")
+                    "an invalid or incorrect file system type:\n\n")
         message += " " + str(exn)
         self.ui.showError(message)
 
@@ -245,7 +241,7 @@ class ErrorHandler(object):
         return ERROR_RAISE
 
     def _bootLoaderErrorHandler(self, exn):
-        message = _("The following error occurred while installing the bootloader. "
+        message = _("The following error occurred while installing the boot loader. "
                     "The system will not be bootable. "
                     "Would you like to ignore this and continue with "
                     "installation?")
@@ -255,6 +251,12 @@ class ErrorHandler(object):
             return ERROR_CONTINUE
         else:
             return ERROR_RAISE
+
+    def _passwordCryptErrorHandler(self, exn):
+        message = _("Unable to encrypt password: unsupported algorithm %s") % exn.algo
+
+        self.ui.showError(message)
+        return ERROR_RAISE
 
     def _ziplErrorHandler(self, *args, **kwargs):
         details = kwargs["exception"]
@@ -283,7 +285,6 @@ class ErrorHandler(object):
         _map = {"PartitioningError": self._partitionErrorHandler,
                 "FSResizeError": self._fsResizeHandler,
                 "NoDisksError": self._noDisksHandler,
-                "DirtyFSError": self._dirtyFSHandler,
                 "FSTabTypeMismatchError": self._fstabTypeMismatchHandler,
                 "InvalidImageSizeError": self._invalidImageSizeHandler,
                 "MissingImageError": self._missingImageHandler,
@@ -295,6 +296,7 @@ class ErrorHandler(object):
                 "PayloadInstallError": self._payloadInstallHandler,
                 "DependencyError": self._dependencyErrorHandler,
                 "BootLoaderError": self._bootLoaderErrorHandler,
+                "PasswordCryptError": self._passwordCryptErrorHandler,
                 "ZIPLError": self._ziplErrorHandler}
 
         if exn.__class__.__name__ in _map:

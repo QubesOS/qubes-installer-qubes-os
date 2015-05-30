@@ -26,7 +26,7 @@ from gi.repository import Gdk, Gtk
 
 from pyanaconda.i18n import _, C_, N_, P_
 from pyanaconda.ui.gui import GUIObject
-from pyanaconda.ui.gui.utils import escape_markup, timed_action
+from pyanaconda.ui.gui.utils import blockedHandler, escape_markup, timed_action
 from blivet.size import Size
 
 __all__ = ["ResizeDialog"]
@@ -95,7 +95,7 @@ class ResizeDialog(GUIObject):
         # First, try to find the partition in some known Root.  If we find
         # it, return the mountpoint as the description.
         for root in self.storage.roots:
-            for (mount, device) in root.mounts.iteritems():
+            for (mount, device) in root.mounts.items():
                 if device == part:
                     return "%s (%s)" % (mount, root.name)
 
@@ -210,13 +210,13 @@ class ResizeDialog(GUIObject):
 
         self._update_labels(totalDisks, totalReclaimableSpace, 0)
 
-        description = _("You can remove existing filesystems you no longer need to free up space "
-                        "for this installation.  Removing a filesystem will permanently delete all "
+        description = _("You can remove existing file systems you no longer need to free up space "
+                        "for this installation.  Removing a file system will permanently delete all "
                         "of the data it contains.")
 
         if canShrinkSomething:
             description += "\n\n"
-            description += _("There is also free space available in pre-existing filesystems.  "
+            description += _("There is also free space available in pre-existing file systems.  "
                              "While it's risky and we recommend you back up your data first, you "
                              "can recover that free disk space and make it available for this "
                              "installation below.")
@@ -226,8 +226,8 @@ class ResizeDialog(GUIObject):
 
     def _update_labels(self, nDisks=None, totalReclaimable=None, selectedReclaimable=None):
         if nDisks is not None and totalReclaimable is not None:
-            text = P_("<b>%(count)s disk; %(size)s reclaimable space</b> (in filesystems)",
-                      "<b>%(count)s disks; %(size)s reclaimable space</b> (in filesystems)",
+            text = P_("<b>%(count)s disk; %(size)s reclaimable space</b> (in file systems)",
+                      "<b>%(count)s disks; %(size)s reclaimable space</b> (in file systems)",
                       nDisks) % {"count" : escape_markup(str(nDisks)),
                                  "size" : escape_markup(totalReclaimable)}
             self._reclaimable_label.set_markup(text)
@@ -261,9 +261,9 @@ class ResizeDialog(GUIObject):
         fivePercent = int(distance / 20)
         twentyPercent = int(distance / 5)
 
-        self._resizeSlider.handler_block_by_func(self.on_resize_value_changed)
-        self._resizeSlider.set_range(minSize, size)
-        self._resizeSlider.handler_unblock_by_func(self.on_resize_value_changed)
+        with blockedHandler(self._resizeSlider, self.on_resize_value_changed):
+            self._resizeSlider.set_range(minSize, size)
+
         self._resizeSlider.set_value(default_value)
 
         adjustment = self.builder.get_object("resizeAdjustment")

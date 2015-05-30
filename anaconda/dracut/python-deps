@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # python-deps - find the dependencies of a given python script.
 
+import copy
 import os, sys
 from modulefinder import ModuleFinder
 # pylint: disable=wildcard-import
@@ -8,6 +9,8 @@ from distutils.sysconfig import *
 
 sitedir = get_python_lib()
 libdir = get_config_var('LIBDEST')
+
+alsoNeeded = { libdir+"/urllib.py": libdir+"/urllib2.py" }
 
 # A couple helper functions...
 def moduledir(pyfile):
@@ -30,10 +33,15 @@ def pyfiles(moddir):
 # OK. Use modulefinder to find all the modules etc. this script uses!
 mods = []
 deps = []
-for script in sys.argv[1:]:
+
+scripts = copy.copy(sys.argv[1:])
+
+while scripts:
+    script = scripts.pop()
+
     finder = ModuleFinder()
     finder.run_script(script) # parse the script
-    for name, mod in finder.modules.iteritems():
+    for mod in finder.modules.itervalues():
         if not mod.__file__: # this module is builtin, so we can skip it
             continue
 
@@ -44,6 +52,9 @@ for script in sys.argv[1:]:
         if moddir and moddir not in mods: #
             deps += list(pyfiles(moddir)) # ...get the whole module
             mods.append(moddir)
+
+        if mod.__file__ in alsoNeeded and alsoNeeded[mod.__file__] not in deps:
+            scripts.append(alsoNeeded[mod.__file__])
 
 # Include some bits that the python install itself needs
 print(get_makefile_filename())

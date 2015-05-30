@@ -28,7 +28,6 @@ from pyanaconda import iutil, kickstart
 import sys
 import os
 import shutil
-import signal
 import time
 import re
 import errno
@@ -37,7 +36,7 @@ import traceback
 import blivet.errors
 from pyanaconda.errors import CmdlineError
 from pyanaconda.ui.communication import hubQ
-from pyanaconda.constants import THREAD_EXCEPTION_HANDLING_TEST
+from pyanaconda.constants import THREAD_EXCEPTION_HANDLING_TEST, IPMI_FAILED
 from pyanaconda.threads import threadMgr
 from pyanaconda.i18n import _
 from pyanaconda import flags
@@ -50,7 +49,7 @@ log = logging.getLogger("anaconda")
 
 class AnacondaExceptionHandler(ExceptionHandler):
 
-    def __init__(self, confObj, intfClass, exnClass, tty_num, gui_lock):
+    def __init__(self, confObj, intfClass, exnClass, tty_num, gui_lock, interactive):
         """
         :see: python-meh's ExceptionHandler
         :param tty_num: the number of tty the interface is running on
@@ -60,8 +59,9 @@ class AnacondaExceptionHandler(ExceptionHandler):
         ExceptionHandler.__init__(self, confObj, intfClass, exnClass)
         self._gui_lock = gui_lock
         self._intf_tty_num = tty_num
+        self._interactive = interactive
 
-    def run_handleException(self, dump_info):
+    def _main_loop_handleException(self, dump_info):
         """
         Helper method with one argument only so that it can be registered
         with GLib.idle_add() to run on idle or called from a handler.
@@ -70,8 +70,21 @@ class AnacondaExceptionHandler(ExceptionHandler):
 
         """
 
-        super(AnacondaExceptionHandler, self).handleException(dump_info)
-        return False
+        ty = dump_info.exc_info.type
+        value = dump_info.exc_info.value
+
+        if (issubclass(ty, blivet.errors.StorageError) and value.hardware_fault) \
+                or (issubclass(ty, OSError) and value.errno == errno.EIO):
+            # hardware fault or '[Errno 5] Input/Output error'
+            hw_error_msg = _("The installation was stopped due to what "
+                             "seems to be a problem with your hardware. "
+                             "The exact error message is:\n\n%s.\n\n "
+                             "The installer will now terminate.") % str(value)
+            self.intf.messageWindow(_("Hardware error occured"), hw_error_msg)
+            sys.exit(0)
+        else:
+            super(AnacondaExceptionHandler, self).handleException(dump_info)
+            return False
 
     def handleException(self, dump_info):
         """
@@ -90,78 +103,70 @@ class AnacondaExceptionHandler(ExceptionHandler):
         ty = dump_info.exc_info.type
         value = dump_info.exc_info.value
 
-        if (issubclass(ty, blivet.errors.StorageError) and value.hardware_fault) \
-                or (issubclass(ty, OSError) and value.errno == errno.EIO):
-            # hardware fault or '[Errno 5] Input/Output error'
-            hw_error_msg = _("The installation was stopped due to what "
-                             "seems to be a problem with your hardware. "
-                             "The exact error message is:\n\n%s.\n\n "
-                             "The installer will now terminate.") % str(value)
-            self.intf.messageWindow(_("Hardware error occured"), hw_error_msg)
-            sys.exit(0)
-        else:
-            try:
-                from gi.repository import Gtk
+        try:
+            from gi.repository import Gtk
 
-                # XXX: Gtk stopped raising RuntimeError if it fails to
-                # initialize. Horay! But will it stay like this? Let's be
-                # cautious and raise the exception on our own to work in both
-                # cases
-                initialized = Gtk.init_check(None)[0]
-                if not initialized:
-                    raise RuntimeError()
+            # XXX: Gtk stopped raising RuntimeError if it fails to
+            # initialize. Horay! But will it stay like this? Let's be
+            # cautious and raise the exception on our own to work in both
+            # cases
+            initialized = Gtk.init_check(None)[0]
+            if not initialized:
+                raise RuntimeError()
 
-                # Attempt to grab the GUI initializing lock, do not block
-                if not self._gui_lock.acquire(False):
-                    # the graphical interface is running, don't crash it by
-                    # running another one potentially from a different thread
-                    log.debug("Gtk running, queuing exception handler to the "
-                             "main loop")
-                    GLib.idle_add(self.run_handleException, dump_info)
-                else:
-                    log.debug("Gtk not running, starting Gtk and running "
-                             "exception handler in it")
-                    super(AnacondaExceptionHandler, self).handleException(
-                                                            dump_info)
+            # Attempt to grab the GUI initializing lock, do not block
+            if not self._gui_lock.acquire(False):
+                # the graphical interface is running, don't crash it by
+                # running another one potentially from a different thread
+                log.debug("Gtk running, queuing exception handler to the "
+                         "main loop")
+                GLib.idle_add(self._main_loop_handleException, dump_info)
+            else:
+                log.debug("Gtk not running, starting Gtk and running "
+                         "exception handler in it")
+                self._main_loop_handleException(dump_info)
 
-            except (RuntimeError, ImportError):
-                log.debug("Gtk cannot be initialized")
-                # X not running (Gtk cannot be initialized)
-                if threadMgr.in_main_thread():
-                    log.debug("In the main thread, running exception handler")
-                    if (issubclass (ty, CmdlineError)):
-
+        except (RuntimeError, ImportError):
+            log.debug("Gtk cannot be initialized")
+            # X not running (Gtk cannot be initialized)
+            if threadMgr.in_main_thread():
+                log.debug("In the main thread, running exception handler")
+                if issubclass(ty, CmdlineError) or not self._interactive:
+                    if issubclass(ty, CmdlineError):
                         cmdline_error_msg = _("\nThe installation was stopped due to "
                                               "incomplete spokes detected while running "
                                               "in non-interactive cmdline mode. Since there "
-                                              "can not be any questions in cmdline mode, "
+                                              "cannot be any questions in cmdline mode, "
                                               "edit your kickstart file and retry "
                                               "installation.\nThe exact error message is: "
                                               "\n\n%s.\n\nThe installer will now terminate.") % str(value)
-
-                        # since there is no UI in cmdline mode and it is completely
-                        # non-interactive, we can't show a message window asking the user
-                        # to acknowledge the error; instead, print the error out and sleep
-                        # for a few seconds before exiting the installer
-                        print(cmdline_error_msg)
-                        time.sleep(10)
-                        sys.exit(0)
                     else:
-                        print("\nAn unknown error has occured, look at the "
-                               "/tmp/anaconda-tb* file(s) for more details")
-                        # in the main thread, run exception handler
-                        super(AnacondaExceptionHandler, self).handleException(
-                                                                dump_info)
+                        cmdline_error_msg = _("\nRunning in cmdline mode, no interactive debugging "
+                                              "allowed.\nThe exact error message is: "
+                                              "\n\n%s.\n\nThe installer will now terminate.") % str(value)
+
+                    # since there is no UI in cmdline mode and it is completely
+                    # non-interactive, we can't show a message window asking the user
+                    # to acknowledge the error; instead, print the error out and sleep
+                    # for a few seconds before exiting the installer
+                    print(cmdline_error_msg)
+                    time.sleep(10)
+                    sys.exit(1)
                 else:
-                    log.debug("In a non-main thread, sending a message with "
-                             "exception data")
-                    # not in the main thread, just send message with exception
-                    # data and let message handler run the exception handler in
-                    # the main thread
-                    exc_info = dump_info.exc_info
-                    hubQ.send_exception((exc_info.type,
-                                         exc_info.value,
-                                         exc_info.stack))
+                    print("\nAn unknown error has occured, look at the "
+                           "/tmp/anaconda-tb* file(s) for more details")
+                    # in the main thread, run exception handler
+                    self._main_loop_handleException(dump_info)
+            else:
+                log.debug("In a non-main thread, sending a message with "
+                         "exception data")
+                # not in the main thread, just send message with exception
+                # data and let message handler run the exception handler in
+                # the main thread
+                exc_info = dump_info.exc_info
+                hubQ.send_exception((exc_info.type,
+                                     exc_info.value,
+                                     exc_info.stack))
 
     def postWriteHook(self, dump_info):
         anaconda = dump_info.object
@@ -181,18 +186,12 @@ class AnacondaExceptionHandler(ExceptionHandler):
         except:
             pass
 
+        iutil.ipmi_report(IPMI_FAILED)
+
     def runDebug(self, exc_info):
         if flags.can_touch_runtime_system("switch console") \
                 and self._intf_tty_num != 1:
             iutil.vtActivate(1)
-
-        pidfl = "/tmp/vncshell.pid"
-        if os.path.exists(pidfl) and os.path.isfile(pidfl):
-            pf = open(pidfl, "r")
-            for pid in pf.readlines():
-                if not int(pid) == os.getpid():
-                    os.kill(int(pid), signal.SIGKILL)
-            pf.close()
 
         iutil.eintr_retry_call(os.open, "/dev/console", os.O_RDWR)   # reclaim stdin
         iutil.eintr_retry_call(os.dup2, 0, 1)                        # reclaim stdout
@@ -266,9 +265,10 @@ def initExceptionHandling(anaconda):
         # anaconda-tb file
         conf.register_callback("journalctl", journalctl_callback, attchmnt_only=False)
 
+    interactive = not anaconda.displayMode == 'c'
     handler = AnacondaExceptionHandler(conf, anaconda.intf.meh_interface,
                                        ReverseExceptionDump, anaconda.intf.tty_num,
-                                       anaconda.gui_initialized)
+                                       anaconda.gui_initialized, interactive)
     handler.install(anaconda)
 
     return conf

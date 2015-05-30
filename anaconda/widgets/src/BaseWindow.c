@@ -17,6 +17,8 @@
  * Author: Chris Lumens <clumens@redhat.com>
  */
 
+#include "config.h"
+
 #include <libintl.h>
 #include <locale.h>
 #include <stdlib.h>
@@ -234,6 +236,7 @@ GtkWidget *anaconda_base_window_new() {
 static void anaconda_base_window_init(AnacondaBaseWindow *win) {
     char *markup;
     AtkObject *atk;
+    GtkStyleContext *context;
 
     win->priv = G_TYPE_INSTANCE_GET_PRIVATE(win,
                                             ANACONDA_TYPE_BASE_WINDOW,
@@ -260,6 +263,13 @@ static void anaconda_base_window_init(AnacondaBaseWindow *win) {
      */
     win->priv->main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_container_add(GTK_CONTAINER(win), win->priv->main_box);
+
+    /* GtkBoxes don't draw a background by default, which causes issues during
+     * transitions in a GtkStack. Work around this by forcing a "background"
+     * style class. See https://bugzilla.gnome.org/show_bug.cgi?id=742552
+     */
+    context = gtk_widget_get_style_context(win->priv->main_box);
+    gtk_style_context_add_class(context, "background");
 
     /* Then the navigation area that sits as the first item in the main box
      * for every Window class.
@@ -588,6 +598,7 @@ static void anaconda_base_window_set_info_bar(AnacondaBaseWindow *win, GtkMessag
     gtk_container_add(GTK_CONTAINER(content_area), label);
     gtk_info_bar_set_message_type(GTK_INFO_BAR(win->priv->info_bar), ty);
     gtk_widget_show(win->priv->info_bar);
+    gtk_widget_show(win->priv->event_box);
 
     win->priv->info_shown = TRUE;
 }
@@ -670,7 +681,6 @@ void anaconda_base_window_clear_info(AnacondaBaseWindow *win) {
 /**
  * anaconda_base_window_retranslate:
  * @win: a #AnacondaBaseWindow
- * @lang: target language
  *
  * Reload translations for this widget as needed.  Generally, this is not
  * needed.  However when changing the language during installation, we need
@@ -679,11 +689,8 @@ void anaconda_base_window_clear_info(AnacondaBaseWindow *win) {
  *
  * Since: 1.0
  */
-void anaconda_base_window_retranslate(AnacondaBaseWindow *win, const char *lang) {
+void anaconda_base_window_retranslate(AnacondaBaseWindow *win) {
     GValue distro = G_VALUE_INIT;
-
-    setenv("LANGUAGE", lang, 1);
-    setlocale(LC_ALL, "");
 
     /* This bit is internal gettext magic. */
     {

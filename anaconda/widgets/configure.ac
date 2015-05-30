@@ -31,38 +31,45 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_TYPE_SIZE_T
+
 AC_PROG_CC
-AC_PROG_CXX
 AC_PROG_LIBTOOL
-AC_PROG_LN_S
 
 AM_GNU_GETTEXT([external])
 
 dnl Make sure that autoconf fails if the gobject-introspection macro
 dnl is not expanded.
-m4_pattern_forbid([GOBJECT_INTROSPECTION_CHECK])dnl
-GOBJECT_INTROSPECTION_CHECK([0.6.7])
+m4_ifdef([GOBJECT_INTROSPECTION_CHECK],
+[GOBJECT_INTROSPECTION_CHECK([0.6.7])],
+[found_introspection=no
+AM_CONDITIONAL(HAVE_INTROSPECTION, false)])
  
-# Fail if introspection was not enabled
+# Complain if introspection was not enabled
 AS_IF([test "x$found_introspection" = xyes], [:],
-      [AC_MSG_ERROR([*** GObject introspection must be enabled])])
+      [ANACONDA_SOFT_FAILURE([GObject introspection must be enabled])])
 
-dnl A missing GTK_DOC_CHECK should fail in autogen.sh running gtkdocize, but
-dnl might as well check it here too
-m4_pattern_forbid([GTK_DOC_CHECK])dnl
-GTK_DOC_CHECK([1.14], [--flavour no-tmpl])
+# Add gtk-doc's html-dir option without pulling in the rest of gtk-doc
+AC_ARG_WITH([html-dir],
+            AS_HELP_STRING([--with-html-dir=PATH], [path to installed docs]),,
+            [with_html_dir='${datadir}/gtk-doc/html'])
+HTML_DIR="$with_html_dir"
+AC_SUBST([HTML_DIR])
 
-PKG_CHECK_MODULES([GLADEUI], [gladeui-2.0 >= 3.10])
-PKG_CHECK_MODULES([GTK], [gtk+-x11-3.0 >= 3.11.3])
-PKG_CHECK_MODULES([GLIB], [glib-2.0])
-PKG_CHECK_MODULES([LIBXKLAVIER], [libxklavier >= 5.2.1])
-PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 1.30])
+ANACONDA_PKG_CHECK_MODULES([GLADEUI], [gladeui-2.0 >= 3.10])
+ANACONDA_PKG_CHECK_MODULES([GTK], [gtk+-x11-3.0 >= 3.11.3])
+ANACONDA_PKG_CHECK_MODULES([LIBXKLAVIER], [libxklavier >= 5.2.1])
+ANACONDA_PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 1.30])
 
-AC_CHECK_HEADERS([libintl.h stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([libintl.h stdlib.h string.h unistd.h locale.h],
+                 [],
+                 [ANACONDA_SOFT_FAILURE([Header file $ac_header not found.])],
+                 [])
 
-AC_STRUCT_TIMEZONE
+AC_CHECK_FUNCS([setlocale],
+               [],
+               [ANACONDA_SOFT_FAILURE([Function $ac_func not found.])])
 
-AC_CHECK_FUNCS([pow setenv setlocale strchr])
 AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  glade/Makefile
@@ -71,3 +78,6 @@ AC_CONFIG_FILES([Makefile
                  data/Makefile
                  data/pixmaps/Makefile])
 AC_OUTPUT
+
+# Gently advise the user about the build failures they are about to encounter
+ANACONDA_FAILURES

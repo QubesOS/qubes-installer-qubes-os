@@ -97,12 +97,15 @@ class ThreadManager(object):
         """Wait for the thread to exit and if the thread exited with an error
            re-raise it here.
         """
+
+        ret_val = True
+
         # we don't need a lock here,
         # because get() acquires it itself
         try:
             self.get(name).join()
         except AttributeError:
-            pass
+            ret_val = False
         # - if there is a thread object for the given name,
         #   we join it
         # - if there is not a thread object for the given name,
@@ -110,6 +113,9 @@ class ThreadManager(object):
         #   and return immediately
 
         self.raise_if_error(name)
+
+        # return True if we waited for the thread, False otherwise
+        return ret_val
 
     def wait_all(self):
         """Wait for all threads to exit and if there was an error re-raise it.
@@ -121,7 +127,7 @@ class ThreadManager(object):
             self.wait(name)
 
         if self.any_errors:
-            thread_names = ", ".join(thread_name for thread_name in self._errors.iterkeys()
+            thread_names = ", ".join(thread_name for thread_name in self._errors.keys()
                                      if self._errors[thread_name])
             msg = "Unhandled errors from the following threads detected: %s" % thread_names
             raise RuntimeError(msg)
@@ -181,6 +187,17 @@ class ThreadManager(object):
         """
         with self._objs_lock:
             return self._objs.keys()
+
+    def wait_for_error_threads(self):
+        """
+        Waits for all threads that caused exceptions. In other words, waits for
+        exception handling (possibly interactive) to be finished.
+
+        """
+
+        for thread_name in self._errors.keys():
+            thread = self._objs[thread_name]
+            thread.join()
 
 class AnacondaThread(threading.Thread):
     """A threading.Thread subclass that exists only for a couple purposes:

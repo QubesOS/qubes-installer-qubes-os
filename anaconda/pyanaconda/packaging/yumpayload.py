@@ -58,12 +58,12 @@ try:
     # handler setup.  We already set one up so we don't need it to run.
     # yum may give us an API to fiddle this at a later time.
     yum.logginglevels._added_handlers = True
+    from yum.Errors import RepoError, RepoMDError, GroupsError
 except ImportError:
     log.error("import of yum failed")
     yum = None
 
-from pyanaconda.constants import BASE_REPO_NAME, DRACUT_ISODIR, INSTALL_TREE, ISO_DIR, MOUNT_DIR, \
-                                 LOGLVL_LOCK
+from pyanaconda.constants import BASE_REPO_NAME, MOUNT_DIR, LOGLVL_LOCK, IPMI_ABORTED
 from pyanaconda.flags import flags
 
 from pyanaconda import iutil
@@ -87,6 +87,7 @@ from pykickstart.constants import GROUP_ALL, GROUP_DEFAULT, KS_MISSING_IGNORE
 
 YUM_PLUGINS = ["fastestmirror", "langpacks"]
 BASE_REPO_NAMES = [BASE_REPO_NAME] + PackagePayload.DEFAULT_REPOS
+YUM_REPOS_DIR = "/etc/yum.repos.d/"
 
 import inspect
 import threading
@@ -172,13 +173,16 @@ class YumPayload(PackagePayload):
         self._yum = None
         self._setup = False
 
+        self._groups = None
+        self._packages = []
+
         # base repo caching
         self._base_repo = None
         self._base_repo_lock = threading.RLock()
 
         self.reset()
 
-    def reset(self, root=None, releasever=None):
+    def reset(self):
         """ Reset this instance to its initial (unconfigured) state. """
 
         super(YumPayload, self).reset()
@@ -187,10 +191,7 @@ class YumPayload(PackagePayload):
         # available we can use that as a better value.
         self._space_required = Size("3000 MB")
 
-        self._groups = None
-        self._packages = []
-
-        self._resetYum(root=root, releasever=releasever)
+        self._resetYum()
 
     def setup(self, storage, instClass):
         super(YumPayload, self).setup(storage, instClass)
@@ -209,6 +210,9 @@ class YumPayload(PackagePayload):
             NOTE:  This is enforced by tests/pylint/preconf.py.  If the name
             of this method changes, change it there too.
         """
+        self._groups = None
+        self._packages = []
+
         if root is None:
             root = self._root_dir
 
@@ -229,9 +233,8 @@ class YumPayload(PackagePayload):
 
             # Set some configuration parameters that don't get set through a config
             # file.  yum will know what to do with these.
-            # Enable all types of yum plugins. We're somewhat careful about what
-            # plugins we put in the environment.
-            self._yum.preconf.plugin_types = yum.plugins.ALL_TYPES
+            # Only enable non-interactive yum plugins
+            self._yum.preconf.plugin_types = yum.plugins.TYPE_CORE
             self._yum.preconf.enabled_plugins = YUM_PLUGINS
             self._yum.preconf.fn = "/tmp/anaconda-yum.conf"
             self._yum.preconf.root = root
@@ -306,6 +309,71 @@ reposdir=%s
             root = self._yum.conf.installroot
             self._yum.conf.cachedir = self._yum.conf.cachedir[len(root):]
 
+    def _writeYumRepo(self, repo, repo_path):
+        """ Write a repo object to a yum repo.conf file
+
+            :param repo: Yum repository object
+            :param string repo_path: Path to write the repo to
+            :raises: PayloadSetupError if the repo doesn't have a url
+        """
+        with open(repo_path, "w") as f:
+            f.write("[%s]\n" % repo.id)
+            f.write("name=%s\n" % repo.id)
+            if self.isRepoEnabled(repo.id):
+                f.write("enabled=1\n")
+            else:
+                f.write("enabled=0\n")
+
+            if repo.mirrorlist:
+                f.write("mirrorlist=%s\n" % repo.mirrorlist)
+            elif repo.metalink:
+                f.write("metalink=%s\n" % repo.metalink)
+            elif repo.baseurl:
+                f.write("baseurl=%s\n" % repo.baseurl[0])
+            else:
+                f.close()
+                os.unlink(repo_path)
+                raise PayloadSetupError("repo %s has no baseurl, mirrorlist or metalink", repo.id)
+
+            # kickstart repo modifiers
+            ks_repo = self.getAddOnRepo(repo.id)
+
+            if not ks_repo and not repo.sslverify:
+                f.write("sslverify=0\n")
+
+            if not ks_repo:
+                return
+
+            if ks_repo.noverifyssl:
+                f.write("sslverify=0\n")
+
+            if ks_repo.proxy:
+                try:
+                    proxy = ProxyString(ks_repo.proxy)
+                    f.write("proxy=%s\n" % (proxy.noauth_url,))
+                    if proxy.username:
+                        f.write("proxy_username=%s\n" % (proxy.username,))
+                    if proxy.password:
+                        f.write("proxy_password=%s\n" % (proxy.password,))
+                except ProxyStringError as e:
+                    log.error("Failed to parse proxy for _writeInstallConfig %s: %s",
+                              ks_repo.proxy, e)
+
+            if ks_repo.cost:
+                f.write("cost=%d\n" % ks_repo.cost)
+
+            if ks_repo.includepkgs:
+                f.write("includepkgs=%s\n"
+                        % ",".join(ks_repo.includepkgs))
+
+            if ks_repo.excludepkgs:
+                f.write("exclude=%s\n"
+                        % ",".join(ks_repo.excludepkgs))
+
+            if ks_repo.ignoregroups:
+                f.write("enablegroups=0\n")
+
+
     def _writeInstallConfig(self):
         """ Write out the yum config that will be used to install packages.
 
@@ -322,53 +390,10 @@ reposdir=%s
         for repo in self._yum.repos.listEnabled():
             cfg_path = "%s/%s.repo" % (self._repos_dir, repo.id)
             log.debug("writing repository file %s for repository %s", cfg_path, repo.id)
-            ks_repo = self.getAddOnRepo(repo.id)
-            with open(cfg_path, "w") as f:
-                f.write("[%s]\n" % repo.id)
-                f.write("name=Install - %s\n" % repo.id)
-                f.write("enabled=1\n")
-                if repo.mirrorlist:
-                    f.write("mirrorlist=%s" % repo.mirrorlist)
-                elif repo.metalink:
-                    f.write("metalink=%s" % repo.metalink)
-                elif repo.baseurl:
-                    f.write("baseurl=%s\n" % repo.baseurl[0])
-                else:
-                    log.error("repo %s has no baseurl, mirrorlist or metalink", repo.id)
-                    f.close()
-                    os.unlink(cfg_path)
-                    continue
-
-                # kickstart repo modifiers
-                if ks_repo:
-                    if ks_repo.noverifyssl:
-                        f.write("sslverify=0\n")
-
-                    if ks_repo.proxy:
-                        try:
-                            proxy = ProxyString(ks_repo.proxy)
-                            f.write("proxy=%s\n" % (proxy.noauth_url,))
-                            if proxy.username:
-                                f.write("proxy_username=%s\n" % (proxy.username,))
-                            if proxy.password:
-                                f.write("proxy_password=%s\n" % (proxy.password,))
-                        except ProxyStringError as e:
-                            log.error("Failed to parse proxy for _writeInstallConfig %s: %s",
-                                      ks_repo.proxy, e)
-
-                    if ks_repo.cost:
-                        f.write("cost=%d\n" % ks_repo.cost)
-
-                    if ks_repo.includepkgs:
-                        f.write("includepkgs=%s\n"
-                                % ",".join(ks_repo.includepkgs))
-
-                    if ks_repo.excludepkgs:
-                        f.write("exclude=%s\n"
-                                % ",".join(ks_repo.excludepkgs))
-
-                    if ks_repo.ignoregroups:
-                        f.write("enablegroups=0\n")
+            try:
+                self._writeYumRepo(repo, cfg_path)
+            except PayloadSetupError as e:
+                log.error(e)
 
         releasever = self._yum.conf.yumvar['releasever']
         self._writeYumConfig()
@@ -468,15 +493,13 @@ reposdir=%s
 
     def isRepoEnabled(self, repo_id):
         """ Return True if repo is enabled. """
-        from yum.Errors import RepoError
-
         try:
             return self.getRepo(repo_id).enabled
         except RepoError:
             return super(YumPayload, self).isRepoEnabled(repo_id)
 
     @refresh_base_repo()
-    def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
+    def updateBaseRepo(self, fallback=True, checkmount=True):
         """ Update the base repo based on self.data.method.
 
             - Tear down any previous base repo devices, symlinks, &c.
@@ -489,7 +512,12 @@ reposdir=%s
               retrieval fails.
         """
         log.info("configuring base repo")
-        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage, checkmount)
+
+        self.reset_install_device()
+        try:
+            url, mirrorlist, sslverify = self._setupInstallDevice(self.storage, checkmount)
+        except PayloadSetupError:
+            self.data.method.method = None
 
         releasever = None
         method = self.data.method
@@ -502,11 +530,8 @@ reposdir=%s
                           method.method, e)
 
         # start with a fresh YumBase instance & tear down old install device
-        self.reset(root=root, releasever=releasever)
+        self._resetYum(releasever=releasever)
         self._yumCacheDirHack()
-
-        # This needs to be done again, reset tore it down.
-        url, mirrorlist, sslverify = self._setupInstallDevice(self.storage, checkmount)
 
         # If this is a kickstart install and no method has been set up, or
         # askmethod was given on the command line, we don't want to do
@@ -625,27 +650,13 @@ reposdir=%s
 
         log.info("metadata retrieval complete")
 
-    @property
-    def ISOImage(self):
-        if not self.data.method.method == "harddrive":
-            return None
-        # This could either be mounted to INSTALL_TREE or on
-        # DRACUT_ISODIR if dracut did the mount.
-        dev = blivet.util.get_mount_device(INSTALL_TREE)
-        if dev:
-            return dev[len(ISO_DIR)+1:]
-        dev = blivet.util.get_mount_device(DRACUT_ISODIR)
-        if dev:
-            return dev[len(DRACUT_ISODIR)+1:]
-        return None
-
     @refresh_base_repo()
     def _configureAddOnRepo(self, repo):
         """ Configure a single ksdata repo. """
         url = repo.baseurl
         if url and url.startswith("nfs://"):
             # Let the assignment throw ValueError for bad NFS urls from kickstart
-            (server, path) = url.strip("nfs://").split(":", 1)
+            (server, path) = url[6:].split(":", 1)
             mountpoint = "%s/%s.nfs" % (MOUNT_DIR, repo.name)
             self._setupNFS(mountpoint, server, path, None)
 
@@ -735,8 +746,6 @@ reposdir=%s
 
     def _getRepoMetadata(self, yumrepo):
         """ Retrieve repo metadata if we don't already have it. """
-        from yum.Errors import RepoError, RepoMDError
-
         # And try to grab its metadata.  We do this here so it can be done
         # on a per-repo basis, so we can then get some finer grained error
         # handling and recovery.
@@ -778,8 +787,6 @@ reposdir=%s
 
     def _addYumRepo(self, name, baseurl, mirrorlist=None, proxyurl=None, **kwargs):
         """ Add a yum repo to the YumBase instance. """
-        from yum.Errors import RepoError
-
         needsAdding = True
 
         # First, delete any pre-existing repo with the same name.
@@ -966,35 +973,7 @@ reposdir=%s
 
             return (environment.ui_name, environment.ui_description)
 
-    def selectEnvironment(self, environmentid):
-        groups = self._yumGroups
-        if not groups:
-            return
-
-        with _yum_lock:
-            if not groups.has_environment(environmentid):
-                raise NoSuchGroup(environmentid)
-
-            environment = groups.return_environment(environmentid)
-            for group in environment.groups:
-                self.selectGroup(group)
-
-    def deselectEnvironment(self, environmentid):
-        groups = self._yumGroups
-        if not groups:
-            return
-
-        with _yum_lock:
-            if not groups.has_environment(environmentid):
-                raise NoSuchGroup(environmentid)
-
-            environment = groups.return_environment(environmentid)
-            for group in environment.groups:
-                self.deselectGroup(group)
-            for group in environment.options:
-                self.deselectGroup(group)
-
-    def environmentGroups(self, environmentid):
+    def environmentGroups(self, environmentid, optional=True):
         groups = self._yumGroups
         if not groups:
             return []
@@ -1004,7 +983,10 @@ reposdir=%s
                 raise NoSuchGroup(environmentid)
 
             environment = groups.return_environment(environmentid)
-            return environment.groups + environment.options
+            if optional:
+                return environment.groups + environment.options
+            else:
+                return environment.groups
 
     ###
     ### METHODS FOR WORKING WITH GROUPS
@@ -1015,7 +997,6 @@ reposdir=%s
         if not self._setup:
             return []
 
-        from yum.Errors import RepoError, GroupsError
         with _yum_lock:
             if not self._groups:
                 if not self.needsNetwork or nm_is_connected():
@@ -1125,8 +1106,6 @@ reposdir=%s
     ###
     @property
     def packages(self):
-        from yum.Errors import RepoError
-
         with _yum_lock:
             if not self._packages:
                 if self.needsNetwork and not nm_is_connected():
@@ -1348,10 +1327,12 @@ reposdir=%s
 
     def preInstall(self, packages=None, groups=None):
         """ Perform pre-installation tasks. """
-        super(YumPayload, self).preInstall()
+        super(YumPayload, self).preInstall(packages, groups)
         progressQ.send_message(_("Starting package installation process"))
 
-        self.requiredPackages = packages
+        self.requiredPackages = ["yum"]
+        if packages:
+            self.requiredPackages += packages
         self.requiredGroups = groups
 
         self.addDriverRepos()
@@ -1417,6 +1398,7 @@ reposdir=%s
         log.info("Running anaconda-yum to install packages")
         # Watch output for progress, debug and error information
         install_errors = []
+        prev = 0
         try:
             for line in execReadlines("/usr/libexec/anaconda/anaconda-yum", args):
                 if line.startswith("PROGRESS_"):
@@ -1424,6 +1406,12 @@ reposdir=%s
                     msg = progress_map[key] + text
                     progressQ.send_message(msg)
                     log.debug(msg)
+                elif line.startswith("PERCENT:"):
+                    _key, pct = line.split(":", 1)
+
+                    if float(pct) // 10 > prev // 10:
+                        progressQ.send_step()
+                        prev = float(pct)
                 elif line.startswith("DEBUG:"):
                     log.debug(line[6:])
                 elif line.startswith("INFO:"):
@@ -1440,6 +1428,7 @@ reposdir=%s
             exn = PayloadInstallError(str(e))
             if errorHandler.cb(exn) == ERROR_RAISE:
                 progressQ.send_quit(1)
+                iutil.ipmi_report(IPMI_ABORTED)
                 sys.exit(1)
         finally:
             # log the contents of the scriptlet logfile if any
@@ -1455,6 +1444,7 @@ reposdir=%s
             exn = PayloadInstallError("\n".join(install_errors))
             if errorHandler.cb(exn) == ERROR_RAISE:
                 progressQ.send_quit(1)
+                iutil.ipmi_report(IPMI_ABORTED)
                 sys.exit(1)
 
     def writeMultiLibConfig(self):
@@ -1505,6 +1495,21 @@ reposdir=%s
 
         self.writeMultiLibConfig()
         self._copyLangpacksConfigToTarget()
+
+        # Write selected kickstart repos to target system
+        for ks_repo in (ks for ks in (self.getAddOnRepo(r) for r in self.addOns) if ks.install):
+            try:
+                repo = self.getRepo(ks_repo.name)
+                if not repo:
+                    continue
+            except RepoError:
+                continue
+            repo_path = iutil.getSysroot() + YUM_REPOS_DIR + "%s.repo" % repo.id
+            try:
+                log.info("Writing %s.repo to target system.", repo.id)
+                self._writeYumRepo(repo, repo_path)
+            except PayloadSetupError as e:
+                log.error(e)
 
         super(YumPayload, self).postInstall()
 

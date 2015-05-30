@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright (C) 2014  Red Hat, Inc.
 #
@@ -19,14 +19,14 @@
 
 __all__ = ["Creator", "OutsideMixin"]
 
-import blivet
+from blivet.size import MiB
 
 from contextlib import contextmanager
+from nose.plugins.multiprocess import TimedOutException
 import os
 import shutil
 import subprocess
 import tempfile
-import unittest
 import errno
 
 # Copied from python's subprocess.py
@@ -49,16 +49,13 @@ class Creator(object):
        attributes:
 
        drives       -- A list of tuples describing disk images to create.  Each
-                       tuple is the name and size, in GB.
+                       tuple is the name of the drive and its size as a blivet.Size.
        environ      -- A dictionary of environment variables that should be added
                        to the environment the test suite will run under.
        name         -- A unique string that names a Creator.  This name will
                        be used in creating the results directory (and perhaps
                        other places in the future) so make sure it doesn't
                        conflict with another object.
-       reqMemory    -- The amount of memory this VM needs, in MB.  The default
-                       is 2048, which seems to be the minimum required to
-                       make things run quickly.  Redefine if you need more.
        tests        -- A list of tuples describing which test cases make up
                        this test.  Each tuple is the name of the module
                        containing the test case (minus the leading "inside."
@@ -68,7 +65,6 @@ class Creator(object):
     drives = []
     environ = {}
     name = "Creator"
-    reqMemory = 2048
     tests = []
 
     def __init__(self):
@@ -76,6 +72,11 @@ class Creator(object):
         self._mountpoint = None
         self._proc = None
         self._tempdir = None
+
+        self._reqMemory = 1536
+
+    def _call(self, args):
+        subprocess.call(args, stdout=open("/dev/null", "w"), stderr=open("/dev/null", "w"))
 
     def archive(self):
         """Copy all log files and other test results to a subdirectory of the
@@ -95,7 +96,6 @@ class Creator(object):
            directory they were stored in.
         """
         shutil.rmtree(self.tempdir, ignore_errors=True)
-        os.unlink(self._drivePaths["suite"])
 
     def die(self):
         """Kill any running qemu process previously started by this test."""
@@ -113,8 +113,10 @@ class Creator(object):
             (fd, diskimage) = tempfile.mkstemp(dir=self.tempdir)
             eintr_retry_call(os.close, fd)
 
-            subprocess.call(["/usr/bin/qemu-img", "create", "-f", "qcow2", diskimage, "%sG" % size],
-                            stdout=open("/dev/null", "w"))
+            # For now we are using qemu-img to create these files but specifying
+            # sizes in blivet Size objects.  Unfortunately, qemu-img wants sizes
+            # as xM or xG, not xMB or xGB.  That's what the conversion here is for.
+            self._call(["/usr/bin/qemu-img", "create", "-f", "raw", diskimage, "%sM" % size.convertTo(MiB)])
             self._drivePaths[drive] = diskimage
 
     @property
@@ -141,79 +143,48 @@ class Creator(object):
         """
         from testconfig import config
 
-        # First, create a disk image and put a filesystem on it.
-        b = blivet.Blivet()
+        self._call(["/usr/bin/qemu-img", "create", "-f", "raw", self.suitepath, "10M"])
+        self._call(["/sbin/mkfs.ext4", "-F", self.suitepath, "-L", "ANACTEST"])
+        self._call(["/usr/bin/mount", "-o", "loop", self.suitepath, self.mountpoint])
 
-        # pylint: disable=undefined-variable
-        disk1_path = blivet.util.create_sparse_tempfile("suite", blivet.size.Size("11 MB"))
-        b.config.diskImages["suite"] = disk1_path
+        # Create the directory structure needed for storing results.
+        os.makedirs(self.mountpoint + "/result/anaconda")
 
-        b.reset()
+        # Copy all the inside stuff into the mountpoint.
+        shutil.copytree("inside", self.mountpoint + "/inside")
 
-        try:
-            disk1 = b.devicetree.getDeviceByName("suite")
-            b.initializeDisk(disk1)
+        # Create the suite file, which contains all the test cases to run and is how
+        # the VM will figure out what to run.
+        with open(self.mountpoint + "/suite.py", "w") as f:
+            imports = map(lambda (path, cls): "    from inside.%s import %s" % (path, cls), self.tests)
+            addtests = map(lambda (path, cls): "    s.addTest(%s())" % cls, self.tests)
 
-            part = b.newPartition(size=blivet.size.Size("10 MB"), parents=[disk1])
-            b.createDevice(part)
+            f.write(self.template % {"environ": "    os.environ.update(%s)" % self.environ,
+                                     "imports": "\n".join(imports),
+                                     "addtests": "\n".join(addtests),
+                                     "anacondaArgs": config.get("anacondaArgs", "").strip('"')})
 
-            fmt = blivet.formats.getFormat("ext4", label="ANACTEST", mountpoint=self.mountpoint)
-            b.formatDevice(part, fmt)
-
-            blivet.partitioning.doPartitioning(b)
-            b.doIt()
-
-            fmt.mount()
-
-            # Create the directory structure needed for storing results.
-            os.makedirs(self.mountpoint + "/result/anaconda")
-
-            # Copy all the inside stuff into the mountpoint.
-            shutil.copytree("inside", self.mountpoint + "/inside")
-
-            # Create the suite file, which contains all the test cases to run and is how
-            # the VM will figure out what to run.
-            with open(self.mountpoint + "/suite.py", "w") as f:
-                imports = map(lambda (path, cls): "    from inside.%s import %s" % (path, cls), self.tests)
-                addtests = map(lambda (path, cls): "    s.addTest(%s())" % cls, self.tests)
-
-                f.write(self.template % {"environ": "    os.environ.update(%s)" % self.environ,
-                                         "imports": "\n".join(imports),
-                                         "addtests": "\n".join(addtests),
-                                         "anacondaArgs": config.get("anacondaArgs", "").strip('"')})
-        finally:
-            # pylint: disable=undefined-variable
-            b.devicetree.teardownDiskImages()
-            shutil.rmtree(self.mountpoint)
+        self._call(["/usr/bin/umount", self.mountpoint])
 
         # This ensures it gets passed to qemu-kvm as a disk arg.
-        self._drivePaths["suite"] = disk1_path
+        self._drivePaths[self.suitename] = self.suitepath
 
     @contextmanager
     def suiteMounted(self):
         """This context manager allows for wrapping code that needs to access the
            suite.  It mounts the disk image beforehand and unmounts it afterwards.
         """
-        if self._drivePaths.get("suite", "") == "":
+        if self._drivePaths.get(self.suitename, "") == "":
             return
 
-        b = blivet.Blivet()
-        b.config.diskImages["suite"] = self._drivePaths["suite"]
-        b.reset()
-
-        disk = b.devicetree.getDeviceByName("suite")
-        part = b.devicetree.getChildren(disk)[0]
-        part.format.mountpoint = self.mountpoint
-        part.format.mount()
+        self._call(["/usr/bin/mount", "-o", "loop", self.suitepath, self.mountpoint])
 
         try:
             yield
         except:
             raise
         finally:
-            part.format.unmount()
-            # pylint: disable=undefined-variable
-            b.devicetree.teardownDiskImages()
+            self._call(["/usr/bin/umount", self.mountpoint])
 
     def run(self):
         """Given disk images previously created by Creator.makeDrives and
@@ -222,10 +193,10 @@ class Creator(object):
         from testconfig import config
 
         args = ["/usr/bin/qemu-kvm",
-                "-vnc", "localhost:2",
-                "-m", str(self.reqMemory),
+                "-vnc", "none",
+                "-m", str(self._reqMemory),
                 "-boot", "d",
-                "-drive", "file=%s,media=cdrom" % config["liveImage"]]
+                "-drive", "file=%s,media=cdrom,readonly" % config["liveImage"]]
 
         for drive in self._drivePaths.values():
             args += ["-drive", "file=%s,media=disk" % drive]
@@ -234,8 +205,15 @@ class Creator(object):
         # it if necessary.  For now, the only reason we'd want to kill it is
         # an expired timer.
         self._proc = subprocess.Popen(args)
-        self._proc.wait()
-        self._proc = None
+
+        try:
+            self._proc.wait()
+        except TimedOutException:
+            self.die()
+            self.cleanup()
+            raise
+        finally:
+            self._proc = None
 
     @property
     def mountpoint(self):
@@ -258,6 +236,14 @@ class Creator(object):
             self._tempdir = tempfile.mkdtemp(prefix="%s-" % self.name, dir="/var/tmp")
 
         return self._tempdir
+
+    @property
+    def suitename(self):
+        return self.name + "_suite"
+
+    @property
+    def suitepath(self):
+        return self.tempdir + "/" + self.suitename
 
 class OutsideMixin(object):
     """A BaseOutsideTestCase subclass is the interface between the unittest framework

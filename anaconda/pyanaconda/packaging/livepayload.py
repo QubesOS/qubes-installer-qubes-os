@@ -56,6 +56,7 @@ from blivet.size import Size
 import blivet.util
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.i18n import _
+from pyanaconda.packaging import versionCmp
 
 class LiveImagePayload(ImagePayload):
     """ A LivePayload copies the source image onto the target system. """
@@ -66,6 +67,8 @@ class LiveImagePayload(ImagePayload):
         self.pct = 0
         self.pct_lock = None
         self.source_size = 1
+
+        self._kernelVersionList = []
 
     def setup(self, storage, instClass):
         super(LiveImagePayload, self).setup(storage, instClass)
@@ -79,6 +82,9 @@ class LiveImagePayload(ImagePayload):
         rc = blivet.util.mount(osimg.path, INSTALL_TREE, fstype="auto", options="ro")
         if rc != 0:
             raise PayloadInstallError("Failed to mount the install tree")
+
+        # Grab the kernel version list now so it's available after umount
+        self._updateKernelVersionList()
 
         source = iutil.eintr_retry_call(os.statvfs, INSTALL_TREE)
         self.source_size = source.f_frsize * (source.f_blocks - source.f_bfree)
@@ -180,6 +186,17 @@ class LiveImagePayload(ImagePayload):
     def spaceRequired(self):
         return Size(iutil.getDirSize("/")*1024)
 
+    def _updateKernelVersionList(self):
+        files = glob.glob(INSTALL_TREE + "/boot/vmlinuz-*")
+        files.extend(glob.glob(INSTALL_TREE + "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir))
+
+        self._kernelVersionList = sorted((f.split("/")[-1][8:] for f in files
+           if os.path.isfile(f) and "-rescue-" not in f), cmp=versionCmp)
+
+    @property
+    def kernelVersionList(self):
+        return self._kernelVersionList
+
 class URLGrabberProgress(object):
     """ Provide methods for urlgrabber progress."""
     def start(self, filename, url, basename, size, text):
@@ -264,7 +281,7 @@ class LiveImageKSPayload(LiveImagePayload):
             # Make a guess as to minimum size needed:
             # Enough space for image and image * 3
             if req.info().get("content-length"):
-                self._min_size = int(req.info().get("content-length")) * 4
+                self._min_size = int(req.info().get('content-length')) * 4
         except IOError as e:
             log.error("Error opening liveimg: %s", e)
             error = e
@@ -304,6 +321,10 @@ class LiveImageKSPayload(LiveImagePayload):
 
         log.debug("liveimg size is %s", self._min_size)
 
+    def unsetup(self):
+        # Skip LiveImagePayload's unsetup method
+        ImagePayload.unsetup(self)
+
     def _preInstall_url_image(self):
         """ Download the image using urlgrabber """
         # Setup urlgrabber and call back to download image to sysroot
@@ -325,10 +346,6 @@ class LiveImageKSPayload(LiveImagePayload):
             if not os.path.exists(self.image_path):
                 error = "Failed to download %s, file doesn't exist" % self.data.method.url
                 log.error(error)
-
-    def unsetup(self):
-        # Skip LiveImagePayload's unsetup method
-        ImagePayload.unsetup(self)
 
     def preInstall(self, *args, **kwargs):
         """ Get image and loopback mount it.
@@ -373,29 +390,53 @@ class LiveImageKSPayload(LiveImagePayload):
                     raise exn
 
         # If this looks like a tarfile, skip trying to mount it
-        if not self.is_tarfile:
-            # Mount the image and check to see if it is a LiveOS/*.img
-            # style squashfs image. If so, move it to IMAGE_DIR and mount the real
-            # root image on INSTALL_TREE
-            blivet.util.mount(self.image_path, INSTALL_TREE, fstype="auto", options="ro")
-            if os.path.exists(INSTALL_TREE+"/LiveOS"):
-                # Find the first .img in the directory and mount that on INSTALL_TREE
-                img_files = glob.glob(INSTALL_TREE+"/LiveOS/*.img")
-                if img_files:
-                    img_file = os.path.basename(sorted(img_files)[0])
+        if self.is_tarfile:
+            return
 
-                    # move the mount to IMAGE_DIR
-                    os.makedirs(IMAGE_DIR, 0o755)
-                    # work around inability to move shared filesystems
-                    iutil.execWithRedirect("mount",
-                                           ["--make-rprivate", "/"])
-                    iutil.execWithRedirect("mount",
-                                           ["--move", INSTALL_TREE, IMAGE_DIR])
-                    blivet.util.mount(IMAGE_DIR+"/LiveOS/"+img_file, INSTALL_TREE,
-                                      fstype="auto", options="ro")
+        # Mount the image and check to see if it is a LiveOS/*.img
+        # style squashfs image. If so, move it to IMAGE_DIR and mount the real
+        # root image on INSTALL_TREE
+        rc = blivet.util.mount(self.image_path, INSTALL_TREE, fstype="auto", options="ro")
+        if rc != 0:
+            log.error("mount error (%s) with %s", rc, self.image_path)
+            exn = PayloadInstallError("mount error %s" % rc)
+            if errorHandler.cb(exn) == ERROR_RAISE:
+                raise exn
 
-                    source = iutil.eintr_retry_call(os.statvfs, INSTALL_TREE)
-                    self.source_size = source.f_frsize * (source.f_blocks - source.f_bfree)
+        # Nothing more to mount
+        if not os.path.exists(INSTALL_TREE+"/LiveOS"):
+            self._updateKernelVersionList()
+            return
+
+        # Mount the first .img in the directory on INSTALL_TREE
+        img_files = glob.glob(INSTALL_TREE+"/LiveOS/*.img")
+        if img_files:
+            # move the mount to IMAGE_DIR
+            os.makedirs(IMAGE_DIR, 0o755)
+            # work around inability to move shared filesystems
+            rc = iutil.execWithRedirect("mount",
+                                        ["--make-rprivate", "/"])
+            if rc == 0:
+                rc = iutil.execWithRedirect("mount",
+                                            ["--move", INSTALL_TREE, IMAGE_DIR])
+            if rc != 0:
+                log.error("error %s moving mount", rc)
+                exn = PayloadInstallError("mount error %s" % rc)
+                if errorHandler.cb(exn) == ERROR_RAISE:
+                    raise exn
+
+            img_file = IMAGE_DIR+"/LiveOS/"+os.path.basename(sorted(img_files)[0])
+            rc = blivet.util.mount(img_file, INSTALL_TREE, fstype="auto", options="ro")
+            if rc != 0:
+                log.error("mount error (%s) with %s", rc, img_file)
+                exn = PayloadInstallError("mount error %s with %s" % (rc, img_file))
+                if errorHandler.cb(exn) == ERROR_RAISE:
+                    raise exn
+
+            self._updateKernelVersionList()
+
+            source = iutil.eintr_retry_call(os.statvfs, INSTALL_TREE)
+            self.source_size = source.f_frsize * (source.f_blocks - source.f_bfree)
 
     def install(self):
         """ Install the payload if it is a tar.
@@ -442,6 +483,12 @@ class LiveImageKSPayload(LiveImagePayload):
             self.pct = 100
         threadMgr.wait(THREAD_LIVE_PROGRESS)
 
+        # Live needs to create the rescue image before bootloader is written
+        for kernel in self.kernelVersionList:
+            log.info("Generating rescue image for %s", kernel)
+            iutil.execInSysroot("new-kernel-pkg",
+                                ["--rpmposttrans", kernel])
+
     def postInstall(self):
         """ Unmount and remove image
 
@@ -466,3 +513,17 @@ class LiveImageKSPayload(LiveImagePayload):
             return Size(self._min_size)
         else:
             return Size(1024*1024*1024)
+
+    @property
+    def kernelVersionList(self):
+        # If it doesn't look like a tarfile use the super's kernelVersionList
+        if not self.is_tarfile:
+            return super(LiveImageKSPayload, self).kernelVersionList
+
+        import tarfile
+        with tarfile.open(self.image_path) as archive:
+            names = archive.getnames()
+
+            # Strip out vmlinuz- from the names
+            return sorted((n.split("/")[-1][8:] for n in names if "boot/vmlinuz-" in n),
+                    cmp=versionCmp)

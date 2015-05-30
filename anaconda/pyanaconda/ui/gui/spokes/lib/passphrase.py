@@ -28,6 +28,7 @@ from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.helpers import GUIInputCheckHandler
 from pyanaconda.constants import PW_ASCII_CHARS
 from pyanaconda.i18n import _, N_
+from pyanaconda.ui.gui.utils import really_hide, really_show
 
 __all__ = ["PassphraseDialog"]
 
@@ -59,6 +60,11 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         self._strength_bar.add_offset_value("medium", 3)
         self._strength_bar.add_offset_value("high", 4)
 
+        # Configure the password policy, if available. Otherwise use defaults.
+        self.policy = self.data.anaconda.pwpolicy.get_policy("luks")
+        if not self.policy:
+            self.policy = self.data.anaconda.PwPolicyData()
+
         # These will be set up later.
         self._pwq = None
         self._pwq_error = None
@@ -79,6 +85,7 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         # set up passphrase quality checker
         self._pwq = pwquality.PWQSettings()
         self._pwq.read_config()
+        self._pwq.minlen = self.policy.minlen
 
         # initialize with the previously set passphrase
         self.passphrase = self.data.autopart.passphrase
@@ -111,7 +118,7 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         try:
             strength = self._pwq.check(passphrase, None, None)
         except pwquality.PWQError as e:
-            self._pwq_error = e[1]
+            self._pwq_error = e.args[1]
 
         if strength < 50:
             val = 1
@@ -137,15 +144,16 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
             result_icon, result_message = failed_check.check_status
             self._passphrase_warning_image.set_from_icon_name(result_icon, Gtk.IconSize.BUTTON)
             self._passphrase_warning_label.set_text(result_message)
-            self._passphrase_warning_image.set_visible(True)
-            self._passphrase_warning_label.set_visible(True)
+            really_show(self._passphrase_warning_image)
+            really_show(self._passphrase_warning_label)
         else:
-            self._passphrase_warning_image.set_visible(False)
-            self._passphrase_warning_label.set_visible(False)
+            really_hide(self._passphrase_warning_image)
+            really_hide(self._passphrase_warning_label)
 
         # The save button should only be sensitive if the match check passes
         if self._passphrase_match_check.check_status == InputCheck.CHECK_OK and \
-                self._confirm_match_check.check_status == InputCheck.CHECK_OK:
+                self._confirm_match_check.check_status == InputCheck.CHECK_OK and \
+                (not self.policy.strict or self._strength_check.check_status == InputCheck.CHECK_OK):
             self._save_button.set_sensitive(True)
         else:
             self._save_button.set_sensitive(False)

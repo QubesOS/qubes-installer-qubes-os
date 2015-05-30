@@ -19,8 +19,10 @@
 #
 # Red Hat Author(s): Ales Kozumplik <akozumpl@redhat.com>
 #
+import os
 
 from blivet.size import Size
+import blivet.arch
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _
 from pyanaconda.progress import progressQ
@@ -31,27 +33,24 @@ import itertools
 import logging
 import multiprocessing
 import operator
-import pyanaconda.constants as constants
+from pyanaconda import constants
 from pykickstart.constants import GROUP_ALL, GROUP_DEFAULT, KS_MISSING_IGNORE
 import pyanaconda.errors as errors
 import pyanaconda.iutil
 import pyanaconda.localization
 import pyanaconda.packaging as packaging
+import shutil
 import sys
 import time
+from pyanaconda.iutil import ProxyString, ProxyStringError
 
 log = logging.getLogger("packaging")
 
-try:
-    import dnf
-    import dnf.exceptions
-    import dnf.repo
-    import dnf.callback
-    import rpm
-except ImportError as e:
-    log.error("dnfpayload: component import failed: %s", e)
-    dnf = None
-    rpm = None
+import dnf
+import dnf.exceptions
+import dnf.repo
+import dnf.callback
+import rpm
 
 DNF_CACHE_DIR = '/tmp/dnf.cache'
 DNF_PACKAGE_CACHE_DIR_SUFFIX = 'dnf.package.cache'
@@ -66,6 +65,7 @@ REPO_DIRS = ['/etc/yum.repos.d',
              '/etc/anaconda.repos.d',
              '/tmp/updates/anaconda.repos.d',
              '/tmp/product/anaconda.repos.d']
+YUM_REPOS_DIR = "/etc/yum.repos.d/"
 
 def _failure_limbo():
     progressQ.send_quit(1)
@@ -110,7 +110,7 @@ def _pick_mpoint(df, requested):
     if not len(sufficients):
         return None
     # default to the biggest one:
-    return sorted(sufficients.iteritems(), key=operator.itemgetter(1),
+    return sorted(sufficients.items(), key=operator.itemgetter(1),
                   reverse=True)[0][0]
 
 class PayloadRPMDisplay(dnf.callback.LoggingTransactionDisplay):
@@ -183,15 +183,34 @@ def do_transaction(base, queue):
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
         packaging.PackagePayload.__init__(self, data)
-        if rpm is None or dnf is None:
-            raise packaging.PayloadError("unsupported payload type")
 
         self._base = None
+        self._download_location = None
         self._configure()
 
     def unsetup(self):
         super(DNFPayload, self).unsetup()
         self._base = None
+        self._configure()
+
+    def _replace_vars(self, url):
+        """ Replace url variables with their values
+
+            :param url: url string to do replacement on
+            :type url:  string
+            :returns:   string with variables substituted
+            :rtype:     string or None
+
+            Currently supports $releasever and $basearch
+        """
+        if not url:
+            return url
+
+        url = url.replace("$releasever", self._base.conf.releasever)
+        url = url.replace("$basearch", blivet.arch.getArch())
+
+        return url
+
 
     def _add_repo(self, ksrepo):
         """Add a repo to the dnf repo object
@@ -201,15 +220,38 @@ class DNFPayload(packaging.PackagePayload):
            :returns: None
         """
         repo = dnf.repo.Repo(ksrepo.name, DNF_CACHE_DIR)
-        url = ksrepo.baseurl
-        mirrorlist = ksrepo.mirrorlist
+        url = self._replace_vars(ksrepo.baseurl)
+        mirrorlist = self._replace_vars(ksrepo.mirrorlist)
         if url:
             repo.baseurl = [url]
         if mirrorlist:
             repo.mirrorlist = mirrorlist
         repo.sslverify = not (ksrepo.noverifyssl or flags.noverifyssl)
-        repo.enable()
-        self._base.repos.add(repo)
+        if ksrepo.proxy:
+            try:
+                repo.proxy = ProxyString(ksrepo.proxy).url
+            except ProxyStringError as e:
+                log.error("Failed to parse proxy for _add_repo %s: %s",
+                          ksrepo.proxy, e)
+
+        # If this repo is already known, it's one of two things:
+        # (1) The user is trying to do "repo --name=updates" in a kickstart file
+        #     and we should just know to enable the already existing on-disk
+        #     repo config.
+        # (2) It's a duplicate, and we need to delete the existing definition
+        #     and use this new one.  The highest profile user of this is livecd
+        #     kickstarts.
+        if repo.id in self._base.repos:
+            if not url and not mirrorlist:
+                self._base.repos[repo.id].enable()
+            else:
+                self._base.repos.pop(repo.id)
+                self._base.repos.add(repo)
+                repo.enable()
+        # If the repo's not already known, we've got to add it.
+        else:
+            self._base.repos.add(repo)
+            repo.enable()
 
         # Load the metadata to verify that the repo is valid
         try:
@@ -217,7 +259,7 @@ class DNFPayload(packaging.PackagePayload):
         except dnf.exceptions.RepoError as e:
             raise packaging.MetadataError(e)
 
-        log.info("added repo: '%s'", ksrepo.name)
+        log.info("added repo: '%s' - %s", ksrepo.name, url or mirrorlist)
 
     def addRepo(self, ksrepo):
         """Add a repo to dnf and kickstart repo lists
@@ -233,34 +275,74 @@ class DNFPayload(packaging.PackagePayload):
         if self.data.packages.nocore:
             log.info("skipping core group due to %%packages --nocore; system may not be complete")
         else:
-            self._select_group('core')
-
-        for pkg_name in self.data.packages.packageList:
-            log.info("selecting package: '%s'", pkg_name)
             try:
-                self._install_package(pkg_name)
-            except packaging.NoSuchPackage as e:
+                self._select_group('core', required=True)
+                log.info("selected group: core")
+            except packaging.NoSuchGroup as e:
+                self._miss(e)
+
+        env = None
+
+        if self.data.packages.default and self.environments:
+            env = self.environments[0]
+        elif self.data.packages.environment:
+            env = self.data.packages.environment
+
+        if env:
+            try:
+                self.selectEnvironment(env)
+                log.info("selected env: %s", env)
+            except packaging.NoSuchGroup as e:
                 self._miss(e)
 
         for group in self.data.packages.groupList:
             if group.name == 'core':
                 continue
+            default = group.include in (GROUP_ALL,
+                                        GROUP_DEFAULT)
+            optional = group.include == GROUP_ALL
             try:
-                default = group.include in (GROUP_ALL,
-                                            GROUP_DEFAULT)
-                optional = group.include == GROUP_ALL
                 self._select_group(group.name, default=default, optional=optional)
+                log.info("selected group: %s", group.name)
             except packaging.NoSuchGroup as e:
                 self._miss(e)
 
-        for package in self.requiredPackages:
-            self._install_package(package, required=True)
+        for group in self.data.packages.excludedGroupList:
+            try:
+                self._deselect_group(group.name)
+                log.info("deselected group: %s", group.name)
+            except packaging.NoSuchGroup:
+                log.info("skipped removing nonexistant group: %s", group.name)
 
-        for group in self.requiredGroups:
-            self._select_group(group, required=True)
+        for pkg_name in self.data.packages.packageList:
+            try:
+                self._install_package(pkg_name)
+                log.info("selected package: '%s'", pkg_name)
+            except packaging.NoSuchPackage as e:
+                self._miss(e)
+
+        for pkg_name in self.data.packages.excludedList:
+            try:
+                self._remove_package(pkg_name)
+                log.info("removed package: %s", pkg_name)
+            except packaging.NoSuchPackage:
+                log.info("skipped removing nonexistant package: %s", pkg_name)
 
         self._select_kernel_package()
-        self._install_package('dnf')
+
+        for pkg_name in self.requiredPackages:
+            try:
+                self._install_package(pkg_name, required=True)
+                log.debug("selected required package: %s", pkg_name)
+            except packaging.NoSuchPackage as e:
+                self._miss(e)
+
+        for group in self.requiredGroups:
+            try:
+                self._select_group(group, required=True)
+                log.debug("selected required group: %s", group)
+            except packaging.NoSuchGroup as e:
+                self._miss(e)
 
     def _bump_tx_id(self):
         if self.txID is None:
@@ -287,6 +369,25 @@ class DNFPayload(packaging.PackagePayload):
         # transaction, disable it in RPM:
         conf.tsflags.append('nocrypto')
 
+        if hasattr(self.data.method, "proxy") and self.data.method.proxy:
+            try:
+                proxy = ProxyString(self.data.method.proxy)
+                conf.proxy = proxy.noauth_url
+                if proxy.username:
+                    conf.proxy_username = proxy.username
+                if proxy.password:
+                    conf.proxy_password = proxy.password
+                log.info("Using %s as proxy", self.data.method.proxy)
+            except ProxyStringError as e:
+                log.error("Failed to parse proxy for dnf configure %s: %s",
+                          self.data.method.proxy, e)
+
+        # Start with an empty comps so we can go ahead and use the environment
+        # and group properties. Unset reposdir to ensure dnf has nothing it can
+        # check automatically
+        conf.reposdir = []
+        self._base.read_comps()
+
         conf.reposdir = REPO_DIRS
 
     @property
@@ -304,6 +405,12 @@ class DNFPayload(packaging.PackagePayload):
         except dnf.exceptions.MarkingError:
             raise packaging.NoSuchPackage(pkg_name, required=required)
 
+    def _remove_package(self, pkg_name):
+        try:
+            return self._base.remove(pkg_name)
+        except dnf.exceptions.PackagesNotInstalledError:
+            raise packaging.NoSuchPackage(pkg_name)
+
     def _miss(self, exn):
         if self.data.packages.handleMissing == KS_MISSING_IGNORE:
             return
@@ -315,6 +422,7 @@ class DNFPayload(packaging.PackagePayload):
             # Doing a sys.exit also ensures the running thread quits before
             # it can do anything else.
             progressQ.send_quit(1)
+            pyanaconda.iutil.ipmi_report(constants.IPMI_ABORTED)
             sys.exit(1)
 
     def _pick_download_location(self):
@@ -331,6 +439,8 @@ class DNFPayload(packaging.PackagePayload):
         for repo in self._base.repos.iter_enabled():
             repo.pkgdir = pkgdir
 
+        return pkgdir
+
     def _select_group(self, group_id, default=True, optional=False, required=False):
         grp = self._base.comps.group_by_pattern(group_id)
         if grp is None:
@@ -341,7 +451,21 @@ class DNFPayload(packaging.PackagePayload):
         if optional:
             types.add('optional')
         exclude = self.data.packages.excludedList
-        self._base.group_install(grp, types, exclude=exclude)
+        try:
+            self._base.group_install(grp, types, exclude=exclude)
+        except dnf.exceptions.CompsError as e:
+            # DNF raises this when it is already selected
+            log.debug(e)
+
+    def _deselect_group(self, group_id):
+        grp = self._base.comps.group_by_pattern(group_id)
+        if grp is None:
+            raise packaging.NoSuchGroup(group_id)
+        try:
+            self._base.group_remove(grp)
+        except dnf.exceptions.CompsError as e:
+            # DNF raises this when it is already not selected
+            log.debug(e)
 
     def _select_kernel_package(self):
         kernels = self.kernelPackages
@@ -361,8 +485,6 @@ class DNFPayload(packaging.PackagePayload):
             dnf_repo.load()
         except dnf.exceptions.RepoError as e:
             id_ = dnf_repo.id
-            if id_ == self.baseRepo:
-                raise packaging.MetadataError(str(e))
             log.info('_sync_metadata: addon repo error: %s', e)
             self.disableRepo(id_)
 
@@ -456,13 +578,16 @@ class DNFPayload(packaging.PackagePayload):
             raise packaging.NoSuchGroup(environmentid)
         return (env.ui_name, env.ui_description)
 
-    def environmentGroups(self, environmentid):
+    def environmentGroups(self, environmentid, optional=True):
         env = self._base.comps.environment_by_pattern(environmentid)
         if env is None:
             raise packaging.NoSuchGroup(environmentid)
         group_ids = (id_.name for id_ in env.group_ids)
         option_ids = (id_.name for id_ in env.option_ids)
-        return list(itertools.chain(group_ids, option_ids))
+        if optional:
+            return list(itertools.chain(group_ids, option_ids))
+        else:
+            return list(group_ids)
 
     def environmentHasOption(self, environmentid, grpid):
         env = self._base.comps.environment_by_pattern(environmentid)
@@ -474,7 +599,10 @@ class DNFPayload(packaging.PackagePayload):
         env = self._base.comps.environment_by_pattern(environmentid)
         if env is None:
             raise packaging.NoSuchGroup(environmentid)
-        return False
+
+        # Look for a group in the optionlist that matches the group_id and has
+        # default set
+        return any(grp for grp in env.option_ids if grp.name == grpid and grp.default)
 
     def groupDescription(self, grpid):
         """ Return name/description tuple for the group specified by id. """
@@ -500,13 +628,13 @@ class DNFPayload(packaging.PackagePayload):
             self._setupMedia(self.install_device)
         try:
             self.checkSoftwareSelection()
-            self._pick_download_location()
+            self._download_location = self._pick_download_location()
         except packaging.PayloadError as e:
             if errors.errorHandler.cb(e) == errors.ERROR_RAISE:
                 _failure_limbo()
 
         pkgs_to_download = self._base.transaction.install_set
-        log.info('Downloading pacakges.')
+        log.info('Downloading packages.')
         progressQ.send_message(_('Downloading packages'))
         progress = DownloadProgress()
         try:
@@ -540,6 +668,19 @@ class DNFPayload(packaging.PackagePayload):
         progressQ.send_message(post_msg)
         process.join()
         self._base.close()
+        if os.path.exists(self._download_location):
+            log.info("Cleaning up downloaded packages: %s", self._download_location)
+            shutil.rmtree(self._download_location)
+        else:
+            # Some installation sources, such as NFS, don't need to download packages to
+            # local storage, so the download location might not always exist. So for now
+            # warn about this, at least until the RFE in bug 1193121 is implemented and
+            # we don't have to care about clearing the download location ourselves.
+            log.warning("Can't delete nonexistent download location: %s", self._download_location)
+
+    def getRepo(self, repo_id):
+        """ Return the yum repo object. """
+        return self._base.repos[repo_id]
 
     def isRepoEnabled(self, repo_id):
         try:
@@ -560,29 +701,40 @@ class DNFPayload(packaging.PackagePayload):
         return list(gids)
 
     def preInstall(self, packages=None, groups=None):
-        super(DNFPayload, self).preInstall()
-        self.requiredPackages = packages
+        super(DNFPayload, self).preInstall(packages, groups)
+        self.requiredPackages = ["dnf"]
+        if packages:
+            self.requiredPackages += packages
         self.requiredGroups = groups
         self.addDriverRepos()
 
-    def release(self):
-        pass
-
-    def reset(self, root=None, releasever=None):
+    def reset(self):
         super(DNFPayload, self).reset()
+        shutil.rmtree(DNF_CACHE_DIR, ignore_errors=True)
         self.txID = None
         self._base.reset(sack=True, repos=True)
 
-    def selectEnvironment(self, environmentid):
-        env = self._base.comps.environment_by_pattern(environmentid)
-        map(self.selectGroup, (id_.name for id_ in env.group_ids))
-
-    def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
+    def updateBaseRepo(self, fallback=True, checkmount=True):
         log.info('configuring base repo')
         self.reset()
         url, mirrorlist, sslverify = self._setupInstallDevice(self.storage,
                                                               checkmount)
         method = self.data.method
+
+        # Read in all the repos from the installation environment, make a note of which
+        # are enabled, and then disable them all.  If the user gave us a method, we want
+        # to use that instead of the default repos.
+        self._base.read_all_repos()
+
+        enabled = []
+        for repo in self._base.repos.iter_enabled():
+            enabled.append(repo.id)
+            repo.disable()
+
+        # If askmethod was specified on the command-line, leave all the repos
+        # disabled and return
+        if flags.askmethod:
+            return
 
         if method.method:
             try:
@@ -593,9 +745,10 @@ class DNFPayload(packaging.PackagePayload):
                           method.method, e)
 
             try:
+                proxy = getattr(method, "proxy", None)
                 base_ksrepo = self.data.RepoData(
                     name=constants.BASE_REPO_NAME, baseurl=url,
-                    mirrorlist=mirrorlist, noverifyssl=not sslverify)
+                    mirrorlist=mirrorlist, noverifyssl=not sslverify, proxy=proxy)
                 self._add_repo(base_ksrepo)
             except (packaging.MetadataError, packaging.PayloadError) as e:
                 log.error("base repo (%s/%s) not valid -- removing it",
@@ -610,11 +763,16 @@ class DNFPayload(packaging.PackagePayload):
                 method.method = None
                 self.install_device = None
 
+        # We need to check this again separately in case method.method was unset above.
         if not method.method:
-            # only when there's no repo set via method use the repos from the
-            # install image itself:
-            log.info('Loading repositories config on the filesystem.')
-            self._base.read_all_repos()
+            # If this is a kickstart install, just return now
+            if flags.automatedInstall:
+                return
+
+            # Otherwise, fall back to the default repos that we disabled above
+            for (id_, repo) in self._base.repos.items():
+                if id_ in enabled:
+                    repo.enable()
 
         for ksrepo in self.data.repo.dataList():
             self._add_repo(ksrepo)
@@ -627,3 +785,67 @@ class DNFPayload(packaging.PackagePayload):
                 self.disableRepo(id_)
             elif constants.isFinal and 'rawhide' in id_:
                 self.disableRepo(id_)
+
+    def _writeDNFRepo(self, repo, repo_path):
+        """ Write a repo object to a DNF repo.conf file
+
+            :param repo: DNF repository object
+            :param string repo_path: Path to write the repo to
+            :raises: PayloadSetupError if the repo doesn't have a url
+        """
+        with open(repo_path, "w") as f:
+            f.write("[%s]\n" % repo.id)
+            f.write("name=%s\n" % repo.id)
+            if self.isRepoEnabled(repo.id):
+                f.write("enabled=1\n")
+            else:
+                f.write("enabled=0\n")
+
+            if repo.mirrorlist:
+                f.write("mirrorlist=%s\n" % repo.mirrorlist)
+            elif repo.metalink:
+                f.write("metalink=%s\n" % repo.metalink)
+            elif repo.baseurl:
+                f.write("baseurl=%s\n" % repo.baseurl[0])
+            else:
+                f.close()
+                os.unlink(repo_path)
+                raise packaging.PayloadSetupError("repo %s has no baseurl, mirrorlist or metalink", repo.id)
+
+            # kickstart repo modifiers
+            ks_repo = self.getAddOnRepo(repo.id)
+            if not ks_repo:
+                return
+
+            if ks_repo.noverifyssl:
+                f.write("sslverify=0\n")
+
+            if ks_repo.proxy:
+                try:
+                    proxy = ProxyString(ks_repo.proxy)
+                    f.write("proxy=%s\n" % proxy.url)
+                except ProxyStringError as e:
+                    log.error("Failed to parse proxy for _writeInstallConfig %s: %s",
+                              ks_repo.proxy, e)
+
+            if ks_repo.cost:
+                f.write("cost=%d\n" % ks_repo.cost)
+
+    def postInstall(self):
+        """ Perform post-installation tasks. """
+        # Write selected kickstart repos to target system
+        for ks_repo in (ks for ks in (self.getAddOnRepo(r) for r in self.addOns) if ks.install):
+            try:
+                repo = self.getRepo(ks_repo.name)
+                if not repo:
+                    continue
+            except (dnf.exceptions.RepoError, KeyError):
+                continue
+            repo_path = pyanaconda.iutil.getSysroot() + YUM_REPOS_DIR + "%s.repo" % repo.id
+            try:
+                log.info("Writing %s.repo to target system.", repo.id)
+                self._writeDNFRepo(repo, repo_path)
+            except packaging.PayloadSetupError as e:
+                log.error(e)
+
+        super(DNFPayload, self).postInstall()

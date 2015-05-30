@@ -20,16 +20,19 @@
 #
 
 import libuser
-import string
+# Used for ascii_letters and digits constants
+import string # pylint: disable=deprecated-module
 import crypt
 import random
 import tempfile
 import os
 import os.path
+import locale
 from pyanaconda import iutil
 import pwquality
 from pyanaconda.iutil import strip_accents
 from pyanaconda.constants import PASSWORD_MIN_LEN
+from pyanaconda.errors import errorHandler, PasswordCryptError, ERROR_RAISE
 
 import logging
 log = logging.getLogger("anaconda")
@@ -40,21 +43,18 @@ def createLuserConf(instPath, algoname='sha512'):
         This must be called before User() is instantiated the first time
         so that libuser.admin will use the temporary config file.
     """
-    createTmp = False
-    try:
-        fn = os.environ["LIBUSER_CONF"]
-        if os.access(fn, os.F_OK):
-            log.info("removing libuser.conf at %s", os.getenv("LIBUSER_CONF"))
-            os.unlink(fn)
-        log.info("created new libuser.conf at %s with instPath=\"%s\"", fn, instPath)
-        fd = open(fn, 'w')
-    except (OSError, IOError, KeyError):
-        createTmp = True
 
-    if createTmp:
+    # If LIBUSER_CONF is not set, create a new temporary file
+    if "LIBUSER_CONF" not in os.environ:
         (fp, fn) = tempfile.mkstemp(prefix="libuser.")
         log.info("created new libuser.conf at %s with instPath=\"%s\"", fn, instPath)
-        fd = os.fdopen(fp, 'w')
+        fd = os.fdopen(fp, "w")
+        # This is only ok if createLuserConf is first called before threads are started
+        os.environ["LIBUSER_CONF"] = fn # pylint: disable=environment-modify
+    else:
+        fn = os.environ["LIBUSER_CONF"]
+        log.info("Clearing libuser.conf at %s", fn)
+        fd = open(fn, "w")
 
     buf = """
 [defaults]
@@ -79,7 +79,6 @@ login_defs = %(instPath)s/etc/login.defs
 
     fd.write(buf)
     fd.close()
-    os.environ["LIBUSER_CONF"] = fn
 
     return fn
 
@@ -114,12 +113,18 @@ def cryptPassword(password, algo=None):
     saltstr = salts[algo]
 
     for _i in range(saltlen):
-        saltstr = saltstr + random.choice (string.letters +
+        saltstr = saltstr + random.choice (string.ascii_letters +
                                            string.digits + './')
 
-    return crypt.crypt (password, saltstr)
+    cryptpw = crypt.crypt (password, saltstr)
+    if cryptpw is None:
+        exn = PasswordCryptError(algo=algo)
+        if errorHandler.cb(exn) == ERROR_RAISE:
+            raise exn
 
-def validatePassword(pw, user="root", settings=None):
+    return cryptpw
+
+def validatePassword(pw, user="root", settings=None, minlen=None):
     """Check the quality of a password.
 
        This function does three things: given a password and an optional
@@ -144,6 +149,8 @@ def validatePassword(pw, user="root", settings=None):
 
        :param settings: an optional PWQSettings object
        :type settings: pwquality.PWQSettings
+       :param int minlen: Minimum acceptable password length. If not passed,
+                          use the default length from PASSWORD_MIN_LEN
 
        :returns: A tuple containing (bool(valid), int(score), str(message))
        :rtype: tuple
@@ -161,6 +168,9 @@ def validatePassword(pw, user="root", settings=None):
             validatePassword.pwqsettings.minlen = PASSWORD_MIN_LEN
         settings = validatePassword.pwqsettings
 
+    if minlen is not None:
+        settings.minlen = minlen
+
     if valid:
         try:
             strength = settings.check(pw, None, user)
@@ -168,7 +178,8 @@ def validatePassword(pw, user="root", settings=None):
             # Leave valid alone here: the password is weak but can still
             # be accepted.
             # PWQError values are built as a tuple of (int, str)
-            message = e[1]
+            # Convert the str message (encoded to the current locale) to a unicode
+            message = e.args[1].decode(locale.nl_langinfo(locale.CODESET))
 
     return (valid, strength, message)
 
@@ -202,7 +213,8 @@ class Users:
             if not root in ["","/"]:
                 os.chroot(root)
                 os.chdir("/")
-                del(os.environ["LIBUSER_CONF"])
+                # This is ok because it's after a fork
+                del(os.environ["LIBUSER_CONF"]) # pylint: disable=environment-modify
 
             self.admin = libuser.admin()
 
@@ -293,16 +305,18 @@ class Users:
             if kwargs.get("gid", -1) >= 0:
                 groupEnt.set(libuser.GIDNUMBER, kwargs["gid"])
 
-            grpLst = filter(lambda grp: grp,
-                            map(self.admin.lookupGroupByName, kwargs.get("groups", [])))
+            grpLst = [grp for grp in map(self.admin.lookupGroupByName, kwargs.get("groups", [])) if grp]
             userEnt.set(libuser.GIDNUMBER, [groupEnt.get(libuser.GIDNUMBER)[0]] +
-                        map(lambda grp: grp.get(libuser.GIDNUMBER)[0], grpLst))
+                        [grp.get(libuser.GIDNUMBER)[0] for grp in grpLst])
 
-            if kwargs.get("homedir", False):
-                userEnt.set(libuser.HOMEDIRECTORY, kwargs["homedir"])
-            else:
-                iutil.mkdirChain('/home')
-                userEnt.set(libuser.HOMEDIRECTORY, "/home/" + user_name)
+            homedir = kwargs.get("homedir", None)
+            if not homedir:
+                homedir = "/home/" + user_name
+            # libuser expects the parent directory tree to exist.
+            parent_dir = iutil.parent_dir(homedir)
+            if parent_dir:
+                iutil.mkdirChain(parent_dir)
+            userEnt.set(libuser.HOMEDIRECTORY, homedir)
 
             if kwargs.get("shell", False):
                 userEnt.set(libuser.LOGINSHELL, kwargs["shell"])
@@ -415,3 +429,36 @@ class Users:
 
     def setRootPassword(self, password, isCrypted=False, isLocked=False, algo=None):
         return self.setUserPassword("root", password, isCrypted, isLocked, algo)
+
+    def setUserSshKey(self, username, key, **kwargs):
+        childpid = self._prepareChroot(kwargs.get("root", iutil.getSysroot()))
+
+        if childpid == 0:
+            user = self.admin.lookupUserByName(username)
+            if not user:
+                log.error("setUserSshKey: user %s does not exist", username)
+                os._exit(1)
+
+            homedir = user.get(libuser.HOMEDIRECTORY)[0]
+            if not os.path.exists(homedir):
+                log.error("setUserSshKey: home directory for %s does not exist", username)
+                os._exit(1)
+
+            sshdir = os.path.join(homedir, ".ssh")
+            if not os.path.isdir(sshdir):
+                os.mkdir(sshdir, 0o700)
+                iutil.eintr_retry_call(os.chown, sshdir, user.get(libuser.UIDNUMBER)[0], user.get(libuser.GIDNUMBER)[0])
+
+            authfile = os.path.join(sshdir, "authorized_keys")
+            authfile_existed = os.path.exists(authfile)
+            with open(authfile, "a") as f:
+                f.write(key + "\n")
+
+            # Only change mode and ownership if we created it
+            if not authfile_existed:
+                iutil.eintr_retry_call(os.chmod, authfile, 0o600)
+                iutil.eintr_retry_call(os.chown, authfile, user.get(libuser.UIDNUMBER)[0], user.get(libuser.GIDNUMBER)[0])
+                iutil.execWithRedirect("restorecon", ["-r", sshdir])
+            os._exit(0)
+        else:
+            return self._finishChroot(childpid)

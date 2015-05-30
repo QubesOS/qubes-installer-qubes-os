@@ -17,6 +17,8 @@
  * Author: Chris Lumens <clumens@redhat.com>
  */
 
+#include "config.h"
+
 #include <atk/atk.h>
 #include <gdk/gdk.h>
 #include <gio/gio.h>
@@ -273,7 +275,7 @@ static void anaconda_disk_overview_init(AnacondaDiskOverview *widget) {
     g_signal_connect(widget, "focus-out-event", G_CALLBACK(anaconda_disk_overview_focus_changed), NULL);
 
     /* Set "hand" cursor shape when over the selector */
-    widget->priv->cursor = gdk_cursor_new(GDK_HAND2);
+    widget->priv->cursor = gdk_cursor_new_for_display(gdk_display_get_default(), GDK_HAND2);
     g_signal_connect(widget, "realize", G_CALLBACK(anaconda_disk_overview_realize), NULL);
 
     /* Set some properties. */
@@ -414,6 +416,7 @@ static void anaconda_disk_overview_set_property(GObject *object, guint prop_id, 
             char *markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", g_value_get_string(value));
             gtk_label_set_markup(GTK_LABEL(priv->description_label), markup);
             g_free(markup);
+            gtk_label_set_justify(GTK_LABEL(priv->description_label), GTK_JUSTIFY_CENTER);
             break;
         }
 

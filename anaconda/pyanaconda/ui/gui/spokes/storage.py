@@ -56,19 +56,19 @@ from pyanaconda.ui.helpers import StorageChecker
 
 from pyanaconda.kickstart import doKickstartStorage, refreshAutoSwapSize, resetCustomStorageData
 from blivet import arch
+from blivet import autopart
 from blivet.size import Size
-from blivet.devices import MultipathDevice
+from blivet.devices import MultipathDevice, ZFCPDiskDevice
 from blivet.errors import StorageError, DasdFormatError
 from blivet.platform import platform
-from blivet.devicelibs import swap as swap_lib
 from blivet.devicelibs.dasd import make_unformatted_dasd_list, format_dasd
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.product import productName
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _, C_, CN_, P_
-from pyanaconda import constants
-from pyanaconda import isys
+from pyanaconda import constants, iutil, isys
 from pyanaconda.bootloader import BootLoaderError
+from pyanaconda.storage_utils import on_disk_storage
 
 from pykickstart.constants import CLEARPART_TYPE_NONE, AUTOPART_TYPE_LVM
 from pykickstart.errors import KickstartValueError
@@ -82,9 +82,13 @@ __all__ = ["StorageSpoke"]
 
 # Response ID codes for all the various buttons on all the dialogs.
 RESPONSE_CANCEL = 0
+RESPONSE_OK = 1
 RESPONSE_MODIFY_SW = 2
 RESPONSE_RECLAIM = 3
 RESPONSE_QUIT = 4
+DASD_FORMAT_NO_CHANGE = -1
+DASD_FORMAT_REFRESH = 1
+DASD_FORMAT_RETURN_TO_HUB = 2
 
 class InstallOptionsDialogBase(GUIObject):
     uiFile = "spokes/storage.glade"
@@ -111,15 +115,26 @@ class InstallOptionsDialogBase(GUIObject):
 
     def _get_sw_needs_text(self, required_space, auto_swap):
         tooltip = _("Please wait... software metadata still loading.")
-        sw_text = (_("Your current <a href=\"\" title=\"%(tooltip)s\"><b>%(product)s</b> software "
-                     "selection</a> requires <b>%(total)s</b> of available "
-                     "space, including <b>%(software)s</b> for software and "
-                     "<b>%(swap)s</b> for swap space.")
-                   % {"tooltip": escape_markup(tooltip),
-                      "product": escape_markup(productName),
-                      "total": escape_markup(str(required_space + auto_swap)),
-                      "software": escape_markup(str(required_space)),
-                      "swap": escape_markup(str(auto_swap))})
+
+        if flags.livecdInstall:
+            sw_text = (_("Your current <b>%(product)s</b> software "
+                         "selection requires <b>%(total)s</b> of available "
+                         "space, including <b>%(software)s</b> for software and "
+                         "<b>%(swap)s</b> for swap space.")
+                       % {"product": escape_markup(productName),
+                          "total": escape_markup(str(required_space + auto_swap)),
+                          "software": escape_markup(str(required_space)),
+                          "swap": escape_markup(str(auto_swap))})
+        else:
+            sw_text = (_("Your current <a href=\"\" title=\"%(tooltip)s\"><b>%(product)s</b> software "
+                         "selection</a> requires <b>%(total)s</b> of available "
+                         "space, including <b>%(software)s</b> for software and "
+                         "<b>%(swap)s</b> for swap space.")
+                       % {"tooltip": escape_markup(tooltip),
+                          "product": escape_markup(productName),
+                          "total": escape_markup(str(required_space + auto_swap)),
+                          "software": escape_markup(str(required_space)),
+                          "swap": escape_markup(str(auto_swap))})
         return sw_text
 
     # Methods to handle sensitivity of the modify button.
@@ -165,7 +180,9 @@ class NeedSpaceDialog(InstallOptionsDialogBase):
                        "amounts of free space:") % sw_text
         label = self.builder.get_object("need_space_desc_label")
         label.set_markup(label_text)
-        label.connect("activate-link", self._modify_sw_link_clicked)
+
+        if not flags.livecdInstall:
+            label.connect("activate-link", self._modify_sw_link_clicked)
 
         self._set_free_space_labels(disk_free, fs_free)
 
@@ -192,15 +209,16 @@ class NoSpaceDialog(InstallOptionsDialogBase):
 
     # pylint: disable=arguments-differ
     def refresh(self, required_space, auto_swap, disk_free, fs_free):
-        sw_text = self._get_sw_needs_text(required_space, auto_swap)
-        label_text = (_("%(sw_text)s You don't have enough space available to install "
-                        "<b>%(product)s</b>, even if you used all of the free space "
-                        "available on the selected disks.")
-                      % {"sw_text": escape_markup(sw_text),
-                         "product": escape_markup(productName)})
+        label_text = self._get_sw_needs_text(required_space, auto_swap)
+        label_text += (_("  You don't have enough space available to install "
+                         "<b>%(product)s</b>, even if you used all of the free space "
+                         "available on the selected disks.")
+                       % {"product": escape_markup(productName)})
         label = self.builder.get_object("no_space_desc_label")
         label.set_markup(label_text)
-        label.connect("activate-link", self._modify_sw_link_clicked)
+
+        if not flags.livecdInstall:
+            label.connect("activate-link", self._modify_sw_link_clicked)
 
         self._set_free_space_labels(disk_free, fs_free)
 
@@ -237,6 +255,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.encrypted = False
         self.passphrase = ""
         self.selected_disks = self.data.ignoredisk.onlyuse[:]
+        self._last_selected_disks = None
+        self._back_clicked = False
 
         # This list contains all possible disks that can be included in the install.
         # All types of advanced disks should be set up for us ahead of time, so
@@ -360,7 +380,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         msg = _("No disks selected")
 
         if flags.automatedInstall and not self.storage.rootDevice:
-            return msg
+            msg = _("Kickstart insufficient")
         elif threadMgr.get(constants.THREAD_DASDFMT):
             msg = _("Formatting DASDs")
         elif self.data.ignoredisk.onlyuse:
@@ -385,8 +405,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
     @property
     def advancedOverviews(self):
-        return filter(lambda child: isinstance(child, AnacondaWidgets.DiskOverview),
-                      self.specialized_disks_box.get_children())
+        return [child for child in self.specialized_disks_box.get_children() if isinstance(child, AnacondaWidgets.DiskOverview)]
 
     def _on_disk_clicked(self, overview, event):
         # This handler only runs for these two kinds of events, and only for
@@ -447,13 +466,19 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self._cur_clicked_overview = overview
 
     def refresh(self):
+        self._back_clicked = False
+
         self.disks = getDisks(self.storage.devicetree)
 
         # synchronize our local data store with the global ksdata
         disk_names = [d.name for d in self.disks]
-        # don't put disks with hidden formats in selected_disks
         self.selected_disks = [d for d in self.data.ignoredisk.onlyuse
-                                    if d in disk_names]
+                               if d in disk_names]
+
+        # unhide previously hidden disks so that they don't look like being
+        # empty (because of all child devices hidden)
+        self._unhide_disks()
+
         self.autopart = self.data.autopart.autopart
         self.autoPartType = self.data.autopart.type
         if self.autoPartType is None:
@@ -471,7 +496,10 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # handled here instead of refresh to take into account the user pressing
         # the rescan button on custom partitioning.
         for disk in filter(isLocalDisk, self.disks):
-            self._add_disk_overview(disk, self.local_disks_box)
+            # While technically local disks, zFCP devices are specialized
+            # storage and should not be shown here.
+            if disk.type is not "zfcp":
+                self._add_disk_overview(disk, self.local_disks_box)
 
         # Advanced disks are different.  Because there can potentially be a lot
         # of them, we do not display them in the box by default.  Instead, only
@@ -481,7 +509,11 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             if name not in disk_names:
                 continue
             obj = self.storage.devicetree.getDeviceByName(name, hidden=True)
-            if isLocalDisk(obj):
+            # since zfcp devices may be detected as local disks when added
+            # manually, specifically check the disk type here to make sure
+            # we won't accidentally bypass adding zfcp devices to the disk
+            # overview
+            if isLocalDisk(obj) and obj.type is not "zfcp":
                 continue
 
             self._add_disk_overview(obj, self.specialized_disks_box)
@@ -499,13 +531,23 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             self.set_warning(_("Error checking storage configuration.  Click for details."))
         elif self.warnings:
             self.set_warning(_("Warning checking storage configuration.  Click for details."))
-        self.window.show_all()
 
     def initialize(self):
         NormalSpoke.initialize(self)
 
         self.local_disks_box = self.builder.get_object("local_disks_box")
         self.specialized_disks_box = self.builder.get_object("specialized_disks_box")
+
+        # Connect the viewport adjustments to the child widgets
+        # See also https://bugzilla.gnome.org/show_bug.cgi?id=744721
+        localViewport = self.builder.get_object("localViewport")
+        specializedViewport = self.builder.get_object("specializedViewport")
+        self.local_disks_box.set_focus_hadjustment(localViewport.get_hadjustment())
+        self.specialized_disks_box.set_focus_hadjustment(specializedViewport.get_hadjustment())
+
+        mainViewport = self.builder.get_object("storageViewport")
+        mainBox = self.builder.get_object("storageMainBox")
+        mainBox.set_focus_vadjustment(mainViewport.get_vadjustment())
 
         threadMgr.add(AnacondaThread(name=constants.THREAD_STORAGE_WATCHER,
                       target=self._initialize))
@@ -526,6 +568,11 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         if isinstance(disk, MultipathDevice):
             desc = disk.wwid.split(":")
             description = ":".join(desc[0:3]) + "..." + ":".join(desc[-4:])
+        elif isinstance(disk, ZFCPDiskDevice):
+            # manually mangle the desc of a zFCP device to be multi-line since
+            # it's so long it makes the disk selection screen look odd
+            description = _("FCP device %(hba_id)s\nWWPN %(wwpn)s\nLUN %(lun)s") % \
+                            {"hba_id": disk.hba_id, "wwpn": disk.wwpn, "lun": disk.fcp_lun}
         else:
             description = disk.description
 
@@ -641,10 +688,6 @@ class StorageSpoke(NormalSpoke, StorageChecker):
                 log.error(str(err))
                 continue
 
-        # I really hate doing this, but the way is the way; probably the most
-        # correct way to kajigger the storage spoke into becoming ready
-        self.execute()
-
     # signal handlers
     def on_summary_clicked(self, button):
         # show the selected disks dialog
@@ -669,8 +712,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.data.bootloader.seen = True
 
         if self.data.bootloader.location == "none":
-            self.set_warning(_("You have chosen to skip bootloader installation.  Your system may not be bootable."))
-            self.window.show_all()
+            self.set_warning(_("You have chosen to skip boot loader installation.  Your system may not be bootable."))
         else:
             self.clear_info()
 
@@ -680,12 +722,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
         return rc
 
-    def _check_encrypted(self):
-        # even if they're not doing autopart, setting autopart.encrypted
-        # establishes a default of encrypting new devices
-        if not self.encrypted:
-            return True
-
+    def _setup_passphrase(self):
         dialog = PassphraseDialog(self.data)
         rc = self.run_lightbox_dialog(dialog)
         if rc != 1:
@@ -700,63 +737,40 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
         return True
 
-    def on_back_clicked(self, button):
-        # We can't exit early if it looks like nothing has changed because the
-        # user might want to change settings presented in the dialogs shown from
-        # within this method.
+    def _remove_nonexistant_partitions(self):
+        for partition in self.storage.partitions[:]:
+            # check if it's been removed in a previous iteration
+            if not partition.exists and \
+               partition in self.storage.partitions:
+                self.storage.recursiveRemove(partition)
 
-        # Remove all non-existing devices if autopart was active when we last
-        # refreshed.
-        if self._previous_autopart:
-            self._previous_autopart = False
-            for partition in self.storage.partitions[:]:
-                # check if it's been removed in a previous iteration
-                if not partition.exists and \
-                   partition in self.storage.partitions:
-                    self.storage.recursiveRemove(partition)
-
-        # hide/unhide disks as requested
+    def _hide_disks(self):
         for disk in self.disks:
             if disk.name not in self.selected_disks and \
                disk in self.storage.devices:
                 self.storage.devicetree.hide(disk)
-            elif disk.name in self.selected_disks and \
-                 disk not in self.storage.devices:
-                self.storage.devicetree.unhide(disk)
 
-        # show the installation options dialog
-        disks = [d for d in self.disks if d.name in self.selected_disks]
-        disks_size = sum((d.size for d in disks), Size(0))
+    def _unhide_disks(self):
+        if self._last_selected_disks:
+            for disk in self.disks:
+                if disk.name not in self.selected_disks and \
+                   disk.name not in self._last_selected_disks:
+                    self.storage.devicetree.unhide(disk)
 
-        # No disks selected?  The user wants to back out of the storage spoke.
-        if not disks:
-            NormalSpoke.on_back_clicked(self, button)
-            return
+    def _check_dasd_formats(self):
+        rc = DASD_FORMAT_NO_CHANGE
+        dasds = make_unformatted_dasd_list(self.selected_disks)
+        if len(dasds) > 0:
+            # We want to apply current selection before running dasdfmt to
+            # prevent this information from being lost afterward
+            applyDiskSelection(self.storage, self.data, self.selected_disks)
+            dialog = DasdFormatDialog(self.data, self.storage, dasds)
+            ignoreEscape(dialog.window)
+            rc = self.run_lightbox_dialog(dialog)
 
-        if arch.isS390():
-            # check for unformatted DASDs and launch dasdfmt if any discovered
-            dasds = make_unformatted_dasd_list(self.selected_disks)
-            if len(dasds) > 0:
-                # We want to apply current selection before running dasdfmt to
-                # prevent this information from being lost afterward
-                applyDiskSelection(self.storage, self.data, self.selected_disks)
-                dialog = DasdFormatDialog(self.data, self.storage, dasds)
-                ignoreEscape(dialog.window)
-                rc = self.run_lightbox_dialog(dialog)
-                if rc == 1:
-                    # User hit OK on the dialog
-                    self.refresh()
-                elif rc == 2:
-                    # User clicked uri to return to hub.
-                    NormalSpoke.on_back_clicked(self, button)
-                    return
-                elif rc != 2:
-                    # User either hit cancel on the dialog or closed it via escape,
-                    # there was no formatting done.
-                    # NOTE: rc == 2 means the user clicked on the link that takes t
-                    # back to the hub.
-                    return
+        return rc
 
+    def _check_space_and_get_dialog(self, disks):
         # Figure out if the existing disk labels will work on this platform
         # you need to have at least one of the platform's labels in order for
         # any of the free space to be useful.
@@ -771,16 +785,17 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         else:
             free_space = self.storage.getFreeSpace(disks=disks,
                                                    clearPartType=CLEARPART_TYPE_NONE)
-            disk_free = sum(f[0] for f in free_space.itervalues())
-            fs_free = sum(f[1] for f in free_space.itervalues())
+            disk_free = sum(f[0] for f in free_space.values())
+            fs_free = sum(f[1] for f in free_space.values())
 
+        disks_size = sum((d.size for d in disks), Size(0))
         required_space = self.payload.spaceRequired
         auto_swap = sum((r.size for r in self.storage.autoPartitionRequests
                                 if r.fstype == "swap"), Size(0))
         if self.autopart and auto_swap == Size(0):
             # autopartitioning requested, but not applied yet (=> no auto swap
             # requests), ask user for enough space to fit in the suggested swap
-            auto_swap = swap_lib.swapSuggestion()
+            auto_swap = autopart.swapSuggestion()
 
         log.debug("disk free: %s  fs free: %s  sw needs: %s  auto swap: %s",
                   disk_free, fs_free, required_space, auto_swap)
@@ -788,92 +803,153 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         if disk_free >= required_space + auto_swap:
             dialog = None
         elif disks_size >= required_space:
-            if self._customPart.get_active() or self._reclaim.get_active():
-                dialog = None
-            else:
-                dialog = NeedSpaceDialog(self.data, payload=self.payload)
-                dialog.refresh(required_space, auto_swap, disk_free, fs_free)
-                rc = self.run_lightbox_dialog(dialog)
+            dialog = NeedSpaceDialog(self.data, payload=self.payload)
+            dialog.refresh(required_space, auto_swap, disk_free, fs_free)
         else:
             dialog = NoSpaceDialog(self.data, payload=self.payload)
             dialog.refresh(required_space, auto_swap, disk_free, fs_free)
-            rc = self.run_lightbox_dialog(dialog)
 
-        if not dialog:
-            # Plenty of room - there's no need to pop up a dialog, so just send
-            # the user to wherever they asked to go.  That's either the custom
-            # spoke or the hub.
-            #    - OR -
-            # Not enough room, but the user checked the reclaim button.
+        # the 'dialog' variable is always set by the if statement above
+        return dialog
 
-            self.encrypted = self._encrypted.get_active()
+    def _run_dialogs(self, disks, start_with):
+        rc = self.run_lightbox_dialog(start_with)
+        if rc == RESPONSE_RECLAIM:
+            # we need to run another dialog
 
-            if self._customPart.get_active():
-                self.autopart = False
-                self.skipTo = "CustomPartitioningSpoke"
-            else:
-                self.autopart = True
-
-                # We might first need to ask about an encryption passphrase.
-                if not self._check_encrypted():
-                    return
-
-                # Oh and then we might also want to go to the reclaim dialog.
-                if self._reclaim.get_active():
-                    self.apply()
-                    if not self._show_resize_dialog(disks):
-                        # User pressed cancel on the reclaim dialog, so don't leave
-                        # the storage spoke.
-                        return
-        elif rc == RESPONSE_CANCEL:
-            # A cancel button was clicked on one of the dialogs.  Stay on this
-            # spoke.  Generally, this is because the user wants to add more disks.
-            return
-        elif rc == RESPONSE_MODIFY_SW:
-            # The "Fedora software selection" link was clicked on one of the
-            # dialogs.  Send the user to the software spoke.
-            self.skipTo = "SoftwareSelectionSpoke"
-        elif rc == RESPONSE_RECLAIM:
-            # Not enough space, but the user can make enough if they do some
-            # work and free up space.
-            self.encrypted = self._encrypted.get_active()
-
-            if not self._check_encrypted():
-                return
-
+            # respect disk selection and other choices in the ReclaimDialog
             self.apply()
-            if not self._show_resize_dialog(disks):
-                # User pressed cancel on the reclaim dialog, so don't leave
-                # the storage spoke.
+            resize_dialog = ResizeDialog(self.data, self.storage, self.payload)
+            resize_dialog.refresh(disks)
+
+            return self._run_dialogs(disks, start_with=resize_dialog)
+        else:
+            # we are done
+            return rc
+
+    def on_back_clicked(self, button):
+        # We can't exit early if it looks like nothing has changed because the
+        # user might want to change settings presented in the dialogs shown from
+        # within this method.
+
+        # Do not enter this method multiple times if user clicking multiple times
+        # on back button
+        if self._back_clicked:
+            return
+        else:
+            self._back_clicked = True
+
+        # make sure the snapshot of unmodified on-disk-storage model is created
+        if not on_disk_storage.created:
+            on_disk_storage.create_snapshot(self.storage)
+
+        # No disks selected?  The user wants to back out of the storage spoke.
+        if not self.selected_disks:
+            NormalSpoke.on_back_clicked(self, button)
+            return
+
+        disk_selection_changed = False
+        if self._last_selected_disks:
+            disk_selection_changed = (self._last_selected_disks != set(self.selected_disks))
+
+        # remember the disk selection for future decisions
+        self._last_selected_disks = set(self.selected_disks)
+
+        if disk_selection_changed:
+            # Changing disk selection is really, really complicated and has
+            # always been causing numerous hard bugs. Let's not play the hero
+            # game and just revert everything and start over again.
+            on_disk_storage.reset_to_snapshot(self.storage)
+            self.disks = getDisks(self.storage.devicetree)
+        else:
+            # Remove all non-existing devices if autopart was active when we last
+            # refreshed.
+            if self._previous_autopart:
+                self._previous_autopart = False
+                self._remove_nonexistant_partitions()
+
+        # hide disks as requested
+        self._hide_disks()
+
+        if arch.isS390():
+            # check for unformatted DASDs and launch dasdfmt if any discovered
+            rc = self._check_dasd_formats()
+            if rc == DASD_FORMAT_NO_CHANGE:
+                pass
+            elif rc == DASD_FORMAT_REFRESH:
+                # User hit OK on the dialog
+                self.refresh()
+            elif rc == DASD_FORMAT_RETURN_TO_HUB:
+                # User clicked uri to return to hub.
+                NormalSpoke.on_back_clicked(self, button)
+                return
+            else:
+                # User either hit cancel on the dialog or closed it via escape,
+                # there was no formatting done.
+                self._back_clicked = False
                 return
 
-            # And then go to the custom partitioning spoke if they chose to
-            # do so.
-            if self._customPart.get_active():
-                self.autopart = False
-                self.skipTo = "CustomPartitioningSpoke"
-            else:
-                self.autopart = True
-        elif rc == RESPONSE_QUIT:
-            # Not enough space, and the user can't do anything about it so
-            # they chose to quit.
-            raise SystemExit("user-selected exit")
-        else:
-            # I don't know how we'd get here, but might as well have a
-            # catch-all.  Just stay on this spoke.
+        # even if they're not doing autopart, setting autopart.encrypted
+        # establishes a default of encrypting new devices
+        self.encrypted = self._encrypted.get_active()
+
+        # We might first need to ask about an encryption passphrase.
+        if self.encrypted and not self._setup_passphrase():
+            self._back_clicked = False
             return
+
+        # At this point there are three possible states:
+        # 1) user chose custom part => just send them to the CustomPart spoke
+        # 2) user wants to reclaim some more space => run the ResizeDialog
+        # 3) we are just asked to do autopart => check free space and see if we need
+        #                                        user to do anything more
+        self.autopart = not self._customPart.get_active()
+        disks = [d for d in self.disks if d.name in self.selected_disks]
+        dialog = None
+        if not self.autopart:
+            self.skipTo = "CustomPartitioningSpoke"
+        elif self._reclaim.get_active():
+            # HINT: change the logic of this 'if' statement if we are asked to
+            # support "reclaim before custom partitioning"
+
+            # respect disk selection and other choices in the ReclaimDialog
+            self.apply()
+            dialog = ResizeDialog(self.data, self.storage, self.payload)
+            dialog.refresh(disks)
+        else:
+            dialog = self._check_space_and_get_dialog(disks)
+
+        if dialog:
+            # more dialogs may need to be run based on user choices, but we are
+            # only interested in the final result
+            rc = self._run_dialogs(disks, start_with=dialog)
+
+            if rc == RESPONSE_OK:
+                # nothing special needed
+                pass
+            elif rc == RESPONSE_CANCEL:
+                # A cancel button was clicked on one of the dialogs.  Stay on this
+                # spoke.  Generally, this is because the user wants to add more disks.
+                self._back_clicked = False
+                return
+            elif rc == RESPONSE_MODIFY_SW:
+                # The "Fedora software selection" link was clicked on one of the
+                # dialogs.  Send the user to the software spoke.
+                self.skipTo = "SoftwareSelectionSpoke"
+            elif rc == RESPONSE_QUIT:
+                # Not enough space, and the user can't do anything about it so
+                # they chose to quit.
+                raise SystemExit("user-selected exit")
+            else:
+                # I don't know how we'd get here, but might as well have a
+                # catch-all.  Just stay on this spoke.
+                self._back_clicked = False
+                return
 
         if self.autopart:
             refreshAutoSwapSize(self.storage)
         self.applyOnSkip = True
         NormalSpoke.on_back_clicked(self, button)
-
-    def _show_resize_dialog(self, disks):
-        resizeDialog = ResizeDialog(self.data, self.storage, self.payload)
-        resizeDialog.refresh(disks)
-
-        rc = self.run_lightbox_dialog(resizeDialog)
-        return rc
 
     def on_custom_toggled(self, button):
         # The custom button won't be active until after this handler is run,
@@ -917,6 +993,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             if rc == 0:
                 # Quit.
                 sys.exit(0)
+                iutil.ipmi_report(constants.IPMI_ABORTED)
         elif self.warnings:
             label = _("The following warnings were encountered when checking your storage "
                       "configuration.  These are not fatal, but you may wish to make "

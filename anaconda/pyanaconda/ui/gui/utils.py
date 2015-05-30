@@ -1,6 +1,6 @@
 # Miscellaneous UI functions
 #
-# Copyright (C) 2012, 2013 Red Hat, Inc.
+# Copyright (C) 2012-2014 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -20,6 +20,8 @@
 #                    Martin Sivak <msivak@redhat.com>
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
+
+from contextlib import contextmanager
 
 from pyanaconda.threads import threadMgr, AnacondaThread
 
@@ -174,7 +176,7 @@ def gtk_batch_map(action, items, args=(), pre_func=None, batch_size=1):
 
         # process as many batches as user shouldn't notice
         while tstamp - tstamp_start < NOTICEABLE_FREEZE:
-            for _i in xrange(batch_size):
+            for _i in range(batch_size):
                 try:
                     action_item = queue.get_nowait()
                     if action_item is TERMINATOR:
@@ -288,12 +290,27 @@ def timed_action(delay=300, threshold=750, busy_cursor=True):
 
     return decorator
 
+@contextmanager
+def blockedHandler(obj, func):
+    """Prevent a GLib signal handling function from being called during some
+       block of code.
+    """
+    obj.handler_block_by_func(func)
+    yield
+    obj.handler_unblock_by_func(func)
+
 def busyCursor():
     window = Gdk.get_default_root_window()
+    if not window:
+        return
+
     window.set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
 
 def unbusyCursor():
     window = Gdk.get_default_root_window()
+    if not window:
+        return
+
     window.set_cursor(Gdk.Cursor(Gdk.CursorType.ARROW))
 
 def ignoreEscape(dlg):
@@ -407,7 +424,9 @@ def escape_markup(value):
     if isinstance(value, unicode):
         value = value.encode("utf-8")
 
-    return GLib.markup_escape_text(str(value))
+    escaped = GLib.markup_escape_text(str(value))
+
+    return escaped.decode("utf-8")
 
 # This will be populated by override_cell_property. Keys are tuples of (column, renderer).
 # Values are a dict of the form {property-name: (property-func, property-data)}.

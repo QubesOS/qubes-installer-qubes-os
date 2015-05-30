@@ -21,10 +21,13 @@
 
 from pyanaconda import iutil
 import unittest
-import types
 import os
+import tempfile
+import signal
 import shutil
 from test_constants import ANACONDA_TEST_DIR
+
+from timer import timer
 
 class UpcaseFirstLetterTests(unittest.TestCase):
 
@@ -90,6 +93,25 @@ class RunProgramTests(unittest.TestCase):
         # check no output is returned
         self.assertEqual(len(iutil.execWithCapture('true', [])), 0)
 
+    def exec_with_capture_no_stderr_test(self):
+        """Test execWithCapture with no stderr"""
+
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "output"
+echo "error" >&2
+""")
+            testscript.flush()
+
+            # check that only the output is captured
+            self.assertEqual(
+                    iutil.execWithCapture("/bin/sh", [testscript.name], filter_stderr=True),
+                    "output\n")
+
+            # check that both output and error are captured
+            self.assertEqual(iutil.execWithCapture("/bin/sh", [testscript.name]),
+                    "output\nerror\n")
+
     def exec_readlines_test(self):
         """Test execReadlines."""
 
@@ -99,13 +121,290 @@ class RunProgramTests(unittest.TestCase):
         # test some lines are returned
         self.assertGreater(len(list(iutil.execReadlines("ls", ["--help"]))), 0)
 
-        # check that it always returns a generator for both
+        # check that it always returns an iterator for both
         # if there is some output and if there isn't any
-        self.assertIsInstance(iutil.execReadlines("ls", ["--help"]),
-                              types.GeneratorType)
-        self.assertIsInstance(iutil.execReadlines("true", []),
-                              types.GeneratorType)
+        self.assertTrue(hasattr(iutil.execReadlines("ls", ["--help"]), "__iter__"))
+        self.assertTrue(hasattr(iutil.execReadlines("true", []), "__iter__"))
 
+    def exec_readlines_test_normal_output(self):
+        """Test the output of execReadlines."""
+
+        # Test regular-looking output
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo "three"
+exit 0
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(StopIteration, rl_iterator.next)
+
+        # Test output with no end of line
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo -n "three"
+exit 0
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(StopIteration, rl_iterator.next)
+
+    def exec_readlines_test_exits(self):
+        """Test execReadlines in different child exit situations."""
+
+        # Tests that exit on signal will raise OSError once output
+        # has been consumed, otherwise the test will exit normally.
+
+        # Test a normal, non-0 exit
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo "three"
+exit 1
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(OSError, rl_iterator.next)
+
+        # Test exit on signal
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo "three"
+kill -TERM $$
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(OSError, rl_iterator.next)
+
+        # Repeat the above two tests, but exit before a final newline
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo -n "three"
+exit 1
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(OSError, rl_iterator.next)
+
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+echo "one"
+echo "two"
+echo -n "three"
+kill -TERM $$
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                self.assertEqual(rl_iterator.next(), "one")
+                self.assertEqual(rl_iterator.next(), "two")
+                self.assertEqual(rl_iterator.next(), "three")
+                self.assertRaises(OSError, rl_iterator.next)
+
+    def exec_readlines_test_signals(self):
+        """Test execReadlines and signal receipt."""
+
+        # ignored signal
+        old_HUP_handler = signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        try:
+            with tempfile.NamedTemporaryFile() as testscript:
+                testscript.write("""#!/bin/sh
+echo "one"
+kill -HUP $PPID
+echo "two"
+echo -n "three"
+exit 0
+""")
+                testscript.flush()
+
+                with timer(5):
+                    rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                    self.assertEqual(rl_iterator.next(), "one")
+                    self.assertEqual(rl_iterator.next(), "two")
+                    self.assertEqual(rl_iterator.next(), "three")
+                    self.assertRaises(StopIteration, rl_iterator.next)
+        finally:
+            signal.signal(signal.SIGHUP, old_HUP_handler)
+
+        # caught signal
+        def _hup_handler(signum, frame):
+            pass
+        old_HUP_handler = signal.signal(signal.SIGHUP, _hup_handler)
+        try:
+            with tempfile.NamedTemporaryFile() as testscript:
+                testscript.write("""#!/bin/sh
+echo "one"
+kill -HUP $PPID
+echo "two"
+echo -n "three"
+exit 0
+""")
+                testscript.flush()
+
+                with timer(5):
+                    rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+                    self.assertEqual(rl_iterator.next(), "one")
+                    self.assertEqual(rl_iterator.next(), "two")
+                    self.assertEqual(rl_iterator.next(), "three")
+                    self.assertRaises(StopIteration, rl_iterator.next)
+        finally:
+            signal.signal(signal.SIGHUP, old_HUP_handler)
+
+    def start_program_preexec_fn_test(self):
+        """Test passing preexec_fn to startProgram."""
+
+        marker_text = "yo wassup man"
+        # Create a temporary file that will be written before exec
+        with tempfile.NamedTemporaryFile() as testfile:
+
+            # Write something to testfile to show this method was run
+            def preexec():
+                # Open a copy of the file here since close_fds has already closed the descriptor
+                testcopy = open(testfile.name, 'w')
+                testcopy.write(marker_text)
+                testcopy.close()
+
+            with timer(5):
+                # Start a program that does nothing, with a preexec_fn
+                proc = iutil.startProgram(["/bin/true"], preexec_fn=preexec)
+                proc.communicate()
+
+            # Rewind testfile and look for the text
+            testfile.seek(0, os.SEEK_SET)
+            self.assertEqual(testfile.read(), marker_text)
+
+    def start_program_stdout_test(self):
+        """Test redirecting stdout with startProgram."""
+
+        marker_text = "yo wassup man"
+        # Create a temporary file that will be written by the program
+        with tempfile.NamedTemporaryFile() as testfile:
+            # Open a new copy of the file so that the child doesn't close and
+            # delete the NamedTemporaryFile
+            stdout = open(testfile.name, 'w')
+            with timer(5):
+                proc = iutil.startProgram(["/bin/echo", marker_text], stdout=stdout)
+                proc.communicate()
+
+            # Rewind testfile and look for the text
+            testfile.seek(0, os.SEEK_SET)
+            self.assertEqual(testfile.read().strip(), marker_text)
+
+    def start_program_reset_handlers_test(self):
+        """Test the reset_handlers parameter of startProgram."""
+
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+# Just hang out and do nothing, forever
+while true ; do sleep 1 ; done
+""")
+            testscript.flush()
+
+            # Start a program with reset_handlers
+            proc = iutil.startProgram(["/bin/sh", testscript.name])
+
+            with timer(5):
+                # Kill with SIGPIPE and check that the python's SIG_IGN was not inheritted
+                # The process should die on the signal.
+                proc.send_signal(signal.SIGPIPE)
+                proc.communicate()
+                self.assertEqual(proc.returncode, -(signal.SIGPIPE))
+
+            # Start another copy without reset_handlers
+            proc = iutil.startProgram(["/bin/sh", testscript.name], reset_handlers=False)
+
+            with timer(5):
+                # Kill with SIGPIPE, then SIGTERM, and make sure SIGTERM was the one
+                # that worked.
+                proc.send_signal(signal.SIGPIPE)
+                proc.terminate()
+                proc.communicate()
+                self.assertEqual(proc.returncode, -(signal.SIGTERM))
+
+    def exec_readlines_auto_kill_test(self):
+        """Test execReadlines with reading only part of the output"""
+
+        with tempfile.NamedTemporaryFile() as testscript:
+            testscript.write("""#!/bin/sh
+# Output forever
+while true; do
+echo hey
+done
+""")
+            testscript.flush()
+
+            with timer(5):
+                rl_iterator = iutil.execReadlines("/bin/sh", [testscript.name])
+
+                # Save the process context
+                proc = rl_iterator._proc
+
+                # Read two lines worth
+                self.assertEqual(rl_iterator.next(), "hey")
+                self.assertEqual(rl_iterator.next(), "hey")
+
+                # Delete the iterator and wait for the process to be killed
+                del rl_iterator
+                proc.communicate()
+
+            # Check that the process is gone
+            self.assertIsNotNone(proc.poll())
+
+    def watch_process_test(self):
+        """Test watchProcess"""
+
+        def test_still_running():
+            with timer(5):
+                # Run something forever so we can kill it
+                proc = iutil.startProgram(["/bin/sh", "-c", "while true; do sleep 1; done"])
+                iutil.watchProcess(proc, "test1")
+                proc.kill()
+                # Wait for the SIGCHLD
+                signal.pause()
+        self.assertRaises(iutil.ExitError, test_still_running)
+
+        # Make sure watchProcess checks that the process has not already exited
+        with timer(5):
+            proc = iutil.startProgram(["true"])
+            proc.communicate()
+        self.assertRaises(iutil.ExitError, iutil.watchProcess, proc, "test2")
+
+class MiscTests(unittest.TestCase):
     def get_dir_size_test(self):
         """Test the getDirSize."""
 
@@ -219,11 +518,16 @@ class RunProgramTests(unittest.TestCase):
         def raise_os_error(*args, **kwargs):
             raise OSError
 
-        # chvt does not exist on all platforms
-        # and the function needs to correctly survie that
-        iutil.vtActivate.func_globals['execWithRedirect'] = raise_os_error
+        _execWithRedirect = iutil.vtActivate.func_globals['execWithRedirect']
 
-        self.assertEqual(iutil.vtActivate(2), False)
+        try:
+            # chvt does not exist on all platforms
+            # and the function needs to correctly survie that
+            iutil.vtActivate.func_globals['execWithRedirect'] = raise_os_error
+
+            self.assertEqual(iutil.vtActivate(2), False)
+        finally:
+            iutil.vtActivate.func_globals['execWithRedirect'] = _execWithRedirect
 
     def get_deep_attr_test(self):
         """Test getdeepattr."""
@@ -438,3 +742,12 @@ class RunProgramTests(unittest.TestCase):
         # Compare unicode and str and make sure nothing crashes
         self.assertTrue(iutil.have_word_match("fête", u"fête champêtre"))
         self.assertTrue(iutil.have_word_match(u"fête", "fête champêtre"))
+
+    def parent_dir_test(self):
+        """Test the parent_dir function"""
+        dirs = [("", ""), ("/", ""), ("/home/", ""), ("/home/bcl", "/home"), ("home/bcl", "home"),
+                ("/home/bcl/", "/home"), ("/home/extra/bcl", "/home/extra"),
+                ("/home/extra/bcl/", "/home/extra"), ("/home/extra/../bcl/", "/home")]
+
+        for d, r in dirs:
+            self.assertEquals(iutil.parent_dir(d), r)

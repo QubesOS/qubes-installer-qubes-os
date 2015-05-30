@@ -29,7 +29,7 @@ import glob
 from collections import namedtuple
 
 from pyanaconda import constants
-from pyanaconda.iutil import upcase_first_letter
+from pyanaconda.iutil import upcase_first_letter, setenv
 
 import logging
 log = logging.getLogger("anaconda")
@@ -152,7 +152,7 @@ def find_best_locale_match(locale, langcodes):
         if not locale_parts or not langcode_parts:
             return score
 
-        for part, part_score in score_map.iteritems():
+        for part, part_score in score_map.items():
             if locale_parts[part] and langcode_parts[part]:
                 if locale_parts[part] == langcode_parts[part]:
                     # match
@@ -187,6 +187,9 @@ def setup_locale(locale, lang=None):
     ksdata.lang object (if given). DOES NOT PERFORM ANY CHECKS OF THE GIVEN
     LOCALE.
 
+    $LANG must be set by the caller in order to set the language used by gettext.
+    Doing this in a thread-safe way is up to the caller.
+
     :param locale: locale to setup
     :type locale: str
     :param lang: ksdata.lang object or None
@@ -198,7 +201,7 @@ def setup_locale(locale, lang=None):
     if lang:
         lang.lang = locale
 
-    os.environ["LANG"] = locale
+    setenv("LANG", locale)
     locale_mod.setlocale(locale_mod.LC_ALL, locale)
 
 def get_english_name(locale):
@@ -395,7 +398,7 @@ def get_xlated_timezone(tz_spec_part):
                                      territoryIdQuery=parts.get("territory", ""),
                                      scriptIdQuery=parts.get("script", ""))
 
-    return xlated.encode("utf-8")
+    return xlated
 
 def write_language_configuration(lang, root):
     """
@@ -419,6 +422,8 @@ def load_firmware_language(lang):
     Procedure that loads firmware language information (if any). It stores the
     information in the given ksdata.lang object and sets the $LANG environment
     variable.
+
+    This method must be run before any other threads are started.
 
     :param lang: ksdata.lang object
     :return: None
@@ -470,6 +475,8 @@ def load_firmware_language(lang):
 
     log.debug("Using UEFI PlatformLang '%s' ('%s') as our language.", d, locales[0])
     setup_locale(locales[0], lang)
+
+    os.environ["LANG"] = locales[0] # pylint: disable=environment-modify
 
 _DateFieldSpec = namedtuple("DateFieldSpec", ["format", "suffix"])
 

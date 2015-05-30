@@ -20,13 +20,16 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from blivet import turnOnFilesystems, callbacks
+from blivet import callbacks
+from blivet.osinstall import turnOnFilesystems
+from blivet.devices import BTRFSDevice
 from pyanaconda.bootloader import writeBootLoader
 from pyanaconda.progress import progress_report, progress_message, progress_step, progress_complete, progress_init
 from pyanaconda.users import createLuserConf, getPassAlgo, Users
 from pyanaconda import flags
 from pyanaconda import iutil
 from pyanaconda import timezone
+from pyanaconda import network
 from pyanaconda.i18n import _
 from pyanaconda.threads import threadMgr
 from pyanaconda.ui.lib.entropy import wait_for_entropy
@@ -97,12 +100,20 @@ def doConfiguration(storage, payload, ksdata, instClass):
         ksdata.rootpw.execute(storage, ksdata, instClass, u)
         ksdata.group.execute(storage, ksdata, instClass, u)
         ksdata.user.execute(storage, ksdata, instClass, u)
+        ksdata.sshkey.execute(storage, ksdata, instClass, u)
 
     with progress_report(_("Configuring addons")):
         ksdata.addons.execute(storage, ksdata, instClass, u)
 
     with progress_report(_("Generating initramfs")):
-        payload.recreateInitrds(force=True)
+        payload.recreateInitrds()
+
+    # Work around rhbz#1200539, grubby doesn't handle grub2 missing initrd with /boot on btrfs
+    # So rerun writing the bootloader if this is live and /boot is on btrfs
+    boot_on_btrfs = isinstance(storage.mountpoints.get("/boot", storage.mountpoints.get("/")), BTRFSDevice)
+    if flags.flags.livecdInstall and boot_on_btrfs \
+                                 and (not ksdata.bootloader.disabled and ksdata.bootloader != "none"):
+        writeBootLoader(storage, payload, instClass, ksdata)
 
     if willRunRealmd:
         with progress_report(_("Joining realm: %s") % ksdata.realm.discovered):
@@ -116,17 +127,6 @@ def doConfiguration(storage, payload, ksdata, instClass):
     _writeKS(ksdata)
 
     progress_complete()
-
-def moveBootMntToPhysical(storage):
-    """Move the /boot mount to /mnt/sysimage/boot."""
-    if iutil.getSysroot() == iutil.getTargetPhysicalRoot():
-        return
-    bootmnt = storage.mountpoints.get('/boot')
-    if bootmnt is None:
-        return
-    bootmnt.format.teardown()
-    bootmnt.teardown()
-    bootmnt.format.setup(options=bootmnt.format.options, chroot=iutil.getTargetPhysicalRoot())
 
 def doInstall(storage, payload, ksdata, instClass):
     """Perform an installation.  This method takes the ksdata as prepared by
@@ -146,6 +146,11 @@ def doInstall(storage, payload, ksdata, instClass):
     # those are the ones that take the most time.
     steps = len(storage.devicetree.findActions(action_type="create", object_type="format")) + \
             len(storage.devicetree.findActions(action_type="resize", object_type="format"))
+
+    # Update every 10% of packages installed.  We don't know how many packages
+    # we are installing until it's too late (see realmd later on) so this is
+    # the best we can do.
+    steps += 10
 
     # pre setup phase, post install
     steps += 2
@@ -190,9 +195,8 @@ def doInstall(storage, payload, ksdata, instClass):
 
     turnOnFilesystems(storage, mountOnly=flags.flags.dirInstall, callbacks=callbacks_reg)
     write_storage_late = (flags.flags.livecdInstall or ksdata.ostreesetup.seen
-                          or ksdata.method.method == "liveimg"
-                          and not flags.flags.dirInstall)
-    if not write_storage_late:
+                          or ksdata.method.method == "liveimg")
+    if not write_storage_late and not flags.flags.dirInstall:
         storage.write()
 
     # Do packaging.
@@ -207,6 +211,10 @@ def doInstall(storage, payload, ksdata, instClass):
     ksdata.authconfig.setup()
     ksdata.firewall.setup()
 
+    # make name resolution work for rpm scripts in chroot
+    if flags.can_touch_runtime_system("copy /etc/resolv.conf to sysroot"):
+        network.copyFileToPath("/etc/resolv.conf", iutil.getSysroot())
+
     # anaconda requires storage packages in order to make sure the target
     # system is bootable and configurable, and some other packages in order
     # to finish setting up the system.
@@ -216,6 +224,9 @@ def doInstall(storage, payload, ksdata, instClass):
     if willInstallBootloader:
         packages += storage.bootloader.packages
 
+    if network.is_using_team_device():
+        packages.append("teamd")
+
     # don't try to install packages from the install class' ignored list and the
     # explicitly excluded ones (user takes the responsibility)
     packages = [p for p in packages
@@ -223,7 +234,7 @@ def doInstall(storage, payload, ksdata, instClass):
     payload.preInstall(packages=packages, groups=payload.languageGroups())
     payload.install()
 
-    if write_storage_late:
+    if write_storage_late and not flags.flags.dirInstall:
         if iutil.getSysroot() != iutil.getTargetPhysicalRoot():
             blivet.setSysroot(iutil.getTargetPhysicalRoot(),
                               iutil.getSysroot())
@@ -251,13 +262,10 @@ def doInstall(storage, payload, ksdata, instClass):
 
     # Do bootloader.
     if willInstallBootloader:
-        with progress_report(_("Installing bootloader")):
+        with progress_report(_("Installing boot loader")):
             writeBootLoader(storage, payload, instClass, ksdata)
 
     with progress_report(_("Performing post-installation setup tasks")):
-        # Now, let's reset the state here so that the payload has
-        # /boot in the system root.
-        moveBootMntToPhysical(storage)
         payload.postInstall()
 
     progress_complete()

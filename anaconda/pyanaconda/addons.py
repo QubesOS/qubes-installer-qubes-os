@@ -56,9 +56,9 @@ def collect_addon_paths(toplevel_addon_paths, ui_subdir="gui"):
             if os.path.isdir(addon_spoke_path):
                 module_paths["spokes"].append(("%s.%s.spokes.%%s" % (addon_id, ui_subdir), addon_spoke_path))
 
-            addon_category_path = os.path.join(path, addon_id, ui_subdir, "categories")
-            if os.path.isdir(addon_spoke_path):
-                module_paths["categories"].append(("%s.%s.categories.%%s" % (addon_id, ui_subdir), addon_category_path))
+            addon_category_path = os.path.join(path, addon_id, "categories")
+            if os.path.isdir(addon_category_path):
+                module_paths["categories"].append(("%s.categories.%%s" % addon_id, addon_category_path))
 
     return module_paths
 
@@ -75,17 +75,17 @@ class AddonRegistry(object):
 
     def __str__(self):
         return functools.reduce(lambda acc, (id, addon): acc + str(addon),
-                                self.__dict__.iteritems(), "")
+                                self.__dict__.items(), "")
 
     def execute(self, storage, ksdata, instClass, users):
         """This method calls execute on all the registered addons."""
-        for v in self.__dict__.itervalues():
+        for v in self.__dict__.values():
             if hasattr(v, "execute"):
                 v.execute(storage, ksdata, instClass, users)
 
     def setup(self, storage, ksdata, instClass):
         """This method calls setup on all the registered addons."""
-        for v in self.__dict__.itervalues():
+        for v in self.__dict__.values():
             if hasattr(v, "setup"):
                 v.setup(storage, ksdata, instClass)
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
 # Copyright (C) 2014  Red Hat, Inc.
 #
@@ -22,7 +22,6 @@ from dogtail.tree import SearchError, root
 from dogtail.utils import doDelay, screenshot
 
 import glob
-import os
 import unittest
 
 class UITestCase(unittest.TestCase):
@@ -92,7 +91,7 @@ class UITestCase(unittest.TestCase):
     ### METHODS FOR FINDING WIDGETS
     ###
 
-    def find(self, name, roleName=None):
+    def find(self, name, roleName=None, node=None):
         """Wrap findChild, returning None if no widget is found instead of
            raising an exception.  This method also allows for checking if
            anaconda has hit a traceback and if so, fails the test
@@ -101,10 +100,19 @@ class UITestCase(unittest.TestCase):
         if len(glob.glob("/tmp/anaconda-tb-*")) > 0:
             self.fail("anaconda encountered a traceback")
 
+        if not node:
+            node = self.ana
+
         try:
-            return self.ana.child(name=name, roleName=roleName)
+            return node.child(name=name, roleName=roleName)
         except SearchError:
             return None
+
+    def view_children(self, view):
+        return [child for child in view.findChildren(GenericPredicate(roleName="table cell"))]
+
+    def selected_view_children(self, view):
+        return [child for child in self.view_children(view) if child.selected]
 
     ###
     ### METHODS FOR CHECKING A SINGLE WIDGET
@@ -115,9 +123,10 @@ class UITestCase(unittest.TestCase):
            provided name is currently displayed on the screen.  If not,
            the current test case will be failed.
         """
-        w = self.find(name)
+        w = self.find(name, roleName="panel")
         self.assertIsNotNone(w, msg="%s not found" % name)
         self.assertTrue(w.showing, msg="%s is not displayed" % name)
+        return w
 
     def check_dialog_displayed(self, name):
         """Verify that a dialog given by the provided name is currently
@@ -127,36 +136,48 @@ class UITestCase(unittest.TestCase):
         w = self.find(name, "dialog")
         self.assertIsNotNone(w, msg="%s not found" % name)
         self.assertTrue(w.showing, msg="%s is not displayed" % name)
+        return w
 
-    def check_keyboard_layout_indicator(self, layout):
+    def check_keyboard_layout_indicator(self, layout, node=None):
         """Verify that the keyboard layout indicator is present and that
            the currently enabled layout is what we expect.  If not, the
            current test case will be failed.
         """
-        indicator = self.find("Keyboard Layout")
+        indicator = self.find("Keyboard Layout", node=node)
         self.assertIsNotNone(indicator, msg="keyboard layout indicator not found")
         self.assertEqual(indicator.description, layout,
                          msg="keyboard layout indicator not set to %s" % layout)
 
-    def check_no_warning_bar(self):
-        """Verify that the warning bar is not currently displayed."""
-        self.assertIsNone(self.find("Warning"), msg="Warning bar should not be displayed")
+    def check_help_button(self, node=None):
+        self.click_button("Help!", node=node)
 
-    def check_warning_bar(self, msg=None):
+        try:
+            yelp = root.application("yelp")
+        except SearchError:
+            self.fail("Help view is not displayed.")
+
+        doDelay(2)
+        yelp.keyCombo("<Alt>F4")
+
+    def check_no_warning_bar(self, node=None):
+        """Verify that the warning bar is not currently displayed."""
+        self.assertIsNone(self.find("Warning", node=node), msg="Warning bar should not be displayed")
+
+    def check_warning_bar(self, msg=None, node=None):
         """Verify that the warning bar is currently displayed.  If msg is given,
            verify that it is contained in whatever message the warning bar is
            showing.
         """
-        bar = self.find("Warning")
+        bar = self.find("Warning", node=node)
         self.assertTrue(bar.showing, msg="Warning bar should be displayed")
         if msg:
             self.assertIn(msg, bar.child(roleName="label").text)
 
-    def click_button(self, name):
+    def click_button(self, name, node=None):
         """Verify that a button with the given name exists and is sensitive,
            and then click it.
         """
-        b = self.find(name, "push button")
+        b = self.find(name, "push button", node=node)
         self.assertIsNotNone(b, msg="%s button not found" % name)
         self.assertTrue(b.sensitive, msg="%s button should be sensitive" % name)
         b.click()
@@ -169,13 +190,13 @@ class UITestCase(unittest.TestCase):
         self.assertIsNotNone(selector, msg="Selector %s not found" % spokeSelectorName)
         selector.click()
 
-    def exit_spoke(self, hubName="INSTALLATION SUMMARY"):
+    def exit_spoke(self, hubName="INSTALLATION SUMMARY", node=None):
         """Leave a spoke by clicking the Done button in the upper left corner,
            then verify we have returned to the proper hub.  Since most spokes
            are off the summary hub, that's the default.  If we are not back
            on the hub, the current test case will be failed.
         """
-        button = self.find("_Done", "push button")
+        button = self.find("_Done", "push button", node=node)
         self.assertIsNotNone(button, msg="Done button not found")
         button.click()
         doDelay(5)

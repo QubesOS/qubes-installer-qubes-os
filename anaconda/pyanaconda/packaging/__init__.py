@@ -27,16 +27,15 @@
         - document all methods
 
 """
-from __future__ import print_function
-import os, sys
+import os
 from urlgrabber.grabber import URLGrabber
 from urlgrabber.grabber import URLGrabError
 import ConfigParser
 import shutil
-import time
 from glob import glob
-import re
+from fnmatch import fnmatch
 import threading
+import re
 
 if __name__ == "__main__":
     from pyanaconda import anaconda_log
@@ -53,10 +52,10 @@ from pyanaconda import iutil
 from pyanaconda import isys
 from pyanaconda.image import findFirstIsoImage
 from pyanaconda.image import mountImage
-from pyanaconda.image import opticalInstallMedia
+from pyanaconda.image import opticalInstallMedia, verifyMedia
 from pyanaconda.iutil import ProxyString, ProxyStringError
-from pyanaconda.regexes import VERSION_DIGITS
 from pyanaconda.threads import threadMgr, AnacondaThread
+from pyanaconda.regexes import VERSION_DIGITS
 
 from pykickstart.parser import Group
 
@@ -72,7 +71,14 @@ from pyanaconda.product import productName, productVersion
 import urlgrabber
 urlgrabber.grabber.default_grabber.opts.user_agent = "%s (anaconda)/%s" %(productName, productVersion)
 
+from distutils.version import LooseVersion
+
 REPO_NOT_SET = False
+
+def versionCmp(v1, v2):
+    """ Compare two version number strings. """
+
+    return LooseVersion(v1).__cmp__(LooseVersion(v2))
 
 ###
 ### ERROR HANDLING
@@ -128,9 +134,6 @@ class Payload(object):
         self.data = data
         self.storage = None
         self.instclass = None
-        self._kernelVersionList = []
-        self._rescueVersionList = []
-        self._createdInitrds = False
         self.txID = None
 
     def setup(self, storage, instClass):
@@ -156,7 +159,7 @@ class Payload(object):
         """
         pass
 
-    def reset(self, root=None, releasever=None):
+    def reset(self):
         """ Reset the instance, not including ksdata. """
         pass
 
@@ -222,18 +225,7 @@ class Payload(object):
     def needsNetwork(self):
         return any(self._repoNeedsNetwork(r) for r in self.data.repo.dataList())
 
-    def _resetMethod(self):
-        self.data.method.method = ""
-        self.data.method.url = None
-        self.data.method.server = None
-        self.data.method.dir = None
-        self.data.method.partition = None
-        self.data.method.biospart = None
-        self.data.method.noverifyssl = False
-        self.data.method.proxy = ""
-        self.data.method.opts = None
-
-    def updateBaseRepo(self, fallback=True, root=None, checkmount=True):
+    def updateBaseRepo(self, fallback=True, checkmount=True):
         """ Update the base repository from ksdata.method. """
         pass
 
@@ -314,60 +306,6 @@ class Payload(object):
         self.data.packages.excludedGroupList.append(grp)
 
     ###
-    ### METHODS FOR WORKING WITH PACKAGES
-    ###
-    def packageSelected(self, pkgid):
-        return pkgid in self.data.packages.packageList
-
-    def selectPackage(self, pkgid):
-        """Mark a package for installation.
-
-           pkgid - The name of a package to be installed.  This could include
-                   a version or architecture component.
-        """
-        if pkgid in self.data.packages.packageList:
-            return
-
-        if pkgid in self.data.packages.excludedList:
-            self.data.packages.excludedList.remove(pkgid)
-
-        self.data.packages.packageList.append(pkgid)
-
-    def deselectPackage(self, pkgid):
-        """Mark a package to be excluded from installation.
-
-           pkgid - The name of a package to be excluded.  This could include
-                   a version or architecture component.
-        """
-        if pkgid in self.data.packages.excludedList:
-            return
-
-        if pkgid in self.data.packages.packageList:
-            self.data.packages.packageList.remove(pkgid)
-
-        self.data.packages.excludedList.append(pkgid)
-
-    def _updateKernelVersionList(self):
-        try:
-            import yum
-        except ImportError:
-            cmpfunc = cmp
-        else:
-            cmpfunc = yum.rpmUtils.miscutils.compareVerOnly
-
-        files = glob(iutil.getSysroot() + "/boot/vmlinuz-*")
-        files.extend(glob(iutil.getSysroot() + "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir))
-
-        versions = sorted((f.split("/")[-1][8:] for f in files if os.path.isfile(f)), cmp=cmpfunc)
-        log.debug("kernel versions: %s", versions)
-
-        # Store regular and rescue kernels separately
-        self._kernelVersionList = (
-                [v for v in versions if "-rescue-" not in v],
-                [v for v in versions if "-rescue-" in v]
-                )
-
-    ###
     ### METHODS FOR QUERYING STATE
     ###
     @property
@@ -377,16 +315,8 @@ class Payload(object):
 
     @property
     def kernelVersionList(self):
-        if not self._kernelVersionList:
-            self._updateKernelVersionList()
-
-        return self._kernelVersionList[0]
-
-    @property
-    def rescueKernelList(self):
-        # do re-scan if looking for rescue kernel
-        self._updateKernelVersionList()
-        return self._kernelVersionList[1]
+        """ An iterable of the kernel versions installed by the payload. """
+        raise NotImplementedError()
 
     ##
     ## METHODS FOR TREE VERIFICATION
@@ -398,7 +328,7 @@ class Payload(object):
             :type baseurl: string
             :param proxy_url: Optional full proxy URL of or ""
             :type proxy_url: string
-            :param sslverify: True if SSL certificate should be varified
+            :param sslverify: True if SSL certificate should be verified
             :type sslverify: bool
             :returns: Path to retrieved .treeinfo file or None
             :rtype: string or None
@@ -462,9 +392,6 @@ class Payload(object):
                 version = "rawhide"
             except ConfigParser.Error:
                 pass
-
-        if version.startswith(time.strftime("%Y")):
-            version = "rawhide"
 
         log.debug("got a release version of %s", version)
         return version
@@ -583,19 +510,14 @@ class Payload(object):
                 # XXX TODO: real error handling, as this is probably going to
                 #           prevent boot on some systems
 
-    def recreateInitrds(self, force=False):
-        """ Recreate the initrds by calling kernel-install
+    def recreateInitrds(self):
+        """ Recreate the initrds by calling new-kernel-pkg
 
             This needs to be done after all configuration files have been
             written, since dracut depends on some of them.
 
-            :param force: Always recreate, default is to only do it on first call
-            :type force: bool
             :returns: None
         """
-        if not force and self._createdInitrds:
-            return
-
         for kernel in self.kernelVersionList:
             log.info("recreating initrd for %s", kernel)
             if not flags.imageInstall:
@@ -610,9 +532,6 @@ class Payload(object):
                                      "--persistent-policy", "by-uuid",
                                      "-f", "/boot/initramfs-%s.img" % kernel,
                                     kernel])
-
-        self._createdInitrds = True
-
 
     def _setDefaultBootTarget(self):
         """ Set the default systemd target for the system. """
@@ -741,6 +660,17 @@ class PackagePayload(Payload):
         else:
             self.rpmMacros.append(('__file_context_path', '%{nil}'))
 
+        # Add platform specific group
+        groupid = iutil.get_platform_groupid()
+        if groupid and groupid in self.groups:
+            if isinstance(groups, list):
+                log.info("Adding platform group %s", groupid)
+                groups.append(groupid)
+            else:
+                log.warning("Could not add %s to groups, not a list.", groupid)
+        elif groupid:
+            log.warning("Platform group %s not available.", groupid)
+
     @property
     def kernelPackages(self):
         if "kernel" in self.data.packages.excludedList:
@@ -762,6 +692,28 @@ class PackagePayload(Payload):
         return kernels
 
     @property
+    def kernelVersionList(self):
+        # Find all installed rpms that provide 'kernel'
+
+        # If a PackagePayload is in use, rpm needs to be available
+        try:
+            import rpm
+        except ImportError:
+            raise PayloadError("failed to import rpm-python, cannot determine kernel versions")
+
+        files = []
+
+        ts = rpm.TransactionSet(iutil.getSysroot())
+        mi = ts.dbMatch('providename', 'kernel')
+        for hdr in mi:
+            # Find all /boot/vmlinuz- files and strip off vmlinuz-
+            files.extend((f.split("/")[-1][8:] for f in hdr.filenames
+                if fnmatch(f, "/boot/vmlinuz-*") or
+                   fnmatch(f, "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir)))
+
+        return sorted(files, cmp=versionCmp)
+
+    @property
     def rpmMacros(self):
         """A list of (name, value) pairs to define as macros in the rpm transaction."""
         return self._rpm_macros
@@ -770,7 +722,11 @@ class PackagePayload(Payload):
     def rpmMacros(self, value):
         self._rpm_macros = value
 
-    def reset(self, root=None, releasever=None):
+    def reset(self):
+        self.reset_install_device()
+
+    def reset_install_device(self):
+        """ Unmount the previous base repo and reset the install_device """
         # cdrom: install_device.teardown (INSTALL_TREE)
         # hd: umount INSTALL_TREE, install_device.teardown (ISO_DIR)
         # nfs: umount INSTALL_TREE
@@ -865,8 +821,12 @@ class PackagePayload(Payload):
                     needmount = False
                     # We don't setup an install_device here
                     # because we can't tear it down
+
             isodevice = storage.devicetree.resolveDevice(devspec)
             if needmount:
+                if not isodevice:
+                    raise PayloadSetupError("device for HDISO install %s does not exist" % devspec)
+
                 self._setupMedia(isodevice)
                 url = "file://" + INSTALL_TREE
                 self.install_device = isodevice
@@ -893,7 +853,8 @@ class PackagePayload(Payload):
                 needmount = True
                 if device:
                     _options, host, path = iutil.parseNfsUrl('nfs:%s' % device)
-                    if path and path in device:
+                    if method.server and method.server == host and \
+                       method.dir and method.dir == path:
                         needmount = False
                         path = DRACUT_REPODIR
                 if needmount:
@@ -945,6 +906,11 @@ class PackagePayload(Payload):
         elif method.method == "cdrom" or (checkmount and not method.method):
             # Did dracut leave the DVD or NFS mounted for us?
             device = blivet.util.get_mount_device(DRACUT_REPODIR)
+
+            # Check for valid optical media if we didn't boot from one
+            if not verifyMedia(DRACUT_REPODIR):
+                self.install_device = opticalInstallMedia(storage.devicetree)
+
             # Only look at the dracut mount if we don't already have a cdrom
             if device and not self.install_device:
                 self.install_device = storage.devicetree.getDeviceByPath(device)
@@ -962,9 +928,6 @@ class PackagePayload(Payload):
                     else:
                         method.method = "cdrom"
             else:
-                # cdrom or no method specified -- check for media
-                if not self.install_device:
-                    self.install_device = opticalInstallMedia(storage.devicetree)
                 if self.install_device:
                     if not method.method:
                         method.method = "cdrom"
@@ -1030,6 +993,21 @@ class PackagePayload(Payload):
                     self.requiredPackages.append(package)
         log.debug("required packages = %s", self.requiredPackages)
 
+    @property
+    def ISOImage(self):
+        """ The location of a mounted ISO repo, or None. """
+        if not self.data.method.method == "harddrive":
+            return None
+        # This could either be mounted to INSTALL_TREE or on
+        # DRACUT_ISODIR if dracut did the mount.
+        dev = blivet.util.get_mount_device(INSTALL_TREE)
+        if dev:
+            return dev[len(ISO_DIR)+1:]
+        dev = blivet.util.get_mount_device(DRACUT_ISODIR)
+        if dev:
+            return dev[len(DRACUT_ISODIR)+1:]
+        return None
+
     ###
     ### METHODS FOR WORKING WITH ENVIRONMENTS
     ###
@@ -1047,9 +1025,14 @@ class PackagePayload(Payload):
         raise NotImplementedError()
 
     def selectEnvironment(self, environmentid):
-        raise NotImplementedError()
+        if environmentid not in self.environments:
+            raise NoSuchGroup(environmentid)
 
-    def environmentGroups(self, environmentid):
+        # Select each group within the environment
+        for groupid in self.environmentGroups(environmentid, optional=False):
+            self.selectGroup(groupid)
+
+    def environmentGroups(self, environmentid, optional=True):
         raise NotImplementedError()
 
     @property
@@ -1285,42 +1268,3 @@ class PayloadManager(object):
 
 # Initialize the PayloadManager instance
 payloadMgr = PayloadManager()
-
-def show_groups(payload):
-    #repo = ksdata.RepoData(name="anaconda", baseurl="http://cannonball/install/rawhide/os/")
-    #obj.addRepo(repo)
-
-    desktops = []
-    addons = []
-
-    for grp in payload.groups:
-        if grp.endswith("-desktop"):
-            desktops.append(payload.description(grp))
-        elif not grp.endswith("-support"):
-            addons.append(payload.description(grp))
-
-    import pprint
-
-    print("==== DESKTOPS ====")
-    pprint.pprint(desktops)
-    print("==== ADDONS ====")
-    pprint.pprint(addons)
-
-    print(payload.groups)
-
-def print_txmbrs(payload, f=None):
-    if f is None:
-        f = sys.stdout
-
-    print("###########", file=f)
-    for txmbr in payload._yum.tsInfo.getMembers():
-        print(txmbr, file=f)
-    print("###########", file=f)
-
-def write_txmbrs(payload, filename):
-    if os.path.exists(filename):
-        os.unlink(filename)
-
-    f = open(filename, 'w')
-    print_txmbrs(payload, f)
-    f.close()

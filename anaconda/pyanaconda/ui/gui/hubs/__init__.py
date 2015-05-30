@@ -19,8 +19,6 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-import os
-
 from gi.repository import GLib
 
 from pyanaconda.flags import flags
@@ -29,9 +27,7 @@ from pyanaconda.product import distributionText
 
 from pyanaconda.ui import common
 from pyanaconda.ui.gui import GUIObject
-from pyanaconda.ui.gui.spokes import StandaloneSpoke
 from pyanaconda.ui.gui.utils import gtk_call_once, escape_markup
-from pyanaconda.constants import ANACONDA_ENVIRON
 
 import logging
 log = logging.getLogger("anaconda")
@@ -97,7 +93,6 @@ class Hub(GUIObject, common.Hub):
 
     def _createBox(self):
         from gi.repository import Gtk, AnacondaWidgets
-        from pyanaconda.ui.gui.utils import setViewportBackground
 
         cats_and_spokes = self._collectCategoriesAndSpokes()
         categories = cats_and_spokes.keys()
@@ -197,7 +192,6 @@ class Hub(GUIObject, common.Hub):
         viewport.add(grid)
         spokeArea.add(viewport)
 
-        setViewportBackground(viewport)
         self._updateContinue()
 
     def _updateCompleteness(self, spoke, update_continue=True):
@@ -226,12 +220,10 @@ class Hub(GUIObject, common.Hub):
         if len(self._incompleteSpokes) == 0:
             if self._checker and not self._checker.check():
                 self.set_warning(self._checker.error_message)
-                self.window.show_all()
         else:
             msg = _("Please complete items marked with this icon before continuing to the next step.")
 
             self.set_warning(msg)
-            self.window.show_all()
 
         self._updateContinueButton()
 
@@ -250,7 +242,7 @@ class Hub(GUIObject, common.Hub):
 
         if not self._spokes and self.window.get_may_continue():
             # no spokes, move on
-            log.info("no spokes available on %s, continuing automatically", self)
+            log.debug("no spokes available on %s, continuing automatically", self)
             gtk_call_once(self.window.emit, "continue-clicked")
 
         click_continue = False
@@ -264,7 +256,7 @@ class Hub(GUIObject, common.Hub):
             # The first argument to all codes is the name of the spoke we are
             # acting on.  If no such spoke exists, throw the message away.
             spoke = self._spokes.get(args[0], None)
-            if not spoke:
+            if not spoke or spoke.__class__.__name__ not in self._spokes:
                 q.task_done()
                 continue
 
@@ -275,7 +267,7 @@ class Hub(GUIObject, common.Hub):
                     self._notReadySpokes.append(spoke)
 
                 self._updateContinueButton()
-                log.info("spoke is not ready: %s", spoke)
+                log.debug("spoke is not ready: %s", spoke)
             elif code == hubQ.HUB_CODE_READY:
                 self._updateCompleteness(spoke)
 
@@ -283,13 +275,18 @@ class Hub(GUIObject, common.Hub):
                     self._notReadySpokes.remove(spoke)
 
                 self._updateContinueButton()
-                log.info("spoke is ready: %s", spoke)
+                log.debug("spoke is ready: %s", spoke)
 
                 # If this is a real kickstart install (the kind with an input ks file)
                 # and all spokes are now completed, we should skip ahead to the next
                 # hub automatically.  Take into account the possibility the user is
                 # viewing a spoke right now, though.
                 if flags.automatedInstall:
+                    # Users might find it helpful to know why a kickstart install
+                    # went interactive.  Log that here.
+                    if not spoke.completed:
+                        log.info("kickstart installation stopped for info: %s", spoke.title.replace("_", ""))
+
                     # Spokes that were not initially ready got the execute call in
                     # _createBox skipped.  Now that it's become ready, do it.  Note
                     # that we also provide a way to skip this processing (see comments
@@ -306,14 +303,14 @@ class Hub(GUIObject, common.Hub):
 
             elif code == hubQ.HUB_CODE_MESSAGE:
                 spoke.selector.set_property("status", args[1])
-                log.info("setting %s status to: %s", spoke, args[1])
+                log.debug("setting %s status to: %s", spoke, args[1])
 
             q.task_done()
 
         # queue is now empty, should continue be clicked?
         if self._autoContinue and click_continue and self.window.get_may_continue():
             # enqueue the emit to the Gtk message queue
-            log.info("_autoContinue clicking continue button")
+            log.debug("_autoContinue clicking continue button")
             gtk_call_once(self.window.emit, "continue-clicked")
 
         return True
@@ -357,6 +354,10 @@ class Hub(GUIObject, common.Hub):
         self.main_window.enterSpoke(spoke)
 
     def spoke_done(self, spoke):
+        # Ignore if not in a spoke
+        if not self._inSpoke:
+            return
+
         spoke.visitedSinceApplied = True
 
         # Don't take visitedSinceApplied into account here.  It will always be
@@ -371,7 +372,7 @@ class Hub(GUIObject, common.Hub):
         self._inSpoke = False
 
         # Now update the selector with the current status and completeness.
-        for sp in self._spokes.itervalues():
+        for sp in self._spokes.values():
             if not sp.indirect:
                 self._updateCompleteness(sp, update_continue=False)
 

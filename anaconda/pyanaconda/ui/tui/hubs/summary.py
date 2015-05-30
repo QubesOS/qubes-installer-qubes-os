@@ -24,7 +24,7 @@ from pyanaconda.ui.lib.space import FileSystemSpaceChecker, DirInstallSpaceCheck
 from pyanaconda.ui.tui.hubs import TUIHub
 from pyanaconda.flags import flags
 from pyanaconda.errors import CmdlineError
-from pyanaconda.i18n import N_, _
+from pyanaconda.i18n import N_, _, C_
 import sys
 import time
 
@@ -78,7 +78,10 @@ class SummaryHub(TUIHub):
                 self.close()
                 return None
 
-        if not flags.ksprompt:
+        if flags.ksprompt:
+            for spoke in incompleteSpokes:
+                log.info("kickstart installation stopped for info: %s", spoke.title)
+        else:
             errtxt = _("The following mandatory spokes are not completed:") + \
                      "\n" + "\n".join(spoke.title for spoke in incompleteSpokes)
             log.error("CmdlineError: %s", errtxt)
@@ -101,7 +104,7 @@ class SummaryHub(TUIHub):
             # If we get a continue, check for unfinished spokes.  If unfinished
             # don't continue
             # TRANSLATORS: 'b' to begin installation
-            if key == _('b'):
+            if key == C_('TUI|Spoke Navigation', 'b'):
                 for spoke in self._spokes.values():
                     if not spoke.completed and spoke.mandatory:
                         print(_("Please complete all spokes before continuing"))
@@ -115,7 +118,7 @@ class SummaryHub(TUIHub):
                     self.app.close_screen()
                     return True
             # TRANSLATORS: 'c' to continue
-            elif key == _('c'):
+            elif key == C_('TUI|Spoke Navigation', 'c'):
                 # Kind of a hack, but we want to ignore if anyone presses 'c'
                 # which is the global TUI key to close the current screen
                 return False

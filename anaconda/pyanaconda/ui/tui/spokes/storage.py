@@ -86,8 +86,10 @@ class StorageSpoke(NormalTUISpoke):
 
         if self.data.zerombr.zerombr and arch.isS390():
             # if zerombr is specified in a ks file and there are unformatted
-            # dasds, automatically format them
-            to_format = make_unformatted_dasd_list(self.selected_disks)
+            # dasds, automatically format them. pass in storage.devicetree here
+            # instead of storage.disks since mediaPresent is checked on disks;
+            # a dasd needing dasdfmt will fail this media check though
+            to_format = make_unformatted_dasd_list(d.name for d in getDisks(self.storage.devicetree))
             if to_format:
                 self.run_dasdfmt(to_format)
 
@@ -121,7 +123,7 @@ class StorageSpoke(NormalTUISpoke):
         msg = _("No disks selected")
 
         if flags.automatedInstall and not self.storage.rootDevice:
-            return msg
+            msg = _("Kickstart insufficient")
         elif self.data.ignoredisk.onlyuse:
             msg = P_(("%d disk selected"),
                      ("%d disks selected"),
@@ -302,7 +304,7 @@ class StorageSpoke(NormalTUISpoke):
         # ask user to verify they want to format if zerombr not in ks file
         if not self.data.zerombr.zerombr:
             # prepare our msg strings; copied directly from dasdfmt.glade
-            summary = _("The following unformatted DASDs have been detected on your system. You can choose to format them now with dasdfmt or cancel to leave them unformatted. Unformatted DASDs can not be used during installation.\n\n")
+            summary = _("The following unformatted DASDs have been detected on your system. You can choose to format them now with dasdfmt or cancel to leave them unformatted. Unformatted DASDs cannot be used during installation.\n\n")
 
             warntext = _("Warning: All storage changes made using the installer will be lost when you choose to format.\n\nProceed to run dasdfmt?\n")
 

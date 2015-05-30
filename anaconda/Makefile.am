@@ -44,18 +44,16 @@ dist_sbin_SCRIPTS     = anaconda
 
 ARCHIVE_TAG   = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_RELEASE)
 
-TX_PULL_ARGS = -a -f
-TX_PUSH_ARGS = -s
-
-INSTALLATION_GUIDE_REPO_URL = git://git.fedorahosted.org/git/docs/install-guide.git
+ZANATA_PULL_ARGS = --transdir $(srcdir)/po/
+ZANATA_PUSH_ARGS = --srcdir $(srcdir)/po/ --push-type source --force
 
 tag:
 	@git tag -s -a -m "Tag as $(ARCHIVE_TAG)" $(ARCHIVE_TAG)
 	@echo "Tagged as $(ARCHIVE_TAG)"
 
 po-pull:
-	rpm -q transifex-client &>/dev/null || ( echo "need to run: yum install transifex-client"; exit 1 )
-	tx pull $(TX_PULL_ARGS)
+	rpm -q zanata-python-client &>/dev/null || ( echo "need to run: yum install zanata-python-client"; exit 1 )
+	zanata pull $(ZANATA_PULL_ARGS)
 
 po-empty:
 	for lingua in $$(grep -v '^#' $(srcdir)/po/LINGUAS) ; do \
@@ -64,12 +62,12 @@ po-empty:
 		exit 1 ; \
 	done
 
-scratch: po-empty get-help
+scratch: po-empty
 	$(MAKE) ARCHIVE_TAG=HEAD dist
 	git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
 
-scratch-bumpver: po-empty get-help
-	@opts="-n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
+scratch-bumpver: po-empty
+	@opts="-S -n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
 	if [ ! -z "$(IGNORE)" ]; then \
 		opts="$${opts} -i $(IGNORE)" ; \
 	fi ; \
@@ -79,17 +77,11 @@ scratch-bumpver: po-empty get-help
 	if [ ! -z "$(BZDEBUG)" ]; then \
 		opts="$${opts} -d" ; \
 	fi ; \
-	if [ ! -z "$(SKIP_ACKS)" ]; then \
-		opts="$${opts} -s" ; \
-	fi ; \
-	( cd $(srcdir) && scripts/makebumpver $${opts} ) || exit 1 ; \
-	$(MAKE) -C po $(PACKAGE_NAME).pot-update ; 
+	( cd $(srcdir) && scripts/makebumpver --skip-zanata $${opts} ) || exit 1 ; \
+	$(MAKE) -C po $(PACKAGE_NAME).pot-update ;
 
-release: get-help
+release:
 	$(MAKE) dist && $(MAKE) tag && git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
-
-api:
-	doxygen docs/api.cfg
 
 bumpver: po-pull
 	@opts="-n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
@@ -107,21 +99,21 @@ bumpver: po-pull
 	fi ; \
 	( cd $(srcdir) && scripts/makebumpver $${opts} ) || exit 1 ; \
 	$(MAKE) -C po $(PACKAGE_NAME).pot-update && \
-	tx push $(TX_PUSH_ARGS)
+	zanata push $(ZANATA_PUSH_ARGS)
 
 # Install all packages specified as BuildRequires in the Anaconda specfile
 # -> installs packages needed to build Anaconda
 install-buildrequires:
 	srcdir="$(srcdir)" && \
 	: $${srcdir:=.} && \
-	yum install $$(grep BuildRequires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2)
+	yum install $$(grep ^BuildRequires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2)
 
 # Install all packages specified as Requires in the Anaconda specfile
 # -> installs packages needed to run Anaconda and the Anaconda unit tests
 install-requires:
 	srcdir="$(srcdir)" && \
 	: $${srcdir:=.} && \
-	yum install $$(grep Requires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2)
+	yum install $$(grep ^Requires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2 | grep -v ^anaconda)
 
 # Generate an updates.img based on the changed files since the release
 # was tagged.  Updates are copied to ./updates-img and then the image is
@@ -141,43 +133,6 @@ unittests-logpicker:
 	PYTHONPATH=$(builddir)/pyanaconda/isys/.libs:tests/:$(srcdir):utils/ nosetests -v old_tests/logpicker_test
 
 # GUI TESTING
-runspoke:
-	ANACONDA_DATA=$(srcdir)/data \
-	ANACONDA_WIDGETS_OVERRIDES=$(srcdir)/widgets/python \
-	ANACONDA_WIDGETS_DATA=$(srcdir)/widgets/data \
-	ANACONDA_INSTALL_CLASSES=$(srcdir)/pyanaconda/installclasses \
-	PYTHONPATH=$(srcdir):$(builddir)/pyanaconda/isys/.libs:$(srcdir)/widgets/python/:$(builddir)/widgets/src/.libs/ \
-	LD_LIBRARY_PATH=$(builddir)/widgets/src/.libs \
-	UIPATH=$(srcdir)/pyanaconda/ui/gui/ \
-	GI_TYPELIB_PATH=$(builddir)/widgets/src/ \
-	$(srcdir)/pyanaconda/ui/gui/tools/run-spoke.py ${SPOKE_MODULE} ${SPOKE_CLASS}
-
-runhub:
-	ANACONDA_DATA=$(srcdir)/data \
-	ANACONDA_WIDGETS_OVERRIDES=$(srcdir)/widgets/python \
-	ANACONDA_WIDGETS_DATA=$(srcdir)/widgets/data \
-	ANACONDA_INSTALL_CLASSES=$(srcdir)/pyanaconda/installclasses \
-	PYTHONPATH=$(srcdir):$(builddir)/pyanaconda/isys/.libs:$(srcdir)/widgets/python/:$(builddir)/widgets/src/.libs/ \
-	LD_LIBRARY_PATH=$(builddir)/widgets/src/.libs \
-	UIPATH=$(srcdir)/pyanaconda/ui/gui/ \
-	GI_TYPELIB_PATH=$(builddir)/widgets/src/ \
-	$(srcdir)/pyanaconda/ui/gui/tools/run-hub.py ${HUB_MODULE} ${HUB_CLASS}
-
-runtextspoke:
-	ANACONDA_DATA=$(srcdir)/data \
-	ANACONDA_INSTALL_CLASSES=$(srcdir)/pyanaconda/installclasses \
-	PYTHONPATH=$(srcdir):$(builddir)/pyanaconda/isys/.libs:$(srcdir)/widgets/python/:$(builddir)/widgets/src/.libs/ \
-	LD_LIBRARY_PATH=$(builddir)/widgets/src/.libs \
-	$(srcdir)/pyanaconda/ui/tui/tools/run-text-spoke.py ${SPOKE_MODULE} ${SPOKE_CLASS}
-
-runtexthub:
-	ANACONDA_DATA=$(srcdir)/data \
-	ANACONDA_INSTALL_CLASSES=$(srcdir)/pyanaconda/installclasses \
-	PYTHONPATH=$(srcdir):$(builddir)/pyanaconda/isys/.libs:$(srcdir)/widgets/python/:$(builddir)/widgets/src/.libs/ \
-	LD_LIBRARY_PATH=$(builddir)/widgets/src/.libs \
-	$(srcdir)/pyanaconda/ui/tui/tools/run-text-hub.py ${HUB_MODULE} ${HUB_CLASS}
-
-
 runglade:
 	ANACONDA_DATA=$(srcdir)/data \
 	ANACONDA_WIDGETS_OVERRIDES=$(srcdir)/widgets/python \
@@ -190,24 +145,3 @@ runglade:
 	GLADE_CATALOG_SEARCH_PATH=$(srcdir)/widgets/glade \
 	GLADE_MODULE_SEARCH_PATH=$(builddir)/widgets/src/.libs \
 	glade ${GLADE_FILE}
-
-
-# Get content for the Anaconda built-in help system by cloning the
-# installation guide git repository and running the help processing
-# script (it is part of the repository).
-# Once the help content has been generated copy it to our help folder,
-# so that it can be included in the tarball.
-# Skip the git clone if the repository already exists but run git pull
-# to make sure it is up to date. We also clone the repository
-# without history as it si rather big (>400 MB!), which is quite
-# an overkill for <100 kB of help conent. :)
-get-help:
-	if [ ! -d "install-guide" ]; then \
-		if [ -f "installation_guide_repo_url" ]; then \
-			git clone --depth=1 `cat installation_guide_repo_url` ; \
-	    else \
-			git clone --depth=1 $(INSTALLATION_GUIDE_REPO_URL) ; \
-		fi ; \
-	fi ; \
-	( cd install-guide && git pull --rebase && python prepare_anaconda_help_content.py )
-	cp -r install-guide/anaconda_help_content/* $(srcdir)/data/help
