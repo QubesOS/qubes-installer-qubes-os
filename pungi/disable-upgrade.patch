@@ -4,8 +4,8 @@
  
          lorax.run(self.ayum, product=product, version=version, release=release,
                    variant=variant, bugurl=bugurl, isfinal=isfinal, domacboot=domacboot,
--                  workdir=workdir, outputdir=outputdir)
-+                  workdir=workdir, outputdir=outputdir, volid=volid, doupgrade=False)
+-                  workdir=workdir, outputdir=outputdir, volid=volid, installpkgs=installpkgs)
++                  workdir=workdir, outputdir=outputdir, volid=volid, installpkgs=installpkgs, doupgrade=False)
  
          # write out the tree data for snake
          self.writeinfo('tree: %s' % self.mkrelative(self.topdir))

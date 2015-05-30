@@ -5,7 +5,7 @@
 %endif
 
 Name:           pungi
-Version:        3.12
+Version:        3.14
 Release:        2%{?dist}
 Epoch:          1000
 Summary:        Distribution compose tool
@@ -14,16 +14,18 @@ Group:          Development/Tools
 License:        GPLv2
 URL:            https://fedorahosted.org/pungi
 Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name}-%{version}.tar.bz2
-Patch0:         0001-replace-tabs-with-spaces.patch
-Patch1:         0001-Make-our-OS-iso-bootable-on-aarch64.patch
 Patch2:         support-verify-downloaded-packages.patch
 Patch3:         disable-efi.patch
 Patch4:         effective-nosource-option.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 Patch6:         disable-upgrade.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:       yum => 3.4.3-28, repoview, createrepo >= 0.4.11
-Requires:       lorax
+Requires:       createrepo >= 0.4.11
+Requires:       yum => 3.4.3-28
+Requires:       lorax >= 22.1
+Requires:       repoview
+Requires:       python-lockfile
+
 BuildRequires:  python-devel
 
 BuildArch:      noarch
@@ -35,8 +37,6 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %prep
 %setup -q
 
-%patch0 -p1
-%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
@@ -75,8 +75,18 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Mon Dec 15 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-3
-- add patch to make the dvd bootable on aarch64
+* Tue Mar 10 2015 Dennis Gilmore <dennis@ausil.us> - 3.14-1
+- switch to BSD style hashes for the iso checksums (dennis)
+- refactor to get better data into .treeinfo (dennis)
+- Add --nomacboot option (csieh)
+
+* Fri Dec 12 2014 Dennis Gilmore <dennis@ausil.us> - 3.13-1
+- Add support for --installpkgs (bcl)
+- Add a cmdline option to set the lorax config file (bcl)
+- Add python-lockfile requires and drop python-devel (bcl)
+- Make our OS iso bootable on aarch64. (pjones)
+- fix up typo (dennis)
+- replace tabs with spaces (dennis)
 
 * Tue Sep 30 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-2
 - add patch to fix whitespace errors
