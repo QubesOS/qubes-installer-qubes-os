@@ -7,9 +7,13 @@ BOOTDIR="isolinux"
 KERNELDIR=PXEBOOTDIR
 LIVEDIR="LiveOS"
 EXTRAKERNELS="extrakernels"
-%>
-<%!
 from distutils.version import LooseVersion
+
+## Don't allow spaces or escape characters in the iso label
+def valid_label(ch):
+    return ch.isalnum() or ch == '_'
+
+isolabel = ''.join(ch if valid_label(ch) else '-' for ch in isolabel)
 %>
 
 mkdir ${LIVEDIR}

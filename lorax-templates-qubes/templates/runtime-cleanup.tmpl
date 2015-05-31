@@ -27,7 +27,8 @@ removefrom dracut --allbut /usr/lib/dracut/modules.d/30convertfs/convertfs.sh \
 ## we don't run SELinux (not in enforcing, anyway)
 removepkg checkpolicy selinux-policy libselinux-utils
 ## anaconda has its own repo files
-removefrom fedora-release --allbut /etc/os-release
+removefrom fedora-release --allbut /etc/os-release /usr/lib/os-release \
+                                   /usr/lib/os.release.d/*
 removepkg fedora-release-rawhide
 ## no user accounts = no account management
 removepkg usermode usermode-gtk passwd shadow-utils
@@ -49,7 +50,7 @@ removefrom isomd5sum --allbut /usr/bin/checkisomd5
 
 ## various other things we remove to save space
 removepkg avahi-autoipd coreutils-libs dash db4-utils diffutils file
-removepkg genisoimage gnome-python2 info iptables
+removepkg genisoimage info iptables
 removepkg jasper-libs libXxf86misc
 removepkg libasyncns libhbaapi libhbalinux
 removepkg libmcpp libpcap libtiff libutempter linux-atm-libs
@@ -92,7 +93,21 @@ arch/x86/kvm
 %endfor
 remove lib/modules/*/{build,source,*.map}
 ## Need to keep virtio_console.ko and ipmi stuff in drivers/char
-runcmd chroot ${root} find /lib/modules -regex ".*/kernel/drivers/char/.*" \! -name virtio_console.ko\* \! -name ipmi* -delete
+## Also keep virtio-rng so that the installer can get sufficient randomness for
+## LUKS setup.
+runcmd chroot ${root} find /lib/modules \
+                        -regex ".*/kernel/drivers/char/.*" \
+                        \! -name virtio_console.ko\* \
+                        \! -name hw_random \
+                        \! -name virtio-rng.ko\* \
+                        \! -name ipmi\* \
+                        -delete
+# Remove all of drivers/hid except for logitech modules.
+runcmd chroot ${root} find /lib/modules \
+                        -regex ".*/kernel/drivers/hid/.*" \
+                        \! -name hid-logitech-hidpp.ko\* \
+                        \! -name hid-logitech-dj.ko\* \
+                        -delete
 ## NOTE: depmod gets re-run after cleanup finishes
 
 ## do not include plymouth 'label' plugin (no text used in installer theme)
@@ -107,6 +122,7 @@ removefrom gtk2-engines --allbut /usr/${libdir}/*/libclearlooks.so \
                                  /usr/share/themes/Clearlooks/*
 removefrom gtk3 /usr/${libdir}/gtk-3.0/*/printbackends/*
 removefrom gtk3 /usr/share/themes/*
+removefrom metacity --allbut /usr/bin/* /usr/${libdir}/* /etc/*
 ## the Fedora icon theme inherits from Mist, so we need that
 removefrom gnome-themes --allbut /usr/share/icons/Mist/* \
                                  /usr/share/themes/Clearlooks/*
@@ -182,7 +198,7 @@ removefrom gdisk /usr/share/*
 removefrom gdk-pixbuf2 /usr/share/locale*
 removefrom gfs2-utils /usr/sbin/*
 removefrom glib2 /etc/* /usr/bin/* /usr/share/locale/*
-removefrom glibc /etc/gai.conf /etc/ld.so.conf /etc/localtime /etc/rpc
+removefrom glibc /etc/gai.conf /etc/localtime /etc/rpc
 removefrom glibc /lib/*/nosegneg/* /${libdir}/libBrokenLocale*
 removefrom glibc /${libdir}/libSegFault* /${libdir}/libanl*
 removefrom glibc /${libdir}/libcidn* /${libdir}/libnss_compat*
@@ -202,7 +218,6 @@ removefrom gnome-keyring /etc/xdg/* /usr/bin/* /usr/${libdir}/* /usr/libexec/*
 removefrom gnome-keyring /usr/share/GConf/* /usr/share/gcr-3/*
 removefrom gnome-keyring /usr/share/glib-2.0/* /usr/share/gnome-keyring*
 removefrom gnome-keyring /usr/share/locale/*
-removefrom gnome-python2-gconf /usr/share/pygtk/*
 removefrom gnutls /usr/share/locale/*
 removefrom gpgme /usr/${libdir}/libgpgme-*
 removefrom grep /etc/* /usr/share/locale/*

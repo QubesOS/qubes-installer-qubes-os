@@ -4,18 +4,19 @@
 installpkg python
 
 ## anaconda package
-installpkg anaconda
+installpkg anaconda anaconda-widgets
 ## anaconda deps that aren't in the RPM
 installpkg tmux
 installpkg iscsi-initiator-utils
+## Other available payloads
+installpkg dnf
+installpkg rpm-ostree
 ## speed up compression on multicore systems
 installpkg pigz
 
-## firstaidkit (rescue mode) packages
-installpkg firstaidkit-plugin-{passwd,key-recovery,mdadm-conf}
-
 ## kernel and firmware
 installpkg kernel
+installpkg grubby
 %if basearch != "s390x":
     installpkg linux-firmware
 %endif
@@ -23,7 +24,7 @@ installpkg xen-hypervisor
 
 ## arch-specific packages (bootloaders etc.)
 %if basearch in ("arm", "armhfp"):
-    installpkg kernel-highbank kernel-imx kernel-kirkwood kernel-mvebu kernel-omap kernel-tegra
+    installpkg kernel-lpae
     installpkg uboot-tools
 %endif
 %if basearch == "i386":
@@ -33,16 +34,13 @@ installpkg xen-hypervisor
     installpkg efibootmgr grub2-efi shim shim-unsigned
 %endif
 %if basearch in ("i386", "x86_64"):
-    installpkg grub2 grub2-tools shim grub2-efi efibootmgr biosdevname memtest86+ syslinux
+    installpkg grub2 grub2-tools memtest86+ syslinux syslinux-nonlinux
 %endif
-%if basearch in ("ppc", "ppc64"):
-    installpkg grub2 grub2-tools yaboot fbset hfsutils kernel-bootwrapper ppc64-utils
+%if basearch in ("ppc", "ppc64", "ppc64le"):
+    installpkg grub2 grub2-tools fbset hfsutils kernel-bootwrapper ppc64-utils
 %endif
 %if basearch == "s390x":
-    installpkg lsscsi modutils s390utils-base s390utils-cmsfs-fuse
-%endif
-%if basearch == "sparc":
-    installpkg silo tilo
+    installpkg lsscsi s390utils-base s390utils-cmsfs-fuse
 %endif
 
 ## yay, plymouth
@@ -53,6 +51,8 @@ installpkg anaconda-dracut dracut-network dracut-config-generic
 
 ## fedup-dracut handles upgrades
 ##installpkg fedup-dracut fedup-dracut-plymouth *-fedup-dracut
+## fedup and rescue need this
+installpkg cryptsetup
 
 ## rpcbind or portmap needed by dracut nfs module
 installpkg rpcbind
@@ -85,12 +85,17 @@ installpkg btrfs-progs jfsutils xfsprogs reiserfs-utils gfs2-utils ntfs-3g ntfsp
 installpkg python-volume_key volume_key
 installpkg system-storage-manager
 installpkg device-mapper-persistent-data
+installpkg xfsdump
+
+## needed for LUKS escrow
+installpkg python-volume_key volume_key
+installpkg python-nss
 
 ## SELinux support
 installpkg selinux-policy-targeted audit libsemanage-python
 
 ## network tools/servers
-installpkg python-ethtool ethtool openssh-server nfs-utils
+installpkg python-ethtool ethtool openssh-server nfs-utils openssh-clients
 installpkg tigervnc-server-minimal
 %if basearch != "s390x":
 installpkg tigervnc-server-module
@@ -103,7 +108,7 @@ installpkg mt-st smartmontools
 %if basearch != "s390x":
 installpkg hdparm pcmciautils
 %endif
-installpkg libmlx4
+installpkg libmlx4 rdma
 
 ## translations & language packs
 installpkg yum-langpacks
@@ -114,7 +119,14 @@ installpkg dejavu-sans-fonts dejavu-sans-mono-fonts
 installpkg kacst-farsi-fonts
 installpkg kacst-qurn-fonts
 installpkg lklug-fonts
-installpkg lohit-*-fonts
+installpkg lohit-assamese-fonts
+installpkg lohit-bengali-fonts
+installpkg lohit-devanagari-fonts
+installpkg lohit-gu*-fonts
+installpkg lohit-kannada-fonts
+installpkg lohit-odia-fonts
+installpkg lohit-tamil-fonts
+installpkg lohit-telugu-fonts
 installpkg madan-fonts
 installpkg nhn-nanum-gothic-fonts
 installpkg smc-meera-fonts
@@ -123,7 +135,9 @@ installpkg vlgothic-fonts
 installpkg wqy-microhei-fonts
 installpkg sil-abyssinica-fonts
 installpkg xorg-x11-fonts-misc
-installpkg gnome-themes-standard gnome-icon-theme-legacy
+installpkg gnome-icon-theme-legacy
+installpkg aajohan-comfortaa-fonts
+installpkg abattis-cantarell-fonts
 
 ## debugging/bug reporting tools
 installpkg gdb-gdbserver
