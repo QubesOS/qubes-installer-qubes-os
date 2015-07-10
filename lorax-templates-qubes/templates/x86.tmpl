@@ -31,6 +31,8 @@ install boot/memtest* ${BOOTDIR}/memtest
 mkdir ${EXTRAKERNELS}
 # bypass "chroot" enforced by Lorax parser
 install ../../../../yum/qubes-dom0/rpm/kernel-[0-9]*rpm ${EXTRAKERNELS}
+# include kernels downloaded from Fedora repositories
+install ../../../../../../../../var/cache/pungi/fedora*/packages/kernel-[0-9]*rpm ${EXTRAKERNELS}
 
 ## install kernels
 mkdir ${KERNELDIR}
