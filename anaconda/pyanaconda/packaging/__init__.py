@@ -571,7 +571,7 @@ class Payload(object):
                 #           prevent boot on some systems
 
     def recreateInitrds(self, force=False):
-        """ Recreate the initrds by calling new-kernel-pkg
+        """ Recreate the initrds by calling kernel-install
 
             This needs to be done after all configuration files have been
             written, since dracut depends on some of them.
@@ -585,9 +585,8 @@ class Payload(object):
 
         for kernel in self.kernelVersionList:
             log.info("recreating initrd for %s", kernel)
-            iutil.execWithRedirect("new-kernel-pkg",
-                                   ["--mkinitrd", "--dracut",
-                                    "--depmod", "--update", kernel],
+            iutil.execWithRedirect("kernel-install",
+                                   ["add", kernel, "/boot/vmlinuz-%s" % kernel],
                                    root=ROOT_PATH)
         self._createdInitrds = True
 
