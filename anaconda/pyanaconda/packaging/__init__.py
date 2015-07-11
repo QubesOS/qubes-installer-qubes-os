@@ -511,7 +511,7 @@ class Payload(object):
                 #           prevent boot on some systems
 
     def recreateInitrds(self):
-        """ Recreate the initrds by calling new-kernel-pkg
+        """ Recreate the initrds by calling kernel-install
 
             This needs to be done after all configuration files have been
             written, since dracut depends on some of them.
@@ -521,9 +521,8 @@ class Payload(object):
         for kernel in self.kernelVersionList:
             log.info("recreating initrd for %s", kernel)
             if not flags.imageInstall:
-                iutil.execInSysroot("new-kernel-pkg",
-                                    ["--mkinitrd", "--dracut",
-                                    "--depmod", "--update", kernel])
+                iutil.execInSysroot("kernel-install",
+                                    ["add", kernel, "/boot/vmlinuz-%s" % kernel])
             else:
                 # hostonly is not sensible for disk image installations
                 # using /dev/disk/by-uuid/ is necessary due to disk image naming
