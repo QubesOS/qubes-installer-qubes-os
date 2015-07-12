@@ -43,7 +43,7 @@ sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
 %for kernel in sortedkernels:
     # Use short kernel version because of ISO9660 filename length limitation
     <%
-    shortkver = kernel.version.replace('.pvops.qubes','')
+    shortkver = kernel.version.replace('.pvops.qubes','').replace('.x86_64','')
     %>
     %if kernel.flavor:
         ## i386 PAE
