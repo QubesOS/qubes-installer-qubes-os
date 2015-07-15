@@ -1457,6 +1457,7 @@ class GRUB2(GRUB):
         defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M\"\n")
         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
         defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
+        defaults.write("GRUB_DISABLE_OS_PROBER=\"true\"\n")
         defaults.close()
 
     def _encrypt_password(self):
