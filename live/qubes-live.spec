@@ -16,7 +16,17 @@ Various fixes for Qubes Live edition
 
 %install
 
+install -D -m 0755 -t /etc/rc.d/init.d/ \
+    livesys \
+    livesys-late
+
 %post
+
+/sbin/restorecon /etc/rc.d/init.d/livesys
+/sbin/chkconfig --add livesys
+
+/sbin/restorecon /etc/rc.d/init.d/livesys-late
+/sbin/chkconfig --add livesys-late
 
 # livecd-tools expects strange xen.gz name
 xen=$(ls -1 /boot/xen-*gz | tail -n 1)
@@ -29,6 +39,8 @@ done
 
 
 %files
+/etc/rc.d/init.d/livesys
+/etc/rc.d/init.d/livesys-late
 
 
 %changelog
