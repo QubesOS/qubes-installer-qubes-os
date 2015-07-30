@@ -1,3 +1,7 @@
+%if 0%{?qubes_builder}
+%define _builddir %(pwd)/live
+%endif
+
 Name:       qubes-live
 Version:    1.0
 Release:    1%{?dist}
@@ -16,7 +20,9 @@ Various fixes for Qubes Live edition
 
 %install
 
-install -D -m 0755 -t /etc/rc.d/init.d/ \
+
+install -d -m 0755 $RPM_BUILD_ROOT/etc/rc.d/init.d/
+install -m 0755 -t $RPM_BUILD_ROOT/etc/rc.d/init.d/ \
     livesys \
     livesys-late
 

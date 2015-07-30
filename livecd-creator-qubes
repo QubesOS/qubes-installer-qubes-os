@@ -19,6 +19,7 @@
 
 import os
 import os.path
+import stat
 import sys
 import time
 import optparse
@@ -208,6 +209,14 @@ def main():
 
     try:
         creator.mount(options.base_on, options.cachedir)
+
+        # fix /dev
+        os.mknod(os.path.join(
+            creator._instroot, 'dev/loop-control'), 0666 | stat.S_IFBLK, os.makedev(10, 237))
+        for i in range(8):
+            os.mknod(os.path.join(creator._instroot, 'dev/loop{}'.format(i)),
+                0666 | stat.S_IFBLK, os.makedev(7, i))
+
         creator.install()
         creator.configure()
         if options.give_shell:
