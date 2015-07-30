@@ -78,6 +78,30 @@ fi
 echo 'File created by kickstart. See systemd-update-done.service(8).' \
     | tee /etc/.updated >/var/.updated
 
+
+#
+# setup Qubes
+#
+
+# TODO: appmenus
+
+# we won't do `useradd qubes`, since his creation depends of persistent home
+# feature; see /etc/rc.d/init.d/livesys
+
+qvm-create  --offline-mode --force-root --net --label red sys-net
+qvm-create  --offline-mode --force-root --proxy --label green sys-firewall
+
+qvm-prefs   --offline-mode --force-root --set sys-firewall netvm sys-net
+qubes-prefs --set default-netvm sys-firewall
+
+qvm-create  --offline-mode --force-root work --label green
+qvm-create  --offline-mode --force-root banking --label green
+qvm-create  --offline-mode --force-root personal --label yellow
+qvm-create  --offline-mode --force-root untrusted --label red
+
+chgrp -R qubes /var/lib/qubes
+chmod -R g+w /var/lib/qubes
+
 %end
 
 
