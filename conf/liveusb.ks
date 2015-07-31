@@ -37,9 +37,6 @@ qubes-live
 
 %post
 
-# enable tmpfs for /tmp
-systemctl enable tmp.mount
-
 # make it so that we don't do writing to the overlay for things which
 # are just tmpdirs/caches
 # note https://bugzilla.redhat.com/show_bug.cgi?id=1135475
@@ -51,8 +48,8 @@ EOF
 # work around for poor key import UI in PackageKit
 rm -f /var/lib/rpm/__db*
 releasever=$(rpm -q --qf '%{version}\n' --whatprovides system-release)
-basearch=$(uname -i)
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-$releasever-$basearch
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-20-primary
 echo "Packages within this LiveCD"
 rpm -qa
 # Note that running rpm recreates the rpm db files which aren't needed or wanted
