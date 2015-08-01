@@ -139,6 +139,17 @@ iso:
 	chown --reference=Makefile -R build yum
 	rm -rf work
 
+liveusb: conf/liveusb.ks
+	ln -sf `pwd` /tmp/qubes-installer
+	createrepo -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
+	mkdir -p work
+	pushd work && ../livecd-creator-qubes --verbose --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --config ../$< && popd
+	# Move result files to known-named directories
+	mkdir -p build/ISO/qubes-x86_64/iso build/work
+	mv work/*.iso build/ISO/qubes-x86_64/iso/
+	chown --reference=Makefile -R build yum
+	rm -rf work
+
 clean-repos:
 	@echo "--> Removing old rpms from the installer repos..."
 	@(cd yum && ./clean_repos.sh)
