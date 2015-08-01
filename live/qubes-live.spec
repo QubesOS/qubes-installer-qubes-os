@@ -26,6 +26,9 @@ install -m 0755 -t $RPM_BUILD_ROOT/etc/rc.d/init.d/ \
     livesys \
     livesys-late
 
+install -D -m 0644 lightdm-qubes-live.conf \
+            $RPM_BUILD_ROOT/etc/lightdm/lightdm.conf.d/50-qubes-live.conf
+
 %post
 
 /sbin/restorecon /etc/rc.d/init.d/livesys
@@ -47,7 +50,7 @@ done
 %files
 /etc/rc.d/init.d/livesys
 /etc/rc.d/init.d/livesys-late
-
+/etc/lightdm/lightdm.conf.d/50-qubes-live.conf
 
 %changelog
 
