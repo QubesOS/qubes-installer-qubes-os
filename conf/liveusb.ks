@@ -96,6 +96,9 @@ qvm-create  --offline-mode --force-root banking --label green
 qvm-create  --offline-mode --force-root personal --label yellow
 qvm-create  --offline-mode --force-root untrusted --label red
 
+qvm-create  --offline-mode --force-root `qubes-prefs default-template`-dvm \
+        --label gray --internal
+
 chgrp -R qubes /var/lib/qubes
 chmod -R g+w /var/lib/qubes
 
