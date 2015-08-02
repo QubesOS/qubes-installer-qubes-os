@@ -38,6 +38,9 @@ LORAXQBS_VERSION := $(call spec_version,lorax-templates-qubes/lorax-templates-qu
 PUNGI_VERSION := $(call spec_version,pungi/pungi.spec)
 PYKICKSTART_VERSION := $(call spec_version,pykickstart/pykickstart.spec)
 
+ISO_INSTALLER ?= 1
+ISO_LIVEUSB ?= 0
+
 PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
 ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
@@ -125,9 +128,18 @@ update-repo-current-testing:
 update-repo-unstable:
 	ln -f $(RPMS) ../yum/current-release/unstable/dom0/rpm/
 
-iso:
-	ln -sf `pwd` /tmp/qubes-installer
+ifeq ($(ISO_INSTALLER),1)
+iso: iso-installer
+endif
+ifeq ($(ISO_LIVEUSB),1)
+iso: iso-liveusb
+endif
+
+iso-prepare:
+	ln -nsf `pwd` /tmp/qubes-installer
 	createrepo -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
+
+iso-installer: iso-prepare
 	mkdir -p work
 	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg && popd
 	./rpm_verify work/$(ISO_VERSION)/x86_64/os/Packages/*/*.rpm
@@ -139,9 +151,7 @@ iso:
 	chown --reference=Makefile -R build yum
 	rm -rf work
 
-liveusb: conf/liveusb.ks
-	ln -sf `pwd` /tmp/qubes-installer
-	createrepo -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
+iso-liveusb: conf/liveusb.ks iso-prepare
 	mkdir -p work
 	pushd work && ../livecd-creator-qubes --verbose --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --config ../$< && popd
 	# Move result files to known-named directories
