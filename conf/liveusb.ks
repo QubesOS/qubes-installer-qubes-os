@@ -99,6 +99,8 @@ qvm-create  --offline-mode --force-root untrusted --label red
 qvm-create  --offline-mode --force-root `qubes-prefs default-template`-dvm \
         --label gray --internal
 
+qubes-set-updates disable
+
 chgrp -R qubes /var/lib/qubes
 chmod -R g+w /var/lib/qubes
 
