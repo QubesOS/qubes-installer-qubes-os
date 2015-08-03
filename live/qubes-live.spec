@@ -29,6 +29,9 @@ install -m 0755 -t $RPM_BUILD_ROOT/etc/rc.d/init.d/ \
 install -D -m 0644 lightdm-qubes-live.conf \
             $RPM_BUILD_ROOT/etc/lightdm/lightdm.conf.d/50-qubes-live.conf
 
+
+install -D -m 0644 default-appmenus $RPM_BUILD_ROOT/usr/share/qubes/live-default-appmenus
+
 %post
 
 /sbin/restorecon /etc/rc.d/init.d/livesys
@@ -51,6 +54,7 @@ done
 /etc/rc.d/init.d/livesys
 /etc/rc.d/init.d/livesys-late
 /etc/lightdm/lightdm.conf.d/50-qubes-live.conf
+/usr/share/qubes/live-default-appmenus
 
 %changelog
 

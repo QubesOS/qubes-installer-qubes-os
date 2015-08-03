@@ -80,7 +80,9 @@ echo 'File created by kickstart. See systemd-update-done.service(8).' \
 # setup Qubes
 #
 
-# TODO: appmenus
+# TODO: icons?
+cat /usr/share/qubes/live-default-appmenus | /usr/bin/qvm-sync-appmenus \
+        --force-root --offline-mode `qubes-prefs default-template`
 
 # we won't do `useradd qubes`, since his creation depends of persistent home
 # feature; see /etc/rc.d/init.d/livesys
