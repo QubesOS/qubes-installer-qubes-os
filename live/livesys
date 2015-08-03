@@ -103,7 +103,7 @@ if ! strstr "`cat /proc/cmdline`" nopersistenthome && [ -n "$homedev" ] ; then
 fi
 
 for dev in $(/sbin/lspci -mm -n | sed -ne 's/^\([0-9][0-9]:[0-9][0-9].[0-9]\) "02.*/\1/p'); do
-    /usr/bin/qvm-pci -a sys-net $dev
+    /usr/bin/qvm-pci --offline-mode -a sys-net $dev
 done
 
 if [ -n "$configdone" ]; then
