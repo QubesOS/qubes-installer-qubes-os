@@ -104,6 +104,9 @@ qubes-set-updates disable
 chgrp -R qubes /var/lib/qubes
 chmod -R g+w /var/lib/qubes
 
+mv /var/lib/qubes /var/lib/qubes-base
+mkdir -p /var/lib/qubes
+
 %end
 
 

@@ -100,7 +100,20 @@ fi
 # if we have a persistent /home, then we want to go ahead and mount it
 if ! strstr "`cat /proc/cmdline`" nopersistenthome && [ -n "$homedev" ] ; then
   action "Mounting persistent /home" mountPersistentHome
+  mkdir -p /home/qubes
+else
+  mkdir -p /home/qubes
+  mount -t tmpfs none /home/qubes
 fi
+
+mkdir -p /home/qubes/qubes
+mkdir -p /home/qubes/workdir
+ln -nsf /var/lib/qubes-base/vm-templates /home/qubes/qubes/vm-templates
+mount -t overlay overlay \
+          -o lowerdir=/var/lib/qubes-base \
+          -o upperdir=/home/qubes/qubes \
+          -o workdir=/home/qubes/workdir \
+          /var/lib/qubes
 
 /usr/bin/qvm-prefs --offline-mode -s sys-net pcidevs '[]'
 for dev in $(/sbin/lspci -mm -n | sed -ne 's/^\([0-9][0-9]:[0-9][0-9].[0-9]\) "02.*/\1/p'); do
