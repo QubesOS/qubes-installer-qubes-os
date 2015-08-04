@@ -104,16 +104,38 @@ if ! strstr "`cat /proc/cmdline`" nopersistenthome && [ -n "$homedev" ] ; then
 else
   mkdir -p /home/qubes
   mount -t tmpfs none /home/qubes
+  chown root:qubes /home/qubes
+  chmod 2775 /home/qubes
 fi
 
-mkdir -p /home/qubes/qubes
-mkdir -p /home/qubes/workdir
-ln -nsf /var/lib/qubes-base/vm-templates /home/qubes/qubes/vm-templates
-mount -t overlay overlay \
-          -o lowerdir=/var/lib/qubes-base \
-          -o upperdir=/home/qubes/qubes \
-          -o workdir=/home/qubes/workdir \
-          /var/lib/qubes
+# overlay fs doesn't handle sparse files:
+#   fs/overlayfs/copy_up.c:94     /* FIXME: copy up sparse files efficiently */
+# So for now it is useless here. But some day...
+# 
+#mkdir -p /home/qubes/qubes
+#mkdir -p /home/qubes/workdir
+#ln -nsf /var/lib/qubes-base/vm-templates /home/qubes/qubes/vm-templates
+#mount -t overlay overlay \
+#          -o lowerdir=/var/lib/qubes-base \
+#          -o upperdir=/home/qubes/qubes \
+#          -o workdir=/home/qubes/workdir \
+#          /var/lib/qubes
+
+ln -nsf /var/lib/qubes-base/vm-templates /home/qubes/vm-templates
+ln -nsf /var/lib/qubes-base/vm-kernels /home/qubes/vm-kernels
+for dir in /var/lib/qubes-base/*; do
+    dir=`basename $dir`
+    case $dir in
+        vm-templates) ;;
+        vm-kernels) ;;
+        *)
+            if [ ! -e /home/qubes/$dir ]; then
+                cp -a /var/lib/qubes-base/$dir /home/qubes/
+            fi
+            ;;
+    esac
+done
+mount --bind /home/qubes /var/lib/qubes
 
 /usr/bin/qvm-prefs --offline-mode -s sys-net pcidevs '[]'
 for dev in $(/sbin/lspci -mm -n | sed -ne 's/^\([0-9][0-9]:[0-9][0-9].[0-9]\) "02.*/\1/p'); do
