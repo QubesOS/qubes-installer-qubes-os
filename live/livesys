@@ -135,6 +135,12 @@ for dir in /var/lib/qubes-base/*; do
             ;;
     esac
 done
+for privateimg in /var/lib/qubes-base/*vms/*/private.img; do
+    tmpfs_path=${privateimg/\/var\/lib\/qubes-base/\/home\/qubes}
+    if rm $tmpfs_path; then
+        ln -s $privateimg $tmpfs_path
+    fi
+done
 mount --bind /home/qubes /var/lib/qubes
 
 /usr/bin/qvm-prefs --offline-mode -s sys-net pcidevs '[]'
