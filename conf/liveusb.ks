@@ -33,6 +33,9 @@ anaconda
 
 qubes-live
 
+# FIXME: xen.efi not supported by livecd-tools, disable it for now
+-shim
+
 %end
 
 %post
