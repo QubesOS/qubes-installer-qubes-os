@@ -11,7 +11,6 @@ mkdir ${EFIBOOTDIR}/fonts/
 install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
 # keep also under original name to make mkefiboot --apple happy
 install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
-install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen-check.efi
 install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
 install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
 install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
@@ -27,8 +26,7 @@ ${make_efiboot("images/efiboot.img", include_kernel=True)}
     <%
     kdir = EFIBOOTDIR if include_kernel else KERNELDIR
     eficonf = "%s/grub.cfg" % (EFIBOOTDIR, )
-    xenconf = "%s/xen-check.cfg" % (EFIBOOTDIR, )
-    xenconf_no_check = "%s/xen.cfg" % (EFIBOOTDIR, )
+    xenconf = "%s/xen.cfg" % (EFIBOOTDIR, )
     args = "--label=ANACONDA --debug"
     if disk: args += " --disk"
     if imgtype == "apple": args += ' --apple --icon=%s --diskname=%s --product="%s %s"' % (APPLE_EFI_ICON, APPLE_EFI_DISKNAME, product.name, product.version)
@@ -54,8 +52,6 @@ ${make_efiboot("images/efiboot.img", include_kernel=True)}
         replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${eficonf}
         replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${xenconf}
     %endif
-    copy ${xenconf} ${xenconf_no_check}
-    replace rd.live.check '' ${xenconf_no_check}
     %if efiarch == 'IA32':
         copy ${eficonf} ${EFIBOOTDIR}/BOOT.conf
     %endif
