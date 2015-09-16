@@ -1129,16 +1129,6 @@
   </group>
 
   <group>
-    <id>debian-7</id>
-    <name>Debian 7 (wheezy) template</name>
-    <default>false</default>
-    <uservisible>true</uservisible>
-    <packagelist>
-      <packagereq>qubes-template-debian-7</packagereq>
-    </packagelist>
-  </group>
-
-  <group>
     <id>debian-8</id>
     <name>Debian 8 (jessie) template</name>
     <default>false</default>
