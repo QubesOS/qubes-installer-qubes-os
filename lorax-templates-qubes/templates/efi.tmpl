@@ -12,11 +12,20 @@ install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
 ## keep also under original name to make mkefiboot --apple happy
 ##install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
 install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
-install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
-install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
+
+
+# For Secure Boot restore those files (keep in mind 32MB limit on efiboot.img
+# imposed by ISO9660, details in #794):
+#install boot/efi/EFI/*/shim.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
+#install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
+#install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
+
 
 ## actually make the EFI images
 ${make_efiboot("images/efiboot.img", include_kernel=True)}
+
+## place fonts on ISO9660, but not in efiboot.img to save space
+install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
 
 ## This is kinda gross, but then... so's EFI.
 <%def name="make_efiboot(img, include_kernel=False, disk=False, imgtype='default')">
