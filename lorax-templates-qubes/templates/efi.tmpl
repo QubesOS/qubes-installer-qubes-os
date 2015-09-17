@@ -1,4 +1,4 @@
-<%page args="configdir, KERNELDIR, efiarch, isolabel"/>
+<%page args="configdir, KERNELDIR, efiarch, isolabel, kver"/>
 <%
 from string import lower
 EFIBOOTDIR="EFI/BOOT"
@@ -33,7 +33,8 @@ ${make_efiboot("images/efiboot.img", include_kernel=True)}
     %>
     %if include_kernel:
         copy ${KERNELDIR}/vmlinuz ${EFIBOOTDIR}
-        copy ${KERNELDIR}/initrd.img ${EFIBOOTDIR}
+        runcmd chroot ${inroot} dracut --nomdadmconf --nolvmconf --xz --install '/.buildstamp' --add 'anaconda pollcdrom' --omit "network multipath modsign systemd crypt shutdown plymouth fcoe fcoe-uefi nfs iscsi ifcfg" /boot/efi/EFI/qubes/initrd-small.img ${kver}
+        install boot/efi/EFI/qubes/initrd-small.img ${EFIBOOTDIR}/initrd.img
     %endif
     install ${configdir}/grub2-efi.cfg ${eficonf}
     install ${configdir}/xen-efi.cfg ${xenconf}

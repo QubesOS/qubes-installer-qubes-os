@@ -69,6 +69,8 @@ sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
   append xen.gz --- vmlinuz-${shortkver} @ROOT@ quiet --- initrd-${shortkver}.img\n\
   @EXTRAKERNELS@' ${BOOTDIR}/isolinux.cfg
 
+  <% latestkver = kernel.version %>
+
 %endfor
 
 ## configure bootloader
@@ -105,7 +107,7 @@ hardlink ${KERNELDIR}/initrd.img ${BOOTDIR}
         efigraft += " {0}={1}/{0}".format(img,outroot)
     efihybrid = "--uefi --mac" if domacboot else "--uefi"
     %>
-    <%include file="efi.tmpl" args="configdir=configdir, KERNELDIR=KERNELDIR, efiarch=efiarch, isolabel=isolabel"/>
+    <%include file="efi.tmpl" args="configdir=configdir, KERNELDIR=KERNELDIR, efiarch=efiarch, isolabel=isolabel, kver=latestkver"/>
 %endif
 
 ## ## make boot.iso

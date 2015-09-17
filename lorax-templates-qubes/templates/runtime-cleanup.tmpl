@@ -92,6 +92,9 @@ arch/x86/kvm
 remove lib/modules/*/{build,source,*.map}
 ## NOTE: depmod gets re-run after cleanup finishes
 
+## this prevents network support from being included in initrd
+remove etc/sysconfig/network-scripts
+
 ## remove unused themes, theme engines, icons, etc.
 removefrom gtk2 /usr/${libdir}/gtk-2.0/*/{engines,printbackends}/*
 removefrom gtk2 /usr/share/themes/*
