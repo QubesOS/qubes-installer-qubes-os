@@ -2,7 +2,11 @@
 # parse-anaconda-options.sh - parse installer-specific options
 
 . /lib/anaconda-lib.sh
-. /lib/url-lib.sh
+if [ -r /lib/url-lib.sh ]; then
+    . /lib/url-lib.sh
+else
+    alias set_http_header=:
+fi
 
 # create the repodir and isodir that anaconda will look for
 mkdir -p $repodir $isodir

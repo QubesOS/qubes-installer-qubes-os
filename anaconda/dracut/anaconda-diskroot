@@ -35,6 +35,8 @@ path="$2" # optional, could be empty
 
 [ -e "/dev/root" ] && exit 1 # we already have a root device!
 
+modprobe -q loop
+
 info "anaconda using disk root at $dev"
 mount $dev $repodir || warn "Couldn't mount $dev"
 anaconda_live_root_dir $repodir $path

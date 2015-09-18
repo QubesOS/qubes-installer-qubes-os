@@ -7,7 +7,7 @@ check() {
 }
 
 depends() {
-    echo img-lib
+    echo img-lib dmsquash-live
     case "$(uname -m)" in
         s390*) echo cms ;;
     esac
