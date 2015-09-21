@@ -1782,7 +1782,7 @@ class XenEFI(EFIGRUB):
             config.write("options=loglvl=all\n")
             config.write("kernel={} root={}\n".format(
                 image.kernel,
-                self.stage2_device.path))
+                image.device.fstabSpec))
             config.write("ramdisk={}\n".format(image.initrd))
 
     def write_config_console(self, config):
