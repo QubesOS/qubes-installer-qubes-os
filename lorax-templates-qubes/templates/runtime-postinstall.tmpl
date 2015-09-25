@@ -115,7 +115,8 @@ append etc/depmod.d/dd.conf "search updates built-in"
 
 ## include additional modules in initramfs
 append etc/dracut.conf.d/extra-install-modules.conf "add_drivers+=' ehci-pci '"
-append etc/dracut.conf.d/extra-install-modules.conf "omit_dracutmodules+=' multipath fcoe fcoe-uefi iscsi nfs ifcfg network '"
+## no longer hard dependencies of anaconda module (for smaller EFI initrd), so add them here
+append etc/dracut.conf.d/extra-install-modules.conf "add_dracutmodules+=' livenet nfs img-lib convertfs ifcfg '"
 
 ## make lvm auto-activate
 remove etc/lvm/*
