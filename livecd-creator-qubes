@@ -19,17 +19,226 @@
 
 import os
 import os.path
+import glob
+import shutil
 import stat
+import subprocess
 import sys
 import time
 import optparse
 import logging
 
 import imgcreate
+from imgcreate.fs import makedirs
 
 class Usage(Exception):
     def __init__(self, msg = None, no_error = False):
         Exception.__init__(self, msg, no_error)
+
+class LiveEFIImageCreator(imgcreate.LiveImageCreator):
+
+    def _get_mkisofs_options(self, isodir):
+        options = [ "-b", "isolinux/isolinux.bin",
+                    "-c", "isolinux/boot.cat",
+                    "-no-emul-boot", "-boot-info-table",
+                    "-boot-load-size", "4" ]
+        if os.path.exists(isodir + "/isolinux/efiboot.img"):
+            options.extend([ "-eltorito-alt-boot",
+                             "-e", "isolinux/efiboot.img",
+                             "-no-emul-boot"])
+        if os.path.exists(isodir + "/isolinux/macboot.img"):
+            options.extend([ "-eltorito-alt-boot",
+                             "-e", "isolinux/macboot.img",
+                             "-no-emul-boot"])
+        return options
+
+    def __copy_efi_files(self, isodir):
+        """ Copy the efi files into /EFI/BOOT/
+            If any of them are missing, return False.
+            requires:
+              xen.efi
+              gcdx64.efi
+              vmlinuz
+              initrd
+        """
+        fail = False
+        missing = []
+        # XXX: when adding multiple kernel support, vmlinuz and initrd needs to
+        #      be suffixed with index
+        files = [("/boot/efi/EFI/*/shim.efi", "/EFI/BOOT/BOOT%s.efi" % (self.efiarch,)),
+                 ("/boot/efi/EFI/*/gcd*.efi", "/EFI/BOOT/grubx64.efi"),
+                 ("/boot/efi/EFI/*/xen-*.efi", "/EFI/BOOT/xen.efi"),
+                 ("/boot/efi/EFI/*/vmlinuz", "/EFI/BOOT/vmlinuz"),
+                 ("/boot/efi/EFI/*/initrd-small.img", "/EFI/BOOT/initrd"),
+                 ("/boot/efi/EFI/*/fonts/unicode.pf2", "/EFI/BOOT/fonts/"),
+                ]
+        makedirs(isodir+"/EFI/BOOT/fonts/")
+        for src, dest in files:
+            src_glob = glob.glob(self._instroot+src)
+            if not src_glob:
+                missing.append("Missing EFI file (%s)" % (src,))
+                fail = True
+            else:
+                shutil.copy(src_glob[0], isodir+dest)
+        map(logging.error, missing)
+        return fail
+
+
+    def __get_xen_efi_image_stanza(self, **args):
+        if self._isDracut:
+            args["rootlabel"] = "live:LABEL=%(fslabel)s" % args
+        else:
+            args["rootlabel"] = "CDLABEL=%(fslabel)s" % args
+        return """[%(name)s%(index)s]
+kernel=vmlinuz%(index)s root=%(rootlabel)s %(liveargs)s %(extra)s
+ramdisk=initrd%(index)s
+
+""" %args
+
+
+    def __get_efi_image_stanza(self, **args):
+        return """menuentry '%(long)s' --class qubes --class gnu-linux --class gnu --class os {
+    chainloader /efi/boot/xen.efi placeholder %(name)s%(index)s
+}
+""" %args
+
+    def __get_efi_image_stanzas(self, isodir, name):
+        # FIXME: this only supports one kernel right now...
+
+        kernel_options = self._get_kernel_options()
+        checkisomd5 = self._has_checkisomd5()
+
+        cfg = ""
+
+        for index in range(0, 9):
+            # only one supported anyway, so simply drop the suffix
+            index = ""
+            cfg += self.__get_efi_image_stanza(long = "Start " + self.product,
+                                               index = index, name = "normal")
+            if checkisomd5:
+                cfg += self.__get_efi_image_stanza(
+                                                   long = "Test this media & start " + self.product,
+                                                   index = index, name = "check")
+            cfg += """
+submenu 'Troubleshooting -->' {
+"""
+            cfg += self.__get_efi_image_stanza(long = "Start " + self.product + " in basic graphics mode",
+                                               index = index, name = "basicvideo")
+
+            cfg+= """}
+"""
+            break
+
+        return cfg
+
+    def __get_xen_efi_image_stanzas(self, isodir, name):
+        # FIXME: this only supports one kernel right now...
+
+        kernel_options = self._get_kernel_options()
+        checkisomd5 = self._has_checkisomd5()
+
+        cfg = ""
+
+        for index in range(0, 9):
+            # only one supported anyway, so simply drop the suffix
+            index = ""
+            cfg += self.__get_xen_efi_image_stanza(fslabel = self.fslabel,
+                                               liveargs = kernel_options,
+                                               long = "Start " + self.product,
+                                               extra = "", index = index,
+                                               name = "normal")
+            if checkisomd5:
+                cfg += self.__get_xen_efi_image_stanza(fslabel = self.fslabel,
+                                                   liveargs = kernel_options,
+                                                   long = "Test this media & start " + self.product,
+                                                   extra = "rd.live.check",
+                                                   index = index, name = "check")
+            cfg += self.__get_xen_efi_image_stanza(fslabel = self.fslabel,
+                                               liveargs = kernel_options,
+                                               long = "Start " + self.product + " in basic graphics mode",
+                                               extra = "nomodeset", index = index,
+                                               name = "basicvideo")
+
+            break
+
+        return cfg
+
+    def __get_basic_xen_efi_config(self):
+        return """
+[global]
+default=normal
+"""
+
+    def __get_basic_efi_config(self, **args):
+        return """
+set default="0"
+
+function load_video {
+  insmod efi_gop
+  insmod efi_uga
+  insmod video_bochs
+  insmod video_cirrus
+  insmod all_video
+}
+
+load_video
+set gfxpayload=keep
+insmod gzio
+insmod part_gpt
+insmod ext2
+
+set timeout=%(timeout)d
+### END /etc/grub.d/00_header ###
+
+# do not use 'search' - root should be already set based on grub.efi location
+
+### BEGIN /etc/grub.d/10_linux ###
+""" %args
+
+    def _configure_efi_bootloader(self, isodir):
+        """Set up the configuration for an EFI bootloader"""
+        if self.__copy_efi_files(isodir):
+            shutil.rmtree(isodir + "/EFI")
+            logging.warn("Failed to copy EFI files, no EFI Support will be included.")
+            return
+
+        cfg = self.__get_basic_efi_config(isolabel = self.fslabel,
+                                          timeout = self._timeout)
+        cfg += self.__get_efi_image_stanzas(isodir, self.name)
+
+        xen_cfg = self.__get_basic_xen_efi_config()
+        xen_cfg += self.__get_xen_efi_image_stanzas(isodir, self.name)
+
+        cfgf = open(isodir + "/EFI/BOOT/grub.cfg", "w")
+        cfgf.write(cfg)
+        cfgf.close()
+
+        xen_cfgf = open(isodir + "/EFI/BOOT/xen.cfg", "w")
+        xen_cfgf.write(xen_cfg)
+        xen_cfgf.close()
+
+    def _generate_efiboot(self, isodir):
+        """Generate EFI boot images."""
+        if not glob.glob(self._instroot+"/boot/efi/EFI/*/xen-*.efi"):
+            logging.error("Missing xen-*.efi, skipping efiboot.img creation.")
+            return
+
+        subprocess.call(["mkefiboot", "--label", "QUBESEFI", isodir + "/EFI/BOOT",
+                         isodir + "/isolinux/efiboot.img"])
+        # FIXME: replace icon
+        # FIXME: this is broken for many reasons:
+        #        - mkefiboot generates unnecessary big image (about 4 times bigger
+        #          than required) - the bug is in mkmacboot function:
+        #          size = estimate_size(bootdir, graft=graft) * 2
+        #                               ^^^^^^^^^^^^^^^^^^^^ already counted twice
+        #        - mkefiboot -a assumes that the loader is grub.efi
+        #        - it isn't clear whether xen.efi would even work on Apple
+        subprocess.call(["mkefiboot", "-a", isodir + "/EFI/BOOT",
+                         isodir + "/isolinux/macboot.img", "-l", self.product,
+                         "-n", "/usr/share/pixmaps/bootloader/fedora-media.vol",
+                         "-i", "/usr/share/pixmaps/bootloader/fedora.icns",
+                         "-p", self.product])
+
 
 def parse_options(args):
     parser = optparse.OptionParser()
@@ -181,7 +390,7 @@ def main():
 
     try:
         if options.image_type == 'livecd':
-            creator = imgcreate.LiveImageCreator(ks, name,
+            creator = LiveEFIImageCreator(ks, name,
                                             fslabel=fslabel,
                                             releasever=options.releasever,
                                             tmpdir=os.path.abspath(options.tmpdir),
