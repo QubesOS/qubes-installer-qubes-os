@@ -56,3 +56,28 @@ Index: pungi-3.03/src/pypungi/__init__.py
  
          self.logger.info('Getting sacks for arches %s' % self.valid_arches)
          self.ayum._getSacks(archlist=self.valid_arches)
+diff --git a/src/pypungi/__init__.py b/src/pypungi/__init__.py
+index fc6a7c7..72cfddf 100644
+--- a/src/pypungi/__init__.py
++++ b/src/pypungi/__init__.py
+@@ -1096,6 +1096,20 @@ class Pungi(pypungi.PungiBase):
+             sys.exit(1)
+ 
+         for po in polist:
++            # before doing anything with the package, verify its signature
++            result, errmsg = self.ayum.sigCheckPkg(po)
++            if result == 0:
++                # Verified ok, or verify not req'd
++                pass
++            elif result == 1:
++                # keys are provided through kickstart, so treat this as consent
++                # for importing them
++                self.ayum.getKeyForPackage(po, lambda x, y, z: True)
++            else:
++                # Fatal error
++                self.logger.error(errmsg)
++                sys.exit(1)
++
+             basename = os.path.basename(po.relativepath)
+ 
+             local = po.localPkg()
