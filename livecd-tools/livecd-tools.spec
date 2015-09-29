@@ -2,6 +2,11 @@
 
 %define debug_package %{nil}
 
+%if 0%{?qubes_builder}
+%define _sourcedir %(pwd)/livecd-tools
+%endif
+
+
 Summary: Tools for building live CDs
 Name: livecd-tools
 Version: 20.6
