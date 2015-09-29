@@ -40,6 +40,7 @@ class InstallClass(BaseInstallClass):
     _descriptionFields = (productName,)
     sortPriority = 20000
     hidden = 0
+    efi_dir = 'qubes'
 
     bootloaderTimeoutDefault = 5
 

@@ -69,6 +69,8 @@ sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
   append xen.gz --- vmlinuz-${shortkver} @ROOT@ quiet --- initrd-${shortkver}.img\n\
   @EXTRAKERNELS@' ${BOOTDIR}/isolinux.cfg
 
+  <% latestkver = kernel.version %>
+
 %endfor
 
 ## configure bootloader
@@ -90,23 +92,21 @@ hardlink ${KERNELDIR}/initrd.img ${BOOTDIR}
     %endif
 %endif
 
-## ## WHeeeeeeee, EFI.
-## ## We could remove the basearch restriction someday..
-## <% efiargs=""; efigraft=""; efihybrid="" %>
-## %if exists("boot/efi/EFI/fedora/gcdx64.efi") and basearch != 'i386':
-##     <%
-##     efiarch = 'X64' if basearch=='x86_64' else 'IA32'
-##     efigraft="EFI/BOOT={0}/EFI/BOOT".format(outroot)
-##     images = ["images/efiboot.img"]
-##     if domacboot:
-##         images.append("images/macboot.img")
-##     for img in images:
-##         efiargs += " -eltorito-alt-boot -e {0} -no-emul-boot".format(img)
-##         efigraft += " {0}={1}/{0}".format(img,outroot)
-##     efihybrid = "--uefi --mac" if domacboot else "--uefi"
-##     %>
-##     <%include file="efi.tmpl" args="configdir=configdir, KERNELDIR=KERNELDIR, efiarch=efiarch, isolabel=isolabel"/>
-## %endif
+## WHeeeeeeee, EFI.
+## We could remove the basearch restriction someday..
+<% efiargs=""; efigraft=""; efihybrid="" %>
+%if exists("boot/efi/EFI/*/gcdx64.efi") and basearch != 'i386':
+    <%
+    efiarch = 'X64' if basearch=='x86_64' else 'IA32'
+    efigraft="EFI/BOOT={0}/EFI/BOOT".format(outroot)
+    images = ["images/efiboot.img"]
+    for img in images:
+        efiargs += " -eltorito-alt-boot -e {0} -no-emul-boot".format(img)
+        efigraft += " {0}={1}/{0}".format(img,outroot)
+    efihybrid = "--uefi"
+    %>
+    <%include file="efi.tmpl" args="configdir=configdir, KERNELDIR=KERNELDIR, efiarch=efiarch, isolabel=isolabel, kver=latestkver"/>
+%endif
 
 ## ## make boot.iso
 ## runcmd mkisofs -o ${outroot}/images/boot.iso \

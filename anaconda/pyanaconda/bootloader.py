@@ -24,6 +24,7 @@
 import collections
 import os
 import re
+import shutil
 import struct
 from parted import PARTITION_BIOS_GRUB
 
@@ -1640,11 +1641,21 @@ class EFIGRUB(GRUB2):
 
     def remove_efi_boot_target(self):
         buf = self.efibootmgr(capture=True)
+        bootorder = None
         for line in buf.splitlines():
             try:
                 (slot, _product) = line.split(None, 1)
             except ValueError:
                 continue
+
+            # Workaround for bug in efibootmgr that causes abort() when
+            # removing an entry not present in BootOrder.
+            # This is already fixed in efibootmgr-0.12, so can be removed when
+            # we upgrade it one day
+            # The fix (with bug details):
+            # https://github.com/rhinstaller/efibootmgr/commit/f575bf87
+            if slot == "BootOrder:":
+                bootorder = _product
 
             if _product == productName:
                 slot_id = slot[4:8]
@@ -1652,6 +1663,11 @@ class EFIGRUB(GRUB2):
                 if not re.match("^[0-9a-fA-F]+$", slot_id):
                     log.warning("failed to parse efi boot slot (%s)", slot)
                     continue
+
+                if bootorder.count(slot_id) == 0:
+                    rc = self.efibootmgr("-o", bootorder + "," + slot_id)
+                    if rc:
+                        raise BootLoaderError("failed to update BootOrder while removing old boot entry")
 
                 rc = self.efibootmgr("-b", slot_id, "-B",
                                      root=ROOT_PATH)
@@ -1709,6 +1725,73 @@ class EFIGRUB(GRUB2):
 
     def check(self):
         return True
+
+class XenEFI(EFIGRUB):
+    packages = ["efibootmgr"]
+    _config_file = 'xen.cfg'
+
+    def __init__(self):
+        super(XenEFI, self).__init__()
+        self.efi_dir = 'qubes'
+
+    def add_efi_boot_target(self):
+        if self.stage1_device.type == "partition":
+            boot_disk = self.stage1_device.disk
+            boot_part_num = self.stage1_device.partedPartition.number
+        elif self.stage1_device.type == "mdarray":
+            # FIXME: I'm just guessing here. This probably needs the full
+            #        treatment, ie: multiple targets for each member.
+            boot_disk = self.stage1_device.parents[0].disk
+            boot_part_num = self.stage1_device.parents[0].partedPartition.number
+        boot_part_num = str(boot_part_num)
+
+        if not os.path.exists(
+                "{}/{}".format(ROOT_PATH + self.config_dir, "xen.efi")):
+            xen_efi = [x for x in os.listdir(ROOT_PATH + self.config_dir) if
+                       x.startswith('xen-') and x.endswith('.efi')][0]
+            shutil.copy("{}/{}".format(ROOT_PATH + self.config_dir, xen_efi),
+                        "{}/{}".format(ROOT_PATH + self.config_dir, "xen.efi"))
+        rc = self.efibootmgr("-c", "-w", "-L", productName,
+                             "-d", boot_disk.path, "-p", boot_part_num,
+                             "-l",
+                             self.efi_dir_as_efifs_dir + "\\xen.efi",
+                             root=ROOT_PATH)
+        if rc:
+            raise BootLoaderError("failed to set new efi boot target")
+
+    def add_image(self, image):
+        super(XenEFI, self).add_image(image)
+        shutil.copy("{}/boot/{}".format(ROOT_PATH, image.kernel),
+                    os.path.normpath(
+                        "{}/{}".format(ROOT_PATH + self.config_dir,
+                                       image.kernel)))
+        if image.initrd is not None:
+            shutil.copy("{}/boot/{}".format(ROOT_PATH, image.initrd),
+                        os.path.normpath(
+                            "{}/{}".format(ROOT_PATH + self.config_dir,
+                                           image.initrd)))
+
+    def write_config_header(self, config):
+        config.write("[global]\n")
+        config.write("default={}\n".format(self.default.version))
+
+    def write_config_images(self, config):
+        for image in self.images:
+            config.write("\n")
+            config.write("[{}]\n".format(image.version))
+            config.write("options=loglvl=all\n")
+            config.write("kernel={} root={}\n".format(
+                image.kernel,
+                image.device.fstabSpec))
+            config.write("ramdisk={}\n".format(image.initrd))
+
+    def write_config_console(self, config):
+        pass
+
+    def write_config_post(self):
+        pass
+
+    write_config = BootLoader.write_config
 
 class MacEFIGRUB(EFIGRUB):
     def mactel_config(self):
@@ -2201,7 +2284,7 @@ class EXTLINUX(BootLoader):
 
 # every platform that wants a bootloader needs to be in this dict
 bootloader_by_platform = {platform.X86: GRUB2,
-                          platform.EFI: EFIGRUB,
+                          platform.EFI: XenEFI,
                           platform.MacEFI: MacEFIGRUB,
                           platform.PPC: GRUB2,
                           platform.IPSeriesPPC: IPSeriesGRUB2,
@@ -2227,7 +2310,7 @@ def writeSysconfigKernel(storage, version):
     kernel_basename = "vmlinuz-" + version
     kernel_file = "/boot/%s" % kernel_basename
     if not os.path.isfile(ROOT_PATH + kernel_file):
-        kernel_file = "/boot/efi/EFI/redhat/%s" % kernel_basename
+        kernel_file = "/boot/efi/EFI/qubes/%s" % kernel_basename
         if not os.path.isfile(ROOT_PATH + kernel_file):
             log.error("failed to recreate path to default kernel image")
             return

@@ -92,6 +92,10 @@ arch/x86/kvm
 remove lib/modules/*/{build,source,*.map}
 ## NOTE: depmod gets re-run after cleanup finishes
 
+## do not include plymouth 'label' plugin (no text used in installer theme)
+remove etc/dracut.conf.d/plymouth-missing-fonts.conf
+remove etc/fonts/conf.d/57-dejavu-sans.conf
+
 ## remove unused themes, theme engines, icons, etc.
 removefrom gtk2 /usr/${libdir}/gtk-2.0/*/{engines,printbackends}/*
 removefrom gtk2 /usr/share/themes/*
