@@ -3,7 +3,7 @@
 Summary: Graphical system installer
 Name:    anaconda
 Version: 20.25.16
-Release: 9%{?dist}
+Release: 10%{?dist}
 Epoch:   1000
 License: GPLv2+
 Group:   Applications/System
