@@ -1,0 +1,80 @@
+From ad81fa7d70111c2d29cb44a17c3511c49538d66d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Sat, 26 Sep 2015 06:14:05 +0200
+Subject: [PATCH 2/2] Actually use repo.gpgkey - verify signatures before
+ installing the packages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ imgcreate/yuminst.py | 35 +++++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/imgcreate/yuminst.py b/imgcreate/yuminst.py
+index 22e840c..17f4774 100644
+--- a/imgcreate/yuminst.py
++++ b/imgcreate/yuminst.py
+@@ -178,7 +178,7 @@ class LiveCDYum(yum.YumBase):
+         repo.metadata_expire = 0
+         repo.mirrorlist_expire = 0
+         repo.timestamp_check = 0
+-        # disable gpg check???
++        # disable gpg by default, enable it later when gpgkey specified
+         repo.gpgcheck = 0
+         repo.enable()
+         repo.setup(self.conf.cache)
+@@ -195,6 +195,33 @@ class LiveCDYum(yum.YumBase):
+                     return True
+         return False
+ 
++    def gpgsigcheck(self, pkgs):
++        """Perform GPG signature verification on the given packages,
++        installing keys if possible.
++
++        :param pkgs: a list of package objects to verify the GPG
++           signatures of
++        :return: non-zero if execution should stop due to an error
++        :raises: Will raise :class:`CreatorError` if there's a problem
++        """
++        for po in pkgs:
++            result, errmsg = self.sigCheckPkg(po)
++
++            if result == 0:
++                # Verified ok, or verify not req'd
++                continue
++
++            elif result == 1:
++                # keys are provided through kickstart, so treat this as consent
++                # for importing them
++                self.getKeyForPackage(po, lambda x, y, z: True)
++
++            else:
++                # Fatal error
++                raise CreatorError(errmsg)
++
++        return 0
++
+ 
+     def runInstall(self):
+         os.environ["HOME"] = "/"
+@@ -211,7 +238,11 @@ class LiveCDYum(yum.YumBase):
+ 
+         dlpkgs = map(lambda x: x.po, filter(lambda txmbr: txmbr.ts_state in ("i", "u"), self.tsInfo.getMembers()))
+         self.downloadPkgs(dlpkgs)
+-        # FIXME: sigcheck?
++
++        # Check GPG signatures
++        if self.gpgsigcheck(dlpkgs) != 0:
++            raise CreatorError("GPG signature verification failed")
++
+ 
+         self.initActionTs()
+         self.populateTs(keepold=0)
+-- 
+2.1.0
+

@@ -23,6 +23,8 @@ URL: http://git.fedorahosted.org/git/livecd
 Source0: http://fedorahosted.org/releases/l/i/livecd/%{name}-%{version}.tar.bz2
 # Drop the requirements for grub2-efi and shim: breaks 32-bit compose
 # and not needed as we have them in comps
+Patch0: 0001-Set-repo.gpgkey-when-provided-in-kickstart.patch
+Patch1: 0002-Actually-use-repo.gpgkey-verify-signatures-before-in.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 Requires: python-imgcreate = %{epoch}:%{version}-%{release}
 Requires: mkisofs
@@ -77,6 +79,9 @@ like live image or appliances.
 
 %prep
 %setup -q
+
+%patch0 -p1
+%patch1 -p1
 
 %build
 make
