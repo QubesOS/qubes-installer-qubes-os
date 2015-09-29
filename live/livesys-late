@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# live: Late init script for live image
+#
+# chkconfig: 345 99 01
+# description: Late init script for live image.
+
+# bah, hal starts way too late
+
+. /etc/init.d/functions
+
+if ! strstr "`cat /proc/cmdline`" rd.live.image || [ "$1" != "start" ] || [ -e /.liveimg-late-configured ] ; then
+    exit 0
+fi
+
+exists() {
+    which $1 >/dev/null 2>&1 || return
+    $*
+}
+
+touch /.liveimg-late-configured
+
+# read some variables out of /proc/cmdline
+for o in `cat /proc/cmdline` ; do
+    case $o in
+    ks=*)
+        ks="--kickstart=${o#ks=}"
+        ;;
+    xdriver=*)
+        xdriver="${o#xdriver=}"
+        ;;
+    esac
+done
+
+# if liveinst or textinst is given, start anaconda
+if strstr "`cat /proc/cmdline`" liveinst ; then
+   plymouth --quit
+   /usr/sbin/liveinst $ks
+fi
+if strstr "`cat /proc/cmdline`" textinst ; then
+   plymouth --quit
+   /usr/sbin/liveinst --text $ks
+fi
+
+# configure X, allowing user to override xdriver
+if [ -n "$xdriver" ]; then
+   cat > /etc/X11/xorg.conf.d/00-xdriver.conf <<FOE
+Section "Device"
+	Identifier	"Videocard0"
+	Driver	"$xdriver"
+EndSection
+FOE
+fi
+

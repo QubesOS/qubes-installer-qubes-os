@@ -1,0 +1,57 @@
+From 2055ba32ac4751a52da1ad600cb820eea76cd8b3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 7 Aug 2015 03:26:30 +0200
+Subject: [PATCH 1/2] Set repo.gpgkey when provided in kickstart
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ imgcreate/creator.py   | 6 +++++-
+ imgcreate/kickstart.py | 2 +-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/imgcreate/creator.py b/imgcreate/creator.py
+index 42faf6f..c3ed346 100644
+--- a/imgcreate/creator.py
++++ b/imgcreate/creator.py
+@@ -627,7 +627,7 @@ class ImageCreator(object):
+         ayum.setup(yum_conf, self._instroot, cacheonly=self.cacheonly)
+ 
+         for repo in kickstart.get_repos(self.ks, repo_urls):
+-            (name, baseurl, mirrorlist, proxy, inc, exc, cost, sslverify) = repo
++            (name, baseurl, mirrorlist, proxy, inc, exc, cost, sslverify, gpgkey) = repo
+ 
+             yr = ayum.addRepository(name, baseurl, mirrorlist)
+             if inc:
+@@ -639,6 +639,10 @@ class ImageCreator(object):
+             if cost is not None:
+                 yr.cost = cost
+             yr.sslverify = sslverify
++            if gpgkey:
++                yr.gpgcheck = True
++                yr.gpgkey = yum.parser.varReplace(gpgkey, ayum.conf.yumvar)
++
+         ayum.setup(yum_conf, self._instroot)
+ 
+         if kickstart.exclude_docs(self.ks):
+diff --git a/imgcreate/kickstart.py b/imgcreate/kickstart.py
+index 1059801..b8b3c82 100644
+--- a/imgcreate/kickstart.py
++++ b/imgcreate/kickstart.py
+@@ -551,7 +551,7 @@ def get_repos(ks, repo_urls = {}):
+ 
+         if repos.has_key(repo.name):
+             logging.warn("Overriding already specified repo %s" %(repo.name,))
+-        repos[repo.name] = (repo.name, baseurl, mirrorlist, proxy, inc, exc, repo.cost, sslverify)
++        repos[repo.name] = (repo.name, baseurl, mirrorlist, proxy, inc, exc, repo.cost, sslverify, repo.gpgkey)
+ 
+     return repos.values()
+ 
+-- 
+2.1.0
+
