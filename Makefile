@@ -78,3 +78,9 @@ clean-repos:
 
 clean:
 	sudo rm -fr build/*
+
+get-sources:
+	$(MAKE) -C livecd-tools get-sources
+
+verify-sources:
+	$(MAKE) -C livecd-tools verify-sources
