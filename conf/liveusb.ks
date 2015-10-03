@@ -82,6 +82,8 @@ echo 'File created by kickstart. See systemd-update-done.service(8).' \
 # setup Qubes
 #
 
+qubes-prefs -s default-template fedora-21
+
 # TODO: icons?
 cat /usr/share/qubes/live-default-appmenus | /usr/bin/qvm-sync-appmenus \
         --force-root --offline-mode `qubes-prefs default-template`
