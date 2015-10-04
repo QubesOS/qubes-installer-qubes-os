@@ -25,6 +25,7 @@ Source0: http://fedorahosted.org/releases/l/i/livecd/%{name}-%{version}.tar.bz2
 # and not needed as we have them in comps
 Patch0: 0001-Set-repo.gpgkey-when-provided-in-kickstart.patch
 Patch1: 0002-Actually-use-repo.gpgkey-verify-signatures-before-in.patch
+Patch2: 0001-Support-repo-ignoregroups-option.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 Requires: python-imgcreate = %{epoch}:%{version}-%{release}
 Requires: mkisofs
@@ -82,6 +83,7 @@ like live image or appliances.
 
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 make

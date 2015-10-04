@@ -1,0 +1,62 @@
+From b61c95f54cb405713a145e33d87820ee7b98de35 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Sun, 4 Oct 2015 18:13:53 +0200
+Subject: [PATCH] Support "repo --ignoregroups" option
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ imgcreate/creator.py   | 3 ++-
+ imgcreate/kickstart.py | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/imgcreate/creator.py b/imgcreate/creator.py
+index 979e38a..fb3f956 100644
+--- a/imgcreate/creator.py
++++ b/imgcreate/creator.py
+@@ -646,7 +646,7 @@ class ImageCreator(object):
+         ayum.setup(yum_conf, self._instroot, cacheonly=self.cacheonly)
+ 
+         for repo in kickstart.get_repos(self.ks, repo_urls):
+-            (name, baseurl, mirrorlist, proxy, inc, exc, cost, sslverify, gpgkey) = repo
++            (name, baseurl, mirrorlist, proxy, inc, exc, cost, groups, sslverify, gpgkey) = repo
+ 
+             yr = ayum.addRepository(name, baseurl, mirrorlist)
+             if inc:
+@@ -657,6 +657,7 @@ class ImageCreator(object):
+                 yr.proxy = proxy
+             if cost is not None:
+                 yr.cost = cost
++            yr.enablegroups = groups
+             yr.sslverify = sslverify
+             if gpgkey:
+                 yr.gpgcheck = True
+diff --git a/imgcreate/kickstart.py b/imgcreate/kickstart.py
+index 59049d9..9346fed 100644
+--- a/imgcreate/kickstart.py
++++ b/imgcreate/kickstart.py
+@@ -557,6 +557,7 @@ def get_repos(ks, repo_urls = {}):
+         mirrorlist = repo.mirrorlist
+         proxy = repo.proxy
+         sslverify = not repo.noverifyssl
++        groups = not bool(repo.ignoregroups)
+ 
+         if repo.name in repo_urls:
+             baseurl = repo_urls[repo.name]
+@@ -564,7 +565,7 @@ def get_repos(ks, repo_urls = {}):
+ 
+         if repos.has_key(repo.name):
+             logging.warn("Overriding already specified repo %s" %(repo.name,))
+-        repos[repo.name] = (repo.name, baseurl, mirrorlist, proxy, inc, exc, repo.cost, sslverify, repo.gpgkey)
++        repos[repo.name] = (repo.name, baseurl, mirrorlist, proxy, inc, exc, repo.cost, groups, sslverify, repo.gpgkey)
+ 
+     return repos.values()
+ 
+-- 
+2.1.0
+
