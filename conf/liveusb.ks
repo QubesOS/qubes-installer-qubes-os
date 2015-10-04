@@ -85,8 +85,20 @@ echo 'File created by kickstart. See systemd-update-done.service(8).' \
 qubes-prefs -s default-template fedora-21
 
 # TODO: icons?
-cat /usr/share/qubes/live-default-appmenus | /usr/bin/qvm-sync-appmenus \
-        --force-root --offline-mode `qubes-prefs default-template`
+for tpl in `ls /var/lib/qubes/vm-templates`; do
+    case $tpl in
+        fedora*)
+            cat /usr/share/qubes/live-default-appmenus-fedora | \
+                /usr/bin/qvm-sync-appmenus \
+                --force-root --offline-mode $tpl
+            ;;
+        debian*)
+            cat /usr/share/qubes/live-default-appmenus-debian | \
+                /usr/bin/qvm-sync-appmenus \
+                --force-root --offline-mode $tpl
+            ;;
+    esac
+done
 
 # we won't do `useradd qubes`, since his creation depends of persistent home
 # feature; see /etc/rc.d/init.d/livesys
