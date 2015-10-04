@@ -65,12 +65,14 @@ if [ -n "$xen" ]; then
     # copy from lorax-templates-qubes/templates/efi.tmpl:
     scsi_modules="3w-9xxx 3w-sas 3w-xxxx BusLogic a100u2w aacraid advansys aic79xx aic7xxx am53c974 arcmsr atp870u bfa bnx2fc csiostor dc395x dmx3191d esas2r esp_scsi fcoe fnic gdth hpsa hptiop hv_storvsc initio ipr ips isci iscsi_boot_sysfs libfc libfcoe libiscsi libosd libsas lpfc megaraid megaraid_mbox megaraid_mm megaraid_sas mpt2sas mpt3sas mvsas mvumi osd pm80xx pmcraid qla1280 qla2xxx qla4xxx raid_class scsi_debug scsi_dh_emc scsi_dh_rdac scsi_transport_fc scsi_transport_iscsi scsi_transport_sas scsi_transport_spi scsi_transport_srp stex sym53c8xx ufshcd virtio_scsi vmw_pvscsi wd719x"
     extra_modules="affs befs coda cuse dlm gfs2 mptfc ncpfs nilfs2 ocfs2 ocfs2_dlm ocfs2_dlmfs ocfs2_nodemanager ocfs2_stack_o2cb ocfs2_stack_user ocfs2_stackglue sctp sysv ubifs ufs"
+    mv /etc/dracut.conf.d/plymouth-missing-fonts.conf /tmp/plymouth-missing-fonts.conf.bak
     dracut --nomdadmconf --nolvmconf --xz \
-        --omit "network multipath modsign systemd crypt shutdown plymouth" \
+        --omit "network multipath modsign systemd crypt shutdown" \
         --omit "fcoe fcoe-uefi nfs iscsi ifcfg" \
         --omit-drivers="${scsi_modules}" \
         --omit-drivers="${extra_modules}" \
         /boot/efi/EFI/qubes/initrd-small.img ${version}
+    mv /tmp/plymouth-missing-fonts.conf.bak /etc/dracut.conf.d/plymouth-missing-fonts.conf
 fi
 
 %files
