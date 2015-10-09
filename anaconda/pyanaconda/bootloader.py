@@ -1455,7 +1455,7 @@ class GRUB2(GRUB):
         # boot arguments
         log.info("bootloader.py: used boot args: %s ", self.boot_args)
         defaults.write("GRUB_CMDLINE_LINUX=\"%s\"\n" % self.boot_args)
-        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M\"\n")
+        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M dom0_mem=max:4096M\"\n")
         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
         defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
         defaults.write("GRUB_DISABLE_OS_PROBER=\"true\"\n")
