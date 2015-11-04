@@ -11,11 +11,11 @@ lang en_US.UTF-8
 keyboard us
 timezone US/Eastern
 auth --useshadow --passalgo=sha512
-selinux --enforcing
-firewall --enabled --service=mdns
 xconfig --startxonboot
 part / --size 16386 --fstype ext4
-services --enabled=NetworkManager --disabled=network,sshd
+
+device xhci_hcd
+device xhci_pci
 
 %include qubes-kickstart.cfg
 
