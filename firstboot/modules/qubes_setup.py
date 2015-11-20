@@ -18,10 +18,17 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
+import grp
+import os
+import re
+import string
+import subprocess
+import sys
+import threading
+import time
+
 import gtk
 import libuser
-import os, string, sys, time, re
-import threading, subprocess, grp
 
 from firstboot.config import *
 from firstboot.constants import *
@@ -32,18 +39,74 @@ import gettext
 _ = lambda x: gettext.ldgettext("firstboot", x)
 N_ = lambda x: x
 
-class moduleClass(Module):
-    netvm_name = "sys-net"
-    fwvm_name  = "sys-firewall"
 
+def is_package_installed(pkgname):
+    return not subprocess.call(['rpm', '-q', pkgname],
+        stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
+
+
+class QubesChoice(object):
+    instances = []
+    def __init__(self, label, states, depend=None, extra_check=None):
+        self.widget = gtk.CheckButton(label)
+        self.states = states
+        self.depend = depend
+        self.extra_check = extra_check
+        self.selected = None
+
+        if self.depend is not None:
+            self.depend.widget.connect('toggled', self.friend_on_toggled)
+
+        self.instances.append(self)
+
+
+    def friend_on_toggled(self, other_widget):
+        self.set_sensitive(other_widget.get_active())
+
+
+    def get_selected(self):
+        return self.selected if self.selected is not None \
+            else self.widget.get_sensitive() and self.widget.get_active()
+
+
+    def store_selected(self):
+        self.selected = self.get_selected()
+
+
+    def set_sensitive(self, sensitive):
+        self.widget.set_sensitive(sensitive
+            and (self.extra_check is None or self.extra_check()))
+
+
+    @classmethod
+    def on_check_advanced_toggled(cls, widget):
+        selected = widget.get_active()
+
+        # this works, because you cannot instantiate the choices in wrong order
+        # (cls.instances is a list and have deterministic ordering)
+        for choice in cls.instances:
+            choice.set_sensitive(not selected and
+                (choice.depend is None or choice.depend.get_selected()))
+
+
+    @classmethod
+    def get_states(cls):
+        for choice in cls.instances:
+            if choice.get_selected():
+                for state in choice.states:
+                    yield state
+
+
+class moduleClass(Module):
     def __init__(self):
         Module.__init__(self)
         self.priority = 10000
-        self.sidebarTitle = N_("Create Service VMs")
-        self.title = N_("Create Service VMs")
+        self.sidebarTitle = N_("Create VMs")
+        self.title = N_("Create VMs")
         self.icon = "qubes.png"
         self.admin = libuser.admin()
         self.default_template = 'fedora-21'
+        self.choices = []
 
     def _showErrorMessage(self, text):
         dlg = gtk.MessageDialog(None, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, text)
@@ -57,16 +120,18 @@ class moduleClass(Module):
         try:
 
             qubes_users = self.admin.enumerateUsersByGroup('qubes')
-            if not self.radio_dontdoanything.get_active():
-                if len(qubes_users) < 1:
-                    self._showErrorMessage(_("You must create a user account to create default VMs."))
-                    return RESULT_FAILURE
-                else:
-                    self.qubes_user = qubes_users[0]
 
-            self.radio_servicevms_and_appvms.set_sensitive(False)
-            self.radio_onlyservicevms.set_sensitive(False)
-            self.radio_dontdoanything.set_sensitive(False)
+            if len(qubes_users) < 1:
+                self._showErrorMessage(_("You must create a user account to create default VMs."))
+                return RESULT_FAILURE
+            else:
+                self.qubes_user = qubes_users[0]
+
+            for choice in QubesChoice.instances:
+                choice.store_selected()
+                choice.widget.set_sensitive(False)
+            self.check_advanced.set_sensitive(False)
+            interface.nextButton.set_sensitive(False)
 
             if self.progress is None:
                 self.progress = gtk.ProgressBar()
@@ -77,39 +142,19 @@ class moduleClass(Module):
             if testing:
                 return RESULT_SUCCESS
 
-            self.set_default_template()
-
-            if self.radio_dontdoanything.get_active():
+            if self.check_advanced.get_active():
                 return RESULT_SUCCESS
-
-            interface.nextButton.set_sensitive(False)
 
             errors = []
 
-            for template in os.listdir('/var/lib/qubes/vm-templates'):
-                try:
-                    self.configure_template(template)
-                except Exception as e:
-                    errors.append((self.stage, str(e)))
+            self.configure_default_template()
+            self.configure_qubes()
+            self.configure_network()
 
             try:
-                self.create_default_netvm()
-                self.create_default_fwvm()
-                self.set_networking_type(netvm=True)
-                self.start_qubes_networking()
+                self.configure_default_dvm()
             except Exception as e:
                 errors.append((self.stage, str(e)))
-
-            try:
-                self.create_default_dvm()
-            except Exception as e:
-                errors.append((self.stage, str(e)))
-
-            if self.radio_servicevms_and_appvms.get_active():
-                try:
-                    self.create_appvms()
-                except Exception as e:
-                    errors.append((self.stage, str(e)))
 
             if errors:
                 msg = ""
@@ -129,61 +174,15 @@ class moduleClass(Module):
             self.show_stage("Failure...")
             self.progress.hide()
 
-            self.radio_dontdoanything.set_active(True)
+            self.check_advanced.set_active(True)
             interface.nextButton.set_sensitive(True)
 
             return RESULT_FAILURE
 
+
     def show_stage(self, stage):
         self.stage = stage
         self.progress.set_text(stage)
-
-    def set_default_template(self):
-        subprocess.call(['/usr/bin/qubes-prefs', '--set', 'default-template', self.default_template])
-
-    def configure_template(self, name):
-        self.show_stage(_("Configuring TemplateVM {}".format(name)))
-        self.run_in_thread(self.do_configure_template, args=(name,))
-
-    def run_in_thread(self, method, args = None):
-        thread = threading.Thread(target=method, args = (args if args else ()))
-        thread.start()
-        count = 0
-        while thread.is_alive():
-            self.progress.pulse()
-            while gtk.events_pending():
-                gtk.main_iteration(False)
-            time.sleep(0.1)
-        if self.process_error is not None:
-            raise Exception(self.process_error)
-
-    def create_default_netvm(self):
-        self.show_stage(_("Creating default NetworkVM"))
-        self.run_in_thread(self.do_create_netvm)
-
-    def create_default_fwvm(self):
-        self.show_stage(_("Creating default FirewallVM"))
-        self.run_in_thread(self.do_create_fwvm)
-
-    def create_default_dvm(self):
-        self.show_stage(_("Creating default DisposableVM"))
-        self.run_in_thread(self.do_create_dvm)
-
-    def set_networking_type(self, netvm):
-        if netvm:
-            self.show_stage(_("Setting FirewallVM + NetworkVM networking"))
-            self.run_in_thread(self.do_set_netvm_networking)
-        else:
-            self.show_stage(_("Setting Dom0 networking"))
-            self.run_in_thread(self.do_set_dom0_networking)
-
-    def start_qubes_networking (self):
-        self.show_stage(_("Starting Qubes networking"))
-        self.run_in_thread(self.do_start_networking)
-
-    def create_appvms (self):
-        self.show_stage(_("Creating handy AppVMs"))
-        self.run_in_thread(self.do_create_appvms)
 
     def run_command(self, command, stdin=None):
         try:
@@ -199,21 +198,57 @@ class moduleClass(Module):
         except Exception as e:
             self.process_error = str(e)
 
-    def get_timezone(self):
-        localtime = "/etc/localtime"
-        zoneinfo = "/usr/share/zoneinfo/"    # must end with "/"
-        if os.path.exists(localtime) and os.path.islink(localtime):
-            tzfile = os.path.realpath(localtime)
-            if tzfile.startswith(zoneinfo):
-                return tzfile[len(zoneinfo):]
-        return None
+    def run_in_thread(self, method, args = None):
+        thread = threading.Thread(target=method, args = (args if args else ()))
+        thread.start()
+        while thread.is_alive():
+            self.progress.pulse()
+            while gtk.events_pending():
+                gtk.main_iteration(False)
+            time.sleep(0.1)
+        if self.process_error is not None:
+            raise Exception(self.process_error)
+
+    def run_command_in_thread(self, *args):
+        self.run_in_thread(self.run_command, args)
+
+
+    def configure_qubes(self):
+        self.show_stage('Executing qubes configuration')
+        for state in QubesChoice.get_states():
+            self.run_command_in_thread(['qubesctl', 'top.enable', state,
+                'saltenv=dom0', '-l', 'quiet', '--out', 'quiet'])
+        self.run_command_in_thread(['qubesctl', 'state.highstate'])
+
+    def configure_default_template(self):
+        self.show_stage('Setting default template')
+        self.run_command_in_thread(['/usr/bin/qubes-prefs', '--set',
+                'default-template', self.default_template])
+
+    def configure_network(self):
+        self.show_stage('Setting up networking')
+        self.run_in_thread(self.do_configure_network)
+
+    def configure_default_dvm(self):
+        self.show_stage(_("Creating default DisposableVM"))
+        self.run_in_thread(self.do_configure_default_dvm)
+
+
+    def do_configure_default_dvm(self):
+        try:
+            self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
+        except:
+            # Kill DispVM template if still running
+            # Do not use self.run_command to not clobber process output
+            subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
+            raise
 
 
     def find_net_devices(self):
         p = subprocess.Popen (["/sbin/lspci", "-mm", "-n"], stdout=subprocess.PIPE)
         result = p.communicate()
         retcode = p.returncode
-        if (retcode != 0):
+        if retcode != 0:
             print "ERROR when executing lspci!"
             raise IOError
 
@@ -226,52 +261,18 @@ class moduleClass(Module):
                 assert dev_bdf is not None
                 net_devices.add (dev_bdf)
 
-        return  net_devices
+        return net_devices
 
-    def do_create_netvm(self):
-        self.run_command(['su', '-c', '/usr/bin/qvm-create --net --label red %s' % self.netvm_name, self.qubes_user])
+
+    def do_configure_network(self):
+        self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', 'sys-firewall', 'netvm', 'sys-net'])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'sys-firewall'])
+
         for dev in self.find_net_devices():
-            self.run_command(['/usr/bin/qvm-pci', '-a', self.netvm_name, dev])
+            self.run_command(['/usr/bin/qvm-pci', '-a', 'sys-net', dev])
 
-    def do_create_fwvm(self):
-        self.run_command(['su', '-c', '/usr/bin/qvm-create --proxy --label green %s' % self.fwvm_name, '-', self.qubes_user])
-
-    def do_create_dvm(self):
-        try:
-            self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
-        except:
-            # Kill DispVM template if still running
-            # Do not use self.run_command to not clobber process output
-            subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
-            raise
-
-
-    def do_set_netvm_networking(self):
-        self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', self.fwvm_name, 'netvm', self.netvm_name])
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', self.fwvm_name])
-
-    def do_set_dom0_networking(self):
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'dom0'])
-
-    def do_start_networking(self):
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
-    def do_configure_template(self, template):
-        self.run_command(['qvm-start', '--no-guid', template])
-        # Copy timezone setting from Dom0 to template
-        self.run_command(['qvm-run', '--nogui', '--pass-io',
-            '-u', 'root', template, 'cat > /etc/locale.conf'],
-            stdin=open('/etc/locale.conf', 'r'))
-        self.run_command(['su', '-c',
-            'qvm-sync-appmenus {}'.format(template),
-            '-', self.qubes_user])
-        self.run_command(['qvm-shutdown', '--wait', template])
-
-    def do_create_appvms(self):
-        self.run_command(['su', '-c', '/usr/bin/qvm-create work --label green', '-', self.qubes_user])
-        self.run_command(['su', '-c', '/usr/bin/qvm-create banking --label green', '-', self.qubes_user])
-        self.run_command(['su', '-c', '/usr/bin/qvm-create personal --label yellow', '-', self.qubes_user])
-        self.run_command(['su', '-c', '/usr/bin/qvm-create untrusted --label red', '-', self.qubes_user])
 
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
@@ -286,19 +287,44 @@ class moduleClass(Module):
         label.set_size_request(500, -1)
         self.vbox.pack_start(label, False, True, padding=20)
 
-        self.radio_servicevms_and_appvms  = gtk.RadioButton(None, _("Create default service VMs, and pre-defined AppVMs (work, banking, personal, untrusted)"))
-        self.vbox.pack_start(self.radio_servicevms_and_appvms, False, True)
+        self.choice_network = QubesChoice(
+            _('Create default system qubes (sys-net, sys-firewall)'),
+            ('qvm.sys-net', 'qvm.sys-firewall'))
 
-        self.radio_onlyservicevms = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Just create default service VMs"))
-        self.vbox.pack_start(self.radio_onlyservicevms, False, True)
+        self.choice_default = QubesChoice(
+            _('Create default application qubes '
+                '(personal, work, untrusted, vault)'),
+            ('qvm.personal', 'qvm.work', 'qvm.untrusted', 'qvm.vault'),
+            depend=self.choice_network)
 
-        self.radio_dontdoanything = gtk.RadioButton(self.radio_servicevms_and_appvms, _("Do not create any VMs right now (not recommended, for advanced users only)"))
-        self.vbox.pack_start(self.radio_dontdoanything, False, True)
+        self.choice_whonix = QubesChoice(
+            _('Create Whonix Gateway and Workstation qubes '
+                '(sys-whonix, anon-whonix)'),
+            ('qvm.sys-whonix', 'qvm.anon-whonix'),
+            depend=self.choice_network,
+            extra_check=lambda: is_package_installed('qubes-template-whonix-gw')
+                and is_package_installed('qubes-template-whonix-ws'))
+
+        self.check_advanced = gtk.CheckButton(
+            _('Do not configure anything (for advanced users)'))
+        self.check_advanced.connect('toggled',
+            QubesChoice.on_check_advanced_toggled)
+
+        for choice in QubesChoice.instances:
+            self.vbox.pack_start(choice.widget, False, True)
+        #self.vbox.pack_start(gtk.HSeparator())
+        self.vbox.pack_end(self.check_advanced, False, True)
 
         self.progress = None
 
+
     def initializeUI(self):
-        self.radio_servicevms_and_appvms.set_active(True)
+        self.check_advanced.set_active(False)
+
+        self.choice_network.widget.set_active(True)
+        self.choice_default.widget.set_active(True)
+        self.choice_whonix.widget.set_active(False)
+
         self.qubes_gid = grp.getgrnam('qubes').gr_gid
         self.stage = "Initialization"
         self.process_error = None
