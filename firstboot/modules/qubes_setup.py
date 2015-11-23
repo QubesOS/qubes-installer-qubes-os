@@ -147,6 +147,15 @@ class moduleClass(Module):
 
             errors = []
 
+            # Finish template(s) installation, because it wasn't fully possible
+            # from anaconda (it isn't possible to start a VM there).
+            # This is specific to firstboot, not general configuration.
+            for template in os.listdir('/var/lib/qubes/vm-templates'):
+                try:
+                    self.configure_template(template)
+                except Exception as e:
+                    errors.append((self.stage, str(e)))
+
             self.configure_default_template()
             self.configure_qubes()
             self.configure_network()
@@ -212,6 +221,9 @@ class moduleClass(Module):
     def run_command_in_thread(self, *args):
         self.run_in_thread(self.run_command, args)
 
+    def configure_template(self, name):
+        self.show_stage(_("Configuring TemplateVM {}".format(name)))
+        self.run_in_thread(self.do_configure_template, args=(name,))
 
     def configure_qubes(self):
         self.show_stage('Executing qubes configuration')
@@ -276,6 +288,12 @@ class moduleClass(Module):
 
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
+    def do_configure_template(self, template):
+        self.run_command(['qvm-start', '--no-guid', template])
+        self.run_command(['su', '-c',
+            'qvm-sync-appmenus {}'.format(template),
+            '-', self.qubes_user])
+        self.run_command(['qvm-shutdown', '--wait', template])
 
     def createScreen(self):
         self.vbox = gtk.VBox(spacing=5)
