@@ -215,6 +215,9 @@ class moduleClass(Module):
 
     def configure_qubes(self):
         self.show_stage('Executing qubes configuration')
+        # Refresh minion configuration to make sure all installed formulas are included
+        self.run_command_in_thread(['qubesctl', 'state.sls', 'config',
+            '-l', 'quiet', '--out', 'quiet'])
         for state in QubesChoice.get_states():
             self.run_command_in_thread(['qubesctl', 'top.enable', state,
                 'saltenv=dom0', '-l', 'quiet', '--out', 'quiet'])
