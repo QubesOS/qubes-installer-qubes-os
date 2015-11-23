@@ -258,34 +258,10 @@ class moduleClass(Module):
             subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
             raise
 
-
-    def find_net_devices(self):
-        p = subprocess.Popen (["/sbin/lspci", "-mm", "-n"], stdout=subprocess.PIPE)
-        result = p.communicate()
-        retcode = p.returncode
-        if retcode != 0:
-            print "ERROR when executing lspci!"
-            raise IOError
-
-        net_devices = set()
-        rx_netdev = re.compile (r"^([0-9][0-9]:[0-9][0-9].[0-9]) \"02")
-        for dev in str(result[0]).splitlines():
-            match = rx_netdev.match (dev)
-            if match is not None:
-                dev_bdf = match.group(1)
-                assert dev_bdf is not None
-                net_devices.add (dev_bdf)
-
-        return net_devices
-
-
     def do_configure_network(self):
         self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', 'sys-firewall', 'netvm', 'sys-net'])
         self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'sys-firewall'])
-
-        for dev in self.find_net_devices():
-            self.run_command(['/usr/bin/qvm-pci', '-a', 'sys-net', dev])
-
+        self.run_command(['/usr/bin/qvm-pci', '--add-class', 'sys-net', 'net'])
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
     def do_configure_template(self, template):
