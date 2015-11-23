@@ -344,7 +344,7 @@ class moduleClass(Module):
 
         self.choice_network.widget.set_active(True)
         self.choice_default.widget.set_active(True)
-        self.choice_whonix.widget.set_active(False)
+        self.choice_whonix.widget.set_active(True)
 
         self.qubes_gid = grp.getgrnam('qubes').gr_gid
         self.stage = "Initialization"
