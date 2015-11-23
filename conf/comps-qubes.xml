@@ -1138,6 +1138,17 @@
     </packagelist>
   </group>
 
+  <group>
+    <id>whonix</id>
+    <name>Whonix</name>
+    <default>false</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>qubes-template-whonix-gw</packagereq>
+      <packagereq>qubes-template-whonix-ws</packagereq>
+    </packagelist>
+  </group>
+
   <environment>
    <id>qubes-kde</id>
    <display_order>2</display_order>
