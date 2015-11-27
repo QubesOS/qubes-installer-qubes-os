@@ -242,7 +242,10 @@ class moduleClass(Module):
 
     def configure_network(self):
         self.show_stage('Setting up networking')
-        self.run_in_thread(self.do_configure_network)
+        self.run_in_thread(
+            self.do_configure_network,
+            'sys-whonix' if self.choice_whonix_default.get_selected() else
+            'sys-firewall')
 
     def configure_default_dvm(self):
         self.show_stage(_("Creating default DisposableVM"))
@@ -258,10 +261,12 @@ class moduleClass(Module):
             subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
             raise
 
-    def do_configure_network(self):
+    def do_configure_network(self, default_netvm):
         self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', 'sys-firewall', 'netvm', 'sys-net'])
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', 'sys-firewall'])
-        self.run_command(['/usr/bin/qvm-pci', '--add-class', 'sys-net', 'net'])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm',
+                          default_netvm])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'updatevm',
+                          default_netvm])
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
     def do_configure_template(self, template):
@@ -301,6 +306,12 @@ class moduleClass(Module):
             depend=self.choice_network,
             extra_check=lambda: is_package_installed('qubes-template-whonix-gw')
                 and is_package_installed('qubes-template-whonix-ws'))
+
+        self.choice_whonix_default = QubesChoice(
+            _('Route applications and updates through Tor anonymity network '
+                '[experimental]'),
+            (),
+            depend=self.choice_whonix)
 
         self.check_advanced = gtk.CheckButton(
             _('Do not configure anything (for advanced users)'))
