@@ -313,6 +313,11 @@ class moduleClass(Module):
             (),
             depend=self.choice_whonix)
 
+        self.choice_usb = QubesChoice(
+            _('Create USB qube holding all USB controllers (sys-usb) '
+                '[experimental]'),
+            ('qvm.sys-usb',))
+
         self.check_advanced = gtk.CheckButton(
             _('Do not configure anything (for advanced users)'))
         self.check_advanced.connect('toggled',
