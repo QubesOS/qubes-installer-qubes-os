@@ -105,7 +105,7 @@ class moduleClass(Module):
         self.title = N_("Create VMs")
         self.icon = "qubes.png"
         self.admin = libuser.admin()
-        self.default_template = 'fedora-21'
+        self.default_template = 'fedora-23'
         self.choices = []
 
     def _showErrorMessage(self, text):
