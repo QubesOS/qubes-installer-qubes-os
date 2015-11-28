@@ -246,8 +246,8 @@ class moduleClass(Module):
         self.show_stage('Setting up networking')
         self.run_in_thread(
             self.do_configure_network,
-            'sys-whonix' if self.choice_whonix_default.get_selected() else
-            'sys-firewall')
+            args=('sys-whonix' if self.choice_whonix_default.get_selected() else
+                  'sys-firewall',))
 
     def configure_default_dvm(self):
         self.show_stage(_("Creating default DisposableVM"))
