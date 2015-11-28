@@ -203,9 +203,11 @@ class moduleClass(Module):
                 self.process_error = None
             else:
                 self.process_error = "{} failed:\n{}".format(command, out)
-                raise Exception(self.process_error)
         except Exception as e:
             self.process_error = str(e)
+        if self.process_error:
+            # not only inform main thread, but also interrupt task thread
+            raise Exception(self.process_error)
 
     def run_in_thread(self, method, args = None):
         thread = threading.Thread(target=method, args = (args if args else ()))
