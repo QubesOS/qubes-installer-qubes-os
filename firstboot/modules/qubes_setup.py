@@ -310,8 +310,8 @@ class moduleClass(Module):
                 and is_package_installed('qubes-template-whonix-ws'))
 
         self.choice_whonix_default = QubesChoice(
-            _('Route applications and updates through Tor anonymity network '
-                '[experimental]'),
+            _('Route applications traffic and updates through Tor anonymity '
+              'network [experimental]'),
             (),
             depend=self.choice_whonix)
 
