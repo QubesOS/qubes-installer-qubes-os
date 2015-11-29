@@ -233,13 +233,26 @@ class moduleClass(Module):
 
     def configure_qubes(self):
         self.show_stage('Executing qubes configuration')
+        try:
+            # get rid of initial entries (from package installation time)
+            os.rename('/var/log/salt/minion', '/var/log/salt/minion.install')
+        except OSError:
+            pass
         # Refresh minion configuration to make sure all installed formulas are included
         self.run_command_in_thread(['qubesctl', 'state.sls', 'config',
             '-l', 'quiet', '--out', 'quiet'])
         for state in QubesChoice.get_states():
             self.run_command_in_thread(['qubesctl', 'top.enable', state,
                 'saltenv=dom0', '-l', 'quiet', '--out', 'quiet'])
-        self.run_command_in_thread(['qubesctl', 'state.highstate'])
+        try:
+            self.run_command_in_thread(['qubesctl', 'state.highstate'])
+        except Exception as e:
+            raise Exception(
+                "Qubes initial configuration failed. Login to the system and "
+                "check /var/log/salt/minion for details. "
+                "You can retry configuration by calling "
+                "'sudo qubesctl state.highstate' in dom0 (you will get "
+                "detailed state there).")
 
     def configure_default_template(self):
         self.show_stage('Setting default template')
