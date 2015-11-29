@@ -1370,8 +1370,8 @@ class GRUB2(GRUB):
 
     def __init__(self):
         super(GRUB2, self).__init__()
-        self.boot_args.add("$([ -x /usr/sbin/rhcrashkernel-param ] && "\
-                           "/usr/sbin/rhcrashkernel-param || :)")
+        #self.boot_args.add("$([ -x /usr/sbin/rhcrashkernel-param ] && "\
+        #                   "/usr/sbin/rhcrashkernel-param || :)")
 
     # XXX we probably need special handling for raid stage1 w/ gpt disklabel
     #     since it's unlikely there'll be a bios boot partition on each disk
