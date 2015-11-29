@@ -3,7 +3,7 @@
 %endif
 
 Name:		lorax-templates-qubes
-Version:	3.1
+Version:	3.1.1
 Release:	1%{?dist}
 Summary:	Lorax templates for Qubes installation ISO
 
