@@ -1780,9 +1780,10 @@ class XenEFI(EFIGRUB):
             config.write("\n")
             config.write("[{}]\n".format(image.version))
             config.write("options=loglvl=all\n")
-            config.write("kernel={} root={}\n".format(
+            config.write("kernel={} root={} {}\n".format(
                 image.kernel,
-                image.device.fstabSpec))
+                image.device.fstabSpec,
+                self.boot_args))
             config.write("ramdisk={}\n".format(image.initrd))
 
     def write_config_console(self, config):
