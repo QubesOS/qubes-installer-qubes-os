@@ -28,12 +28,6 @@ install ${configdir}/grub.conf ${BOOTDIR}
 install usr/share/anaconda/boot/syslinux-splash.png ${BOOTDIR}/splash.png
 install boot/memtest* ${BOOTDIR}/memtest
 
-mkdir ${EXTRAKERNELS}
-# bypass "chroot" enforced by Lorax parser
-install ../../../../yum/qubes-dom0/rpm/kernel-[0-9]*rpm ${EXTRAKERNELS}
-# include kernels downloaded from Fedora repositories
-install ../../../../../../../../var/cache/pungi/fedora*/packages/kernel-[0-9]*rpm ${EXTRAKERNELS}
-
 ## install kernels
 mkdir ${KERNELDIR}
 <%
@@ -62,12 +56,6 @@ sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
     %endif
     installkernel images-alt-${shortkver} ${kernel.path} ${BOOTDIR}/vmlinuz-${shortkver}
     installinitrd images-alt-${shortkver} ${kernel.initrd.path} ${BOOTDIR}/initrd-${shortkver}.img
-    replace '@EXTRAKERNELS@' 'label kernel-${kernel.version}\n\
-  menu indent count 5\n\
-  menu label ^Install @PRODUCT@ using ${kernel.version} kernel\n\
-  kernel mboot.c32\n\
-  append xen.gz --- vmlinuz-${shortkver} @ROOT@ quiet --- initrd-${shortkver}.img\n\
-  @EXTRAKERNELS@' ${BOOTDIR}/isolinux.cfg
 
   <% latestkver = kernel.version %>
 
