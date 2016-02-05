@@ -1727,6 +1727,9 @@ class XenEFI(EFIGRUB):
     packages = ["efibootmgr"]
     _config_file = 'xen.cfg'
 
+    # stage2 not used at all, so allow any type
+    stage2_device_types = ["partition", "mdarray", "lvmlv"]
+
     def __init__(self):
         super(XenEFI, self).__init__()
         self.efi_dir = 'qubes'
