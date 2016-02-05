@@ -169,6 +169,7 @@ class moduleClass(Module):
                 choice.widget.set_sensitive(False)
             self.check_advanced.set_sensitive(False)
             interface.nextButton.set_sensitive(False)
+            interface.backButton.set_sensitive(False)
 
             if self.progress is None:
                 self.progress = gtk.ProgressBar()
