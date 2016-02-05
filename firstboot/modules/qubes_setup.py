@@ -36,6 +36,8 @@ from firstboot.functions import *
 from firstboot.module import *
 
 import gettext
+import pyudev
+
 _ = lambda x: gettext.ldgettext("firstboot", x)
 N_ = lambda x: x
 
@@ -44,6 +46,37 @@ def is_package_installed(pkgname):
     return not subprocess.call(['rpm', '-q', pkgname],
         stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
 
+def usb_keyboard_present():
+    context = pyudev.Context()
+    keyboards = context.list_devices(subsystem='input', ID_INPUT_KEYBOARD='1')
+    return any([d.get('ID_USB_INTERFACES', False) for d in keyboards])
+
+def started_from_usb():
+    def get_all_used_devices(dev):
+        stat = os.stat(dev)
+        if stat.st_rdev:
+            # XXX any better idea how to handle device-mapper?
+            sysfs_slaves = '/sys/dev/block/{}:{}/slaves'.format(
+                os.major(stat.st_rdev), os.minor(stat.st_rdev))
+            if os.path.exists(sysfs_slaves):
+                for slave_dev in os.listdir(sysfs_slaves):
+                    for d in get_all_used_devices('/dev/{}'.format(slave_dev)):
+                        yield d
+            else:
+                yield dev
+
+    context = pyudev.Context()
+    mounts = open('/proc/mounts').readlines()
+    for mount in mounts:
+        device = mount.split(' ')[0]
+        if not os.path.exists(device):
+            continue
+        for dev in get_all_used_devices(device):
+            udev_info = pyudev.Device.from_device_file(context, dev)
+            if udev_info.get('ID_USB_INTERFACES', False):
+                return True
+
+    return False
 
 class QubesChoice(object):
     instances = []
@@ -74,9 +107,7 @@ class QubesChoice(object):
 
 
     def set_sensitive(self, sensitive):
-        self.widget.set_sensitive(sensitive
-            and (self.extra_check is None or self.extra_check()))
-
+        self.widget.set_sensitive(sensitive)
 
     @classmethod
     def on_check_advanced_toggled(cls, widget):
@@ -95,6 +126,12 @@ class QubesChoice(object):
             if choice.get_selected():
                 for state in choice.states:
                     yield state
+
+
+class DisabledChoice(QubesChoice):
+    def __init__(self, label):
+        super(DisabledChoice, self).__init__(label, ())
+        self.widget.set_sensitive(False)
 
 
 class moduleClass(Module):
@@ -318,13 +355,15 @@ class moduleClass(Module):
             ('qvm.personal', 'qvm.work', 'qvm.untrusted', 'qvm.vault'),
             depend=self.choice_network)
 
-        self.choice_whonix = QubesChoice(
-            _('Create Whonix Gateway and Workstation qubes '
-                '(sys-whonix, anon-whonix)'),
-            ('qvm.sys-whonix', 'qvm.anon-whonix'),
-            depend=self.choice_network,
-            extra_check=lambda: is_package_installed('qubes-template-whonix-gw')
-                and is_package_installed('qubes-template-whonix-ws'))
+        if is_package_installed('qubes-template-whonix-gw') and \
+                is_package_installed('qubes-template-whonix-ws'):
+            self.choice_whonix = QubesChoice(
+                _('Create Whonix Gateway and Workstation qubes '
+                    '(sys-whonix, anon-whonix)'),
+                ('qvm.sys-whonix', 'qvm.anon-whonix'),
+                depend=self.choice_network)
+        else:
+            self.choice_whonix = DisabledChoice(_("Whonix not installed"))
 
         self.choice_whonix_default = QubesChoice(
             _('Route applications traffic and updates through Tor anonymity '
@@ -332,10 +371,15 @@ class moduleClass(Module):
             (),
             depend=self.choice_whonix)
 
-        self.choice_usb = QubesChoice(
-            _('Create USB qube holding all USB controllers (sys-usb) '
-                '[experimental]'),
-            ('qvm.sys-usb',))
+        if not usb_keyboard_present() and not started_from_usb():
+            self.choice_usb = QubesChoice(
+                _('Create USB qube holding all USB controllers (sys-usb) '
+                    '[experimental]'),
+                ('qvm.sys-usb',))
+        else:
+            self.choice_usb = DisabledChoice(
+                _('USB qube configuration disabled - you are using USB '
+                  'keyboard or USB disk'))
 
         self.check_advanced = gtk.CheckButton(
             _('Do not configure anything (for advanced users)'))

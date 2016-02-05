@@ -34,6 +34,7 @@ Requires(preun): systemd-units
 Requires(postun): systemd-units
 Requires: firstboot(windowmanager)
 Requires: libreport-python
+Requires: python-pyudev
 Requires: qubes-artwork
 Requires: qubes-mgmt-salt-dom0
 
