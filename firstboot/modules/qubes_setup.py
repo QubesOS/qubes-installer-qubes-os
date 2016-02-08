@@ -80,12 +80,14 @@ def started_from_usb():
 
 class QubesChoice(object):
     instances = []
-    def __init__(self, label, states, depend=None, extra_check=None):
+    def __init__(self, label, states, depend=None, extra_check=None,
+                 replace=None):
         self.widget = gtk.CheckButton(label)
         self.states = states
         self.depend = depend
         self.extra_check = extra_check
         self.selected = None
+        self.replace = replace
 
         if self.depend is not None:
             self.depend.widget.connect('toggled', self.friend_on_toggled)
@@ -122,10 +124,17 @@ class QubesChoice(object):
 
     @classmethod
     def get_states(cls):
+        replaced = reduce(
+            lambda x, y: x+y if y else x,
+            (choice.replace for choice in cls.instances if
+             choice.get_selected()),
+            ()
+        )
         for choice in cls.instances:
             if choice.get_selected():
                 for state in choice.states:
-                    yield state
+                    if state not in replaced:
+                        yield state
 
 
 class DisabledChoice(QubesChoice):
@@ -381,6 +390,13 @@ class moduleClass(Module):
             self.choice_usb = DisabledChoice(
                 _('USB qube configuration disabled - you are using USB '
                   'keyboard or USB disk'))
+
+        self.choice_usb_with_net = QubesChoice(
+            _("Use sys-net qube for both networking and USB devices"),
+            ('qvm.sys-net-with-usb',),
+            depend=self.choice_usb,
+            replace=('qvm.sys-usb',),
+        )
 
         self.check_advanced = gtk.CheckButton(
             _('Do not configure anything (for advanced users)'))
