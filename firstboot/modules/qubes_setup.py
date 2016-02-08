@@ -81,13 +81,19 @@ def started_from_usb():
 class QubesChoice(object):
     instances = []
     def __init__(self, label, states, depend=None, extra_check=None,
-                 replace=None):
+                 replace=None, indent=False):
         self.widget = gtk.CheckButton(label)
         self.states = states
         self.depend = depend
         self.extra_check = extra_check
         self.selected = None
         self.replace = replace
+        if indent:
+            self.outer_widget = gtk.Alignment()
+            self.outer_widget.add(self.widget)
+            self.outer_widget.set_padding(0, 0, 20, 0)
+        else:
+            self.outer_widget = self.widget
 
         if self.depend is not None:
             self.depend.widget.connect('toggled', self.friend_on_toggled)
@@ -379,7 +385,8 @@ class moduleClass(Module):
             _('Route applications traffic and updates through Tor anonymity '
               'network [experimental]'),
             (),
-            depend=self.choice_whonix)
+            depend=self.choice_whonix,
+            indent=True)
 
         if not usb_keyboard_present() and not started_from_usb():
             self.choice_usb = QubesChoice(
@@ -396,6 +403,7 @@ class moduleClass(Module):
             ('qvm.sys-net-with-usb',),
             depend=self.choice_usb,
             replace=('qvm.sys-usb',),
+            indent=True
         )
 
         self.check_advanced = gtk.CheckButton(
@@ -404,7 +412,7 @@ class moduleClass(Module):
             QubesChoice.on_check_advanced_toggled)
 
         for choice in QubesChoice.instances:
-            self.vbox.pack_start(choice.widget, False, True)
+            self.vbox.pack_start(choice.outer_widget, False, True)
         #self.vbox.pack_start(gtk.HSeparator())
         self.vbox.pack_end(self.check_advanced, False, True)
 
