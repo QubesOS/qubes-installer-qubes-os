@@ -97,6 +97,7 @@ class QubesChoice(object):
 
         if self.depend is not None:
             self.depend.widget.connect('toggled', self.friend_on_toggled)
+            self.friend_on_toggled(self.depend.widget)
 
         self.instances.append(self)
 
