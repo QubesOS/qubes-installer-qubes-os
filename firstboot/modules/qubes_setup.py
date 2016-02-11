@@ -340,6 +340,8 @@ class moduleClass(Module):
                           default_netvm])
         self.run_command(['/usr/bin/qubes-prefs', '--set', 'updatevm',
                           default_netvm])
+        self.run_command(['/usr/bin/qubes-prefs', '--set', 'clockvm',
+                          'sys-net'])
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
     def do_configure_template(self, template):
