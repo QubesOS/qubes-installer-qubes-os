@@ -213,7 +213,8 @@ class moduleClass(Module):
             self.configure_default_template()
             self.configure_qubes()
             self.configure_network()
-            if self.choice_usb.get_selected():
+            if self.choice_usb.get_selected() \
+                    and not self.choice_usb_with_net.get_selected():
                 # Workaround for #1464 (so qvm.start from salt can't be used)
                 self.run_command_in_thread(['systemctl', 'start',
                                             'qubes-vm@sys-usb.service'])
