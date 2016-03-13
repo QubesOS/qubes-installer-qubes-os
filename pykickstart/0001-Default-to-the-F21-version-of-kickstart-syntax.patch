@@ -1,25 +1,26 @@
-diff -ruN pykickstart-1.99.63.orig/pykickstart/version.py pykickstart-1.99.63/pykickstart/version.py
---- pykickstart-1.99.63.orig/pykickstart/version.py	2014-10-13 11:22:47.053181434 -0400
-+++ pykickstart-1.99.63/pykickstart/version.py	2014-10-13 11:22:53.773239001 -0400
-@@ -78,8 +78,8 @@
- F21 = 19000
+diff --git a/pykickstart/version.py b/pykickstart/version.py
+index 379f13f..f107cef 100644
+--- a/pykickstart/version.py
++++ b/pykickstart/version.py
+@@ -83,8 +83,8 @@ F21 = 19000
  F22 = 20000
+ F23 = 21000
  
 -# This always points at the latest version and is the default.
--DEVEL = F22
+-DEVEL = F23
 +# Point to the proper version of kickstart syntax for this release.
 +DEVEL = F21
  
  # A one-to-one mapping from string representations to version numbers.
  versionMap = {
-diff -ruN pykickstart-1.99.63.orig/tests/version.py pykickstart-1.99.63/tests/version.py
---- pykickstart-1.99.63.orig/tests/version.py	2014-10-13 11:22:47.066181228 -0400
-+++ pykickstart-1.99.63/tests/version.py	2014-10-13 11:23:24.882507493 -0400
-@@ -148,17 +148,6 @@
- 
+diff --git a/tests/version.py b/tests/version.py
+index acb79cd..f0b9c29 100644
+--- a/tests/version.py
++++ b/tests/version.py
+@@ -155,16 +155,6 @@ class StringToVersion_TestCase(CommandTest):
  class VersionToString_TestCase(CommandTest):
      def runTest(self):
--
+ 
 -        # Make sure DEVEL is the highest version, but RHEL versions aren't
 -        # counted as devel.
 -        highest = 0
@@ -33,11 +34,11 @@ diff -ruN pykickstart-1.99.63.orig/tests/version.py pykickstart-1.99.63/tests/ve
          # FC series
          self.assertEqual(versionToString(FC3), "FC3")
          self.assertEqual(versionToString(FC4), "FC4")
-@@ -184,7 +173,7 @@
-         self.assertEqual(versionToString(F20, skipDevel=True), "F20")
+@@ -191,7 +181,7 @@ class VersionToString_TestCase(CommandTest):
          self.assertEqual(versionToString(F21, skipDevel=True), "F21")
          self.assertEqual(versionToString(F22, skipDevel=True), "F22")
--        self.assertEqual(versionToString(F22, skipDevel=False), "DEVEL")
+         self.assertEqual(versionToString(F23, skipDevel=True), "F23")
+-        self.assertEqual(versionToString(F23, skipDevel=False), "DEVEL")
 +        self.assertEqual(versionToString(F21, skipDevel=False), "DEVEL")
          # RHEL series
          self.assertEqual(versionToString(RHEL3), "RHEL3")

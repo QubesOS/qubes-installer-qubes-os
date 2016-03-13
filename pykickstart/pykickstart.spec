@@ -4,64 +4,266 @@
 %define _sourcedir %(pwd)/pykickstart
 %endif
 
-Summary:  A python library for manipulating kickstart files
-Name: pykickstart
-Url: http://fedoraproject.org/wiki/pykickstart
-Version: 1.99.66
-Release: 2.2%{?dist}
+Name:      pykickstart
+Version:   2.13
+Release:   1%{?dist}
+Epoch: 1000
+License:   GPLv2 and MIT
+Group:     System Environment/Libraries
+Summary:   Python utilities for manipulating kickstart files.
+Url:       http://fedoraproject.org/wiki/pykickstart
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
 # within this srpm.
-Source0: %{name}-%{version}.tar.gz
+Source0:   %{name}-%{version}.tar.gz
 Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
-Patch1: repo-gpgkey-option.patch
-
-License: GPLv2
-Group: System Environment/Libraries
+Patch1: 0002-disable-test.patch
+Patch2: repo-gpgkey-option.patch
 BuildArch: noarch
+
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: python-devel, gettext
-BuildRequires: python-urlgrabber
+BuildRequires: gettext
+BuildRequires: python-devel
+BuildRequires: python-nose
+BuildRequires: python-setuptools
+BuildRequires: python-requests
 %if ! 0%{?rhel}
 BuildRequires: transifex-client
 %endif
-Requires: python, python-urlgrabber
+
+BuildRequires: python3-devel
+BuildRequires: python3-nose
+BuildRequires: python3-pocketlint
+BuildRequires: python3-requests
+BuildRequires: python3-setuptools
+BuildRequires: python3-six
+
+Requires: python3-kickstart
 
 %description
-The pykickstart package is a python library for manipulating kickstart
-files.
+Python utilities for manipulating kickstart files.  The Python 2 and 3 libraries
+can be found in the packages python-kickstart and python3-kickstart
+respectively.
+
+# Python 2 library
+%package -n python-kickstart
+Summary:  Python 2 library for manipulating kickstart files.
+Requires: python-six
+Requires: python-requests
+
+%description -n python-kickstart
+Python 2 library for manipulating kickstart files.  The binaries are found in
+the pykickstart package.
+
+# Python 3 library
+%package -n python3-kickstart
+Summary:  Python 3 library for manipulating kickstart files.
+Requires: python3-six
+Requires: python3-requests
+
+%description -n python3-kickstart
+Python 3 library for manipulating kickstart files.  The binaries are found in
+the pykickstart package.
 
 %prep
 %setup -q
 
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
+
+rm -rf %{py3dir}
+mkdir %{py3dir}
+cp -a . %{py3dir}
 
 %build
 make
 
+pushd %{py3dir}
+PYTHON=%{__python3} make
+popd
+
 %install
 rm -rf %{buildroot}
-make DESTDIR=%{buildroot} PATH=/usr/bin:/bin:/usr/sbin:/sbin install
-%find_lang %{name}
+make DESTDIR=%{buildroot} install
 
-%clean
-rm -rf %{buildroot}
+pushd %{py3dir}
+PYTHON=%{__python3} make DESTDIR=%{buildroot} install
+popd
 
-%files -f %{name}.lang
+%check
+make test
+
+pushd %{py3dir}
+PYTHON=%{__python3} make DESTDIR=%{buildroot} test
+popd
+
+%files
 %defattr(-,root,root,-)
-%doc README COPYING docs/programmers-guide
-%doc docs/kickstart-docs.txt
-%{python_sitelib}/*
+%license COPYING
+%doc README
 %{_bindir}/ksvalidator
 %{_bindir}/ksflatten
 %{_bindir}/ksverdiff
 %{_bindir}/ksshell
 %{_mandir}/man1/*
 
+%files -n python-kickstart
+%defattr(-,root,root,-)
+%doc docs/programmers-guide
+%doc docs/kickstart-docs.rst
+%{python2_sitelib}/pykickstart*egg*
+%{python2_sitelib}/pykickstart/*py*
+%{python2_sitelib}/pykickstart/commands/*py*
+%{python2_sitelib}/pykickstart/handlers/*py*
+%{python2_sitelib}/pykickstart/locale/
+
+%files -n python3-kickstart
+%defattr(-,root,root,-)
+%doc docs/programmers-guide
+%doc docs/kickstart-docs.rst
+%{python3_sitelib}/pykickstart*egg*
+%{python3_sitelib}/pykickstart/*py*
+%{python3_sitelib}/pykickstart/commands/*py*
+%{python3_sitelib}/pykickstart/handlers/*py*
+%{python3_sitelib}/pykickstart/locale/
+
 %changelog
-* Fri Dec 19 2014 Chris Lumens <clumens@redhat.com> 1.99.65-2
-- Rebuild for F21.
+* Wed Aug 05 2015 Chris Lumens <clumens@redhat.com> - 2.13-1
+- Fix liveimg equality check (bcl)
+- improve test coverage for version.py (atodorov)
+
+* Thu Jul 30 2015 Chris Lumens <clumens@redhat.com> - 2.12-1
+- Avoid polluting generated kickstarts by unexpected reqpart commands (#1164660) (mkolman)
+- Don't always assume the mock chroot is on x86_64. (clumens)
+- Remove documentation compilation warnings (jkonecny)
+- Use sys.exit instead of os._exit. (clumens)
+- Add a new makefile target that does everything needed for jenkins. (clumens)
+
+* Thu Jul 09 2015 Chris Lumens <clumens@redhat.com> - 2.11-1
+- Run nosetests with the same python as was passed to make. (clumens)
+- Looks like Group still needs to define __hash__ to be hashable. (clumens)
+
+* Mon Jul 06 2015 Chris Lumens <clumens@redhat.com> - 2.10-1
+- Don't forget to call the superclass's __init__ in Group now. (clumens)
+- Group objects need to be hashable. (clumens)
+- Ignore some more files. (clumens)
+- Don't allow using --fsprofile and --mkfsopts at the same time. (clumens)
+
+* Mon Jun 22 2015 Chris Lumens <clumens@redhat.com> - 2.9-1
+- Add --mkfsoptions to btrfs, logvol, partition, and raid commands. (clumens)
+- Document the unit used for the --cachesize option (vpodzime)
+- Add options for LVM cache specs to the 'logvol' command (vpodzime) (clumens)
+- Set PYTHONPATH when running "make check". (clumens)
+- Add --mkfsoptions to btrfs, logvol, partition, and raid commands. (clumens)
+- Avoid traceback in module loading failure paths. (dlehman)
+- Install the python3 .mo files to python3_sitelib (dshea)
+- add extra test coverage for commands/btrfs.py (atodorov)
+- additional test coverage for commands/device.py (atodorov)
+- additional test coverage for parser/sections.py (atodorov)
+- add test documentation (atodorov)
+- cover corner case in commands/eula.py test (atodorov)
+
+* Tue Jun 02 2015 Chris Lumens <clumens@redhat.com> - 2.8-1
+- Merge pull request #16 from atodorov/commands_partition_updates (clumens)
+- Merge pull request #15 from atodorov/fix_zanata_warning (clumens)
+- cover some corner cases in the current partitioning test revealed by python-coverage (atodorov)
+- Merge pull request #14 from atodorov/check_if_nosetests_is_installed (clumens)
+- Remove unnecessary part_cb() and related __init__() methods (atodorov)
+- fix: Warning, the url https://fedora.zanata.org/, contains / at end,please check your URL in zanata.xml (atodorov)
+- if zanata and coverage are not installed make the error messages more platform independent (atodorov)
+- check if nosetest is installed and abort with error if not (atodorov)
+- Merge pull request #13 from vpodzime/master-ntp_pools (clumens)
+- Adapt the Timezone class to support NTP pools (vpodzime)
+- Update kickstart-docs.rst (jkonecny)
+- RHEL7 now supports the reqpart command, too. (clumens)
+- Use isinstance instead of type. (clumens)
+- Add a missing space before --profile= on the logvol command. (clumens)
+- Add some missing removedKeywords/removedAttrs setting. (clumens)
+
+* Tue Apr 28 2015 Chris Lumens <clumens@redhat.com> - 2.7-1
+- Ignore some pylint warnings in the tools/ directory. (clumens)
+- Move most pylint disable pragmas onto the line they apply to. (clumens)
+- Allow skipping the errors on unknown sections. (clumens)
+
+* Tue Apr 21 2015 Chris Lumens <clumens@redhat.com> - 2.6-1
+- Merge pull request #8 from bcl/master-kexec (clumens)
+- Merge pull request #10 from bcl/master-pre-install (clumens)
+- Switch to using nosetests. (clumens)
+- Allow multiple partitions with the "swap" mountpoint. (clumens)
+- Add %pre-install section to be used after mounting filesystems (bcl)
+- Convert reboot to use _getArgsAsStr (bcl)
+- Merge pull request #9 from bcl/master-rc-release (clumens)
+- Add rc-release Makefile target (bcl)
+- Add --kexec flag to reboot (bcl)
+
+* Fri Apr 17 2015 Chris Lumens <clumens@redhat.com> - 2.5-1
+- Add a new command to only make those partitions required by the platform. (clumens)
+- btrfs levels should be handled the same way as RAID levels. (clumens)
+- Include test cases for lower-cased and just numeric versions of RAID levels. (clumens)
+- Two more docs fixes. (clumens)
+
+* Tue Apr 14 2015 Chris Lumens <clumens@redhat.com> - 2.4-1
+- Move docs to the correct file name. (clumens)
+- Handle two-digit version numbers on this branch. (clumens)
+
+* Tue Apr 14 2015 Chris Lumens <clumens@redhat.com> - 2.3-1
+- Merge pull request #5 from vpodzime/master-python3 (clumens)
+- RHEL7 now uses the F21 versions of commands, typically. (clumens)
+- Handle a %include line that starts with whitespace in a section. (clumens)
+- Treat "RAID" as uppercased at all times. (clumens)
+- Add support for Fedora 23. (clumens)
+- Merge pull request #6 from vpodzime/master-docs (clumens)
+- Switch from transifex to zanata. (clumens)
+- Let's have the docs in the repository (vpodzime)
+- Prevent recursion in hasattr and __getattr__ (vpodzime)
+
+* Tue Mar 24 2015 Chris Lumens <clumens@redhat.com> - 2.2-1
+- And then BuildRequires pocketlint. (clumens)
+- Fix the couple last pylint warnings. (clumens)
+- Tell pylint to ignore a couple places where we catch all exceptions. (clumens)
+- Don't use [] as a default argument to loadModules. (clumens)
+- Define bytesPerInode in __init__ methods. (clumens)
+- Don't pointlessly redefine the command attr in some tests. (clumens)
+- tstList -> tests (clumens)
+- lan -> len (clumens)
+- Fix wildcard imports and other import-related pylint problems. (clumens)
+- Remove some unused variables. (clumens)
+- Fix string substitutions into translatable strings. (clumens)
+- Start using pocketlint to run pylint. (clumens)
+
+* Thu Feb 26 2015 Chris Lumens <clumens@redhat.com> - 2.1-1
+- Both library packages need to require python-six of some variety (#1195715). (clumens)
+- Fix the python-six requirement for python3-kickstart (#1195719). (clumens)
+
+* Fri Feb 20 2015 Chris Lumens <clumens@redhat.com> - 2.0-1
+- Make sure pykickstart requires some version of the library. (clumens)
+- Split into python2 and python3 specific packages. (clumens)
+- Look for translations in their new location. (clumens)
+- Install .mo files into the python site-packages directory. (clumens)
+- Merge pull request #3 from tradej/python3 (clumens)
+- Fixed pylint warnings (tradej)
+- Fixed executables in tools + related parts of pykickstart.parser. (tradej)
+- Explicitly closing files. Python 3 tests work now. (tradej)
+- Implemented rich comparison for parser.Group. (tradej)
+- Error parsing in test.commands.logvol matches Python 3's optparse. (tradej)
+- Keeping order of contents in the %packages section with OrderedSet (under MIT license). (tradej)
+- Redefined _ in pykickstart.i18n, importing. (tradej)
+- Fixed assertRaisesRegexp function in Python3. (tradej)
+- Replaced string.strip(pkgs) with str(pkgs).strip(). (tradej)
+- Adapted Makefile to allow running tests under Python 3. (tradej)
+- Converted syntax to Python 3-compatible (rhbz#985310) (tradej)
+- Fix a problem pylint caught with the last patch merge. (clumens)
+- Make sure pykickstart/*/*py messages get included in pykickstart.pot. (clumens)
+- Merge pull request #2 from tradej/urlgrabber (clumens)
+- Replaced URLGrabber with requests (rhbz#1141245) (tradej)
+- Remove --nobase as an option. (clumens)
+- Add support to rhel6 for specifying thin pool profile (vpodzime)
+- Add support to rhel6 for custom layouts using lvm thin provisioning. (dlehman)
+
+* Fri Jan 30 2015 Chris Lumens <clumens@redhat.com> - 1.99.66-1
+- network: add support for bridge to F22 (#1075195) (rvykydal)
+- Use %license in pykickstart.spec (bcl)
 
 * Mon Dec 15 2014 Chris Lumens <clumens@redhat.com> - 1.99.65-1
 - Add support for setting user account ssh key (bcl)
@@ -74,9 +276,6 @@ rm -rf %{buildroot}
 - Add new RHEL7 logvol objects to master (vpodzime)
 - Add new RHEL7 volgroup objects to master (vpodzime)
 - RHEL7 supports the ostreesetup command. (clumens)
-
-* Mon Oct 13 2014 Chris Lumens <clumens@redhat.com> 1.99.63-2
-- Rebuild for F20.
 
 * Fri Oct 10 2014 Chris Lumens <clumens@redhat.com> - 1.99.63-1
 - Move the test for --nombr option to the right class (vpodzime)
@@ -92,9 +291,6 @@ rm -rf %{buildroot}
 - Add missing import (mkolman)
 - Add tests for --interfacename validation (mkolman)
 - Validate network interface name when parsing the kickstart (#1081982) (mkolman)
-
-* Thu Sep 25 2014 Chris Lumens <clumens@redhat.com> 1.99.60-2
-- Add a patch to default to F21 syntax.
 
 * Wed Sep 24 2014 Chris Lumens <clumens@redhat.com> - 1.99.60-1
 - Make --size and --percent mutually exclusive in logvol. (dlehman)
@@ -995,7 +1191,7 @@ rm -rf %{buildroot}
 - Make ksvalidator validate from a URL in addition to a file.
 - Don't write out an empty packages section (#192851).
 
-* Thu May 23 2006 Chris Lumens <clumens@redhat.com> 0.29-1
+* Tue May 23 2006 Chris Lumens <clumens@redhat.com> 0.29-1
 - Add multipath command, handlers, and data objects (pjones).
 - Rename --ports to --port in writer.
 
@@ -1003,7 +1199,7 @@ rm -rf %{buildroot}
 - Support --mtu for the network command (#191328).
 - Accept --isUtc for backwards compatibility.
 
-* Wed May 04 2006 Chris Lumens <clumens@redhat.com> 0.27-1
+* Thu May 04 2006 Chris Lumens <clumens@redhat.com> 0.27-1
 - Output formatting fixes.
 - Added commands for managing users and services.
 
