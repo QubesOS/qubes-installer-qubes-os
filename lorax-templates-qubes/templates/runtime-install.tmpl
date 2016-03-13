@@ -17,8 +17,7 @@ installpkg firstaidkit-plugin-{passwd,key-recovery,mdadm-conf}
 ## kernel and firmware
 installpkg kernel
 %if basearch != "s390x":
-    installpkg *-firmware -ivtv-firmware
-    installpkg b43-openfwwf
+    installpkg linux-firmware
 %endif
 installpkg xen-hypervisor
 
