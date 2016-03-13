@@ -5,3 +5,4 @@ pkgs/
 installer
 *~
 build/
+anaconda/widgets/src/gettext.h
