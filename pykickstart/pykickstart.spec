@@ -15,6 +15,13 @@ Url:       http://fedoraproject.org/wiki/pykickstart
 # This is a Red Hat maintained package which is specific to
 # our distribution.  Thus the source is only available from
 # within this srpm.
+
+# Qubes: To get the source:
+# git clone https://github.com/rhinstaller/pykickstart
+# check out the version of interest by its tag (rXX-X)
+# sudo dnf install zanata-python-client
+# make po-pull && make archive
+# The tarball will be in the current directory.
 Source0:   %{name}-%{version}.tar.gz
 Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
 Patch1: 0002-disable-test.patch
