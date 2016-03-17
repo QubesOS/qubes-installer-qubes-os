@@ -84,6 +84,7 @@ BuildRequires: libtimezonemap-devel >= %{libtimezonemapver}
 Requires: anaconda-core = %{epoch}:%{version}-%{release}
 Requires: anaconda-gui = %{epoch}:%{version}-%{release}
 Requires: anaconda-tui = %{epoch}:%{version}-%{release}
+Requires: anaconda-dracut
 
 %description
 The anaconda package is a metapackage for the Anaconda installer.
