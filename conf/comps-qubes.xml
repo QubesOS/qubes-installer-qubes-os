@@ -1023,6 +1023,7 @@
       <packagereq>dmraid</packagereq>
       <packagereq>dosfstools</packagereq>
       <packagereq>dracut-network</packagereq>
+      <packagereq>dracut-live</packagereq>
       <packagereq>e2fsprogs</packagereq>
       <packagereq>efibootmgr</packagereq>
       <packagereq>fcoe-utils</packagereq>
