@@ -1717,8 +1717,8 @@ class EFIGRUB(GRUB2):
 
         sync()
         self.stage2_device.format.sync(root=ROOT_PATH)
-        self.install()
         self.write_config()
+        self.install()
 
     def check(self):
         return True
