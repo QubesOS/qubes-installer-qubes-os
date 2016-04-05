@@ -15,7 +15,7 @@ Patch1:         0001-Set-repository-gpgkey-option.patch
 Patch2:         0002-Verify-downloaded-packages.patch
 Patch3:         disable-efi.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
-Patch6:         disable-upgrade.patch
+#Patch6:         disable-upgrade.patch
 BuildRequires:  python-nose, python-nose-cov, python-mock
 BuildRequires:  python-devel, python-setuptools, python2-productmd
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
@@ -54,7 +54,7 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %patch2 -p1
 %patch3 -p1
 #%%patch5 -p1
-%patch6 -p1
+#%%patch6 -p1
 
 %build
 %{__python} setup.py build
