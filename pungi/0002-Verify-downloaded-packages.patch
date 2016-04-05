@@ -1,0 +1,44 @@
+From b6947894de2874b03467e02ae735ccef3ec554d3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Tue, 29 Sep 2015 14:07:25 +0200
+Subject: [PATCH 2/2] Verify downloaded packages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/gather.py | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/pungi/gather.py b/pungi/gather.py
+index a5c9df9..66212d2 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -1103,6 +1103,20 @@ class Pungi(PungiBase):
+             sys.exit(1)
+ 
+         for po in polist:
++            # before doing anything with the package, verify its signature
++            result, errmsg = self.ayum.sigCheckPkg(po)
++            if result == 0:
++                # Verified ok, or verify not req'd
++                pass
++            elif result == 1:
++                # keys are provided through kickstart, so treat this as consent
++                # for importing them
++                self.ayum.getKeyForPackage(po, lambda x, y, z: True)
++            else:
++                # Fatal error
++                self.logger.error(errmsg)
++                sys.exit(1)
++
+             basename = os.path.basename(po.relativepath)
+ 
+             local = po.localPkg()
+-- 
+2.1.0
+

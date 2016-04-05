@@ -1,14 +1,29 @@
+From adbdc84c60045ca647a739a0818a6f46347772d7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 7 Aug 2015 03:39:17 +0200
+Subject: [PATCH 1/2] Set repository gpgkey option
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
 Handle "repo --gpgkey" in kickstart to verify downloaded packages
 
-Especially important for lorax - they will not verified in any way without
-setting yum options here.
+Especially important for lorax - packages  will not verified there in
+any way without setting yum options here.
 
-Signed-off-by: Marek Marczykowski <marmarek@invisiblethingslab.com>
-Index: pungi-3.03/src/pypungi/__init__.py
-===================================================================
---- pungi-3.03.orig/src/pypungi/__init__.py
-+++ pungi-3.03/src/pypungi/__init__.py
-@@ -242,7 +242,7 @@
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/gather.py | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/pungi/gather.py b/pungi/gather.py
+index bcc2861..a5c9df9 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -281,7 +281,7 @@ class Pungi(PungiBase):
  
      def _add_yum_repo(self, name, url, mirrorlist=False, groups=True,
                        cost=1000, includepkgs=None, excludepkgs=None,
@@ -17,7 +32,7 @@ Index: pungi-3.03/src/pypungi/__init__.py
          """This function adds a repo to the yum object.
          name: Name of the repo
          url: Full url to the repo
-@@ -279,6 +279,10 @@
+@@ -318,6 +318,10 @@ class Pungi(PungiBase):
          thisrepo.exclude = excludepkgs
          thisrepo.includepkgs = includepkgs
          thisrepo.cost = cost
@@ -28,7 +43,7 @@ Index: pungi-3.03/src/pypungi/__init__.py
          # Yum doesn't like proxy being None
          if proxy:
              thisrepo.proxy = proxy
-@@ -309,6 +313,7 @@
+@@ -349,6 +353,7 @@ class Pungi(PungiBase):
          yumconf.installroot = os.path.join(self.workdir, 'yumroot')
          yumconf.uid = os.geteuid()
          yumconf.cache = 0
@@ -36,7 +51,7 @@ Index: pungi-3.03/src/pypungi/__init__.py
          yumconf.failovermethod = 'priority'
          yumconf.deltarpm = 0
          yumvars = yum.config._getEnvVar()
-@@ -339,7 +344,8 @@
+@@ -379,7 +384,8 @@ class Pungi(PungiBase):
                                     cost=repo.cost,
                                     includepkgs=repo.includepkgs,
                                     excludepkgs=repo.excludepkgs,
@@ -46,7 +61,7 @@ Index: pungi-3.03/src/pypungi/__init__.py
              else:
                  self._add_yum_repo(repo.name, repo.baseurl,
                                     mirrorlist=False,
-@@ -347,7 +353,8 @@
+@@ -387,7 +393,8 @@ class Pungi(PungiBase):
                                     cost=repo.cost,
                                     includepkgs=repo.includepkgs,
                                     excludepkgs=repo.excludepkgs,
@@ -56,28 +71,6 @@ Index: pungi-3.03/src/pypungi/__init__.py
  
          self.logger.info('Getting sacks for arches %s' % self.valid_arches)
          self.ayum._getSacks(archlist=self.valid_arches)
-diff --git a/src/pypungi/__init__.py b/src/pypungi/__init__.py
-index fc6a7c7..72cfddf 100644
---- a/src/pypungi/__init__.py
-+++ b/src/pypungi/__init__.py
-@@ -1096,6 +1096,20 @@ class Pungi(pypungi.PungiBase):
-             sys.exit(1)
- 
-         for po in polist:
-+            # before doing anything with the package, verify its signature
-+            result, errmsg = self.ayum.sigCheckPkg(po)
-+            if result == 0:
-+                # Verified ok, or verify not req'd
-+                pass
-+            elif result == 1:
-+                # keys are provided through kickstart, so treat this as consent
-+                # for importing them
-+                self.ayum.getKeyForPackage(po, lambda x, y, z: True)
-+            else:
-+                # Fatal error
-+                self.logger.error(errmsg)
-+                sys.exit(1)
-+
-             basename = os.path.basename(po.relativepath)
- 
-             local = po.localPkg()
+-- 
+2.1.0
+
