@@ -484,7 +484,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
     def configure_dom0(self):
         self.set_stage("Setting up administration VM (dom0)")
 
-        for service in [ 'rdisc', 'kdump' ]:
+        for service in [ 'rdisc', 'kdump', 'libvirt-guests' ]:
             self.run_command(['systemctl', 'disable', '{}.service'.format(service) ], ignore_failure=True)
             self.run_command(['systemctl', 'stop',    '{}.service'.format(service) ], ignore_failure=True)
 

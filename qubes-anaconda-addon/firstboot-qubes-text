@@ -91,7 +91,7 @@ done
 
 set -e
 
-for service in rdisc kdump; do
+for service in rdisc kdump libvirt-guests; do
     systemctl disable ${service}.service || :
     systemctl stop    ${service}.service || :
 done
