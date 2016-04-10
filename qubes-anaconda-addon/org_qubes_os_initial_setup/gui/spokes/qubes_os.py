@@ -225,7 +225,6 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.main_box = self.builder.get_object("mainBox")
         self.thread_dialog = None
 
-        self.process_error = None
         self.qubes_user = None
         self.qubes_gid = None
         self.default_template = 'fedora-23'
@@ -456,7 +455,9 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         if self.thread_dialog != None:
             self.thread_dialog.set_text(stage)
 
-    def run_command(self, command, stdin=None):
+    def run_command(self, command, stdin=None, ignore_failure=False):
+        process_error = None
+
         try:
             sys_root = iutil.getSysroot()
 
@@ -467,17 +468,15 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             stdout = stdout.decode("utf-8")
             stderr = stderr.decode("utf-8")
 
-            if cmd.returncode == 0:
-                self.process_error = None
-            else:
-                self.process_error = "{} failed:\nstdout: \"{}\"\nstderr: \"{}\"".format(command, stdout, stderr)
+            if not ignore_failure and cmd.returncode != 0:
+                process_error = "{} failed:\nstdout: \"{}\"\nstderr: \"{}\"".format(command, stdout, stderr)
 
         except Exception as e:
-            self.process_error = str(e)
+            process_error = str(e)
 
-        if self.process_error:
-            self.logger.error(self.process_error)
-            raise Exception(self.process_error)
+        if process_error:
+            self.logger.error(process_error)
+            raise Exception(process_error)
 
         return (stdout, stderr)
 
