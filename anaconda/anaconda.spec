@@ -122,7 +122,6 @@ Requires: NetworkManager-glib >= %{nmver}
 Requires: NetworkManager-team
 Requires: dhclient
 Requires: kbd
-Requires: chrony
 Requires: python3-ntplib
 Requires: rsync
 Requires: systemd
