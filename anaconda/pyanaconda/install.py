@@ -25,7 +25,7 @@ from blivet.osinstall import turnOnFilesystems
 from blivet.devices import BTRFSDevice
 from pyanaconda.bootloader import writeBootLoader
 from pyanaconda.progress import progress_report, progress_message, progress_step, progress_complete, progress_init
-from pyanaconda.users import createLuserConf, getPassAlgo, Users
+from pyanaconda.users import Users
 from pyanaconda import flags
 from pyanaconda import iutil
 from pyanaconda import timezone
@@ -33,13 +33,12 @@ from pyanaconda import network
 from pyanaconda.i18n import _
 from pyanaconda.threads import threadMgr
 from pyanaconda.ui.lib.entropy import wait_for_entropy
+from pyanaconda.kickstart import runPostScripts, runPreInstallScripts
+from pyanaconda.kexec import setup_kexec
 import logging
-import blivet
 log = logging.getLogger("anaconda")
 
 def _writeKS(ksdata):
-    import os
-
     path = iutil.getSysroot() + "/root/anaconda-ks.cfg"
 
     # Clear out certain sensitive information that kickstart doesn't have a
@@ -48,15 +47,11 @@ def _writeKS(ksdata):
                ksdata.partition.dataList() + ksdata.raid.dataList():
         obj.passphrase = ""
 
-    with open(path, "w") as f:
+    # Make it so only root can read - could have passwords
+    with iutil.open_with_perm(path, "w", 0o600) as f:
         f.write(str(ksdata))
 
-    # Make it so only root can read - could have passwords
-    iutil.eintr_retry_call(os.chmod, path, 0o600)
-
 def doConfiguration(storage, payload, ksdata, instClass):
-    from pyanaconda.kickstart import runPostScripts
-
     willWriteNetwork = not flags.flags.imageInstall and not flags.flags.dirInstall
     willRunRealmd = ksdata.realm.discovered
 
@@ -95,7 +90,6 @@ def doConfiguration(storage, payload, ksdata, instClass):
 
     # Creating users and groups requires some pre-configuration.
     with progress_report(_("Creating users")):
-        createLuserConf(iutil.getSysroot(), algoname=getPassAlgo(ksdata.authconfig.authconfig))
         u = Users()
         ksdata.rootpw.execute(storage, ksdata, instClass, u)
         ksdata.group.execute(storage, ksdata, instClass, u)
@@ -121,6 +115,10 @@ def doConfiguration(storage, payload, ksdata, instClass):
 
     with progress_report(_("Running post-installation scripts")):
         runPostScripts(ksdata.scripts)
+
+    # setup kexec reboot if requested
+    if flags.flags.kexec:
+        setup_kexec()
 
     # Write the kickstart file to the installed system (or, copy the input
     # kickstart file over if one exists).
@@ -150,7 +148,7 @@ def doInstall(storage, payload, ksdata, instClass):
     # Update every 10% of packages installed.  We don't know how many packages
     # we are installing until it's too late (see realmd later on) so this is
     # the best we can do.
-    steps += 10
+    steps += 11
 
     # pre setup phase, post install
     steps += 2
@@ -168,7 +166,8 @@ def doInstall(storage, payload, ksdata, instClass):
         progress_init(steps+1)
 
         with progress_report(_("Waiting for %s threads to finish") % (threadMgr.running-1)):
-            map(log.debug, ("Thread %s is running" % n for n in threadMgr.names))
+            for message in ("Thread %s is running" % n for n in threadMgr.names):
+                log.debug(message)
             threadMgr.wait_all()
     else:
         progress_init(steps)
@@ -194,10 +193,11 @@ def doInstall(storage, payload, ksdata, instClass):
                                                             wait_for_entropy=entropy_wait_clbk)
 
     turnOnFilesystems(storage, mountOnly=flags.flags.dirInstall, callbacks=callbacks_reg)
-    write_storage_late = (flags.flags.livecdInstall or ksdata.ostreesetup.seen
-                          or ksdata.method.method == "liveimg")
-    if not write_storage_late and not flags.flags.dirInstall:
-        storage.write()
+    payload.writeStorageEarly()
+
+    # Run %pre-install scripts with the filesystem mounted and no packages
+    with progress_report(_("Running pre-installation scripts")):
+        runPreInstallScripts(ksdata.scripts)
 
     # Do packaging.
 
@@ -210,6 +210,7 @@ def doInstall(storage, payload, ksdata, instClass):
     # Check for additional packages
     ksdata.authconfig.setup()
     ksdata.firewall.setup()
+    ksdata.network.setup()
 
     # make name resolution work for rpm scripts in chroot
     if flags.can_touch_runtime_system("copy /etc/resolv.conf to sysroot"):
@@ -219,13 +220,10 @@ def doInstall(storage, payload, ksdata, instClass):
     # system is bootable and configurable, and some other packages in order
     # to finish setting up the system.
     packages = storage.packages + ksdata.realm.packages
-    packages += ksdata.authconfig.packages + ksdata.firewall.packages
+    packages += ksdata.authconfig.packages + ksdata.firewall.packages + ksdata.network.packages
 
     if willInstallBootloader:
         packages += storage.bootloader.packages
-
-    if network.is_using_team_device():
-        packages.append("teamd")
 
     # don't try to install packages from the install class' ignored list and the
     # explicitly excluded ones (user takes the responsibility)
@@ -234,31 +232,7 @@ def doInstall(storage, payload, ksdata, instClass):
     payload.preInstall(packages=packages, groups=payload.languageGroups())
     payload.install()
 
-    if write_storage_late and not flags.flags.dirInstall:
-        if iutil.getSysroot() != iutil.getTargetPhysicalRoot():
-            blivet.setSysroot(iutil.getTargetPhysicalRoot(),
-                              iutil.getSysroot())
-            storage.write()
-
-            # Now that we have the FS layout in the target, umount
-            # things that were in the legacy sysroot, and put them in
-            # the target root, except for the physical /.  First,
-            # unmount all target filesystems.
-            storage.umountFilesystems()
-
-            # Explicitly mount the root on the physical sysroot
-            rootmnt = storage.mountpoints.get('/')
-            rootmnt.setup()
-            rootmnt.format.setup(options=rootmnt.format.options, chroot=iutil.getTargetPhysicalRoot())
-
-            payload.prepareMountTargets(storage)
-
-            # Everything else goes in the target root, including /boot
-            # since the bootloader code will expect to find /boot
-            # inside the chroot.
-            storage.mountFilesystems(skipRoot=True)
-        else:
-            storage.write()
+    payload.writeStorageLate()
 
     # Do bootloader.
     if willInstallBootloader:

@@ -41,6 +41,12 @@
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="fileSystemStore">
+    <columns>
+      <!-- column-name fs_type -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkListStore" id="mountPointStore">
     <columns>
       <!-- column-name path -->
@@ -59,27 +65,27 @@
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes">RAID0 &lt;span foreground="grey"&gt;(Performance)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID0</col>
         <col id="1">raid0</col>
       </row>
       <row>
-        <col id="0" translatable="yes">RAID1 &lt;span foreground="grey"&gt;(Redundancy)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID1</col>
         <col id="1">raid1</col>
       </row>
       <row>
-        <col id="0" translatable="yes">RAID4 &lt;span foreground="grey"&gt;(Error Checking)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID4</col>
         <col id="1">raid4</col>
       </row>
       <row>
-        <col id="0" translatable="yes">RAID5 &lt;span foreground="grey"&gt;(Distributed Error Checking)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID5</col>
         <col id="1">raid5</col>
       </row>
       <row>
-        <col id="0" translatable="yes">RAID6 &lt;span foreground="grey"&gt;(Redundant Error Checking)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID6</col>
         <col id="1">raid6</col>
       </row>
       <row>
-        <col id="0" translatable="yes">RAID10 &lt;span foreground="grey"&gt;(Performance, Redundancy)&lt;/span&gt;</col>
+        <col id="0" translatable="yes">RAID10</col>
         <col id="1">raid10</col>
       </row>
     </data>
@@ -355,7 +361,7 @@
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
                                                     <property name="xalign">0</property>
-                                                    <property name="label" translatable="yes">Mount _Point:</property>
+                                                    <property name="label" translatable="yes" context="GUI|Custom Partitioning|Configure|Devices">Mount _Point:</property>
                                                     <property name="use_underline">True</property>
                                                     <property name="mnemonic_widget">mountPointEntry</property>
                                                     <attributes>
@@ -373,7 +379,7 @@
                                                     <property name="visible">True</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="halign">start</property>
-                                                    <property name="width_chars">20</property>
+                                                    <property name="width_chars">10</property>
                                                     <property name="completion">mountPointCompletion</property>
                                                     <signal name="changed" handler="on_value_changed" swapped="no"/>
                                                   </object>
@@ -402,7 +408,7 @@
                                                     <property name="can_focus">False</property>
                                                     <property name="halign">start</property>
                                                     <property name="xalign">0</property>
-                                                    <property name="label" translatable="yes">_Desired Capacity:</property>
+                                                    <property name="label" translatable="yes" context="GUI|Custom Partitioning|Configure|Devices">_Desired Capacity:</property>
                                                     <property name="use_underline">True</property>
                                                     <property name="mnemonic_widget">sizeEntry</property>
                                                     <attributes>
@@ -452,8 +458,7 @@
                                               <object class="GtkLabel" id="labelLabel">
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
-                                                <property name="xalign">0</property>
-                                                <property name="label" translatable="yes">_Label:</property>
+                                                <property name="label" translatable="yes" context="GUI|Custom Partitioning|Configure|Devices">_Label:</property>
                                                 <property name="use_underline">True</property>
                                                 <property name="mnemonic_widget">labelEntry</property>
                                                 <attributes>
@@ -518,8 +523,7 @@
                                                 <property name="valign">start</property>
                                                 <property name="xalign">0</property>
                                                 <property name="wrap">True</property>
-                                                <property name="width_chars">35</property>
-                                                <property name="angle">0.01</property>
+                                                <property name="wrap_mode">word-char</property>
                                                 <property name="max_width_chars">35</property>
                                               </object>
                                               <packing>
@@ -562,7 +566,7 @@
                                                 <property name="visible">True</property>
                                                 <property name="can_focus">False</property>
                                                 <property name="xalign">0</property>
-                                                <property name="label" translatable="yes">_Name:</property>
+                                                <property name="label" translatable="yes" context="GUI|Custom Partitioning|Configure|Devices">_Name:</property>
                                                 <property name="use_underline">True</property>
                                                 <property name="mnemonic_widget">nameEntry</property>
                                                 <attributes>
@@ -716,11 +720,20 @@
                                                       </packing>
                                                     </child>
                                                     <child>
-                                                      <object class="GtkComboBoxText" id="fileSystemTypeCombo">
+                                                      <object class="GtkComboBox" id="fileSystemTypeCombo">
                                                         <property name="visible">True</property>
                                                         <property name="can_focus">False</property>
+                                                        <property name="model">fileSystemStore</property>
                                                         <signal name="changed" handler="on_fs_type_changed" swapped="no"/>
                                                         <signal name="changed" handler="on_value_changed" swapped="no"/>
+                                                        <child>
+                                                          <object class="GtkCellRendererText" id="fileSystemRenderer">
+                                                            <property name="ellipsize">end</property>
+                                                          </object>
+                                                          <attributes>
+                                                            <attribute name="text">0</attribute>
+                                                          </attributes>
+                                                        </child>
                                                       </object>
                                                       <packing>
                                                         <property name="expand">False</property>
@@ -810,7 +823,6 @@
                                                         <property name="can_focus">False</property>
                                                         <property name="model">containerStore</property>
                                                         <signal name="changed" handler="on_container_changed" swapped="no"/>
-                                                        <signal name="changed" handler="on_value_changed" swapped="no"/>
                                                         <child>
                                                           <object class="GtkCellRendererText" id="descRenderer">
                                                             <property name="ellipsize">middle</property>
@@ -942,7 +954,7 @@
                                         <property name="spacing">6</property>
                                         <child>
                                           <object class="GtkButton" id="applyButton">
-                                            <property name="label" translatable="yes">_Update Settings</property>
+                                            <property name="label" translatable="yes" context="GUI|Custom Partitioning|Configure|Devices">_Update Settings</property>
                                             <property name="visible">True</property>
                                             <property name="sensitive">False</property>
                                             <property name="can_focus">True</property>
@@ -1085,6 +1097,7 @@
                                             <property name="can_focus">False</property>
                                             <property name="label" translatable="yes" context="GUI|Custom Partitioning|Encrypted">_Passphrase:</property>
                                             <property name="use_underline">True</property>
+                                            <property name="mnemonic_widget">passphraseEntry</property>
                                             <attributes>
                                               <attribute name="font-desc" value="Cantarell 11"/>
                                             </attributes>

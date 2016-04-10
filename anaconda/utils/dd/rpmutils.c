@@ -28,6 +28,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <rpm/rpmlib.h>		/* rpmReadPackageFile .. */
 #include <rpm/rpmtag.h>
 #include <rpm/rpmio.h>
@@ -345,7 +350,6 @@ int explodeDDRPM(const char *source,
         const struct stat *fstat;
         int64_t fsize;
         const char* filename;
-        int needskip = 1; /* do we need to read the data to get to the next header? */
         int offset = 0;
         int towrite = 0;
 
@@ -392,22 +396,22 @@ int explodeDDRPM(const char *source,
 
         /* Regular file */
         if (towrite>=2) {
-            FILE *fdout = fopen(filename+offset, "w");
+            int fd = open(filename+offset, O_WRONLY|O_CREAT, fstat->st_mode);
 
-            if (fdout==NULL){
+            if (fd==-1){
                 rc = 33;
                 break;
             }
 
-            rc = archive_read_data_into_fd(cpio, fileno(fdout));
-            if (rc!=ARCHIVE_OK) {
-                /* XXX We didn't get the file.. well.. */
-                needskip = 0;
-            } else {
-                needskip = 0;
+            /* call chmod to set any bits that were removed by umask during open */
+            if (fchmod(fd, fstat->st_mode) != 0) {
+                rc = 33;
+                break;
             }
 
-            fclose(fdout);
+            rc = archive_read_data_into_fd(cpio, fd);
+
+            close(fd);
         }
 
         /* symlink, we assume that the path contained in symlink
@@ -415,7 +419,6 @@ int explodeDDRPM(const char *source,
         while (towrite && S_ISLNK(fstat->st_mode)) {
             char symlinkbuffer[BUFFERSIZE-1];
 
-            needskip = 0;
             if ((rc = archive_read_data(cpio, symlinkbuffer, fsize))!=ARCHIVE_OK) {
                 /* XXX We didn't get the file.. well.. */
                 break;
@@ -428,8 +431,6 @@ int explodeDDRPM(const char *source,
             break;
         }
 
-        if(needskip)
-            archive_read_data_skip(cpio);
     }
 
     rc = archive_read_free(cpio); /* Also closes the RPM stream using callback */

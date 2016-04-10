@@ -18,12 +18,32 @@
 #
 # Author(s): Chris Lumens <clumens@redhat.com>
 
-from pyanaconda.i18n import _
+from pyanaconda.i18n import _, C_
 
 __all__ = ["ERROR_RAISE", "ERROR_CONTINUE", "ERROR_RETRY",
            "InvalidImageSizeError", "MissingImageError", "MediaUnmountError",
            "MediaMountError", "ScriptError", "CmdlineError",
            "errorHandler"]
+
+# Only run the pango markup escape if the GUI is available
+try:
+    import gi
+    gi.require_version("Gtk", "3.0")
+
+    from gi.repository import Gtk
+
+    # XXX: Gtk stopped raising RuntimeError if it fails to
+    # initialize. Horay! But will it stay like this? Let's be
+    # cautious and raise the exception on our own to work in both
+    # cases
+    initialized = Gtk.init_check(None)[0]
+    if not initialized:
+        raise RuntimeError()
+
+    # If we don't do the check above this import will fail within _isys
+    from pyanaconda.ui.gui.utils import escape_markup
+except (RuntimeError, ImportError, ValueError):
+    escape_markup = lambda x: x
 
 class InvalidImageSizeError(Exception):
     def __init__(self, message, filename):
@@ -119,6 +139,23 @@ class ErrorHandler(object):
 
         self.ui.showError(message)
         return ERROR_RAISE
+
+    def _storageResetHandler(self, exn):
+        message = (_("There is a problem with your existing storage "
+                     "configuration: <b>%(errortxt)s</b>\n\n"
+                     "You must resolve this matter before the installation can "
+                     "proceed. There is a shell available for use which you "
+                     "can access by pressing ctrl-alt-f1 and then ctrl-b 2."
+                     "\n\nOnce you have resolved the issue you can retry the "
+                     "storage scan. If you do not fix it you will have to exit "
+                     "the installer.") % {"errortxt": escape_markup(exn)})
+        details = _(exn.suggestion)
+        buttons = (C_("GUI|Storage Detailed Error Dialog", "_Exit Installer"),
+                   C_("GUI|Storage Detailed Error Dialog", "_Retry"))
+        if self.ui.showDetailedError(message, details, buttons=buttons):
+            return ERROR_RETRY
+        else:
+            return ERROR_RAISE
 
     def _noDisksHandler(self, exn):
         message = _("An error has occurred - no valid devices were found on "
@@ -235,7 +272,7 @@ class ErrorHandler(object):
     def _dependencyErrorHandler(self, exn):
         message = _("The following software marked for installation has errors.  "
                     "This is likely caused by an error with\nyour installation source.")
-        details = "\n".join(sorted(exn.message))
+        details = str(exn)
 
         self.ui.showDetailedError(message, details)
         return ERROR_RAISE
@@ -284,6 +321,10 @@ class ErrorHandler(object):
 
         _map = {"PartitioningError": self._partitionErrorHandler,
                 "FSResizeError": self._fsResizeHandler,
+                "UnusableConfigurationError": self._storageResetHandler,
+                "DiskLabelScanError": self._storageResetHandler,
+                "CorruptGPTError": self._storageResetHandler,
+                "DuplicateVGError": self._storageResetHandler,
                 "NoDisksError": self._noDisksHandler,
                 "FSTabTypeMismatchError": self._fstabTypeMismatchHandler,
                 "InvalidImageSizeError": self._invalidImageSizeHandler,

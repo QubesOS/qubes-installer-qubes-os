@@ -20,20 +20,24 @@
 #
 
 from pyanaconda import safe_dbus
+
+import gi
+gi.require_version("GLib", "2.0")
+
 from gi.repository import GLib
 
 import logging
 log = logging.getLogger("anaconda")
 
 SCREENSAVER_SERVICE = "org.freedesktop.ScreenSaver"
-SCREENSAVER_PATH    = "/org/freedesktop/ScreenSaver"
-SCREENSAVER_IFACE   = "org.freedesktop.ScreenSaver"
+SCREENSAVER_PATH = "/org/freedesktop/ScreenSaver"
+SCREENSAVER_IFACE = "org.freedesktop.ScreenSaver"
 
-SCREENSAVER_INHIBIT_METHOD   = "Inhibit"
+SCREENSAVER_INHIBIT_METHOD = "Inhibit"
 SCREENSAVER_UNINHIBIT_METHOD = "UnInhibit"
 
 SCREENSAVER_APPLICATION = "anaconda"
-SCREENSAVER_REASON      = "Installing"
+SCREENSAVER_REASON = "Installing"
 
 def inhibit_screensaver(connection):
     """

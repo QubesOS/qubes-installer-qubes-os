@@ -17,10 +17,15 @@
 #
 # Author: David Cantrell <dcantrell@redhat.com>
 
-m4_define(python_required_version, 2.5)
+m4_define(python_required_version, 3.4)
 
 AC_PREREQ([2.63])
-AC_INIT([anaconda], [22.20.13], [anaconda-devel-list@redhat.com])
+AC_INIT([anaconda], [23.19.10], [anaconda-devel-list@redhat.com])
+
+# Disable building static libraries.
+# This needs to be set before initializing automake
+AC_DISABLE_STATIC
+
 AM_INIT_AUTOMAKE([foreign no-dist-gzip dist-bzip2 tar-ustar])
 
 AC_CONFIG_HEADERS([config.h])
@@ -92,9 +97,9 @@ AC_CHECK_LIB([audit], [audit_open], [:],
 AM_PATH_PYTHON(python_required_version)
 
 # Check for the python extension paths
-PKG_CHECK_MODULES([PYTHON], [python], [
+PKG_CHECK_MODULES([PYTHON3], [python3], [
     LIBS_save="$LIBS"
-    LIBS="$LIBS $PYTHON_LIBS"
+    LIBS="$LIBS $PYTHON3_LIBS"
     AC_MSG_CHECKING([Python libraries])
     AC_TRY_LINK_FUNC([Py_Initialize], 
                      [AC_MSG_RESULT([yes])], 

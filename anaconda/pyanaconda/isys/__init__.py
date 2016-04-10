@@ -33,6 +33,7 @@ import blivet.arch
 import time
 import datetime
 import pytz
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import logging
 log = logging.getLogger("anaconda")
@@ -48,11 +49,6 @@ MIN_GUI_RAM = MIN_RAM + GUI_INSTALL_EXTRA_RAM
 SQUASHFS_EXTRA_RAM = 750
 NO_SWAP_EXTRA_RAM = 200
 
-## Flush filesystem buffers.
-def sync ():
-    # TODO: This can be replaced with os.sync in Python 3.3
-    return _isys.sync ()
-
 ISO_BLOCK_SIZE = 2048
 
 ## Determine if a file is an ISO image or not.
@@ -63,7 +59,7 @@ def isIsoImage(path):
         with open(path, "rb") as isoFile:
             for blockNum in range(16, 100):
                 isoFile.seek(blockNum * ISO_BLOCK_SIZE + 1)
-                if isoFile.read(5) == "CD001":
+                if isoFile.read(5) == b"CD001":
                     return True
     except IOError:
         pass
@@ -141,7 +137,7 @@ def set_system_date_time(year=None, month=None, day=None, hour=None, minute=None
     epoch = datetime.datetime.fromtimestamp(0, pytz.UTC)
     timestamp = (set_date - epoch).total_seconds()
 
-    set_system_time(timestamp)
+    set_system_time(int(timestamp))
 
 def total_memory():
     """Returns total system memory in kB (given to us by /proc/meminfo)"""

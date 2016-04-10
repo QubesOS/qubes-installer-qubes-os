@@ -29,9 +29,17 @@
 # - Implement striping and mirroring for LVM.
 # - Activating reformat should always enable resize for existing devices.
 
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("AnacondaWidgets", "3.0")
+
+from gi.repository import Gdk, Gtk
+from gi.repository.AnacondaWidgets import MountpointSelector
+
 from pykickstart.constants import CLEARPART_TYPE_NONE
 
-from pyanaconda.i18n import _, N_, CP_
+from pyanaconda.i18n import _, N_, CP_, C_
 from pyanaconda.product import productName, productVersion, translated_new_install_name
 from pyanaconda.threads import AnacondaThread, threadMgr
 from pyanaconda.constants import THREAD_EXECUTE_STORAGE, THREAD_STORAGE, THREAD_CUSTOM_STORAGE_INIT
@@ -53,6 +61,7 @@ from blivet.devicefactory import DEVICE_TYPE_MD
 from blivet.devicefactory import DEVICE_TYPE_DISK
 from blivet.devicefactory import DEVICE_TYPE_LVM_THINP
 from blivet.devicefactory import SIZE_POLICY_AUTO
+from blivet.devicefactory import is_supported_device_type
 from blivet.osinstall import findExistingInstallations, Root
 from blivet.autopart import doAutoPartition
 from blivet.errors import StorageError
@@ -87,11 +96,8 @@ from pyanaconda.ui.gui.utils import setViewportBackground, fancy_set_sensitive, 
 from pyanaconda.ui.gui.utils import really_hide, really_show, timed_action
 from pyanaconda.ui.categories.system import SystemCategory
 
-from gi.repository import Gdk, Gtk
-from gi.repository import BlockDev as blockdev
-from gi.repository.AnacondaWidgets import MountpointSelector
-
 from functools import wraps
+from itertools import chain
 
 import logging
 log = logging.getLogger("anaconda")
@@ -107,10 +113,10 @@ NOTEBOOK_INCOMPLETE_PAGE = 4
 NEW_CONTAINER_TEXT = N_("Create a new %(container_type)s ...")
 CONTAINER_TOOLTIP = N_("Create or select %(container_type)s")
 
-DEVICE_CONFIGURATION_ERROR_MSG = N_("Device reconfiguration failed. Click for "
-                                    "details.")
+DEVICE_CONFIGURATION_ERROR_MSG = N_("Device reconfiguration failed. <a href=\"\">Click for "
+                                    "details.</a>")
 UNRECOVERABLE_ERROR_MSG = N_("Storage configuration reset due to unrecoverable "
-                             "error. Click for details.")
+                             "error. <a href=\"\">Click for details.</a>")
 
 def dev_type_from_const(dev_type_const):
     """ Return integer corresponding to name for device type defined as
@@ -131,10 +137,14 @@ def ui_storage_logged(func):
     return decorated
 
 class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
+    """
+       .. inheritance-diagram:: CustomPartitioningSpoke
+          :parts: 3
+    """
     builderObjects = ["customStorageWindow", "containerStore", "deviceTypeStore",
                       "partitionStore", "raidStoreFiltered", "raidLevelStore",
                       "addImage", "removeImage", "settingsImage",
-                      "mountPointCompletion", "mountPointStore"]
+                      "mountPointCompletion", "mountPointStore", "fileSystemStore"]
     mainWidgetName = "customStorageWindow"
     uiFile = "spokes/custom.glade"
     helpFile = "CustomSpoke.xml"
@@ -234,6 +244,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         # Detailed configuration stuff
         self._encryptCheckbox = self.builder.get_object("encryptCheckbox")
         self._fsCombo = self.builder.get_object("fileSystemTypeCombo")
+        self._fsStore = self.builder.get_object("fileSystemStore")
         self._labelEntry = self.builder.get_object("labelEntry")
         self._mountPointEntry = self.builder.get_object("mountPointEntry")
         self._nameEntry = self.builder.get_object("nameEntry")
@@ -431,6 +442,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._current_selector.set_chosen(False)
             self._current_selector = None
 
+    def _get_fstype(self, fstypeCombo):
+        itr = fstypeCombo.get_active_iter()
+        if not itr:
+            return None
+
+        model = fstypeCombo.get_model()
+        return model[itr][0]
+
     def _get_autopart_type(self, autopartTypeCombo):
         itr = autopartTypeCombo.get_active_iter()
         if not itr:
@@ -503,7 +522,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
             for device in new_devices:
                 if device in self.bootLoaderDevices:
-                    mounts[device.format.type] = device
+                    mounts[device.format.name] = device
 
             new_root = Root(mounts=mounts, swaps=swaps, name=translated_new_install_name())
             ui_roots.insert(0, new_root)
@@ -512,7 +531,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         for root in ui_roots:
             # Don't make a page if none of the root's devices are left.
             # Also, only include devices in an old page if the format is intact.
-            if not any(d for d in root.swaps + root.mounts.values()
+            if not any(d for d in chain(root.swaps, root.mounts.values())
                         if d in self._devices and d.disks and
                            (root.name == translated_new_install_name() or d.format.exists)):
                 continue
@@ -782,7 +801,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                 use_dev.size = use_old_size
                 self._error = e
                 self.set_warning(_("Device resize request failed. "
-                                   "Click for details."))
+                                   "<a href=\"\">Click for details.</a>"))
             else:
                 _changed_size = True
 
@@ -850,12 +869,12 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                                device=device.path)
         try:
             self._storage_playground.formatDevice(device, new_format)
-        except StorageError as e:
+        except (StorageError, ValueError) as e:
             log.error("failed to register device format action: %s", e)
             device.format = old_format
             self._error = e
             self.set_warning(_("Device reformat request failed. "
-                               "Click for details."))
+                               "<a href=\"\">Click for details.</a>"))
         else:
             # first, remove this selector from any old install page(s)
             new_selector = None
@@ -1252,7 +1271,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         log.debug("populate_raid: %s, %s", device_type, raid_level)
 
         if not raidLevelsSupported(device_type):
-            map(really_hide, [self._raidLevelLabel, self._raidLevelCombo])
+            for widget in [self._raidLevelLabel, self._raidLevelCombo]:
+                really_hide(widget)
             return
 
         raid_level = raid_level or defaultRaidLevel(device_type)
@@ -1263,8 +1283,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if row[1] == raid_level_name:
                 self._raidLevelCombo.set_active(i)
                 break
-
-        map(really_show, [self._raidLevelLabel, self._raidLevelCombo])
+        for widget in [self._raidLevelLabel, self._raidLevelCombo]:
+            really_show(widget)
 
     def _get_current_device_type_name(self):
         """ Return name for type combo selection.
@@ -1329,9 +1349,9 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         names.sort()
 
         # Add all desired fileystem type names to the box, sorted alphabetically
-        self._fsCombo.remove_all()
+        self._fsStore.clear()
         for ty in names:
-            self._fsCombo.append_text(ty)
+            self._fsStore.append([ty])
 
         # set the active filesystem type
         idx = next(i for i, data in enumerate(self._fsCombo.get_model()) if data[0] == type_name)
@@ -1384,6 +1404,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         # only include disk if the current device is a disk
         if use_dev.isDisk:
             should_appear.add("DEVICE_TYPE_DISK")
+
+        should_appear = set(dt for dt in should_appear if is_supported_device_type(dev_type_from_const(dt)))
 
         # go through the store and remove things that shouldn't be included
         # store.remove() updates or invalidates the passed iterator
@@ -1442,7 +1464,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             if num_disks > 1:
                 devices_desc += CP_("GUI|Custom Partitioning|Devices",
                                     " and %d other", " and %d others",
-                                    num_disks - 1) % (num_disks -1 )
+                                    num_disks - 1) % (num_disks - 1)
         self._deviceDescLabel.set_text(devices_desc)
 
     def _populate_right_side(self, selector):
@@ -1591,9 +1613,9 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         StorageChecker.checkStorage(self)
 
         if self.errors:
-            self.set_warning(_("Error checking storage configuration.  Click for details or press Done again to continue."))
+            self.set_warning(_("Error checking storage configuration.  <a href=\"\">Click for details</a> or press Done again to continue."))
         elif self.warnings:
-            self.set_warning(_("Warning checking storage configuration.  Click for details or press Done again to continue."))
+            self.set_warning(_("Warning checking storage configuration.  <a href=\"\">Click for details</a> or press Done again to continue."))
 
         # on_info_bar_clicked requires self._error to be set, so set it to the
         # list of all errors and warnings that storage checking found.
@@ -1710,8 +1732,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
             if e:
                 self._error = e
-                self.set_error(_("Failed to add new device. Click for "
-                                 "details."))
+                self.set_error(_("Failed to add new device. <a href=\"\">Click for "
+                                 "details.</a>"))
         except OverflowError as e:
             log.error("invalid size set for partition")
             self._error = e
@@ -1822,8 +1844,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         except StorageError as e:
             log.error("failed to schedule device removal: %s", e)
             self._error = e
-            self.set_warning(_("Device removal request failed. Click "
-                               "for details."))
+            self.set_warning(_("Device removal request failed. <a href=\"\">Click "
+                               "for details.</a>"))
         else:
             if is_logical_partition:
                 self._storage_playground.removeEmptyExtendedPartitions()
@@ -2102,10 +2124,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
         log.debug("renaming container %s to %s", container_name, self._device_container_name)
         if container:
-            # btrfs volume name/label does not go in the name list
-            if container.name in self._storage_playground.devicetree.names:
-                self._storage_playground.devicetree.names.remove(container.name)
-                self._storage_playground.devicetree.names.append(self._device_container_name)
+            # remove the names of the container and its child devices from the
+            # list of already-used names
+            for device in chain([container], self._storage_playground.devicetree.getChildren(container)):
+                if device.name in self._storage_playground.devicetree.names:
+                    self._storage_playground.devicetree.names.remove(device.name)
+                luks_name = "luks-%s" % device.name
+                if luks_name in self._storage_playground.devicetree.names:
+                    self._storage_playground.devicetree.names.remove(luks_name)
 
             try:
                 container.name = self._device_container_name
@@ -2118,6 +2144,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             else:
                 if container.format.type == "btrfs":
                     container.format.label = self._device_container_name
+            finally:
+                # add the new names to the list of the already-used names and
+                # prevent potential issues with making the devices encrypted
+                # later
+                for device in chain([container], self._storage_playground.devicetree.getChildren(container)):
+                    self._storage_playground.devicetree.names.append(device.name)
+                    luks_name = "luks-%s" % device.name
+                    self._storage_playground.devicetree.names.append(luks_name)
 
         container_exists = getattr(container, "exists", False)
 
@@ -2160,16 +2194,18 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             return
 
         device_type = self._get_current_device_type()
-        container_type_name = get_container_type(device_type).name.lower()
+        container_type_name = _(get_container_type(device_type).name).lower()
         new_text = _(NEW_CONTAINER_TEXT) % {"container_type": container_type_name}
         create_new_container = container_name == new_text
+        user_changed_container = True
         if create_new_container:
             # run the vg editor dialog with a default name and disk set
             hostname = self.data.network.hostname
             name = self._storage_playground.suggestContainerName(hostname=hostname)
-            new = self.run_container_editor(name=name)
+            # user_changed_container flips to False if "cancel" picked
+            user_changed_container = self.run_container_editor(name=name)
             for idx, data in enumerate(self._containerStore):
-                if new and data[0] == new_text:
+                if user_changed_container and data[0] == new_text:
                     c = self._storage_playground.devicetree.getDeviceByName(self._device_container_name)
                     freeSpace = getattr(c, "freeSpace", None)
                     row = self._container_store_row(self._device_container_name, freeSpace)
@@ -2177,11 +2213,15 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                     self._containerStore.insert(idx, row)
                     combo.set_active(idx)   # triggers a call to this method
                     return
-                elif not new and data[0] == self._device_container_name:
+                elif not user_changed_container and data[0] == self._device_container_name:
                     combo.set_active(idx)
                     return
+        # else clause runs if an already existing container is picked
         else:
             self._device_container_name = container_name
+
+        if user_changed_container:
+            self._applyButton.set_sensitive(True)
 
         container = self._storage_playground.devicetree.getDeviceByName(self._device_container_name)
         container_exists = getattr(container, "exists", False)    # might not be in the tree
@@ -2328,8 +2368,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             log.error("doAutoPartition failed: %s", e)
             self._reset_storage()
             self._error = e
-            self.set_error(_("Automatic partitioning failed. Click "
-                             "for details."))
+            self.set_error(_("Automatic partitioning failed. <a href=\"\">Click "
+                             "for details.</a>"))
         else:
             self._devices = self._storage_playground.devices
             # mark all new containers for automatic size management
@@ -2344,17 +2384,17 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         errors = [exn for exn in exns if isinstance(exn, SanityError) and not isinstance(exn, LUKSDeviceWithoutKeyError)]
         warnings = [exn for exn in exns if isinstance(exn, SanityWarning)]
         for error in errors:
-            log.error(error.message)
+            log.error("%s", error)
         for warning in warnings:
-            log.warning(warning.message)
+            log.warning("%s", warning)
 
         if errors:
-            messages = "\n".join(error.message for error in errors)
+            messages = "\n".join(str(error) for error in errors)
             log.error("doAutoPartition failed: %s", messages)
             self._reset_storage()
             self._error = messages
-            self.set_error(_("Automatic partitioning failed. Click "
-                             "for details."))
+            self.set_error(_("Automatic partitioning failed. <a href=\"\">Click "
+                             "for details.</a>"))
 
     def on_create_clicked(self, button, autopartTypeCombo):
         # Then do autopartitioning.  We do not do any clearpart first.  This is
@@ -2396,10 +2436,12 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         if not self._initialized:
             return
 
-        new_type = combo.get_active_text()
-        if new_type is None:
+        itr = combo.get_active_iter()
+        if not itr:
             return
-        log.debug("fs type changed: %s", new_type)
+
+        new_type = self._get_fstype(combo)
+
         fmt = getFormat(new_type)
         fancy_set_sensitive(self._mountPointEntry, fmt.mountable)
 
@@ -2417,7 +2459,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         container_size_policy = SIZE_POLICY_AUTO
         if device_type not in CONTAINER_DEVICE_TYPES:
             # just hide the buttons with no meaning for non-container devices
-            map(really_hide, [self._containerLabel, self._containerCombo, self._modifyContainerButton])
+            for widget in [self._containerLabel, self._containerCombo, self._modifyContainerButton]:
+                really_hide(widget)
             return
 
         # else really populate the container
@@ -2437,7 +2480,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                 container_size_policy = container.size_policy
 
         container_type = get_container_type(device_type)
-        self._containerLabel.set_text(container_type.label.title())
+        self._containerLabel.set_text(C_("GUI|Custom Partitioning|Configure|Devices", container_type.label).title())
         self._containerLabel.set_use_underline(True)
         self._containerStore.clear()
         if device_type == DEVICE_TYPE_BTRFS:
@@ -2464,12 +2507,13 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             self._containerStore.append(self._container_store_row(default_container_name))
             self._containerCombo.set_active(len(self._containerStore) - 1)
 
-        self._containerStore.append(self._container_store_row(_(NEW_CONTAINER_TEXT) % {"container_type": container_type.name.lower()}))
-        self._containerCombo.set_tooltip_text(_(CONTAINER_TOOLTIP) % {"container_type": container_type.name.lower()})
+        self._containerStore.append(self._container_store_row(_(NEW_CONTAINER_TEXT) % {"container_type": _(container_type.name).lower()}))
+        self._containerCombo.set_tooltip_text(_(CONTAINER_TOOLTIP) % {"container_type": _(container_type.name).lower()})
         if default_container_name is None:
             self._containerCombo.set_active(len(self._containerStore) - 1)
 
-        map(really_show, [self._containerLabel, self._containerCombo, self._modifyContainerButton])
+        for widget in [self._containerLabel, self._containerCombo, self._modifyContainerButton]:
+            really_show(widget)
 
         # make the combo and button insensitive for existing LVs
         can_change_container = (device is not None and not device.exists and
@@ -2499,12 +2543,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
             This method is idempotent, and must remain so.
         """
         # Find unique instance of btrfs in fsCombo, if any.
-        btrfs_idx = next((idx for idx, data in enumerate(self._fsCombo.get_model()) if data[0] == "btrfs"), None)
+        model = self._fsCombo.get_model()
+        btrfs_iter = ((idx, row) for idx, row in enumerate(model) if row[0] == "btrfs")
+        btrfs_idx, btrfs_row = next(btrfs_iter, (None, None))
 
         if device_type == DEVICE_TYPE_BTRFS:
             # If no btrfs entry, add one, and select the new entry
             if btrfs_idx is None:
-                self._fsCombo.append_text("btrfs")
+                self._fsStore.append(["btrfs"])
                 active_index = len(self._fsCombo.get_model()) - 1
             # Otherwise, select the already located btrfs entry
             else:
@@ -2515,7 +2561,7 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
 
             # If there is a btrfs entry, remove and adjust active_index
             if btrfs_idx is not None:
-                self._fsCombo.remove(btrfs_idx)
+                self._fsStore.remove(btrfs_row.iter)
 
                 # If btrfs previously selected, select default filesystem
                 if active_index == btrfs_idx:
@@ -2585,7 +2631,8 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
                                 buttons=Gtk.ButtonsType.NONE,
                                 message_format=msg)
         dlg.set_decorated(False)
-        dlg.add_buttons(_("_Reset selections"), 0, _("_Preserve current selections"), 1)
+        dlg.add_buttons(C_("GUI|Custom Partitioning|Reset Dialog", "_Reset selections"), 0,
+                        C_("GUI|Custom Partitioning|Reset Dialog", "_Preserve current selections"), 1)
         dlg.set_default_response(1)
 
         with self.main_window.enlightbox(dlg):
@@ -2654,14 +2701,14 @@ class CustomPartitioningSpoke(NormalSpoke, StorageChecker):
         try:
             device.setup()
             device.format.setup()
-        except (StorageError, blockdev.CryptoError) as e:
+        except StorageError as e:
             log.error("failed to unlock %s: %s", device.name, e)
             device.teardown(recursive=True)
             self._error = e
             device.format.passphrase = None
             self._passphraseEntry.set_text("")
             self.set_warning(_("Failed to unlock encrypted block device. "
-                               "Click for details"))
+                               "<a href=\"\">Click for details.</a>"))
             return
 
         # set the passphrase also to the originalFormat of the device (a

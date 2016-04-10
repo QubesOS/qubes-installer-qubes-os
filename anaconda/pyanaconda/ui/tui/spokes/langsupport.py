@@ -34,6 +34,9 @@ class LangSpoke(FirstbootSpokeMixIn, NormalTUISpoke):
     in text-mode.
 
     Also this doesn't allow for selection of multiple languages like in the GUI.
+
+       .. inheritance-diagram:: LangSpoke
+          :parts: 3
     """
     title = N_("Language settings")
     category = LocalizationCategory
@@ -98,6 +101,8 @@ class LangSpoke(FirstbootSpokeMixIn, NormalTUISpoke):
         """ Handle user input. """
         try:
             keyid = int(key) - 1
+            if keyid < 0:
+                return key
             if args:
                 self._selected = args[keyid]
                 self.apply()
@@ -117,7 +122,14 @@ class LangSpoke(FirstbootSpokeMixIn, NormalTUISpoke):
 
     def prompt(self, args=None):
         """ Override default prompt with a custom prompt. """
-        return _("Please select language support to install.\n[b to language list, c to continue, q to quit]: ")
+        return _("Please select language support to install.\n['%(back)s' to return to language list, '%(continue)s' to continue, '%(quit)s' to quit]: ") % {
+            # TRANSLATORS: 'b' to go back
+            'back': C_('TUI|Spoke Navigation|Language Support', 'b'),
+            # TRANSLATORS:'c' to continue
+            'continue': C_('TUI|Spoke Navigation|Language Support', 'c'),
+            # TRANSLATORS:'q' to quit
+            'quit': C_('TUI|Spoke Navigation|Language Support', 'q')
+        }
 
     def apply(self):
         """ Store the selected langsupport locales """

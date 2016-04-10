@@ -29,9 +29,14 @@ and various modifications of keyboard layouts settings.
 
 """
 
+import gi
+gi.require_version("GdkX11", "3.0")
+gi.require_version("Xkl", "1.0")
+
+from gi.repository import GdkX11, Xkl
+
 import threading
 import gettext
-from gi.repository import GdkX11, Xkl
 from collections import namedtuple
 
 from pyanaconda import flags
@@ -43,8 +48,8 @@ from pyanaconda.ui.gui.utils import gtk_action_wait
 import logging
 log = logging.getLogger("anaconda")
 
-Xkb_ = lambda x: gettext.ldgettext("xkeyboard-config", x)
-iso_ = lambda x: gettext.ldgettext("iso_639", x)
+Xkb_ = lambda x: gettext.translation("xkeyboard-config", fallback=True).gettext(x)
+iso_ = lambda x: gettext.translation("iso_639", fallback=True).gettext(x)
 
 # namedtuple for information about a keyboard layout (its language and description)
 LayoutInfo = namedtuple("LayoutInfo", ["lang", "desc"])
@@ -112,7 +117,9 @@ class XklWrapper(object):
         self.configreg.load(False)
 
         self._layout_infos = dict()
+        self._layout_infos_lock = threading.RLock()
         self._switch_opt_infos = dict()
+        self._switch_opt_infos_lock = threading.RLock()
 
         #this might take quite a long time
         self.configreg.foreach_language(self._get_language_variants, None)
@@ -132,7 +139,8 @@ class XklWrapper(object):
         #if this layout has already been added for some other language,
         #do not add it again (would result in duplicates in our lists)
         if name not in self._layout_infos:
-            self._layout_infos[name] = LayoutInfo(lang, description)
+            with self._layout_infos_lock:
+                self._layout_infos[name] = LayoutInfo(lang, description)
 
     def _get_country_variant(self, c_reg, item, subitem, country):
         if subitem:
@@ -144,7 +152,8 @@ class XklWrapper(object):
 
         # if the layout was not added with any language, add it with a country
         if name not in self._layout_infos:
-            self._layout_infos[name] = LayoutInfo(country, description)
+            with self._layout_infos_lock:
+                self._layout_infos[name] = LayoutInfo(country, description)
 
     def _get_language_variants(self, c_reg, item, user_data=None):
         lang_name, lang_desc = item.get_name(), item.get_description()
@@ -162,7 +171,8 @@ class XklWrapper(object):
         desc = item.get_description()
         name = item.get_name()
 
-        self._switch_opt_infos[name] = desc
+        with self._switch_opt_infos_lock:
+            self._switch_opt_infos[name] = desc
 
     def get_current_layout(self):
         """
@@ -195,14 +205,16 @@ class XklWrapper(object):
         return join_layout_variant(layout, variant)
 
     def get_available_layouts(self):
-        """A generator yielding layouts (no need to store them as a bunch)"""
+        """A list of layouts"""
 
-        return self._layout_infos.keys()
+        with self._layout_infos_lock:
+            return list(self._layout_infos.keys())
 
     def get_switching_options(self):
         """Method returning list of available layout switching options"""
 
-        return self._switch_opt_infos.keys()
+        with self._switch_opt_infos_lock:
+            return list(self._switch_opt_infos.keys())
 
     def get_layout_variant_description(self, layout_variant, with_lang=True, xlated=True):
         """
@@ -225,8 +237,8 @@ class XklWrapper(object):
         # translate language and upcase its first letter, translate the
         # layout-variant description
         if xlated:
-            lang = iutil.upcase_first_letter(iso_(layout_info.lang).decode("utf-8"))
-            description = Xkb_(layout_info.desc).decode("utf-8")
+            lang = iutil.upcase_first_letter(iso_(layout_info.lang))
+            description = Xkb_(layout_info.desc)
         else:
             lang = iutil.upcase_first_letter(layout_info.lang)
             description = layout_info.desc
@@ -287,7 +299,7 @@ class XklWrapper(object):
             raise XklWrapperError("Failed to add layout: %s" % ilverr)
 
         #do not add the same layout-variant combinanion multiple times
-        if (layout, variant) in zip(self._rec.layouts, self._rec.variants):
+        if (layout, variant) in list(zip(self._rec.layouts, self._rec.variants)):
             return
 
         self._rec.set_layouts(self._rec.layouts + [layout])
@@ -313,7 +325,7 @@ class XklWrapper(object):
         #we can get 'layout' or 'layout (variant)'
         (layout, variant) = parse_layout_variant(layout)
 
-        layouts_variants = zip(self._rec.layouts, self._rec.variants)
+        layouts_variants = list(zip(self._rec.layouts, self._rec.variants))
 
         if not (layout, variant) in layouts_variants:
             msg = "'%s (%s)' not in the list of added layouts" % (layout,

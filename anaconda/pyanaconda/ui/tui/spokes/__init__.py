@@ -36,14 +36,17 @@ __all__ = ["TUISpoke", "EditTUISpoke", "EditTUIDialog", "EditTUISpokeEntry",
 # pylint: disable=abstract-method
 class TUISpoke(TUIObject, tui.Widget, Spoke):
     """Base TUI Spoke class implementing the pyanaconda.ui.common.Spoke API.
-    It also acts as a Widget so we can easily add it to Hub, where is shows
-    as a summary box with title, description and completed checkbox.
+       It also acts as a Widget so we can easily add it to Hub, where is shows
+       as a summary box with title, description and completed checkbox.
 
-    :param title: title of this spoke
-    :type title: unicode
+       :param title: title of this spoke
+       :type title: str
 
-    :param category: category this spoke belongs to
-    :type category: string
+       :param category: category this spoke belongs to
+       :type category: string
+
+       .. inheritance-diagram:: TUISpoke
+          :parts: 3
     """
 
     title = N_("Default spoke title")
@@ -64,7 +67,7 @@ class TUISpoke(TUIObject, tui.Widget, Spoke):
     def completed(self):
         return True
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         TUIObject.refresh(self, args)
         return True
 
@@ -85,12 +88,16 @@ class TUISpoke(TUIObject, tui.Widget, Spoke):
 
         # always set completed = True here; otherwise key value won't be
         # displayed if completed (spoke value from above) is False
-        c = tui.CheckboxWidget(key = key, completed = True,
-                               title = _(self.title), text = self.status)
+        c = tui.CheckboxWidget(key=key, completed=True,
+                               title=_(self.title), text=self.status)
         c.render(width)
         self.draw(c)
 
 class NormalTUISpoke(TUISpoke, NormalSpoke):
+    """
+       .. inheritance-diagram:: NormalTUISpoke
+          :parts: 3
+    """
     pass
 
 EditTUISpokeEntry = namedtuple("EditTUISpokeEntry", ["title", "attribute", "aux", "visible"])
@@ -98,7 +105,14 @@ EditTUISpokeEntry = namedtuple("EditTUISpokeEntry", ["title", "attribute", "aux"
 # Inherit abstract methods from NormalTUISpoke
 # pylint: disable=abstract-method
 class EditTUIDialog(NormalTUISpoke):
-    """Spoke/dialog used to read new value of textual or password data"""
+    """Spoke/dialog used to read new value of textual or password data
+
+       .. inheritance-diagram:: EditTUIDialog
+          :parts: 3
+
+       To override the wrong input message set the wrong_input_message attribute
+       to a translated string.
+    """
 
     title = N_("New value")
     PASSWORD = re.compile(".*")
@@ -109,18 +123,20 @@ class EditTUIDialog(NormalTUISpoke):
 
         NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
         self.value = None
+        self.policy = None
+        self.wrong_input_message = None
 
         # Configure the password policy, if available. Otherwise use defaults.
         self.policy = self.data.anaconda.pwpolicy.get_policy(policy_name)
         if not self.policy:
             self.policy = self.data.anaconda.PwPolicyData()
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         self._window = []
         self.value = None
         return True
 
-    def prompt(self, entry = None):
+    def prompt(self, entry=None):
         if not entry:
             return None
 
@@ -154,7 +170,7 @@ class EditTUIDialog(NormalTUISpoke):
                     done_msg = _("\nWould you like to use it anyway?")
 
                 if message:
-                    error = _(PASSWORD_WEAK_WITH_ERROR) % (message, done_msg)
+                    error = _(PASSWORD_WEAK_WITH_ERROR) % message + " " + done_msg
                 else:
                     error = _(PASSWORD_WEAK) % done_msg
 
@@ -182,8 +198,10 @@ class EditTUIDialog(NormalTUISpoke):
             self.close()
             return True
         else:
-            print(_("You have provided an invalid user name: %s\n"
-                    "Tip: Keep your user name shorter than 32 characters and do not use spaces.\n") % key)
+            if self.wrong_input_message:
+                print(self.wrong_input_message)
+            else:
+                print(_("You have provided an invalid value\n"))
             return NormalTUISpoke.input(self, entry, key)
 
 class OneShotEditTUIDialog(EditTUIDialog):
@@ -191,7 +209,7 @@ class OneShotEditTUIDialog(EditTUIDialog):
        the value is read
     """
 
-    def prompt(self, entry = None):
+    def prompt(self, entry=None):
         ret = None
 
         if entry:
@@ -208,6 +226,9 @@ class EditTUISpoke(NormalTUISpoke):
        a list of titles, attribute names and regexps
        that specify the fields of an object the user
        allowed to edit.
+
+       .. inheritance-diagram:: EditTUISpoke
+          :parts: 3
     """
 
     # self.data's subattribute name
@@ -263,7 +284,7 @@ class EditTUISpoke(NormalTUISpoke):
 
         return ret
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         NormalTUISpoke.refresh(self, args)
 
         if args:
@@ -333,4 +354,8 @@ class EditTUISpoke(NormalTUISpoke):
         return NormalTUISpoke.input(self, args, key)
 
 class StandaloneTUISpoke(TUISpoke, StandaloneSpoke):
+    """
+       .. inheritance-diagram:: StandaloneTUISpoke
+          :parts: 3
+    """
     pass

@@ -19,8 +19,12 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from __future__ import division
+
 from collections import namedtuple
+
+import gi
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
 
 from gi.repository import Gdk, Gtk
 

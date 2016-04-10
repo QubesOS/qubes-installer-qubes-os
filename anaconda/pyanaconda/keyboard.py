@@ -34,6 +34,10 @@ from pyanaconda import iutil
 from pyanaconda import safe_dbus
 from pyanaconda.constants import DEFAULT_VC_FONT, DEFAULT_KEYBOARD
 from pyanaconda.flags import can_touch_runtime_system
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
+
+import gi
+gi.require_version("GLib", "2.0")
 
 from gi.repository import GLib
 
@@ -46,7 +50,7 @@ LOCALED_IFACE = "org.freedesktop.locale1"
 
 # should match and parse strings like 'cz' or 'cz (qwerty)' regardless of white
 # space
-LAYOUT_VARIANT_RE = re.compile(r'^\s*(\w+)\s*' # layout plus
+LAYOUT_VARIANT_RE = re.compile(r'^\s*([/\w]+)\s*' # layout plus
                                r'(?:(?:\(\s*([-\w]+)\s*\))' # variant in parentheses
                                r'|(?:$))\s*') # or nothing
 

@@ -33,12 +33,12 @@ import os
 import stat
 from time import sleep
 from threading import Lock
-from urlgrabber.grabber import URLGrabber
-from urlgrabber.grabber import URLGrabError
+import requests
 from pyanaconda.iutil import ProxyString, ProxyStringError, lowerASCII
-import urllib
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import hashlib
 import glob
+import functools
 
 from pyanaconda.packaging import ImagePayload, PayloadSetupError, PayloadInstallError
 
@@ -75,6 +75,9 @@ class LiveImagePayload(ImagePayload):
 
         # Mount the live device and copy from it instead of the overlay at /
         osimg = storage.devicetree.getDeviceByPath(self.data.method.partition)
+        if not osimg:
+            raise PayloadInstallError("Unable to find osimg for %s" % self.data.method.partition)
+
         if not stat.S_ISBLK(os.stat(osimg.path)[stat.ST_MODE]):
             exn = PayloadSetupError("%s is not a valid block device" % (self.data.method.partition,))
             if errorHandler.cb(exn) == ERROR_RAISE:
@@ -166,6 +169,10 @@ class LiveImagePayload(ImagePayload):
         threadMgr.wait(THREAD_LIVE_PROGRESS)
 
         # Live needs to create the rescue image before bootloader is written
+        if not os.path.exists(iutil.getSysroot() + "/usr/sbin/new-kernel-pkg"):
+            log.error("new-kernel-pkg does not exist - grubby wasn't installed?  skipping")
+            return
+
         for kernel in self.kernelVersionList:
             log.info("Generating rescue image for %s", kernel)
             iutil.execInSysroot("new-kernel-pkg",
@@ -191,33 +198,28 @@ class LiveImagePayload(ImagePayload):
         files.extend(glob.glob(INSTALL_TREE + "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir))
 
         self._kernelVersionList = sorted((f.split("/")[-1][8:] for f in files
-           if os.path.isfile(f) and "-rescue-" not in f), cmp=versionCmp)
+           if os.path.isfile(f) and "-rescue-" not in f), key=functools.cmp_to_key(versionCmp))
 
     @property
     def kernelVersionList(self):
         return self._kernelVersionList
 
-class URLGrabberProgress(object):
-    """ Provide methods for urlgrabber progress."""
-    def start(self, filename, url, basename, size, text):
-        """ Start of urlgrabber download
+    def writeStorageEarly(self):
+        pass
 
-            :param filename: path and file that download will be saved to
-            :type filename:  string
-            :param url:      url to download from
-            :type url:       string
-            :param basename: file that it will be saved to
-            :type basename:  string
+class DownloadProgress(object):
+    """ Provide methods for download progress reporting."""
+
+    def start(self, url, size):
+        """ Start of download
+
+            :param url:      url of the download
+            :type url:       str
             :param size:     length of the file
             :type size:      int
-            :param text:     unknown
-            :type text:      unknown
         """
-        self.filename = filename
         self.url = url
-        self.basename = basename
         self.size = size
-        self.text = text
         self._pct = -1
 
     def update(self, bytes_read):
@@ -233,7 +235,6 @@ class URLGrabberProgress(object):
         if pct == self._pct:
             return
         self._pct = pct
-
         progressQ.send_message(_("Downloading %(url)s (%(pct)d%%)") % \
                 {"url" : self.url, "pct" : pct})
 
@@ -275,21 +276,21 @@ class LiveImageKSPayload(LiveImagePayload):
 
         error = None
         try:
-            req = urllib.urlopen(self.data.method.url, proxies=self._proxies)
+            response = self._session.get(self.data.method.url, proxies=self._proxies, verify=True)
 
             # At this point we know we can get the image and what its size is
             # Make a guess as to minimum size needed:
             # Enough space for image and image * 3
-            if req.info().get("content-length"):
-                self._min_size = int(req.info().get('content-length')) * 4
+            if response.headers.get('content-length'):
+                self._min_size = int(response.headers.get('content-length')) * 4
         except IOError as e:
             log.error("Error opening liveimg: %s", e)
             error = e
         else:
             # If it is a http request we need to check the code
             method = self.data.method.url.split(":", 1)[0]
-            if method.startswith("http") and req.getcode() != 200:
-                error = "http request returned %s" % req.getcode()
+            if method.startswith("http") and response.status_code != 200:
+                error = "http request returned %s" % response.getcode()
 
         return error
 
@@ -326,20 +327,37 @@ class LiveImageKSPayload(LiveImagePayload):
         ImagePayload.unsetup(self)
 
     def _preInstall_url_image(self):
-        """ Download the image using urlgrabber """
-        # Setup urlgrabber and call back to download image to sysroot
-        progress = URLGrabberProgress()
-        ugopts = {"ssl_verify_peer": not self.data.method.noverifyssl,
-                  "ssl_verify_host": not self.data.method.noverifyssl,
-                  "proxies" : self._proxies,
-                  "progress_obj" : progress,
-                  "copy_local" : True}
+        """ Download the image using Requests with progress reporting"""
 
         error = None
+        progress = DownloadProgress()
         try:
-            ug = URLGrabber()
-            ug.urlgrab(self.data.method.url, self.image_path, **ugopts)
-        except URLGrabError as e:
+            log.info("Starting image download")
+            with open(self.image_path, "wb") as f:
+                ssl_verify = not self.data.method.noverifyssl
+                response = self._session.get(self.data.method.url, proxies=self._proxies, verify=ssl_verify, stream=True)
+                total_length = response.headers.get('content-length')
+                if total_length is None:  # no content length header
+                    # just download the file in one go and fake the progress reporting once done
+                    log.warning("content-length header is missing for the installation image, "
+                                "download progress reporting will not be available")
+                    f.write(response.content)
+                    size = f.tell()
+                    progress.start(self.data.method.url, size)
+                    progress.end(size)
+                else:
+                    # requests return headers as strings, so convert total_length to int
+                    progress.start(self.data.method.url, int(total_length))
+                    bytes_read = 0
+                    for buf in response.iter_content(1024 * 1024):  # 1 MB chunks
+                        if buf:
+                            f.write(buf)
+                            f.flush()
+                            bytes_read += len(buf)
+                            progress.update(bytes_read)
+                    progress.end(bytes_read)
+                log.info("Image download finished")
+        except requests.exceptions.RequestException as e:
             log.error("Error downloading liveimg: %s", e)
             error = e
         else:
@@ -458,7 +476,7 @@ class LiveImageKSPayload(LiveImagePayload):
 
         cmd = "tar"
         # preserve: ACL's, xattrs, and SELinux context
-        args = ["--selinux", "--acls", "--xattrs",
+        args = ["--selinux", "--acls", "--xattrs", "--xattrs-include", "*",
                 "--exclude", "/dev/", "--exclude", "/proc/",
                 "--exclude", "/sys/", "--exclude", "/run/", "--exclude", "/boot/*rescue*",
                 "--exclude", "/etc/machine-id", "-xaf", self.image_path, "-C", iutil.getSysroot()]
@@ -526,4 +544,4 @@ class LiveImageKSPayload(LiveImagePayload):
 
             # Strip out vmlinuz- from the names
             return sorted((n.split("/")[-1][8:] for n in names if "boot/vmlinuz-" in n),
-                    cmp=versionCmp)
+                    key=functools.cmp_to_key(versionCmp))

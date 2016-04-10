@@ -32,13 +32,26 @@ case $repo in
         # after this point.
         repo=${repo//\\x20/ }
 
-        # HACK: work around some Mysterious NFS4 Badness (#811242 and friends)
-        # by defaulting to nfsvers=3 when no version is requested
-        nfs_to_var "$repo" $netif
-        if [ "$nfs" != "nfs4" ] && ! strstr "$options" "vers="; then
-            repo="nfs:$options,nfsvers=3:$server:$path"
+        # Convert nfs4 to nfs:nfsvers=4
+        #
+        # The reason for this is because anaconda's nfs and dracut's nfs are different.
+        # dracut expects options at the end, anaconda puts them after nfs:
+        # dracut's nfs_to_var  has a special case to handle anaconda's nfs: form but not nfs4:
+        if str_starts "$repo" "nfs4:"; then
+            repo=nfs:${repo#nfs4:}
+            nfs_to_var "$repo" $netif
+            if ! strstr "$options" "vers="; then
+                repo="nfs:${options:+$options,}nfsvers=4:$server:$path"
+            fi
+        else
+            # HACK: work around some Mysterious NFS4 Badness (#811242 and friends)
+            # by defaulting to nfsvers=3 when no version is requested
+            nfs_to_var "$repo" $netif
+            if ! strstr "$options" "vers="; then
+                repo="nfs:${options:+$options,}nfsvers=3:$server:$path"
+            fi
+            # END HACK. FIXME: Figure out what is up with nfs4, jeez
         fi
-        # END HACK. FIXME: Figure out what is up with nfs4, jeez
         if [ "${repo%.iso}" == "$repo" ]; then
             mount_nfs "$repo" "$repodir" "$netif" || warn "Couldn't mount $repo"
             anaconda_live_root_dir $repodir
@@ -56,15 +69,17 @@ case $repo in
           stage2=$(config_get stage2 mainimage < $treeinfo)
         if [ -z "$treeinfo" -o -z "$stage2" ]; then
             warn "can't find installer mainimage path in .treeinfo"
-            stage2="LiveOS/squashfs.img"
+            stage2="images/install.img"
         fi
-        if runtime=$(fetch_url $repo/$stage2); then
+        if runtime=$(fetch_url $repo/$stage2) || runtime=$(fetch_url $repo/LiveOS/squashfs.img); then
             # NOTE: Should be the same as anaconda_auto_updates()
             updates=$(fetch_url $repo/images/updates.img)
             [ -n "$updates" ] && unpack_updates_img $updates /updates
             product=$(fetch_url $repo/images/product.img)
             [ -n "$product" ] && unpack_updates_img $product /updates
-            /sbin/dmsquash-live-root $runtime
+            anaconda_mount_sysroot $runtime
+        else
+            warn "Could not retrieve stage2 image from $repo using $netif"
         fi
     ;;
     *)

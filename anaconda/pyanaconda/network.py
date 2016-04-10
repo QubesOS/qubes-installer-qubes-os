@@ -24,15 +24,21 @@
 #            David Cantrell <dcantrell@redhat.com>
 #            Radek Vykydal <rvykydal@redhat.com>
 
+import gi
+gi.require_version("NetworkManager", "1.0")
+
+from gi.repository import NetworkManager
+
 import shutil
 from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import socket
 import os
 import time
 import threading
 import re
 import dbus
-import IPy
+import ipaddress
 from uuid import uuid4
 import itertools
 
@@ -45,8 +51,6 @@ from pyanaconda import constants
 from pyanaconda.flags import flags, can_touch_runtime_system
 from pyanaconda.i18n import _
 from pyanaconda.regexes import HOSTNAME_PATTERN_WITHOUT_ANCHORS
-
-from gi.repository import NetworkManager
 
 import logging
 log = logging.getLogger("anaconda")
@@ -76,12 +80,29 @@ def setup_ifcfg_log():
     ifcfglog = logging.getLogger("ifcfg")
 
 def check_ip_address(address, version=None):
+    """
+    Check if the given IP address is valid in given version if set.
+
+    :param str address: IP address for testing
+    :param int version: ``4`` for IPv4, ``6`` for IPv6 or
+                        ``None`` to allow either format
+    :returns: ``True`` if IP address is valid or ``False`` if not
+    :rtype: bool
+
+    """
     try:
-        _ip, ver = IPy.parseAddress(address)
+        if version == 4:
+            ipaddress.IPv4Address(address)
+        elif version == 6:
+            ipaddress.IPv6Address(address)
+        elif not version: # any of those
+            ipaddress.ip_address(address)
+        else:
+            log.error("IP version %s is not supported", version)
+            return False
+        return True
     except ValueError:
         return False
-    if version and version == ver:
-        return True
 
 def sanityCheckHostname(hostname):
     """
@@ -108,8 +129,8 @@ def sanityCheckHostname(hostname):
 
     return (True, "")
 
-# Return a list of IP addresses for all active devices.
 def getIPs():
+    """ Return a list of IP addresses for all active devices. """
     ipv4_addresses = []
     ipv6_addresses = []
     for devname in nm.nm_activated_devices():
@@ -122,14 +143,19 @@ def getIPs():
     # prefer IPv4 addresses to IPv6 addresses
     return ipv4_addresses + ipv6_addresses
 
-# Return the first real non-local IP we find
 def getFirstRealIP():
+    """ Return the first real non-local IP we find from the list of
+        all active devices.
+
+        :rtype: str or ``None``
+    """
     for ip in getIPs():
         if ip not in ("127.0.0.1", "::1"):
             return ip
     return None
 
 def netmask2prefix(netmask):
+    """ Convert netmask to prefix (CIDR bits) """
     prefix = 0
 
     while prefix < 33:
@@ -153,9 +179,8 @@ def prefix2netmask(prefix):
     netmask = ".".join(str(byte) for byte in _bytes)
     return netmask
 
-# Try to determine what the hostname should be for this system
 def getHostname():
-
+    """ Try to determine what the hostname should be for this system """
     hn = None
 
     # First address (we prefer ipv4) of last device (as it used to be) wins
@@ -181,6 +206,11 @@ def getHostname():
     return hn
 
 def logIfcfgFile(path, message=""):
+    """ Log content of network ifcfg file.
+
+        :param str path: path to the ifcfg file
+        :param str message: optional message appended to the log
+    """
     content = ""
     if os.access(path, os.R_OK):
         f = open(path, 'r')
@@ -196,10 +226,14 @@ def _ifcfg_files(directory):
         if name.startswith("ifcfg-"):
             if name == "ifcfg-lo":
                 continue
-            rv.append(os.path.join(directory,name))
+            rv.append(os.path.join(directory, name))
     return rv
 
 def logIfcfgFiles(message=""):
+    """ Log contents of all network ifcfg files.
+
+        :param str message: append message to the log
+    """
     ifcfglog.debug("content of files (%s):", message)
     for path in _ifcfg_files(netscriptsDir):
         ifcfglog.debug("%s:", path)
@@ -255,8 +289,8 @@ def dumpMissingDefaultIfcfgs():
     and dump its ifcfg file. (For server, default auto connections will
     be turned off in NetworkManager.conf.)
     The connection id (and consequently ifcfg file) is set to device name.
-    Returns list of devices for which ifcfg file was dumped.
 
+    :return: list of devices for which ifcfg file was dumped.
     """
     rv = []
 
@@ -277,8 +311,6 @@ def dumpMissingDefaultIfcfgs():
         try:
             nm.nm_update_settings_of_device(devname, [['connection', 'id', devname, None]])
             log.debug("network: dumping ifcfg file for default autoconnection on %s", devname)
-            nm.nm_update_settings_of_device(devname, [['connection', 'autoconnect', False, None]])
-            log.debug("network: setting autoconnect of %s to False" , devname)
         except nm.SettingsNotFoundError:
             log.debug("network: no ifcfg file for %s", devname)
         rv.append(devname)
@@ -347,7 +379,7 @@ def dracutBootArguments(devname, ifcfg, storage_ipaddr, hostname=None):
                 else:
                     gateway = ""
                 netmask = ifcfg.get('NETMASK%s' % cfgidx)
-                prefix  = ifcfg.get('PREFIX%s' % cfgidx)
+                prefix = ifcfg.get('PREFIX%s' % cfgidx)
                 if not netmask and prefix:
                     netmask = prefix2netmask(int(prefix))
                 ipaddr = ifcfg.get('IPADDR%s' % cfgidx)
@@ -386,7 +418,10 @@ def _get_ip_setting_values_from_ksdata(networkdata):
 
     if method4 == "manual":
         addr4 = nm.nm_ipv4_to_dbus_int(networkdata.ip)
-        gateway4 = nm.nm_ipv4_to_dbus_int(networkdata.gateway)
+        if networkdata.gateway:
+            gateway4 = nm.nm_ipv4_to_dbus_int(networkdata.gateway)
+        else:
+            gateway4 = 0 # will be ignored by NetworkManager
         prefix4 = netmask2prefix(networkdata.netmask)
         values.append(["ipv4", "addresses", [[addr4, prefix4, gateway4]], "aau"])
 
@@ -421,11 +456,13 @@ def _get_ip_setting_values_from_ksdata(networkdata):
     nss4 = []
     nss6 = []
     if networkdata.nameserver:
-        for ns in networkdata.nameserver.split(","):
-            if ":" in ns:
+        for ns in [str.strip(i) for i in networkdata.nameserver.split(",")]:
+            if check_ip_address(ns, version=6):
                 nss6.append(nm.nm_ipv6_to_dbus_ay(ns))
-            else:
+            elif check_ip_address(ns, version=4):
                 nss4.append(nm.nm_ipv4_to_dbus_int(ns))
+            else:
+                log.error("IP address %s is not valid", ns)
     values.append(["ipv4", "dns", nss4, "au"])
     values.append(["ipv6", "dns", nss6, "aay"])
 
@@ -510,6 +547,14 @@ def add_connection_for_ksdata(networkdata, devname):
             suuid = _add_slave_connection('bridge', slave, devname, networkdata.activate)
             added_connections.append((suuid, slave))
         dev_spec = None
+    # type "infiniband"
+    elif nm.nm_device_type_is_infiniband(devname):
+        values.append(['infiniband', 'transport-mode', 'datagram', 's'])
+        values.append(['connection', 'type', 'infiniband', 's'])
+        values.append(['connection', 'id', devname, 's'])
+        values.append(['connection', 'interface-name', devname, 's'])
+
+        dev_spec = None
     # type "802-3-ethernet"
     else:
         mac = nm.nm_device_perm_hwaddress(devname)
@@ -538,7 +583,7 @@ def _add_slave_connection(slave_type, slave, master, activate, values=None):
     slave_name = slave
 
     values = []
-    suuid =  str(uuid4())
+    suuid = str(uuid4())
     # assume ethernet, TODO: infiniband, wifi, vlan
     values.append(['connection', 'uuid', suuid, 's'])
     values.append(['connection', 'id', slave_name, 's'])
@@ -629,7 +674,7 @@ def ifcfg_to_ksdata(ifcfg, devname):
         return None
 
     # ipv4 and ipv6
-    if ifcfg.get("ONBOOT") and ifcfg.get("ONBOOT" ) == "no":
+    if ifcfg.get("ONBOOT") and ifcfg.get("ONBOOT") == "no":
         kwargs["onboot"] = False
     if ifcfg.get('MTU') and ifcfg.get('MTU') != "0":
         kwargs["mtu"] = ifcfg.get('MTU')
@@ -645,7 +690,7 @@ def ifcfg_to_ksdata(ifcfg, devname):
             kwargs["bootProto"] = "static"
             kwargs["ip"] = ifcfg.get('IPADDR')
             netmask = ifcfg.get('NETMASK')
-            prefix  = ifcfg.get('PREFIX')
+            prefix = ifcfg.get('PREFIX')
             if not netmask and prefix:
                 netmask = prefix2netmask(int(prefix))
             if netmask:
@@ -656,7 +701,7 @@ def ifcfg_to_ksdata(ifcfg, devname):
         elif ifcfg.get('IPADDR0'):
             kwargs["bootProto"] = "static"
             kwargs["ip"] = ifcfg.get('IPADDR0')
-            prefix  = ifcfg.get('PREFIX0')
+            prefix = ifcfg.get('PREFIX0')
             if prefix:
                 netmask = prefix2netmask(int(prefix))
                 kwargs["netmask"] = netmask
@@ -773,6 +818,8 @@ def find_ifcfg_file_of_device(devname, root_path=""):
         ifcfg_path = find_ifcfg_file([("DEVICE", devname)])
     elif nm.nm_device_type_is_bridge(devname):
         ifcfg_path = find_ifcfg_file([("DEVICE", devname)])
+    elif nm.nm_device_type_is_infiniband(devname):
+        ifcfg_path = find_ifcfg_file([("DEVICE", devname)])
     elif nm.nm_device_type_is_ethernet(devname):
         try:
             hwaddr = nm.nm_device_perm_hwaddress(devname)
@@ -879,7 +926,7 @@ def get_team_slaves(master_specs):
     return slaves
 
 def ifaceForHostIP(host):
-    route = iutil.execWithCapture("ip", [ "route", "get", "to", host ])
+    route = iutil.execWithCapture("ip", ["route", "get", "to", host])
     if not route:
         log.error("Could not get interface for route to %s", host)
         return ""
@@ -892,10 +939,10 @@ def ifaceForHostIP(host):
 
     return routeInfo[routeInfo.index("dev") + 1]
 
-def default_route_device():
-    routes = iutil.execWithCapture("ip", ["route", "show"])
+def default_route_device(family="inet"):
+    routes = iutil.execWithCapture("ip", [ "-f", family, "route", "show"])
     if not routes:
-        log.error("Could not get default route device")
+        log.debug("Could not get default %s route device", family)
         return None
 
     for line in routes.split("\n"):
@@ -904,7 +951,7 @@ def default_route_device():
             if len(parts) >= 5 and parts[3] == "dev":
                 return parts[4]
             else:
-                log.error("Could not parse default route device: %s", line)
+                log.debug("Could not parse default %s route device", family)
                 return None
 
     return None
@@ -926,7 +973,7 @@ def copyFileToPath(fileName, destPath='', overwrite=False):
 def copyIfcfgFiles(destPath):
     files = os.listdir(netscriptsDir)
     for cfgFile in files:
-        if cfgFile.startswith(("ifcfg-","keys-")):
+        if cfgFile.startswith(("ifcfg-", "keys-")):
             srcfile = os.path.join(netscriptsDir, cfgFile)
             copyFileToPath(srcfile, destPath)
 
@@ -967,7 +1014,7 @@ def ks_spec_to_device_name(ksspec=""):
         # "XX:XX:XX:XX:XX:XX" (mac address)
         elif ':' in ksspec:
             try:
-                hwaddr = nm.nm_device_perm_hwaddress(dev)
+                hwaddr = nm.nm_device_valid_hwaddress(dev)
             except ValueError as e:
                 log.debug("ks_spec_to_device_name: %s", e)
                 continue
@@ -977,7 +1024,7 @@ def ks_spec_to_device_name(ksspec=""):
         # "bootif" and BOOTIF==XX:XX:XX:XX:XX:XX
         elif ksspec == 'bootif':
             try:
-                hwaddr = nm.nm_device_perm_hwaddress(dev)
+                hwaddr = nm.nm_device_valid_hwaddress(dev)
             except ValueError as e:
                 log.debug("ks_spec_to_device_name: %s", e)
                 continue
@@ -1253,7 +1300,10 @@ def _get_ntp_servers_from_dhcp(ksdata):
 
 def _wait_for_connecting_NM():
     """If NM is in connecting state, wait for connection.
-    Return value: NM has got connection."""
+
+       :return: ``True`` NM has got connection otherwise ``False``
+       :rtype: bool
+    """
 
     if nm.nm_is_connected():
         return True
@@ -1305,7 +1355,7 @@ def wait_for_connectivity(timeout=constants.NETWORK_CONNECTION_TIMEOUT):
     """Wait for network connectivty to become available
 
     :param timeout: how long to wait in seconds
-    :type param: integer of float"""
+    :type timeout: integer of float"""
     connected = False
     network_connected_condition.acquire()
     # if network_connected is None, network connectivity check

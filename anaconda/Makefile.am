@@ -19,8 +19,6 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
-
 SUBDIRS = data docs dracut po pyanaconda scripts tests widgets utils
 
 EXTRA_DIST = config.rpath COPYING
@@ -47,12 +45,15 @@ ARCHIVE_TAG   = $(PACKAGE_NAME)-$(PACKAGE_VERSION)-$(PACKAGE_RELEASE)
 ZANATA_PULL_ARGS = --transdir $(srcdir)/po/
 ZANATA_PUSH_ARGS = --srcdir $(srcdir)/po/ --push-type source --force
 
+RC_RELEASE ?= $(shell date -u +0.1.%Y%m%d%H%M%S)
+MOCKCHROOT ?= fedora-rawhide-$(shell uname -m)
+
 tag:
 	@git tag -s -a -m "Tag as $(ARCHIVE_TAG)" $(ARCHIVE_TAG)
 	@echo "Tagged as $(ARCHIVE_TAG)"
 
 po-pull:
-	rpm -q zanata-python-client &>/dev/null || ( echo "need to run: yum install zanata-python-client"; exit 1 )
+	rpm -q zanata-python-client &>/dev/null || ( echo "need to run: dnf install zanata-python-client"; exit 1 )
 	zanata pull $(ZANATA_PULL_ARGS)
 
 po-empty:
@@ -67,7 +68,7 @@ scratch: po-empty
 	git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
 
 scratch-bumpver: po-empty
-	@opts="-S -n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
+	@opts="-S -n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT) --newrelease $(RC_RELEASE)" ; \
 	if [ ! -z "$(IGNORE)" ]; then \
 		opts="$${opts} -i $(IGNORE)" ; \
 	fi ; \
@@ -78,10 +79,15 @@ scratch-bumpver: po-empty
 		opts="$${opts} -d" ; \
 	fi ; \
 	( cd $(srcdir) && scripts/makebumpver --skip-zanata $${opts} ) || exit 1 ; \
-	$(MAKE) -C po $(PACKAGE_NAME).pot-update ;
+	$(MAKE) -C po $(PACKAGE_NAME).pot-update
 
 release:
 	$(MAKE) dist && $(MAKE) tag && git checkout -- $(srcdir)/po/$(PACKAGE_NAME).pot
+
+rc-release: scratch-bumpver scratch
+	mock -r $(MOCKCHROOT) --scrub all || exit 1
+	mock -r $(MOCKCHROOT) --buildsrpm  --spec ./$(PACKAGE_NAME).spec --sources . --resultdir $(PWD) || exit 1
+	mock -r $(MOCKCHROOT) --rebuild *src.rpm --resultdir $(PWD) || exit 1
 
 bumpver: po-pull
 	@opts="-n $(PACKAGE_NAME) -v $(PACKAGE_VERSION) -r $(PACKAGE_RELEASE) -b $(PACKAGE_BUGREPORT)" ; \
@@ -103,17 +109,23 @@ bumpver: po-pull
 
 # Install all packages specified as BuildRequires in the Anaconda specfile
 # -> installs packages needed to build Anaconda
+# don't try to install s390utils-devel on non-s390 arches
 install-buildrequires:
 	srcdir="$(srcdir)" && \
 	: $${srcdir:=.} && \
-	yum install $$(grep ^BuildRequires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2)
+	pkglist="$$(grep ^BuildRequires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2)" && \
+	if ! [[ $$(uname -m) =~ s390x? ]]; then \
+		pkglist=$$(echo "$$pkglist" | grep -v s390utils) ; \
+	fi ; \
+	dnf install $$pkglist
 
 # Install all packages specified as Requires in the Anaconda specfile
 # -> installs packages needed to run Anaconda and the Anaconda unit tests
+# Filter out the %{name} entries required by -devel
 install-requires:
 	srcdir="$(srcdir)" && \
 	: $${srcdir:=.} && \
-	yum install $$(grep ^Requires: $${srcdir}/anaconda.spec.in | cut -d ' ' -f 2 | grep -v ^anaconda)
+	dnf install $$(grep ^Requires: $${srcdir}/anaconda.spec.in | grep -v %{name} | cut -d ' ' -f 2 | grep -v ^anaconda)
 
 # Generate an updates.img based on the changed files since the release
 # was tagged.  Updates are copied to ./updates-img and then the image is
@@ -128,10 +140,6 @@ updates:
 	fi ; \
 	( cd $(srcdir) && scripts/makeupdates $${opts} -b '$(abs_builddir)' )
 
-# UNIT TESTING TARGETS
-unittests-logpicker:
-	PYTHONPATH=$(builddir)/pyanaconda/isys/.libs:tests/:$(srcdir):utils/ nosetests -v old_tests/logpicker_test
-
 # GUI TESTING
 runglade:
 	ANACONDA_DATA=$(srcdir)/data \
@@ -145,3 +153,12 @@ runglade:
 	GLADE_CATALOG_SEARCH_PATH=$(srcdir)/widgets/glade \
 	GLADE_MODULE_SEARCH_PATH=$(builddir)/widgets/src/.libs \
 	glade ${GLADE_FILE}
+
+ci: rc-release
+	$(MAKE) -C utils/dd
+	$(MAKE) TMPDIR=/var/tmp check
+	@sudo $(MAKE) TMPDIR=/var/tmp TESTS=nosetests_root.sh check
+	@mkdir -p repo
+	@mv *rpm repo
+	@createrepo -p repo
+	@sudo $(MAKE) TMPDIR=/var/tmp TESTS=install/run_install_test.sh TEST_ANACONDA_REPO=file://$(abs_builddir)/repo/ check

@@ -28,14 +28,17 @@
 
 """
 import os
-from urlgrabber.grabber import URLGrabber
-from urlgrabber.grabber import URLGrabError
-import ConfigParser
+import requests
+import configparser
 import shutil
 from glob import glob
 from fnmatch import fnmatch
 import threading
 import re
+import functools
+
+from pyanaconda.iutil import requests_session
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 if __name__ == "__main__":
     from pyanaconda import anaconda_log
@@ -66,10 +69,10 @@ from blivet.errors import StorageError
 import blivet.util
 import blivet.arch
 from blivet.platform import platform
+from blivet import setSysroot
 
 from pyanaconda.product import productName, productVersion
-import urlgrabber
-urlgrabber.grabber.default_grabber.opts.user_agent = "%s (anaconda)/%s" %(productName, productVersion)
+USER_AGENT = "%s (anaconda)/%s" %(productName, productVersion)
 
 from distutils.version import LooseVersion
 
@@ -77,8 +80,9 @@ REPO_NOT_SET = False
 
 def versionCmp(v1, v2):
     """ Compare two version number strings. """
-
-    return LooseVersion(v1).__cmp__(LooseVersion(v2))
+    firstVersion = LooseVersion(v1)
+    secondVersion = LooseVersion(v2)
+    return (firstVersion > secondVersion) - (firstVersion < secondVersion)
 
 ###
 ### ERROR HANDLING
@@ -136,10 +140,16 @@ class Payload(object):
         self.instclass = None
         self.txID = None
 
+        # A list of verbose error strings from the subclass
+        self.verbose_errors = []
+
+        self._session = requests_session()
+
     def setup(self, storage, instClass):
         """ Do any payload-specific setup. """
         self.storage = storage
         self.instclass = instClass
+        self.verbose_errors = []
 
     def unsetup(self):
         """ Invalidate a previously setup paylaod. """
@@ -339,9 +349,6 @@ class Payload(object):
         log.debug("retrieving treeinfo from %s (proxy: %s ; sslverify: %s)",
                   url, proxy_url, sslverify)
 
-        ugopts = {"ssl_verify_peer": sslverify,
-                  "ssl_verify_host": sslverify}
-
         proxies = {}
         if proxy_url:
             try:
@@ -352,21 +359,27 @@ class Payload(object):
                 log.info("Failed to parse proxy for _getTreeInfo %s: %s",
                          proxy_url, e)
 
-        ug = URLGrabber()
+        response = None
+        headers = {"user-agent": USER_AGENT}
         try:
-            treeinfo = ug.urlgrab("%s/.treeinfo" % url,
-                                  "/tmp/.treeinfo", copy_local=True,
-                                  proxies=proxies, **ugopts)
-        except URLGrabError as e:
+            response = self._session.get("%s/.treeinfo" % url, headers=headers, proxies=proxies, verify=sslverify)
+        except requests.exceptions.RequestException as e:
             try:
-                treeinfo = ug.urlgrab("%s/treeinfo" % url,
-                                      "/tmp/.treeinfo", copy_local=True,
-                                      proxies=proxies, **ugopts)
-            except URLGrabError as e:
+                response = self._session.get("%s/treeinfo" % url, headers=headers, proxies=proxies, verify=sslverify)
+            except requests.exceptions.RequestException as e:
                 log.info("Error downloading treeinfo: %s", e)
-                treeinfo = None
+                self.verbose_errors.append(str(e))
+                response = None
 
-        return treeinfo
+        if response:
+            # write the local treeinfo file
+            with open("/tmp/.treeinfo", "w") as f:
+                f.write(response.text)
+
+            # and also return the treeinfo contents as a string
+            return response.text
+        else:
+            return None
 
     def _getReleaseVersion(self, url):
         """ Return the release version of the tree at the specified URL. """
@@ -383,14 +396,14 @@ class Payload(object):
             proxy = None
         treeinfo = self._getTreeInfo(url, proxy, not flags.noverifyssl)
         if treeinfo:
-            c = ConfigParser.ConfigParser()
+            c = configparser.ConfigParser()
             c.read(treeinfo)
             try:
                 # Trim off any -Alpha or -Beta
                 version = re.match(VERSION_DIGITS, c.get("general", "version")).group(1)
             except AttributeError:
                 version = "rawhide"
-            except ConfigParser.Error:
+            except configparser.Error:
                 pass
 
         log.debug("got a release version of %s", version)
@@ -518,6 +531,10 @@ class Payload(object):
 
             :returns: None
         """
+        if not os.path.exists(iutil.getSysroot() + "/usr/sbin/new-kernel-pkg"):
+            log.error("new-kernel-pkg does not exist - grubby wasn't installed?  skipping")
+            return
+
         for kernel in self.kernelVersionList:
             log.info("recreating initrd for %s", kernel)
             if not flags.imageInstall:
@@ -585,6 +602,45 @@ class Payload(object):
         #   kickstart should handle this before we get here
 
         self._copyDriverDiskFiles()
+
+    def writeStorageEarly(self):
+        """Some packaging payloads require that the storage configuration be
+           written out before doing installation.  Right now, this is basically
+           just the dnfpayload.  Payloads should only implement one of these
+           methods by overriding the unneeded one with a pass.
+        """
+        if not flags.dirInstall:
+            self.storage.write()
+
+    def writeStorageLate(self):
+        """Some packaging payloads require that the storage configuration be
+           written out after doing installation.  Right now, this is basically
+           every payload except for dnf.  Payloads should only implement one of
+           these methods by overriding the unneeded one with a pass.
+        """
+        if not flags.dirInstall:
+            if iutil.getSysroot() != iutil.getTargetPhysicalRoot():
+                setSysroot(iutil.getTargetPhysicalRoot(), iutil.getSysroot())
+
+                # Now that we have the FS layout in the target, umount
+                # things that were in the legacy sysroot, and put them in
+                # the target root, except for the physical /.  First,
+                # unmount all target filesystems.
+                self.storage.umountFilesystems()
+
+                # Explicitly mount the root on the physical sysroot
+                rootmnt = self.storage.mountpoints.get('/')
+                rootmnt.setup()
+                rootmnt.format.setup(options=rootmnt.format.options, chroot=iutil.getTargetPhysicalRoot())
+
+                self.prepareMountTargets(self.storage)
+
+                # Everything else goes in the target root, including /boot
+                # since the bootloader code will expect to find /boot
+                # inside the chroot.
+                self.storage.mountFilesystems(skipRoot=True)
+
+            self.storage.write()
 
 # Inherit abstract methods from Payload
 # pylint: disable=abstract-method
@@ -705,12 +761,13 @@ class PackagePayload(Payload):
         ts = rpm.TransactionSet(iutil.getSysroot())
         mi = ts.dbMatch('providename', 'kernel')
         for hdr in mi:
+            unicode_fnames = (f.decode("utf-8") for f in hdr.filenames)
             # Find all /boot/vmlinuz- files and strip off vmlinuz-
-            files.extend((f.split("/")[-1][8:] for f in hdr.filenames
+            files.extend((f.split("/")[-1][8:] for f in unicode_fnames
                 if fnmatch(f, "/boot/vmlinuz-*") or
                    fnmatch(f, "/boot/efi/EFI/%s/vmlinuz-*" % self.instclass.efi_dir)))
 
-        return sorted(files, cmp=versionCmp)
+        return sorted(files, key=functools.cmp_to_key(versionCmp))
 
     @property
     def rpmMacros(self):
@@ -960,14 +1017,12 @@ class PackagePayload(Payload):
             if not os.path.isdir(repo):
                 break
 
-            # Drivers are under /<arch>/ or /DD-net/
+            # Drivers may be under /<arch>/ or /DD-net/, but they can also be
+            # in the top level of the DD repo.
             if os.path.isdir(repo+"DD-net"):
                 repo += "DD-net"
             elif os.path.isdir(repo+blivet.arch.getArch()):
                 repo += blivet.arch.getArch()
-            else:
-                log.debug("No driver repo in %s", repo)
-                continue
 
             # Run createrepo if there are rpms and no repodata
             if not os.path.isdir(repo+"/repodata"):
@@ -1023,13 +1078,14 @@ class PackagePayload(Payload):
     def environmentDescription(self, environmentid):
         raise NotImplementedError()
 
-    def selectEnvironment(self, environmentid):
+    def selectEnvironment(self, environmentid, excluded=None):
         if environmentid not in self.environments:
             raise NoSuchGroup(environmentid)
 
-        # Select each group within the environment
-        for groupid in self.environmentGroups(environmentid, optional=False):
-            self.selectGroup(groupid)
+        self.data.packages.environment = environmentid
+
+        if excluded is None:
+            excluded = []
 
     def environmentGroups(self, environmentid, optional=True):
         raise NotImplementedError()
@@ -1226,6 +1282,7 @@ class PayloadManager(object):
         # Download package metadata
         try:
             payload.updateBaseRepo(fallback=fallback, checkmount=checkmount)
+            payload.addDriverRepos()
         except (OSError, PayloadError) as e:
             log.error("PayloadError: %s", e)
             self._error = self.ERROR_SETUP
@@ -1242,23 +1299,6 @@ class PayloadManager(object):
         if not payload.baseRepo:
             log.error("No base repo configured")
             self._error = self.ERROR_MD
-            self._setState(self.STATE_ERROR)
-            payload.unsetup()
-            return
-
-        try:
-            # Grabbing the list of groups could potentially take a long time the
-            # first time (yum does a lot of magic property stuff, some of which
-            # involves side effects like network access) so go ahead and grab
-            # them now. These are properties with side-effects, just accessing
-            # them will trigger yum.
-            # pylint: disable=pointless-statement
-            payload.environments
-            # pylint: disable=pointless-statement
-            payload.groups
-        except MetadataError as e:
-            log.error("MetadataError: %s", e)
-            self._error = self.ERROR_SOURCE
             self._setState(self.STATE_ERROR)
             payload.unsetup()
             return

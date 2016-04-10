@@ -42,6 +42,7 @@ class ThreadManager(object):
         self._objs = {}
         self._objs_lock = threading.RLock()
         self._errors = {}
+        self._errors_lock = threading.RLock()
         self._main_thread = threading.current_thread()
 
     def __call__(self):
@@ -120,15 +121,19 @@ class ThreadManager(object):
     def wait_all(self):
         """Wait for all threads to exit and if there was an error re-raise it.
         """
-        for name in self._objs.keys():
+        with self._objs_lock:
+            names = list(self._objs.keys())
+
+        for name in names:
             if self.get(name) == threading.current_thread():
                 continue
             log.debug("Waiting for thread %s to exit", name)
             self.wait(name)
 
         if self.any_errors:
-            thread_names = ", ".join(thread_name for thread_name in self._errors.keys()
-                                     if self._errors[thread_name])
+            with self._errors_lock:
+                thread_names = ", ".join(thread_name for thread_name in self._errors.keys()
+                                         if self._errors[thread_name])
             msg = "Unhandled errors from the following threads detected: %s" % thread_names
             raise RuntimeError(msg)
 
@@ -137,7 +142,8 @@ class ThreadManager(object):
 
            The exception data is expected to be the tuple from sys.exc_info()
         """
-        self._errors[name] = exc_info
+        with self._errors_lock:
+            self._errors[name] = exc_info
 
     def get_error(self, name):
         """Get the error data for a thread using its name
@@ -148,7 +154,8 @@ class ThreadManager(object):
     def any_errors(self):
         """Return True of there have been any errors in any threads
         """
-        return any(self._errors.values())
+        with self._errors_lock:
+            return any(self._errors.values())
 
     def raise_if_error(self, name):
         """If a thread has failed due to an exception, raise it into the main
@@ -158,9 +165,10 @@ class ThreadManager(object):
             # no errors found for the thread
             return
 
-        exc_info = self._errors.pop(name)
+        with self._errors_lock:
+            exc_info = self._errors.pop(name)
         if exc_info:
-            raise exc_info[0], exc_info[1], exc_info[2]
+            raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
 
     def in_main_thread(self):
         """Return True if it is run in the main thread."""
@@ -186,7 +194,7 @@ class ThreadManager(object):
             :rtype:   list of strings
         """
         with self._objs_lock:
-            return self._objs.keys()
+            return list(self._objs.keys())
 
     def wait_for_error_threads(self):
         """
@@ -195,9 +203,10 @@ class ThreadManager(object):
 
         """
 
-        for thread_name in self._errors.keys():
-            thread = self._objs[thread_name]
-            thread.join()
+        with self._errors_lock:
+            for thread_name in self._errors.keys():
+                thread = self._objs[thread_name]
+                thread.join()
 
 class AnacondaThread(threading.Thread):
     """A threading.Thread subclass that exists only for a couple purposes:

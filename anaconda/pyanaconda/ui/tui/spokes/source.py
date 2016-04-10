@@ -33,6 +33,7 @@ from pyanaconda.iutil import DataHolder
 from pyanaconda.constants import THREAD_SOURCE_WATCHER, THREAD_PAYLOAD
 from pyanaconda.constants import THREAD_STORAGE_WATCHER
 from pyanaconda.constants import THREAD_CHECK_SOFTWARE, ISO_DIR, DRACUT_ISODIR, DRACUT_REPODIR
+from pyanaconda.constants import PAYLOAD_STATUS_PROBING_STORAGE
 from pyanaconda.constants_text import INPUT_PROCESSED
 
 from pyanaconda.ui.helpers import SourceSwitchHandler
@@ -50,7 +51,11 @@ LOG = logging.getLogger("anaconda")
 __all__ = ["SourceSpoke"]
 
 class SourceSpoke(EditTUISpoke, SourceSwitchHandler):
-    """ Spoke used to customize the install source repo. """
+    """ Spoke used to customize the install source repo.
+
+       .. inheritance-diagram:: SourceSpoke
+          :parts: 3
+    """
     title = N_("Installation source")
     category = SoftwareCategory
 
@@ -363,7 +368,7 @@ class SelectDeviceSpoke(NormalTUISpoke):
             # storage refresh is running - just report it
             # so that the user can refresh until it is done
             # TODO: refresh once the thread is done ?
-            message = _("Probing storage...")
+            message = _(PAYLOAD_STATUS_PROBING_STORAGE)
             self._window += [TextWidget(message), ""]
             return True
 
@@ -497,6 +502,6 @@ class SelectISOSpoke(NormalTUISpoke, SourceSwitchHandler):
 
         if self._current_iso_path:
             self.set_source_hdd_iso(self._device, self._current_iso_path)
-        # unmount the device - the (YUM) payload will remount it anyway
+        # unmount the device - the payload will remount it anyway
         # (if it uses it)
         self._unmount_device()

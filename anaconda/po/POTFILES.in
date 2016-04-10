@@ -11,15 +11,14 @@ pyanaconda/exception.py
 pyanaconda/image.py
 pyanaconda/install.py
 pyanaconda/installclass.py
-pyanaconda/installinterfacebase.py
 pyanaconda/iutil.py
 pyanaconda/kickstart.py
 pyanaconda/network.py
 pyanaconda/product.py
+pyanaconda/pwpolicy.py
 pyanaconda/regexes.py
 pyanaconda/rescue.py
 pyanaconda/storage_utils.py
-pyanaconda/text.py
 pyanaconda/users.py
 pyanaconda/vnc.py
 
@@ -27,7 +26,6 @@ pyanaconda/vnc.py
 pyanaconda/packaging/__init__.py
 pyanaconda/packaging/livepayload.py
 pyanaconda/packaging/tarpayload.py
-pyanaconda/packaging/yumpayload.py
 pyanaconda/packaging/dnfpayload.py
 pyanaconda/packaging/rpmostreepayload.py
 
@@ -45,6 +43,7 @@ pyanaconda/ui/categories/user_settings.py
 # Common stuff
 pyanaconda/ui/lib/space.py
 pyanaconda/ui/lib/entropy.py
+pyanaconda/ui/lib/disks.py
 
 # Text interface
 pyanaconda/ui/tui/hubs/summary.py
@@ -63,7 +62,7 @@ pyanaconda/ui/tui/spokes/shell_spoke.py
 pyanaconda/ui/tui/spokes/source.py
 pyanaconda/ui/tui/spokes/software.py
 pyanaconda/ui/tui/spokes/user.py
-pyanaconda/ui/tui/spokes/warnings.py
+pyanaconda/ui/tui/spokes/warnings_spoke.py
 pyanaconda/ui/tui/spokes/progress.py
 pyanaconda/ui/tui/spokes/__init__.py
 pyanaconda/ui/tui/__init__.py

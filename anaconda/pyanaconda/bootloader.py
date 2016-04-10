@@ -25,17 +25,16 @@ import collections
 import os
 import re
 import shutil
-import struct
 import blivet
 from parted import PARTITION_BIOS_GRUB
 from glob import glob
+from itertools import chain
 
 from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from blivet.devicelibs import raid
-from pyanaconda.isys import sync
 from pyanaconda.product import productName
 from pyanaconda.flags import flags, can_touch_runtime_system
-from blivet.errors import StorageError
 from blivet.fcoe import fcoe
 import pyanaconda.network
 from pyanaconda.errors import errorHandler, ERROR_RAISE, ZIPLError
@@ -44,41 +43,10 @@ from pyanaconda.nm import nm_device_hwaddress
 from blivet import platform
 from blivet.size import Size
 from pyanaconda.i18n import _, N_
+from pyanaconda.orderedset import OrderedSet
 
 import logging
 log = logging.getLogger("anaconda")
-
-def get_boot_block(device, seek_blocks=0):
-    status = device.status
-    if not status:
-        try:
-            device.setup()
-        except StorageError:
-            return ""
-    block_size = device.partedDevice.sectorSize
-    fd = iutil.eintr_retry_call(os.open, device.path, os.O_RDONLY)
-    if seek_blocks:
-        os.lseek(fd, seek_blocks * block_size, 0)
-    block = iutil.eintr_retry_call(os.read, fd, 512)
-    iutil.eintr_retry_call(os.close, fd)
-    if not status:
-        try:
-            device.teardown(recursive=True)
-        except StorageError:
-            pass
-
-    return block
-
-def is_windows_boot_block(block):
-    try:
-        windows = (len(block) >= 512 and
-                   struct.unpack("H", block[0x1fe: 0x200]) == (0xaa55,))
-    except struct.error:
-        windows = False
-    return windows
-
-def has_windows_boot_block(device):
-    return is_windows_boot_block(get_boot_block(device))
 
 class serial_opts(object):
     def __init__(self):
@@ -89,18 +57,24 @@ class serial_opts(object):
         self.flow = None
 
 def parse_serial_opt(arg):
-    """Parse and split serial console options.
+    """
+    Parse and split serial console options.
 
-    Documentation/kernel-parameters.txt says:
-      ttyS<n>[,options]
-                Use the specified serial port.  The options are of
-                the form "bbbbpnf", where "bbbb" is the baud rate,
-                "p" is parity ("n", "o", or "e"), "n" is number of
-                bits, and "f" is flow control ("r" for RTS or
-                omit it).  Default is "9600n8".
-    but note that everything after the baud rate is optional, so these are
-    all valid: 9600, 19200n, 38400n8, 9600e7r.
-    Also note that the kernel assumes 1 stop bit; this can't be changed.
+    .. NOTE::
+
+       Documentation/kernel-parameters.txt says:
+
+          ttyS<n>[,options]
+
+             Use the specified serial port.  The options are of
+             the form "bbbbpnf", where "bbbb" is the baud rate,
+             "p" is parity ("n", "o", or "e"), "n" is number of
+             bits, and "f" is flow control ("r" for RTS or
+             omit it).  Default is "9600n8".
+
+       but note that everything after the baud rate is optional, so these are
+       all valid: 9600, 19200n, 38400n8, 9600e7r.
+       Also note that the kernel assumes 1 stop bit; this can't be changed.
     """
     opts = serial_opts()
     m = re.match(r'\d+', arg)
@@ -110,8 +84,8 @@ def parse_serial_opt(arg):
     idx = len(opts.speed)
     try:
         opts.parity = arg[idx+0]
-        opts.word   = arg[idx+1]
-        opts.flow   = arg[idx+2]
+        opts.word = arg[idx+1]
+        opts.flow = arg[idx+2]
     except IndexError:
         pass
     return opts
@@ -122,15 +96,15 @@ def _is_on_iscsi(device):
     return all(isinstance(disk, blivet.devices.iScsiDiskDevice)
                for disk in device.disks)
 
+def _is_on_ibft(device):
+    """Tells whether a given device is ibft disk or not."""
+
+    return all(getattr(disk, "ibft", False) for disk in device.disks)
+
 class BootLoaderError(Exception):
     pass
 
-class Arguments(set):
-    ordering_dict = {
-        "rhgb" : 99,
-        "quiet" : 100
-        }
-
+class Arguments(OrderedSet):
     def _merge_ip(self):
         """
         Find ip= arguments targetting the same interface and merge them.
@@ -141,7 +115,7 @@ class Arguments(set):
             # automatic network setup:
             return arg.startswith("ip=") and arg.count(":") == 1
         ip_params = filter(partition_p, self)
-        rest = set(filter(lambda p: not partition_p(p), self))
+        rest = OrderedSet(filter(lambda p: not partition_p(p), self))
 
         # split at the colon:
         ip_params = map(lambda p: p.split(":"), ip_params)
@@ -163,12 +137,16 @@ class Arguments(set):
 
     def __str__(self):
         self._merge_ip()
-        # sort the elements according to their values in ordering_dict. The
-        # higher the number the closer to the final string the argument
-        # gets. The default is 50.
-        lst = sorted(self, key=lambda s: self.ordering_dict.get(s, 50))
+        return " ".join(list(self))
 
-        return " ".join(lst)
+    def add(self, key):
+        self.discard(key)
+        super(Arguments, self).add(key)
+
+    def update(self, other):
+        for key in other:
+            self.discard(key)
+            self.add(key)
 
 class BootLoaderImage(object):
     """ Base class for bootloader images. Suitable for non-linux OS images. """
@@ -253,7 +231,9 @@ class BootLoader(object):
     def stage2_format_types(self):
         return ["ext4", "ext3", "ext2"]
 
-    global_no_preserve_args = ["inst.stage2", "root", "rescue",
+    preserve_args = []
+
+    global_no_preserve_args = ["stage2", "root", "rescue",
                                "rd.live.check", "ip", "repo", "ks",
                                "rd.lvm", "rd.md", "rd.luks", "rd.dm",
                                "rd.lvm.lv"]
@@ -532,7 +512,7 @@ class BootLoader(object):
         return self._device_type_index(device, types) is not None
 
     def device_description(self, device):
-        device_types = self.device_descriptions.keys()
+        device_types = list(self.device_descriptions.keys())
         idx = self._device_type_index(device, device_types)
         if idx is None:
             raise ValueError("No description available for %s" % device.type)
@@ -583,8 +563,8 @@ class BootLoader(object):
             log.debug("stage1 device cannot be of type %s", device.type)
             return False
 
-        if blivet.arch.isS390() and _is_on_iscsi(device):
-            log.debug("stage1 device cannot be on an iSCSI disk on s390(x)")
+        if _is_on_iscsi(device) and not _is_on_ibft(device):
+            log.debug("stage1 device cannot be on an iSCSI disk")
             return False
 
         description = self.device_description(device)
@@ -695,8 +675,8 @@ class BootLoader(object):
         if device.protected:
             valid = False
 
-        if blivet.arch.isS390() and _is_on_iscsi(device):
-            self.errors.append(_("%s cannot be on an iSCSI disk on s390(x)") % self.stage2_description)
+        if _is_on_iscsi(device) and not _is_on_ibft(device):
+            self.errors.append(_("%s cannot be on an iSCSI disk") % self.stage2_description)
             valid = False
 
         if not self._device_type_match(device, self.stage2_device_types):
@@ -711,7 +691,7 @@ class BootLoader(object):
         if not self._is_valid_size(device, desc=_(self.stage2_description)):
             valid = False
 
-        if not self._is_valid_location(device,
+        if self.stage2_max_end and not self._is_valid_location(device,
                                        max_end=self.stage2_max_end,
                                        desc=_(self.stage2_description)):
             valid = False
@@ -799,7 +779,8 @@ class BootLoader(object):
         #
         # FIPS
         #
-        if flags.cmdline.get("fips") == "1":
+        boot_device = storage.mountpoints.get("/boot")
+        if flags.cmdline.get("fips") == "1" and boot_device:
             self.boot_args.add("boot=%s" % self.stage2_device.fstabSpec)
 
         #
@@ -823,6 +804,9 @@ class BootLoader(object):
         rootdev = storage.rootDevice
         if any(rootdev.dependsOn(netdev) for netdev in netdevs):
             dracut_devices = set(dracut_devices)
+            # By this time this thread should be the only one running, and also
+            # mountpoints is a property function that returns a new dict every
+            # time, so iterating over the values is safe.
             for dev in storage.mountpoints.values():
                 if any(dev.dependsOn(netdev) for netdev in netdevs):
                     dracut_devices.add(dev)
@@ -852,7 +836,7 @@ class BootLoader(object):
                     self.dracut_args.update(setup_args)
 
         # passed-in objects
-        for cfg_obj in list(args) + kwargs.values():
+        for cfg_obj in chain(args, kwargs.values()):
             if hasattr(cfg_obj, "dracutSetupArgs"):
                 setup_args = cfg_obj.dracutSetupArgs()
                 self.boot_args.update(setup_args)
@@ -895,6 +879,17 @@ class BootLoader(object):
 
             self.boot_args.add(new_arg)
 
+        # passed-in objects
+        for cfg_obj in chain(args, kwargs.values()):
+            if hasattr(cfg_obj, "dracutSetupArgs"):
+                setup_args = cfg_obj.dracutSetupArgs()
+                self.boot_args.update(setup_args)
+                self.dracut_args.update(setup_args)
+            else:
+                setup_string = cfg_obj.dracutSetupString()
+                self.boot_args.add(setup_string)
+                self.dracut_args.add(setup_string)
+
     #
     # configuration
     #
@@ -933,10 +928,7 @@ class BootLoader(object):
         raise NotImplementedError()
 
     def write_config_post(self):
-        try:
-            iutil.eintr_retry_call(os.chmod, iutil.getSysroot() + self.config_file, self.config_file_mode)
-        except OSError as e:
-            log.error("failed to set config file permissions: %s", e)
+        pass
 
     def write_config(self):
         """ Write the bootloader configuration. """
@@ -947,7 +939,7 @@ class BootLoader(object):
         if os.access(config_path, os.R_OK):
             os.rename(config_path, config_path + ".anacbak")
 
-        config = open(config_path, "w")
+        config = iutil.open_with_perm(config_path, "w", self.config_file_mode)
         self.write_config_header(config)
         self.write_config_images(config)
         config.close()
@@ -974,7 +966,7 @@ class BootLoader(object):
             return
 
         self.write_config()
-        sync()
+        os.sync()
         self.stage2_device.format.sync(root=iutil.getTargetPhysicalRoot())
         self.install()
 
@@ -1289,12 +1281,12 @@ class GRUB(BootLoader):
 
         # Look for both mdraid and btrfs raid
         if self.stage2_device.type == "mdarray" and \
-           self.stage2_device.level == raid.RAID1:
+           self.stage2_device.level in self.stage2_raid_levels:
             stage2_raid = True
             # Set parents to the list of partitions in the RAID
             stage2_parents = self.stage2_device.parents
         elif self.stage2_device.type == "btrfs subvolume" and \
-           self.stage2_device.parents[0].dataLevel == raid.RAID1:
+           self.stage2_device.parents[0].dataLevel in self.stage2_raid_levels:
             stage2_raid = True
             # Set parents to the list of partitions in the parent volume
             stage2_parents = self.stage2_device.parents[0].parents
@@ -1331,12 +1323,12 @@ class GRUB(BootLoader):
                       "stage1dev": self.grub_device_name(stage1dev),
                       "stage2dev": self.grub_device_name(stage2dev)})
             (pread, pwrite) = os.pipe()
-            iutil.eintr_retry_call(os.write, pwrite, cmd)
-            iutil.eintr_retry_call(os.close, pwrite)
+            iutil.eintr_retry_call(os.write, pwrite, cmd.encode("utf-8"))
+            iutil.eintr_ignore(os.close, pwrite)
             args = ["--batch", "--no-floppy",
                     "--device-map=%s" % self.device_map_file]
             rc = iutil.execInSysroot("grub", args, stdin=pread)
-            iutil.eintr_retry_call(os.close, pread)
+            iutil.eintr_ignore(os.close, pread)
             if rc:
                 raise BootLoaderError("boot loader install failed")
 
@@ -1366,7 +1358,7 @@ class GRUB(BootLoader):
         # to every disk in the array by install_targets).
         if self.stage1_device and self.stage2_device and \
                 self.stage2_device.type == "mdarray" and \
-                self.stage2_device.level == raid.RAID1 and \
+                self.stage2_device.level in self.stage2_raid_levels and \
                 self.stage1_device.type != "mdarray":
             if not self.stage1_device.isDisk:
                 msg = _("boot loader stage2 device %(stage2dev)s is on a multi-disk array, but boot loader stage1 device %(stage1dev)s is not. " \
@@ -1409,6 +1401,9 @@ class GRUB2(GRUB):
     _config_file = "grub.cfg"
     _config_dir = "grub2"
     defaults_file = "/etc/default/grub"
+    stage2_max_end = None
+    can_dual_boot = True
+    can_update = True
     terminal_type = "gfxterm"
 
     # requirements for boot devices
@@ -1426,8 +1421,6 @@ class GRUB2(GRUB):
 
     def __init__(self):
         super(GRUB2, self).__init__()
-        #self.boot_args.add("$([ -x /usr/sbin/rhcrashkernel-param ] && "\
-        #                   "/usr/sbin/rhcrashkernel-param || :)")
 
     # XXX we probably need special handling for raid stage1 w/ gpt disklabel
     #     since it's unlikely there'll be a bios boot partition on each disk
@@ -1526,12 +1519,13 @@ class GRUB2(GRUB):
             raise RuntimeError("cannot encrypt empty password")
 
         (pread, pwrite) = os.pipe()
-        iutil.eintr_retry_call(os.write, pwrite, "%s\n%s\n" % (self.password, self.password))
-        iutil.eintr_retry_call(os.close, pwrite)
+        passwords = "%s\n%s\n" % (self.password, self.password)
+        iutil.eintr_retry_call(os.write, pwrite, passwords.encode("utf-8"))
+        iutil.eintr_ignore(os.close, pwrite)
         buf = iutil.execWithCapture("grub2-mkpasswd-pbkdf2", [],
                                     stdin=pread,
                                     root=iutil.getSysroot())
-        iutil.eintr_retry_call(os.close, pread)
+        iutil.eintr_ignore(os.close, pread)
         self.encrypted_password = buf.split()[-1].strip()
         if not self.encrypted_password.startswith("grub.pbkdf2."):
             raise BootLoaderError("failed to encrypt boot loader password")
@@ -1541,7 +1535,7 @@ class GRUB2(GRUB):
             return
 
         users_file = iutil.getSysroot() + "/etc/grub.d/01_users"
-        header = open(users_file, "w")
+        header = iutil.open_with_perm(users_file, "w", 0o700)
         header.write("#!/bin/sh -e\n\n")
         header.write("cat << \"EOF\"\n")
         # XXX FIXME: document somewhere that the username is "root"
@@ -1552,7 +1546,6 @@ class GRUB2(GRUB):
         header.write("%s\n" % password_line)
         header.write("EOF\n")
         header.close()
-        iutil.eintr_retry_call(os.chmod, users_file, 0o700)
 
     def write_config(self):
         self.write_config_console(None)
@@ -1570,12 +1563,18 @@ class GRUB2(GRUB):
             log.error("boot loader password setup failed: %s", e)
 
         # disable non-xen entries
-        os.chmod("%s/etc/grub.d/10_linux" % iutil.getSysroot(), 0644)
+        os.chmod("%s/etc/grub.d/10_linux" % iutil.getSysroot(), 0o644)
 
         # make sure the default entry is the OS we are installing
         if self.default is not None:
-            entry_title = "0"
-            rc = iutil.execInSysroot("grub2-set-default", [entry_title])
+            # find the index of the default image
+            try:
+                default_index = self.images.index(self.default)
+            except ValueError:
+                log.warn("Failed to find default image (%s), defaulting to 0", self.default.label)
+                default_index = 0
+
+            rc = iutil.execInSysroot("grub2-set-default", [str(default_index)])
             if rc:
                 log.error("failed to set default menu entry to %s", productName)
 
@@ -1602,7 +1601,7 @@ class GRUB2(GRUB):
                 grub_args.insert(0, '--force')
             else:
                 if flags.nombr:
-                    grub_args.insert(0,'--grub-setup=/bin/true')
+                    grub_args.insert(0, '--grub-setup=/bin/true')
                     log.info("bootloader.py: mbr update by grub2 disabled")
                 else:
                     log.info("bootloader.py: mbr will be updated for grub2")
@@ -1625,13 +1624,13 @@ class GRUB2(GRUB):
         try:
             self.write_device_map()
             self.stage2_device.format.sync(root=iutil.getTargetPhysicalRoot())
-            sync()
+            os.sync()
             self.install()
-            sync()
+            os.sync()
             self.stage2_device.format.sync(root=iutil.getTargetPhysicalRoot())
         finally:
             self.write_config()
-            sync()
+            os.sync()
             self.stage2_device.format.sync(root=iutil.getTargetPhysicalRoot())
 
     def check(self):
@@ -1750,7 +1749,8 @@ class EFIGRUB(GRUB2):
                     if rc:
                         raise BootLoaderError("failed to update BootOrder while removing old boot entry")
 
-                rc = self.efibootmgr("-b", slot_id, "-B")
+                rc = self.efibootmgr("-b", slot_id, "-B",
+                                     root=iutil.getSysroot())
                 if rc:
                     raise BootLoaderError("failed to remove old efi boot entry.  This is most likely a kernel or firmware bug.")
 
@@ -1799,7 +1799,7 @@ class EFIGRUB(GRUB2):
             return
 
         try:
-            sync()
+            os.sync()
             self.stage2_device.format.sync(root=iutil.getTargetPhysicalRoot())
             self.install()
         finally:
@@ -1808,6 +1808,8 @@ class EFIGRUB(GRUB2):
     def check(self):
         return True
 
+class Aarch64EFIGRUB(EFIGRUB):
+    _serial_consoles = ["ttyAMA", "ttyS"]
 
 class XenEFI(EFIGRUB):
     packages = ["efibootmgr"]
@@ -1832,29 +1834,29 @@ class XenEFI(EFIGRUB):
         boot_part_num = str(boot_part_num)
 
         if not os.path.exists(
-                "{}/{}".format(ROOT_PATH + self.config_dir, "xen.efi")):
-            xen_efi = [x for x in os.listdir(ROOT_PATH + self.config_dir) if
+                "{}/{}".format(iutil.getSysroot() + self.config_dir, "xen.efi")):
+            xen_efi = [x for x in os.listdir(iutil.getSysroot() + self.config_dir) if
                        x.startswith('xen-') and x.endswith('.efi')][0]
-            shutil.copy("{}/{}".format(ROOT_PATH + self.config_dir, xen_efi),
-                        "{}/{}".format(ROOT_PATH + self.config_dir, "xen.efi"))
+            shutil.copy("{}/{}".format(iutil.getSysroot() + self.config_dir, xen_efi),
+                        "{}/{}".format(iutil.getSysroot() + self.config_dir, "xen.efi"))
         rc = self.efibootmgr("-c", "-w", "-L", productName,
                              "-d", boot_disk.path, "-p", boot_part_num,
                              "-l",
                              self.efi_dir_as_efifs_dir + "\\xen.efi",
-                             root=ROOT_PATH)
+                             root=iutil.getSysroot())
         if rc:
             raise BootLoaderError("failed to set new efi boot target")
 
     def add_image(self, image):
         super(XenEFI, self).add_image(image)
-        shutil.copy("{}/boot/{}".format(ROOT_PATH, image.kernel),
+        shutil.copy("{}/boot/{}".format(iutil.getSysroot(), image.kernel),
                     os.path.normpath(
-                        "{}/{}".format(ROOT_PATH + self.config_dir,
+                        "{}/{}".format(iutil.getSysroot() + self.config_dir,
                                        image.kernel)))
         if image.initrd is not None:
-            shutil.copy("{}/boot/{}".format(ROOT_PATH, image.initrd),
+            shutil.copy("{}/boot/{}".format(iutil.getSysroot(), image.initrd),
                         os.path.normpath(
-                            "{}/{}".format(ROOT_PATH + self.config_dir,
+                            "{}/{}".format(iutil.getSysroot() + self.config_dir,
                                            image.initrd)))
 
     def write_config_header(self, config):
@@ -1879,10 +1881,6 @@ class XenEFI(EFIGRUB):
         pass
 
     write_config = BootLoader.write_config
-
-
-class Aarch64EFIGRUB(EFIGRUB):
-    _serial_consoles = ["ttyAMA", "ttyS"]
 
 class MacEFIGRUB(EFIGRUB):
     def mactel_config(self):
@@ -1948,7 +1946,7 @@ class YabootBase(BootLoader):
                       "%(initrd_line)s"
                       "%(root_line)s"
                       "\tappend=\"%(args)s\"\n\n"
-                      % {"kernel": image.kernel,  "initrd_line": initrd_line,
+                      % {"kernel": image.kernel, "initrd_line": initrd_line,
                          "label": self.image_label(image),
                          "root_line": root_line, "args": args,
                          "boot_prefix": self.boot_prefix})
@@ -2071,7 +2069,7 @@ class IPSeriesYaboot(Yaboot):
                                     ["--print-config=boot-device"])
 
         if len(buf) == 0:
-            log.error ("FAIL: nvram --print-config=boot-device")
+            log.error("FAIL: nvram --print-config=boot-device")
             return
 
         boot_list = buf.strip().split()
@@ -2133,7 +2131,7 @@ class IPSeriesGRUB2(GRUB2):
                                     ["--print-config=boot-device"])
 
         if len(buf) == 0:
-            log.error ("Failed to determine nvram boot device")
+            log.error("Failed to determine nvram boot device")
             return
 
         boot_list = buf.strip().replace("\"", "").split()
@@ -2169,6 +2167,12 @@ class IPSeriesGRUB2(GRUB2):
         defaults = open(defaults_file, "a+")
         # The terminfo's X and Y size, and output location could change in the future
         defaults.write("GRUB_TERMINFO=\"terminfo -g 80x24 console\"\n")
+        # Disable OS Prober on pSeries systems
+        # TODO: This will disable across all POWER platforms. Need to get
+        #       into blivet and rework how it segments the POWER systems
+        #       to allow for differentiation between PowerNV and
+        #       PowerVM / POWER on qemu/kvm
+        defaults.write("GRUB_DISABLE_OS_PROBER=true\n")
         defaults.close()
 
 
@@ -2352,10 +2356,10 @@ class EXTLINUX(BootLoader):
                   "menu hidden\n\n"
                   "timeout %(timeout)d\n"
                   "#totaltimeout 9000\n\n"
-                  % { "productName": productName, "timeout": self.timeout *10 })
+                  % {"productName": productName, "timeout": self.timeout *10})
         config.write(header)
         if self.default is not None:
-            config.write("default %(default)s\n\n" % { "default" : self.image_label(self.default) })
+            config.write("default %(default)s\n\n" % {"default" : self.image_label(self.default)})
         self.write_config_password(config)
 
     def write_config_password(self, config):
@@ -2434,7 +2438,7 @@ def writeSysconfigKernel(storage, version, instClass):
         log.error("failed to get package name for default kernel")
         return
 
-    kernel = h.name
+    kernel = h.name.decode()
 
     f = open(iutil.getSysroot() + "/etc/sysconfig/kernel", "w+")
     f.write("# UPDATEDEFAULT specifies if new-kernel-pkg should make\n"

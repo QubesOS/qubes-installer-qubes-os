@@ -20,12 +20,17 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
+from blivet.devicefactory import is_supported_device_type
 
-from pyanaconda.i18n import _
+from pyanaconda.i18n import _, C_
 from pyanaconda.product import productName, productVersion
 from pyanaconda.ui.gui.utils import escape_markup, really_hide, really_show
 from pyanaconda.constants import DEFAULT_AUTOPART_TYPE
-from pyanaconda.storage_utils import AUTOPART_CHOICES
+from pyanaconda.storage_utils import AUTOPART_CHOICES, AUTOPART_DEVICE_TYPES
+
+import gi
+gi.require_version("AnacondaWidgets", "3.0")
+gi.require_version("Gtk", "3.0")
 
 from gi.repository.AnacondaWidgets import MountpointSelector
 from gi.repository import Gtk
@@ -207,12 +212,13 @@ class Page(Gtk.Box):
 
     def _mountpointType(self, mountpoint):
         if not mountpoint or mountpoint in ["/", "/boot", "/boot/efi", "/tmp", "/usr", "/var",
-                                            "biosboot", "prepboot", "swap"]:
+                                            "swap", "PPC PReP Boot", "BIOS Boot"]:
             return SYSTEM_DEVICE
         else:
             return DATA_DEVICE
 
     def _onSelectorClicked(self, selector, event, cb):
+        gi.require_version("Gdk", "3.0")
         from gi.repository import Gdk
 
         if event and not event.type in [Gdk.EventType.BUTTON_PRESS, Gdk.EventType.KEY_RELEASE, Gdk.EventType.FOCUS_CHANGE]:
@@ -288,7 +294,8 @@ class CreateNewPage(Page):
         dot = Gtk.Label(label="•", xalign=0.5, yalign=0.4, hexpand=False)
         self._createBox.attach(dot, 0, 1, 1, 1)
 
-        self._createNewButton = Gtk.LinkButton(uri="", label=_("_Click here to create them automatically."))
+        self._createNewButton = Gtk.LinkButton(uri="",
+                label=C_("GUI|Custom Partitioning|Autopart Page", "_Click here to create them automatically."))
         label = self._createNewButton.get_children()[0]
         label.set_alignment(0, 0.5)
         label.set_hexpand(True)
@@ -326,20 +333,23 @@ class CreateNewPage(Page):
                               xalign=0, yalign=0.5, hexpand=True, wrap=True)
             self._createBox.attach(label, 1, 3, 1, 1)
 
-        label = Gtk.Label(label=_("_New mount points will use the following partitioning scheme:"),
+        label = Gtk.Label(label=C_("GUI|Custom Partitioning|Autopart Page", "_New mount points will use the following partitioning scheme:"),
                           xalign=0, yalign=0.5, wrap=True, use_underline=True)
         self._createBox.attach(label, 0, 4, 2, 1)
         label.set_mnemonic_widget(combo)
 
-        for item in (AUTOPART_CHOICES):
-            itr = store.append([_(item[0]), item[1]])
-            if item[1] == DEFAULT_AUTOPART_TYPE:
+        autopart_choices = (c for c in AUTOPART_CHOICES if is_supported_device_type(AUTOPART_DEVICE_TYPES[c[1]]))
+        default = None
+        for name, code in autopart_choices:
+            itr = store.append([_(name), code])
+            if code == DEFAULT_AUTOPART_TYPE:
                 default = itr
 
         combo.set_margin_left(18)
         combo.set_margin_right(18)
         combo.set_hexpand(False)
-        combo.set_active_iter(default)
+        combo.set_active_iter(default or store.get_iter_first())
+
         self._createBox.attach(combo, 0, 5, 2, 1)
 
         self.add(self._createBox)

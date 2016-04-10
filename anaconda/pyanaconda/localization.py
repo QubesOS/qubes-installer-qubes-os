@@ -27,14 +27,19 @@ import langtable
 import locale as locale_mod
 import glob
 from collections import namedtuple
+import sys
+import io
 
 from pyanaconda import constants
-from pyanaconda.iutil import upcase_first_letter, setenv
+from pyanaconda.iutil import upcase_first_letter, setenv, execWithRedirect
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import logging
 log = logging.getLogger("anaconda")
 
 LOCALE_CONF_FILE_PATH = "/etc/locale.conf"
+
+SCRIPTS_SUPPORTED_BY_CONSOLE = {'Latn', 'Cyrl', 'Grek'}
 
 #e.g. 'SR_RS.UTF-8@latin'
 LANGCODE_RE = re.compile(r'(?P<language>[A-Za-z]+)'
@@ -92,6 +97,23 @@ def is_supported_locale(locale):
     en_name = get_english_name(locale)
     return bool(en_name)
 
+def locale_supported_in_console(locale):
+    """
+    Function that tells if the given locale can be displayed by the Linux console.
+
+    The Linux console can display Latin, Cyrillic and Greek characters reliably,
+    but others such as Japanese, can't be correctly installed.
+
+    :param str locale: locale to test
+    :return: whether the given locale is supported by the console or not
+    :rtype: bool
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    locale_scripts = get_locale_scripts(locale)
+    return set(locale_scripts).issubset(SCRIPTS_SUPPORTED_BY_CONSOLE)
+
 def langcode_matches_locale(langcode, locale):
     """
     Function that tells if the given langcode matches the given locale. I.e. if
@@ -139,10 +161,10 @@ def find_best_locale_match(locale, langcodes):
 
     """
 
-    score_map = { "language" : 1000,
-                  "territory":  100,
-                  "script"   :   10,
-                  "encoding" :    1 }
+    SCORE_MAP = {"language" : 1000,
+                 "territory":  100,
+                 "script"   :   10,
+                 "encoding" :    1}
 
     def get_match_score(locale, langcode):
         score = 0
@@ -152,7 +174,7 @@ def find_best_locale_match(locale, langcodes):
         if not locale_parts or not langcode_parts:
             return score
 
-        for part, part_score in score_map.items():
+        for part, part_score in SCORE_MAP.items():
             if locale_parts[part] and langcode_parts[part]:
                 if locale_parts[part] == langcode_parts[part]:
                     # match
@@ -176,12 +198,12 @@ def find_best_locale_match(locale, langcodes):
     sorted_langcodes = sorted(scores, key=lambda item_score: item_score[1], reverse=True)
 
     # matches matching only script or encoding or both are not useful
-    if sorted_langcodes and sorted_langcodes[0][1] > score_map["territory"]:
+    if sorted_langcodes and sorted_langcodes[0][1] > SCORE_MAP["territory"]:
         return sorted_langcodes[0][0]
     else:
         return None
 
-def setup_locale(locale, lang=None):
+def setup_locale(locale, lang=None, text_mode=False):
     """
     Procedure setting the system to use the given locale and store it in to the
     ksdata.lang object (if given). DOES NOT PERFORM ANY CHECKS OF THE GIVEN
@@ -190,9 +212,13 @@ def setup_locale(locale, lang=None):
     $LANG must be set by the caller in order to set the language used by gettext.
     Doing this in a thread-safe way is up to the caller.
 
-    :param locale: locale to setup
-    :type locale: str
+    We also try to set a proper console font for the locale in text mode.
+    If the font for the locale can't be displayed in the Linux console,
+    we fall back to the English locale.
+
+    :param str locale: locale to setup
     :param lang: ksdata.lang object or None
+    :param bool text_mode: if the locale is being setup for text mode
     :return: None
     :rtype: None
 
@@ -201,8 +227,68 @@ def setup_locale(locale, lang=None):
     if lang:
         lang.lang = locale
 
+    # not all locales might be displayable in text mode
+    if text_mode:
+        # check if the script corresponding to the locale/language
+        # can be displayed by the Linux console
+        # * all scripts for the given locale/language need to be
+        #   supported by the linux console
+        # * otherwise users might get a screen full of white rectangles
+        #   (also known as "tofu") in text mode
+        # then we also need to check if we have information about what
+        # font to use for correctly displaying the given language/locale
+
+        script_supported = locale_supported_in_console(locale)
+        log.debug("scripts found for locale %s: %s", locale, get_locale_scripts(locale))
+
+        console_fonts = get_locale_console_fonts(locale)
+        log.debug("console fonts found for locale %s: %s", locale, console_fonts)
+
+        font_set = False
+        if script_supported and console_fonts:
+            # try to set console font
+            for font in console_fonts:
+                if set_console_font(font):
+                    # console font set successfully, skip the rest
+                    font_set = True
+                    break
+
+        if not font_set:
+            log.warning("can't set console font for locale %s", locale)
+            # report what exactly went wrong
+            if not(script_supported):
+                log.warning("script not supported by console for locale %s", locale)
+            if not(console_fonts):  # no fonts known for locale
+                log.warning("no console font found for locale %s", locale)
+            if script_supported and console_fonts:
+                log.warning("none of the suggested fonts can be set for locale %s", locale)
+            log.warning("falling back to the English locale")
+            locale = constants.DEFAULT_LANG
+            os.environ["LANG"] = locale  # pylint: disable=environment-modify
+
+    # set the locale to the value we have selected
+    log.debug("setting locale to: %s", locale)
     setenv("LANG", locale)
     locale_mod.setlocale(locale_mod.LC_ALL, locale)
+
+    # This part is pretty gross:
+    # In python3, sys.stdout and friends are TextIOWrapper objects that translate
+    # betwen str types (in python) and byte types (used to actually read from or
+    # write to the console). These wrappers are configured at startup using the
+    # locale at startup, which means that if anaconda starts with LANG=C or LANG
+    # unset, sys.stdout.encoding will be "ascii". And if the language is then changed,
+    # because anaconda read the kickstart or parsed the command line or whatever,
+    # say, to Czech, text mode will crash because it's going to try to print non-ASCII
+    # characters and sys.stdout doesn't know what to do with them. So, when changing
+    # the locale, create new objects for the standard streams so they are created with
+    # the new locale's encoding.
+
+    # Replacing stdout is about as stable as it looks, and it seems to break when done
+    # after the GUI is started. Only make the switch if the encoding actually changed.
+    if locale_mod.getpreferredencoding() != sys.stdout.encoding:
+        sys.stdin = io.TextIOWrapper(sys.stdin.detach())
+        sys.stdout = io.TextIOWrapper(sys.stdout.detach())
+        sys.stderr = io.TextIOWrapper(sys.stderr.detach())
 
 def get_english_name(locale):
     """
@@ -377,6 +463,45 @@ def get_locale_territory(locale):
 
     return parts.get("territory", None)
 
+def get_locale_console_fonts(locale):
+    """
+    Function returning preferred console fonts for the given locale.
+
+    :param str locale: locale string (see LANGCODE_RE)
+    :return: list of preferred console fonts
+    :rtype: list of strings
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    return langtable.list_consolefonts(languageId=parts["language"],
+                                       territoryId=parts.get("territory", ""),
+                                       scriptId=parts.get("script", ""))
+
+def get_locale_scripts(locale):
+    """
+    Function returning preferred scripts (writing systems) for the given locale.
+
+    :param locale: locale string (see LANGCODE_RE)
+    :type locale: str
+    :return: list of preferred scripts
+    :rtype: list of strings
+    :raise InvalidLocaleSpec: if an invalid locale is given (see LANGCODE_RE)
+
+    """
+
+    parts = parse_langcode(locale)
+    if "language" not in parts:
+        raise InvalidLocaleSpec("'%s' is not a valid locale" % locale)
+
+    return langtable.list_scripts(languageId=parts["language"],
+                                  territoryId=parts.get("territory", ""),
+                                  scriptId=parts.get("script", ""))
+
 def get_xlated_timezone(tz_spec_part):
     """
     Function returning translated name of a region, city or complete timezone
@@ -397,7 +522,6 @@ def get_xlated_timezone(tz_spec_part):
     xlated = langtable.timezone_name(tz_spec_part, languageIdQuery=parts["language"],
                                      territoryIdQuery=parts.get("territory", ""),
                                      scriptIdQuery=parts.get("script", ""))
-
     return xlated
 
 def write_language_configuration(lang, root):
@@ -417,40 +541,31 @@ def write_language_configuration(lang, root):
         msg = "Cannot write language configuration file: %s" % ioerr.strerror
         raise LocalizationConfigError(msg)
 
-def load_firmware_language(lang):
+def get_firmware_language(text_mode=False):
     """
-    Procedure that loads firmware language information (if any). It stores the
-    information in the given ksdata.lang object and sets the $LANG environment
-    variable.
+    Procedure that returns the firmware language information (if any).
 
-    This method must be run before any other threads are started.
-
-    :param lang: ksdata.lang object
-    :return: None
-    :rtype: None
-
+    :param boot text_mode: if the locale is being setup for text mode
+    :return: the firmware language translated into a locale string, or None
+    :rtype: str
     """
-
-    if lang.lang and lang.seen:
-        # set in kickstart, do not override
-        return
 
     try:
         n = "/sys/firmware/efi/efivars/PlatformLang-8be4df61-93ca-11d2-aa0d-00e098032b8c"
-        d = open(n, 'r', 0).read()
+        d = open(n, 'r').read()
     except IOError:
-        return
+        return None
 
     # the contents of the file are:
     # 4-bytes of attribute data that we don't care about
     # NUL terminated ASCII string like 'en-US'.
     if len(d) < 10:
         log.debug("PlatformLang was too short")
-        return
+        return None
     d = d[4:]
     if d[2] != '-':
         log.debug("PlatformLang was malformed")
-        return
+        return None
 
     # they use - and we use _, so fix it...
     d = d[:2] + '_' + d[3:-1]
@@ -466,17 +581,15 @@ def load_firmware_language(lang):
 
     if not is_supported_locale(d):
         log.debug("PlatformLang was '%s', which is unsupported.", d)
-        return
+        return None
 
     locales = get_language_locales(d)
     if not locales:
         log.debug("No locales found for the PlatformLang '%s'.", d)
-        return
+        return None
 
     log.debug("Using UEFI PlatformLang '%s' ('%s') as our language.", d, locales[0])
-    setup_locale(locales[0], lang)
-
-    os.environ["LANG"] = locales[0] # pylint: disable=environment-modify
+    return locales[0]
 
 _DateFieldSpec = namedtuple("DateFieldSpec", ["format", "suffix"])
 
@@ -563,3 +676,86 @@ def resolve_date_format(year, month, day, fail_safe=True):
             # if this call fails too, something is going terribly wrong and we
             # should be informed about it
             return order_terms_formats(FAIL_SAFE_DEFAULT)
+
+def set_console_font(font):
+    """
+    Try to set console font to the given value.
+
+    :param str font: console font name
+    :returns: True on success, False on failure
+    :rtype: Bool
+
+    """
+    log.debug("setting console font to %s", font)
+    rc = execWithRedirect("setfont", [font])
+    if rc == 0:
+        log.debug("console font set successfully to %s", font)
+        return True
+    else:
+        log.error("setting console font to %s failed", font)
+        return False
+
+def setup_locale_environment(locale=None, text_mode=False, prefer_environment=False):
+    """
+    Clean and configure the local environment variables.
+
+    This function will attempt to determine the desired locale and configure
+    the process environment (os.environ) in the least surprising way. If a
+    locale argument is provided, it will be attempted first. After that, this
+    function will attempt to use the language environment variables in a manner
+    similar to gettext(3) (in order, $LANGUAGE, $LC_ALL, $LC_MESSAGES, $LANG),
+    followed by the UEFI PlatformLang, followed by a default.
+
+    When this function returns, $LANG will be set, and $LANGUAGE, $LC_ALL,
+    and $LC_MESSAGES will not be set, because they get in the way when changing
+    the language after startup.
+
+    This function must be run before any threads are started. This function
+    modifies the process environment, which is not thread-safe.
+
+    :param str locale: locale to setup if provided
+    :param bool text_mode: if the locale is being setup for text mode
+    :param bool prefer_environment: whether the process environment, if available, overrides the locale parameter
+    :return: None
+    :rtype: None
+    """
+
+    # pylint: disable=environment-modify
+
+    # Look for a locale in the environment. If the variable is setup but
+    # empty it doesn't count, and some programs (KDE) actually do this.
+    # If prefer_environment is set, the environment locale can override
+    # the parameter passed in. This can be used, for example, by initial-setup,
+    # to prefer the possibly-more-recent environment settings before falling back
+    # to a locale set at install time and saved in the kickstart.
+    if not locale or prefer_environment:
+        for varname in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
+            if varname in os.environ and os.environ[varname]:
+                locale = os.environ[varname]
+                break
+
+    # Look for a locale in the firmware if there was nothing in the environment
+    if not locale:
+        locale = get_firmware_language(text_mode)
+
+    # parse the locale using langtable
+    if locale:
+        env_langs = get_language_locales(locale)
+        if env_langs:
+            # the first langauge is the best match
+            locale = env_langs[0]
+        else:
+            log.error("Invalid locale '%s' given on command line, kickstart or environment", locale)
+            locale = None
+
+    # If langtable returned no locales, or if nothing was configured, fall back to the default
+    if not locale:
+        locale = constants.DEFAULT_LANG
+
+    # Save the locale in the environment
+    os.environ["LANG"] = locale
+
+    # Cleanup the rest of the environment variables
+    for varname in ("LANGUAGE", "LC_ALL", "LC_MESSAGES"):
+        if varname in os.environ:
+            del os.environ[varname]

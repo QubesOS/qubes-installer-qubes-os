@@ -24,8 +24,13 @@ screens handling languages or locales configuration.
 
 """
 
-import os
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("Pango", "1.0")
+
 from gi.repository import Gtk, Pango
+
+import os
 from pyanaconda import localization
 from pyanaconda.iutil import strip_accents
 from pyanaconda.ui.gui.utils import set_treeview_selection, timed_action, override_cell_property
@@ -85,13 +90,9 @@ class LangLocaleHandler(object):
 
         # Otherwise, filter the list showing only what is matched by the
         # text entry.  Either the English or native names can match.
-        # Convert strings to unicode so lower() works.
-        lowered = entry.decode('utf-8').lower()
-        native = native.decode('utf-8').lower()
-        english = english.decode('utf-8').lower()
+        lowered = entry.lower()
         translit = strip_accents(native).lower()
-
-        if lowered in native or lowered in english or lowered in translit:
+        if lowered in native.lower() or lowered in english.lower() or lowered in translit:
             return True
         else:
             return False

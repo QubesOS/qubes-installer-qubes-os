@@ -19,8 +19,11 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from IPy import IP
 from collections import namedtuple
+
+import gi
+gi.require_version("GLib", "2.0")
+
 from gi.repository import GLib
 
 from pyanaconda import constants
@@ -29,6 +32,8 @@ from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import escape_markup
 from pyanaconda.i18n import _
 from pyanaconda import nm
+from pyanaconda.regexes import ISCSI_IQN_NAME_REGEX, ISCSI_EUI_NAME_REGEX
+from pyanaconda.network import check_ip_address
 
 __all__ = ["ISCSIDialog"]
 
@@ -106,6 +111,10 @@ def credentials_valid(credentials):
                credentials.rUsername.strip() != "" and credentials.rPassword != ""
 
 class ISCSIDialog(GUIObject):
+    """
+       .. inheritance-diagram:: ISCSIDialog
+          :parts: 3
+    """
     builderObjects = ["iscsiDialog", "nodeStore", "nodeStoreFiltered"]
     mainWidgetName = "iscsiDialog"
     uiFile = "spokes/advstorage/iscsi.glade"
@@ -126,6 +135,7 @@ class ISCSIDialog(GUIObject):
         self._iscsiNotebook = self.builder.get_object("iscsiNotebook")
 
         self._loginButton = self.builder.get_object("loginButton")
+        self._retryLoginButton = self.builder.get_object("retryLoginButton")
         self._loginAuthTypeCombo = self.builder.get_object("loginAuthTypeCombo")
         self._loginAuthNotebook = self.builder.get_object("loginAuthNotebook")
         self._loginGrid = self.builder.get_object("loginGrid")
@@ -139,6 +149,7 @@ class ISCSIDialog(GUIObject):
         self._startButton = self.builder.get_object("startButton")
         self._okButton = self.builder.get_object("okButton")
         self._cancelButton = self.builder.get_object("cancelButton")
+        self._retryButton = self.builder.get_object("retryButton")
 
         self._initiatorEntry = self.builder.get_object("initiatorEntry")
 
@@ -196,6 +207,8 @@ class ISCSIDialog(GUIObject):
         elif (self.iscsi.mode == "bind"
               or self.iscsi.mode == "none" and bind):
             activated = set(nm.nm_activated_devices())
+            # The only place iscsi.ifaces is modified is create_interfaces(),
+            # right below, so iteration is safe.
             created = set(self.iscsi.ifaces.values())
             self.iscsi.create_interfaces(activated - created)
 
@@ -291,11 +304,7 @@ class ISCSIDialog(GUIObject):
         widget = self.builder.get_object("targetEntry")
         text = widget.get_text()
 
-        try:
-            IP(text)
-            return True
-        except ValueError:
-            return False
+        return check_ip_address(text)
 
     def _initiator_name_valid(self):
         widget = self.builder.get_object("initiatorEntry")
@@ -303,7 +312,8 @@ class ISCSIDialog(GUIObject):
 
         stripped = text.strip()
         #iSCSI Naming Standards: RFC 3720 and RFC 3721
-        return "." in stripped
+        #iSCSI Name validation using regex. Name should either match IQN format or EUI format.
+        return bool(ISCSI_IQN_NAME_REGEX.match(stripped) or ISCSI_EUI_NAME_REGEX.match(stripped))
 
     def on_discover_field_changed(self, *args):
         # Make up a credentials object so we can test if it's valid.
@@ -317,7 +327,7 @@ class ISCSIDialog(GUIObject):
 
     def _add_nodes(self, nodes):
         for node in nodes:
-            iface =  self.iscsi.ifaces.get(node.iface, node.iface)
+            iface = self.iscsi.ifaces.get(node.iface, node.iface)
             portal = "%s:%s" % (node.address, node.port)
             self._store.append([False, True, node.name, iface, portal])
 
@@ -449,3 +459,21 @@ class ISCSIDialog(GUIObject):
             credentials = loginMap[page](self.builder)
 
         self._loginButton.set_sensitive(credentials_valid(credentials))
+
+    def on_discover_entry_activated(self, *args):
+        # When an entry is activated in the discovery view, push either the
+        # start or retry discovery button.
+        current_page = self._conditionNotebook.get_current_page()
+        if current_page == 0:
+            self._startButton.clicked()
+        elif current_page == 2:
+            self._retryButton.clicked()
+
+    def on_login_entry_activated(self, *args):
+        # When an entry or a row in the tree view is activated on the login view,
+        # push the login or retry button
+        current_page = self._loginConditionNotebook.get_current_page()
+        if current_page == 0:
+            self._loginButton.clicked()
+        elif current_page == 1:
+            self._retryLoginButton.clicked()

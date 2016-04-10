@@ -19,16 +19,22 @@
 # Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
 #
 
+import gi
+gi.require_version("BlockDev", "1.0")
+
+from gi.repository import BlockDev as blockdev
+
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import gtk_action_nowait
-
-from blivet.devicelibs.dasd import sanitize_dasd_dev_input, online_dasd
 
 __all__ = ["DASDDialog"]
 
 class DASDDialog(GUIObject):
     """ Gtk dialog which allows users to manually add DASD devices without
         having previously specified them in a parm file.
+
+       .. inheritance-diagram:: DASDDialog
+          :parts: 3
     """
     builderObjects = ["dasdDialog"]
     mainWidgetName = "dasdDialog"
@@ -44,14 +50,13 @@ class DASDDialog(GUIObject):
         self._update_devicetree = False
 
         # grab all of the ui objects
-        self._dasdNotebook = self.builder.get_object("dasdNotebook")
-
         self._configureGrid = self.builder.get_object("configureGrid")
         self._conditionNotebook = self.builder.get_object("conditionNotebook")
 
         self._startButton = self.builder.get_object("startButton")
         self._okButton = self.builder.get_object("okButton")
         self._cancelButton = self.builder.get_object("cancelButton")
+        self._retryButton = self.builder.get_object("retryButton")
 
         self._deviceEntry = self.builder.get_object("deviceEntry")
 
@@ -83,7 +88,7 @@ class DASDDialog(GUIObject):
         self._conditionNotebook.set_current_page(1)
 
         try:
-            device = sanitize_dasd_dev_input(self._deviceEntry.get_text())
+            device = blockdev.s390.sanitize_dev_input(self._deviceEntry.get_text())
         except ValueError as e:
             _config_error = str(e)
             self.builder.get_object("deviceErrorLabel").set_text(_config_error)
@@ -126,8 +131,17 @@ class DASDDialog(GUIObject):
         """
         # attempt to add the device
         try:
-            online_dasd(device)
+            blockdev.s390.dasd_online(device)
             self._update_devicetree = True
-        except ValueError as e:
-            self._discoveryError = str(e)
+        except blockdev.S390Error as err:
+            self._discoveryError = str(err)
             return
+
+    def on_device_entry_activate(self, entry, user_data=None):
+        # If the user hit Enter while the start button is displayed, activate
+        # whichever button is displayed.
+        current_page = self._conditionNotebook.get_current_page()
+        if current_page == 0:
+            self._startButton.clicked()
+        elif current_page == 2:
+            self._retryButton.clicked()

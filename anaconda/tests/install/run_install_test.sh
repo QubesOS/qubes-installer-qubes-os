@@ -18,7 +18,7 @@
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 
-# Have to be root to run this test, as yum is stupid.
+# Have to be root to run this test.
 if [ ${EUID} != 0 ]; then
    exit 77
 fi
@@ -49,17 +49,28 @@ enabled=1
 [anaconda-rawhide]
 name=Fedora - Rawhide - Developmental packages for the next Fedora release
 failovermethod=priority
-baseurl=http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/\$basearch/os/
 enabled=1
 gpgcheck=0
 EOF
 
-yum install -y -c ${tmpdir}/yum.conf --installroot=${tmpdir} --releasever=rawhide \
+# Primary and secondary arches do not use the same baseurl, so we have to figure it
+# out here.
+if [[ "$(uname -m)" == "x86_64" ]]; then
+    cat <<EOF >> ${tmpdir}/yum.conf
+baseurl=http://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/\$basearch/os/
+EOF
+else
+    cat <<EOF >> ${tmpdir}/yum.conf
+baseurl=http://mirrors.kernel.org/fedora-secondary/development/rawhide/\$basearch/os/
+EOF
+fi
+
+dnf install -y -c ${tmpdir}/yum.conf --installroot=${tmpdir} --releasever=rawhide \
             --disablerepo=\* --enablerepo=anaconda --enablerepo=anaconda-rawhide \
             anaconda
 status=$?
 
-# yum's return value is not especially helpful (it can return 0 even on error)
+# dnf's return value is not especially helpful (it can return 0 even on error)
 # but just in case it told us it failed, exit out here.
 if [ $? != 0 ]; then
     rm -r ${tmpdir}

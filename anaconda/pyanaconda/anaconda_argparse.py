@@ -33,6 +33,7 @@ import struct
 from argparse import ArgumentParser, ArgumentError, HelpFormatter, Namespace
 
 from pyanaconda.flags import BootArgs
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import logging
 log = logging.getLogger("anaconda")
@@ -178,7 +179,7 @@ class AnacondaArgumentParser(ArgumentParser):
         :rtype: Namespace
         """
         namespace = Namespace()
-        if boot_cmdline is None or type(boot_cmdline) is str:
+        if boot_cmdline is None or isinstance(boot_cmdline, str):
             bootargs = BootArgs(boot_cmdline)
         else:
             bootargs = boot_cmdline

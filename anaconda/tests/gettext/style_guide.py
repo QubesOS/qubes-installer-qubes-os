@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # Copyright (C) 2014  Red Hat, Inc.
 #
@@ -39,7 +39,8 @@ bad_strings = {'(?i)bootloader': 'boot loader',
 # {'filename': {'matched string', occurrences}}
 expected_badness = {'pyanaconda/bootloader.py': {'mountpoint': 1},  # format string specifier
                     'pyanaconda/kickstart.py':  {'btrfs': 1},       # quoted filesystem type
-                    'pyanaconda/network.py':    {'vlan': 1}}        # format string specifier
+                    'pyanaconda/network.py':    {'vlan': 1},        # format string specifier
+                    'pyanaconda/rescue.py':     {'mountpoint': 1}}  # format string specifier
 
 # Use polib to parse anaconda.pot
 try:

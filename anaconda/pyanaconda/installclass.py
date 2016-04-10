@@ -23,7 +23,7 @@
 
 from distutils.sysconfig import get_python_lib
 import os, sys
-import imputil
+import imp
 
 from blivet.partspec import PartSpec
 from blivet.autopart import swapSuggestion
@@ -82,7 +82,7 @@ class BaseInstallClass(object):
 
     def getBackend(self):
         # The default is to return None here, which means anaconda should
-        # use live or yum (whichever can be detected).  This method is
+        # use live or dnf (whichever can be detected).  This method is
         # provided as a way for other products to specify their own.
         return None
 
@@ -136,22 +136,6 @@ def availableClasses(showHidden=False):
     global allClasses
     global allClasses_hidden
 
-    def _ordering(first, second):
-        ((name1, _), priority1) = first
-        ((name2, _), priority2) = second
-
-        if priority1 < priority2:
-            return -1
-        elif priority1 > priority2:
-            return 1
-
-        if name1 < name2:
-            return -1
-        elif name1 > name2:
-            return 1
-
-        return 0
-
     if not showHidden:
         if allClasses:
             return allClasses
@@ -168,7 +152,7 @@ def availableClasses(showHidden=False):
     for d in env_path + ["installclasses",
               "/tmp/updates/pyanaconda/installclasses",
               "/tmp/product/pyanaconda/installclasses",
-              "%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1) ]:
+              "%s/pyanaconda/installclasses" % get_python_lib(plat_specific=1)]:
         if os.access(d, os.R_OK):
             path.append(d)
 
@@ -185,7 +169,7 @@ def availableClasses(showHidden=False):
     for fileName in files:
         if fileName[0] == '.':
             continue
-        if len (fileName) < 4:
+        if len(fileName) < 4:
             continue
         if fileName[-3:] != ".py" and fileName[-4:-1] != ".py":
             continue
@@ -195,13 +179,13 @@ def availableClasses(showHidden=False):
         done[mainName] = 1
 
         try:
-            found = imputil.imp.find_module(mainName)
+            found = imp.find_module(mainName)
         except ImportError:
-            log.warning ("module import of %s failed: %s", mainName, sys.exc_info()[0])
+            log.warning("module import of %s failed: %s", mainName, sys.exc_info()[0])
             continue
 
         try:
-            loaded = imputil.imp.load_module(mainName, found[0], found[1], found[2])
+            loaded = imp.load_module(mainName, found[0], found[1], found[2])
 
             for (_key, obj) in loaded.__dict__.items():
                 # If it's got these two methods, it's an InstallClass.
@@ -210,9 +194,10 @@ def availableClasses(showHidden=False):
                     if not obj.hidden or showHidden:
                         lst.append(((obj.name, obj), sortOrder))
         except (ImportError, AttributeError):
-            log.warning ("module import of %s failed: %s", mainName, sys.exc_info()[0])
+            log.warning("module import of %s failed: %s", mainName, sys.exc_info()[0])
 
-    lst.sort(_ordering)
+    # sort by sort order first, then by install class name
+    lst.sort(key=lambda x: (x[1], x[0][0]))
     for (item, _) in lst:
         if showHidden:
             allClasses_hidden += [item]

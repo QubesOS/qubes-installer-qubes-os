@@ -23,8 +23,6 @@ Module facilitating the work with NTP servers and NTP daemon's configuration
 
 """
 
-from __future__ import division
-
 import re
 import os
 import tempfile
@@ -33,7 +31,7 @@ import ntplib
 import socket
 
 from pyanaconda import isys
-from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.constants import THREAD_SYNC_TIME_BASENAME
 
@@ -193,10 +191,8 @@ def save_servers_to_config(pools, servers, conf_file_path=NTP_CONFIG_FILE,
 
     if not out_file_path:
         try:
-            stat = os.stat(conf_file_path)
             # Use copy rather then move to get the correct selinux context
-            shutil.copy(temp_path, conf_file_path)
-            iutil.eintr_retry_call(os.chmod, conf_file_path, stat.st_mode)
+            shutil.copyfile(temp_path, conf_file_path)
             os.unlink(temp_path)
 
         except OSError as oserr:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014  Red Hat, Inc.
+# Copyright (C) 2014-2015 Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -18,7 +18,11 @@
 #
 # Red Hat Author(s): Brian C. Lane <bcl@redhat.com>
 
+# Ignore any interruptible calls
+# pylint: disable=interruptible-system-call
+
 from pyanaconda.simpleconfig import SimpleConfigFile
+from pyanaconda.simpleconfig import simple_replace
 from pyanaconda import simpleconfig
 import unittest
 import tempfile
@@ -34,7 +38,7 @@ KEY2="A single ' inside" # And comment "with quotes"
 """
 
     def comment_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             testconfig.write(self.TEST_CONFIG)
             testconfig.flush()
 
@@ -74,7 +78,7 @@ KEY2="A single ' inside" # And comment "with quotes"
         self.assertEqual(scf.get('key1'), '')
 
     def write_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             scf = SimpleConfigFile()
             scf.set(('key1', 'value1'))
             scf.write(testconfig.name)
@@ -82,7 +86,7 @@ KEY2="A single ' inside" # And comment "with quotes"
             self.assertEqual(open(testconfig.name).read(), 'KEY1=value1\n')
 
     def read_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             scf = SimpleConfigFile()
             open(testconfig.name, 'w').write('KEY1="value1"\n')
             testconfig.flush()
@@ -90,7 +94,7 @@ KEY2="A single ' inside" # And comment "with quotes"
             self.assertEqual(scf.get('key1'), 'value1')
 
     def read_write_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             testconfig.write(self.TEST_CONFIG)
             testconfig.flush()
 
@@ -101,7 +105,7 @@ KEY2="A single ' inside" # And comment "with quotes"
             self.assertEqual(open(testconfig.name).read(), self.TEST_CONFIG)
 
     def write_new_keys_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             testconfig.write(self.TEST_CONFIG)
             testconfig.flush()
 
@@ -115,7 +119,7 @@ KEY2="A single ' inside" # And comment "with quotes"
                              self.TEST_CONFIG+"KEY1=value1\n")
 
     def remove_key_test(self):
-        with tempfile.NamedTemporaryFile() as testconfig:
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
             testconfig.write(self.TEST_CONFIG)
             testconfig.flush()
 
@@ -128,3 +132,103 @@ KEY2="A single ' inside" # And comment "with quotes"
             scf.reset()
             scf.read(testconfig.name)
             self.assertEqual(scf.get("BOOT"), "")
+
+    def use_tmp_test(self):
+        with tempfile.NamedTemporaryFile(mode="w+t") as testconfig:
+            # Write a starting file and keep the handle open
+            testconfig.write("KEY1=value1\n")
+            testconfig.flush()
+            testconfig.seek(0)
+
+            # Overwrite the value and write a new file
+            scf = SimpleConfigFile()
+            scf.read(testconfig.name)
+            scf.set(('key1', 'value2'))
+            scf.write(testconfig.name, use_tmp=True)
+
+            # Check the new contents
+            self.assertEqual(open(testconfig.name).read(), 'KEY1=value2\n')
+
+            # Check that the original file handle still points to the old contents
+            self.assertEqual(testconfig.read(), 'KEY1=value1\n')
+
+    def use_tmp_multifs_test(self):
+        # Open a file on a non-default filesystem
+        with tempfile.NamedTemporaryFile(dir='/dev/shm', mode='w+t') as testconfig:
+            # Write a starting file and keep the handle open
+            testconfig.write("KEY1=value1\n")
+            testconfig.flush()
+            testconfig.seek(0)
+
+            # Overwrite the value and write a new file
+            scf = SimpleConfigFile()
+            scf.read(testconfig.name)
+            scf.set(('key1', 'value2'))
+            scf.write(testconfig.name, use_tmp=True)
+
+            # Check the new contents
+            self.assertEqual(open(testconfig.name).read(), 'KEY1=value2\n')
+
+            # Check that the original file handle still points to the old contents
+            self.assertEqual(testconfig.read(), 'KEY1=value1\n')
+
+    def no_use_tmp_test(self):
+        with tempfile.NamedTemporaryFile(mode="w+t") as testconfig:
+            # Write a starting file and keep the handle open
+            testconfig.write("KEY1=value1\n")
+            testconfig.flush()
+            testconfig.seek(0)
+
+            # Overwrite the value and write a new file
+            scf = SimpleConfigFile()
+            scf.read(testconfig.name)
+            scf.set(('key1', 'value2'))
+            scf.write(testconfig.name, use_tmp=False)
+
+            # Check the new contents
+            self.assertEqual(open(testconfig.name).read(), 'KEY1=value2\n')
+
+            # Check that the original file handle points to the replaced contents
+            self.assertEqual(testconfig.read(), 'KEY1=value2\n')
+
+class SimpleReplaceTests(unittest.TestCase):
+    TEST_CONFIG = """#SKIP=Skip this commented line
+BOOT=always
+"""
+
+    def replace_test(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
+            testconfig.write(self.TEST_CONFIG)
+            testconfig.flush()
+
+            keys = [("BOOT", "BOOT=never")]
+            simple_replace(testconfig.name, keys)
+
+            config = SimpleConfigFile(testconfig.name)
+            config.read()
+            self.assertEqual(config.get("BOOT"), "never")
+
+    def append_test(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
+            testconfig.write(self.TEST_CONFIG)
+            testconfig.flush()
+
+            keys = [("NEWKEY", "NEWKEY=froboz")]
+            simple_replace(testconfig.name, keys)
+
+            config = SimpleConfigFile(testconfig.name)
+            config.read()
+            self.assertEqual(config.get("NEWKEY"), "froboz")
+
+    def no_append_test(self):
+        with tempfile.NamedTemporaryFile(mode="wt") as testconfig:
+            testconfig.write(self.TEST_CONFIG)
+            testconfig.flush()
+
+            keys = [("BOOT", "BOOT=sometimes"), ("NEWKEY", "NEWKEY=froboz")]
+            simple_replace(testconfig.name, keys, add=False)
+
+            config = SimpleConfigFile(testconfig.name)
+            config.read()
+            self.assertEqual(config.get("BOOT"), "sometimes")
+            self.assertEqual(config.get("NEWKEY"), "")

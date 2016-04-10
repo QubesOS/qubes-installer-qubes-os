@@ -33,26 +33,28 @@
 AM_TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)" top_builddir="$(top_builddir)" ; . $(srcdir)/testenv.sh ;
 TEST_EXTENSIONS = .sh
 
-dist_check_DATA = pylint/pylint-false-positives
-
 # Test scripts need to be listed both here and in TESTS
-dist_check_SCRIPTS = $(srcdir)/glade/*/*.py \
+dist_check_SCRIPTS = $(srcdir)/glade/*.py \
 		     glade/run_glade_tests.sh \
 		     $(srcdir)/lib/*.py \
 		     $(srcdir)/lib/*.sh \
 		     nosetests.sh \
-		     $(srcdir)/pylint/*.py \
-		     pylint/runpylint.sh \
-		     pylint/pylint-one.sh \
+		     nosetests_root.sh \
+		     pylint/runpylint.py \
 		     cppcheck/runcppcheck.sh \
 		     testenv.sh \
+		     $(srcdir)/gettext/*.py \
+		     gettext/click.py \
 		     gettext/gettext_warnings.sh \
 		     gettext/gettext_potfiles.py \
 		     gettext/style_guide.py \
+		     gettext/contexts.py \
 		     storage/run_storage_tests.py \
 		     install/run_install_test.sh \
 		     $(srcdir)/kickstart_tests/*.ks \
 		     $(srcdir)/kickstart_tests/*.sh \
+		     $(srcdir)/kickstart_tests/*.py \
+		     $(srcdir)/kickstart_tests/kstest-runner \
 		     $(srcdir)/gui/*.ks \
 		     $(srcdir)/gui/*.sh \
 		     $(srcdir)/gui/inside/*.py \
@@ -61,11 +63,13 @@ dist_check_SCRIPTS = $(srcdir)/glade/*/*.py \
 		     $(srcdir)/*_tests/*.py
 
 TESTS = nosetests.sh \
-	pylint/runpylint.sh \
+	pylint/runpylint.py \
 	cppcheck/runcppcheck.sh \
+	gettext/click.py \
 	gettext/gettext_warnings.sh \
 	gettext/gettext_potfiles.py \
 	gettext/style_guide.py \
+	gettext/contexts.py \
 	storage/run_storage_tests.py \
 	glade/run_glade_tests.sh \
 	kickstart_tests/run_kickstart_tests.sh

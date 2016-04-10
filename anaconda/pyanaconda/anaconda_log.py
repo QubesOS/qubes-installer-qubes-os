@@ -26,7 +26,6 @@ import logging
 from logging.handlers import SysLogHandler, SocketHandler, SYSLOG_UDP_PORT
 import os
 import sys
-import types
 import warnings
 
 from pyanaconda.flags import flags
@@ -60,14 +59,14 @@ def autoSetLevel(handler, value):
 
 # all handlers of given logger with autoSetLevel == True are set to level
 def setHandlersLevel(logr, level):
-    map(lambda hdlr: hdlr.setLevel(level),
-        filter (lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logr.handlers))
+    for handler in filter(lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logr.handlers):
+        handler.setLevel(level)
 
 class AnacondaSyslogHandler(SysLogHandler):
     # syslog doesn't understand these level names
-    levelMap = { "ERR": "error",
-                 "CRIT": "critical",
-                 "LOCK": "debug"}
+    levelMap = {"ERR": "error",
+                "CRIT": "critical",
+                "LOCK": "debug"}
 
     def __init__(self,
                  address=('localhost', SYSLOG_UDP_PORT),
@@ -88,13 +87,13 @@ class AnacondaSyslogHandler(SysLogHandler):
 
 class AnacondaSocketHandler(SocketHandler):
     def makePickle(self, record):
-        return self.formatter.format(record) + "\n"
+        return bytes(self.formatter.format(record) + "\n", "utf-8")
 
 class AnacondaLog:
-    SYSLOG_CFGFILE  = "/etc/rsyslog.conf"
+    SYSLOG_CFGFILE = "/etc/rsyslog.conf"
     VIRTIO_PORT = "/dev/virtio-ports/org.fedoraproject.anaconda.log.0"
 
-    def __init__ (self):
+    def __init__(self):
         self.loglevel = DEFAULT_LEVEL
         self.remote_syslog = None
         # Rename the loglevels so they are the same as in syslog.
@@ -166,11 +165,11 @@ class AnacondaLog:
                             fmtStr=STDOUT_FORMAT, minLevel=logging.INFO)
 
     # Add a simple handler - file or stream, depending on what we're given.
-    def addFileHandler (self, dest, addToLogger, minLevel=DEFAULT_LEVEL,
+    def addFileHandler(self, dest, addToLogger, minLevel=DEFAULT_LEVEL,
                         fmtStr=ENTRY_FORMAT,
                         autoLevel=False):
         try:
-            if isinstance(dest, types.StringTypes):
+            if isinstance(dest, str):
                 logfileHandler = logging.FileHandler(dest)
             else:
                 logfileHandler = logging.StreamHandler(dest)
@@ -223,6 +222,9 @@ class AnacondaLog:
 
         Requires updating rsyslogd config and restarting rsyslog
         """
+        # Import here instead of at the module level to avoid an import loop
+        from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
+
         TEMPLATE = "*.* @@%s\n"
 
         self.remote_syslog = remote_syslog
@@ -234,9 +236,12 @@ class AnacondaLog:
     def setupVirtio(self):
         """Setup virtio rsyslog logging.
         """
+        # Import here instead of at the module level to avoid an import loop
+        from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
+
         TEMPLATE = "*.* %s;anaconda_syslog\n"
 
-        vport = flags.cmdline.get('virtiolog', self.VIRTIO_PORT)
+        vport = flags.cmdline.get('virtiolog') or self.VIRTIO_PORT
 
         if not os.access(vport, os.W_OK):
             return

@@ -39,6 +39,10 @@ __all__ = ["PasswordSpoke"]
 
 
 class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
+    """
+       .. inheritance-diagram:: PasswordSpoke
+          :parts: 3
+    """
     builderObjects = ["passwordWindow"]
 
     mainWidgetName = "passwordWindow"
@@ -72,14 +76,10 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         # - Is there any data in the confirm box?
         self.add_check(self.pw, self._checkPasswordEmpty)
 
-        # The password confirmation needs to be checked whenever either of the password
-        # fields change. Separate checks are created for each field so that edits on either
-        # will trigger a new check and so that the last edited field will get focus when
-        # Done is clicked. The checks are saved here so that either check can trigger the
-        # other check in order to reset the status on both when either field is changed.
-        # The check_data field is used as a flag to prevent infinite recursion.
+        # the password confirmation needs to be checked whenever either of the password
+        # fields change. attach to the confirm field so that errors focus on confirm,
+        # and check changes to the password field in on_password_changed
         self._confirm_check = self.add_check(self.confirm, self._checkPasswordConfirm)
-        self._password_check = self.add_check(self.pw, self._checkPasswordConfirm)
 
         # Keep a reference for these checks, since they have to be manually run for the
         # click Done twice check.
@@ -214,19 +214,9 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         else:
             result = InputCheck.CHECK_OK
 
-        # If the check succeeded, reset the status of the other check object
-        # Disable the current check to prevent a cycle
-        inputcheck.enabled = False
-        if result == InputCheck.CHECK_OK:
-            if inputcheck == self._confirm_check:
-                self._password_check.update_check_status()
-            else:
-                self._confirm_check.update_check_status()
-        inputcheck.enabled = True
-
         return result
 
-    def _updatePwQuality(self, editable=None, data=None):
+    def _updatePwQuality(self):
         """Update the password quality information.
 
            This function is called by the ::changed signal handler on the
@@ -255,6 +245,12 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
 
         self.pw_bar.set_value(val)
         self.pw_label.set_text(text)
+
+    def on_password_changed(self, editable, data=None):
+        # Update the password/confirm match check on changes to the main password field
+        self._confirm_check.update_check_status()
+
+        self._updatePwQuality()
 
     def _checkPasswordStrength(self, inputcheck):
         """Update the error message based on password strength.
@@ -293,7 +289,7 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
                     done_msg = _(PASSWORD_DONE_TWICE)
 
                 if self._pwq_error:
-                    return _(PASSWORD_WEAK_WITH_ERROR) % (self._pwq_error, done_msg)
+                    return _(PASSWORD_WEAK_WITH_ERROR) % self._pwq_error + " " + done_msg
                 else:
                     return _(PASSWORD_WEAK) % done_msg
         else:

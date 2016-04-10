@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # Copyright (C) 2014  Red Hat, Inc.
 #
@@ -17,6 +17,10 @@
 #
 # Author: Chris Lumens <clumens@redhat.com>
 
+# Ignore any interruptible calls
+# pylint: disable=interruptible-system-call
+# pylint: disable=ignorable-system-call
+
 __all__ = ["Creator", "OutsideMixin"]
 
 from blivet.size import MiB
@@ -27,18 +31,6 @@ import os
 import shutil
 import subprocess
 import tempfile
-import errno
-
-# Copied from python's subprocess.py
-def eintr_retry_call(func, *args):
-    """Retry an interruptible system call if interrupted."""
-    while True:
-        try:
-            return func(*args)
-        except (OSError, IOError) as e:
-            if e.errno == errno.EINTR:
-                continue
-            raise
 
 class Creator(object):
     """A Creator subclass defines all the parameters for making a VM to run a
@@ -76,7 +68,7 @@ class Creator(object):
         self._reqMemory = 1536
 
     def _call(self, args):
-        subprocess.call(args, stdout=open("/dev/null", "w"), stderr=open("/dev/null", "w"))
+        subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def archive(self):
         """Copy all log files and other test results to a subdirectory of the
@@ -111,7 +103,7 @@ class Creator(object):
         """
         for (drive, size) in self.drives:
             (fd, diskimage) = tempfile.mkstemp(dir=self.tempdir)
-            eintr_retry_call(os.close, fd)
+            os.close(fd)
 
             # For now we are using qemu-img to create these files but specifying
             # sizes in blivet Size objects.  Unfortunately, qemu-img wants sizes
@@ -156,8 +148,8 @@ class Creator(object):
         # Create the suite file, which contains all the test cases to run and is how
         # the VM will figure out what to run.
         with open(self.mountpoint + "/suite.py", "w") as f:
-            imports = map(lambda (path, cls): "    from inside.%s import %s" % (path, cls), self.tests)
-            addtests = map(lambda (path, cls): "    s.addTest(%s())" % cls, self.tests)
+            imports = map(lambda path_cls: "    from inside.%s import %s" % (path_cls[0], path_cls[1]), self.tests)
+            addtests = map(lambda path_cls1: "    s.addTest(%s())" % path_cls1[1], self.tests)
 
             f.write(self.template % {"environ": "    os.environ.update(%s)" % self.environ,
                                      "imports": "\n".join(imports),

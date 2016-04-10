@@ -20,7 +20,11 @@
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
-from gi.repository import Gkbd, Gdk, Gtk
+import gi
+gi.require_version("Gkbd", "3.0")
+gi.require_version("Gtk", "3.0")
+
+from gi.repository import Gkbd, Gtk
 
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
@@ -79,7 +83,7 @@ class AddLayoutDialog(GUIObject):
         eng_value = self._xkl_wrapper.get_layout_variant_description(value, xlated=False)
         xlated_value = self._xkl_wrapper.get_layout_variant_description(value)
         translit_value = strip_accents(xlated_value).lower()
-        entry_text = unicode(entry_text, "utf-8").lower()
+        entry_text = entry_text.lower()
 
         return have_word_match(entry_text, eng_value) or have_word_match(entry_text, xlated_value) \
             or have_word_match(entry_text, translit_value)
@@ -160,16 +164,12 @@ class AddLayoutDialog(GUIObject):
     def on_entry_icon_clicked(self, *args):
         self._entry.set_text("")
 
-    def on_layout_view_button_press(self, widget, event, *args):
-        if event.type == Gdk.EventType._2BUTTON_PRESS and \
-                self._confirmAddButton.get_sensitive():
-            # double-click should close the dialog if something is selected
-            # (i.e. the Add button is sensitive)
-            # @see on_add_layout_selection_changed
-            self._confirmAddButton.emit("clicked")
-
-        # let the other actions happen as well
-        return False
+    def on_layout_row_activated(self, treeview, path, column, user_data=None):
+        # Activating a row (double-click, Enter, space, shift+space) should
+        # close the dialog if something is selected (i.e. the Add button is
+        # sensitive)
+        # @see on_add_layout_selection_changed
+        self._confirmAddButton.emit("clicked")
 
     def _addLayout(self, name, store):
         store.append([name])
@@ -260,6 +260,10 @@ class ConfigureSwitchingDialog(GUIObject):
 
 
 class KeyboardSpoke(NormalSpoke):
+    """
+       .. inheritance-diagram:: KeyboardSpoke
+          :parts: 3
+    """
     builderObjects = ["addedLayoutStore", "keyboardWindow",
                       "layoutTestBuffer"]
     mainWidgetName = "keyboardWindow"
@@ -546,6 +550,7 @@ class KeyboardSpoke(NormalSpoke):
         with self.main_window.enlightbox(dialog):
             dialog.show_all()
             dialog.run()
+            dialog.destroy()
 
     def on_selection_changed(self, selection, *args):
         # We don't have to worry about multiple rows being selected in this

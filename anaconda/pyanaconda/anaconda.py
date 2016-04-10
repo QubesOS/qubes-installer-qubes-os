@@ -36,6 +36,7 @@ import threading
 from pyanaconda.bootloader import get_bootloader
 from pyanaconda import constants
 from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda import addons
 
 import logging
@@ -51,6 +52,7 @@ class Anaconda(object):
         self.desktop = desktop.Desktop()
         self.dir = None
         self.displayMode = None
+        self.gui_startup_failed = False
         self.id = None
         self._instClass = None
         self._intf = None
@@ -130,15 +132,9 @@ class Anaconda(object):
                 elif self.ksdata.method.method == "liveimg":
                     from pyanaconda.packaging.livepayload import LiveImageKSPayload
                     klass = LiveImageKSPayload
-                elif flags.dnf:
-                    try:
-                        from pyanaconda.packaging.dnfpayload import DNFPayload
-                        klass = DNFPayload
-                    except ImportError:
-                        log.critical('Importing DNF  failed.', exc_info=True)
                 else:
-                    from pyanaconda.packaging.yumpayload import YumPayload
-                    klass = YumPayload
+                    from pyanaconda.packaging.dnfpayload import DNFPayload
+                    klass = DNFPayload
 
             self._payload = klass(self.ksdata)
 
@@ -167,10 +163,24 @@ class Anaconda(object):
     def storage(self):
         if not self._storage:
             import blivet
+            import blivet.arch
+
+            import gi
+            gi.require_version("BlockDev", "1.0")
+
+            from gi.repository import BlockDev as blockdev
             self._storage = blivet.Blivet(ksdata=self.ksdata)
 
             if self.instClass.defaultFS:
                 self._storage.setDefaultFSType(self.instClass.defaultFS)
+
+            if blivet.arch.isS390():
+                # want to make sure s390 plugin is loaded
+                if "s390" not in blockdev.get_available_plugin_names():
+                    plugin = blockdev.PluginSpec()
+                    plugin.name = blockdev.Plugin.S390
+                    plugin.so_name = None
+                    blockdev.reinit([plugin], reload=False)
 
         return self._storage
 
@@ -188,6 +198,10 @@ class Anaconda(object):
 
         # gather up info on the running threads
         threads = "\nThreads\n-------\n"
+
+        # Every call to sys._current_frames() returns a new dict, so it is not
+        # modified when threads are created or destroyed. Iterating over it is
+        # thread safe.
         for thread_id, frame in sys._current_frames().items():
             threads += "\nThread %s\n" % (thread_id,)
             threads += "".join(format_stack(frame))
@@ -196,9 +210,9 @@ class Anaconda(object):
         (fd, filename) = mkstemp(prefix="anaconda-tb-", dir="/tmp")
         dump_text = exn.traceback_and_object_dump(self)
         dump_text += threads
-        dump_text = dump_text.encode("utf-8")
-        iutil.eintr_retry_call(os.write, fd, dump_text)
-        iutil.eintr_retry_call(os.close, fd)
+        dump_text_bytes = dump_text.encode("utf-8")
+        iutil.eintr_retry_call(os.write, fd, dump_text_bytes)
+        iutil.eintr_ignore(os.close, fd)
 
         # append to a given file
         with open("/tmp/anaconda-tb-all.log", "a+") as f:
@@ -234,7 +248,7 @@ class Anaconda(object):
         if addon_paths:
             self._intf.update_paths(addon_paths)
 
-    def writeXdriver(self, root = None):
+    def writeXdriver(self, root=None):
         # this should go away at some point, but until it does, we
         # need to keep it around.
         if self.xdriver is None:

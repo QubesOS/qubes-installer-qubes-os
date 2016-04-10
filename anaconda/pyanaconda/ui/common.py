@@ -159,7 +159,7 @@ class FirstbootOnlySpokeMixIn(object):
         else:
             return False
 
-class Spoke(object):
+class Spoke(object, metaclass=ABCMeta):
     """A Spoke is a single configuration screen.  There are several different
        places where a Spoke can be displayed, each of which will have its own
        unique class.  A Spoke is typically used when an element in the Hub is
@@ -186,8 +186,6 @@ class Spoke(object):
                      corresponding to this Spoke instance.  If no title is
                      given, the default from SpokeSelector will be used.
     """
-
-    __metaclass__ = ABCMeta
 
     category = None
     icon = None
@@ -440,7 +438,7 @@ class StandaloneSpoke(Spoke):
     def status(self):
         return None
 
-class Hub(object):
+class Hub(object, metaclass=ABCMeta):
     """A Hub is an overview UI screen.  A Hub consists of one or more grids of
        configuration options that the user may choose from.  Each grid is
        provided by a SpokeCategory, and each option is provided by a Spoke.
@@ -461,8 +459,6 @@ class Hub(object):
        Installation may consist of multiple chained Hubs, or Hubs with
        additional standalone screens either before or after them.
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, storage, payload, instclass):
         """Create a new Hub instance.
@@ -675,7 +671,7 @@ def collect(module_pattern, path, pred):
                        for name in module.__all__
                        if p(getattr(module, name))]
 
-        for (name, val) in members:
+        for (_name, val) in members:
             retval.append(val)
 
     return retval
@@ -713,10 +709,10 @@ def collect_categories(mask_paths, displaymode):
     return categories
 
 def collectCategoriesAndSpokes(paths, klass, displaymode):
-    """collects categories and spokes to be displayed on this Hub
+    """Collects categories and spokes to be displayed on this Hub
 
        :param paths: dictionary mapping categories, spokes, and hubs to their
-       their respective search path(s)
+                     their respective search path(s)
        :return: dictionary mapping category class to list of spoke classes
        :rtype: dictionary[category class] -> [ list of spoke classes ]
     """

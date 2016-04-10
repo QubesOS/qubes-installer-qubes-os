@@ -19,9 +19,21 @@ case "${kickstart%%:*}" in
             when_diskdev_appears "$ksdev" \
                 fetch-kickstart-disk \$env{DEVNAME} "$kspath"
         fi
+        # "cdrom:" also means "wait forever for kickstart" because rhbz#1168902
+        if [ "$kstype" = "cdrom" ]; then
+            # if we reset main_loop to 0 every loop, we never hit the timeout.
+            # (see dracut's dracut-initqueue.sh for details on the mainloop)
+            echo "main_loop=0" > "$hookdir/initqueue/ks-cdrom-wait-forever.sh"
+        fi
         wait_for_kickstart
     ;;
     bd) # bd:<dev>:<path> - biospart (TODO... if anyone uses this anymore)
         warn "inst.ks: can't get kickstart - biospart (bd:) isn't supported yet"
+    ;;
+    "")
+        if [ -z "$kickstart" -a -n "$(getarg ks= inst.ks=)" ]; then
+            when_diskdev_appears $(disk_to_dev_path LABEL=OEMDRV) \
+                fetch-kickstart-disk \$env{DEVNAME} "/ks.cfg"
+        fi
     ;;
 esac

@@ -36,7 +36,11 @@ __all__ = ["SoftwareSpoke"]
 
 
 class SoftwareSpoke(NormalTUISpoke):
-    """ Spoke used to read new value of text to represent source repo. """
+    """ Spoke used to read new value of text to represent source repo.
+
+       .. inheritance-diagram:: SoftwareSpoke
+          :parts: 3
+    """
     title = N_("Software selection")
     category = SoftwareCategory
 
@@ -215,7 +219,8 @@ class SoftwareSpoke(NormalTUISpoke):
 
     def _apply(self):
         """ Private apply. """
-        if 0 <= self._selection < len(self.payload.environments):
+        # self._selection can be None during kickstart installation
+        if self._selection is not None and 0 <= self._selection < len(self.payload.environments):
             self.environment = self.payload.environments[self._selection]
         else:
             self.environment = None
@@ -249,12 +254,12 @@ class SoftwareSpoke(NormalTUISpoke):
         try:
             self.payload.checkSoftwareSelection()
         except DependencyError as e:
-            self.errors = [e.message]
+            self.errors = [str(e)]
             self._tx_id = None
         else:
             self._tx_id = self.payload.txID
 
     @property
     def txid_valid(self):
-        """ Whether we have a valid yum tx id. """
+        """ Whether we have a valid dnf tx id. """
         return self._tx_id == self.payload.txID

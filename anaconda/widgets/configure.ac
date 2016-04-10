@@ -19,12 +19,19 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
+m4_define(python_required_version, 3.4)
+
 AC_PREREQ([2.63])
-AC_INIT([AnacondaWidgets], [3.1], [clumens@redhat.com])
+AC_INIT([AnacondaWidgets], [3.2], [clumens@redhat.com])
+
+# Disable building static libraries.
+# This needs to be set before initializing automake
+AC_DISABLE_STATIC
+
 AM_INIT_AUTOMAKE([foreign])
 AM_SILENT_RULES([yes])
 
-AM_PATH_PYTHON
+AM_PATH_PYTHON(python_required_version)
 
 AC_CONFIG_SRCDIR([src/BaseWindow.c])
 AC_CONFIG_HEADERS([config.h])

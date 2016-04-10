@@ -19,13 +19,13 @@
 
 from pyanaconda import isys
 import os, os.path, stat, tempfile
-from pyanaconda.constants import ISO_DIR
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
-from pyanaconda.errors import errorHandler, ERROR_RAISE, InvalidImageSizeError, MediaMountError, MediaUnmountError, MissingImageError
+from pyanaconda.errors import errorHandler, ERROR_RAISE, InvalidImageSizeError, MissingImageError
 
 import blivet.util
 import blivet.arch
-from blivet.errors import FSError, StorageError
+from blivet.errors import FSError
 
 import logging
 log = logging.getLogger("anaconda")
@@ -102,61 +102,6 @@ def findFirstIsoImage(path):
 
     return None
 
-def getMediaId(path):
-    if os.access("%s/.discinfo" % path, os.R_OK):
-        f = open("%s/.discinfo" % path)
-        newStamp = f.readline().strip()
-        f.close()
-
-        return newStamp
-    else:
-        return None
-
-# This mounts the directory containing the iso images on ISO_DIR.
-def mountImageDirectory(method, storage):
-    # No need to mount it again.
-    if os.path.ismount(ISO_DIR):
-        return
-
-    if method.method == "harddrive":
-        if method.biospart:
-            log.warning("biospart support is not implemented")
-            devspec = method.biospart
-        else:
-            devspec = method.partition
-
-        # FIXME: teach DeviceTree.resolveDevice about biospart
-        device = storage.devicetree.resolveDevice(devspec)
-
-        while True:
-            try:
-                device.setup()
-                device.format.setup(mountpoint=ISO_DIR)
-            except StorageError as e:
-                log.error("couldn't mount ISO source directory: %s", e)
-                exn = MediaMountError(str(e), device)
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    raise exn
-    elif method.method.startswith("nfsiso:"):
-        # XXX what if we mount it on ISO_DIR and then create a symlink
-        #     if there are no isos instead of the remount?
-
-        # mount the specified directory
-        path = method.dir
-        if method.dir.endswith(".iso"):
-            path = os.path.dirname(method.dir)
-
-        url = "%s:%s" % (method.server, path)
-
-        while True:
-            try:
-                blivet.util.mount(url, ISO_DIR, fstype="nfs", options=method.options)
-            except OSError as e:
-                log.error("couldn't mount ISO source directory: %s", e)
-                exn = MediaMountError(str(e), device)
-                if errorHandler.cb(exn) == ERROR_RAISE:
-                    raise exn
-
 def mountImage(isodir, tree):
     while True:
         if os.path.isfile(isodir):
@@ -173,7 +118,7 @@ def mountImage(isodir, tree):
             image = os.path.normpath("%s/%s" % (isodir, image))
 
         try:
-            blivet.util.mount(image, tree, fstype = 'iso9660', options="ro")
+            blivet.util.mount(image, tree, fstype='iso9660', options="ro")
         except OSError:
             exn = MissingImageError()
             if errorHandler.cb(exn) == ERROR_RAISE:
@@ -212,7 +157,7 @@ def opticalInstallMedia(devicetree):
                 if not verifyMedia(mountpoint):
                     continue
             finally:
-                dev.format.unmount()
+                dev.format.unmount(mountpoint=mountpoint)
         finally:
             os.rmdir(mountpoint)
 
@@ -225,24 +170,6 @@ def opticalInstallMedia(devicetree):
 # somewhere.  Candidate devices are simply any that we can mount.
 def potentialHdisoSources(devicetree):
     return filter(lambda d: d.format.exists and d.format.mountable, devicetree.getDevicesByType("partition"))
-
-def umountImage(tree):
-    if os.path.ismount(tree):
-        blivet.util.umount(tree)
-
-def unmountCD(dev):
-    if not dev:
-        return
-
-    while True:
-        try:
-            dev.format.unmount()
-        except FSError as e:
-            log.error("exception in _unmountCD: %s", e)
-            exn = MediaUnmountError(dev)
-            errorHandler.cb(exn)
-        else:
-            break
 
 def verifyMedia(tree, timestamp=None):
     if os.access("%s/.discinfo" % tree, os.R_OK):

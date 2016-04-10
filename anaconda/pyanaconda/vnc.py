@@ -22,6 +22,7 @@
 import os, sys
 import time
 from pyanaconda import constants, network, product, iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import socket
 import subprocess
 import dbus
@@ -79,15 +80,16 @@ class VncServer:
         """Set the vnc server password. Output to file. """
 
         r, w = os.pipe()
-        iutil.eintr_retry_call(os.write, w, "%s\n" % self.password)
+        password_string = "%s\n" % self.password
+        iutil.eintr_retry_call(os.write, w, password_string.encode("utf-8"))
 
-        with open(self.pw_file, "w") as pw_file:
+        with open(self.pw_file, "wb") as pw_file:
             # the -f option makes sure vncpasswd does not ask for the password again
             rc = iutil.execWithRedirect("vncpasswd", ["-f"],
                     stdin=r, stdout=pw_file, binary_output=True, log_output=False)
 
-            iutil.eintr_retry_call(os.close, r)
-            iutil.eintr_retry_call(os.close, w)
+            iutil.eintr_ignore(os.close, r)
+            iutil.eintr_ignore(os.close, w)
 
         return rc
 
@@ -106,37 +108,39 @@ class VncServer:
         if not self.ip:
             return
 
-        ipstr = self.ip
-        try:
-            hinfo = socket.gethostbyaddr(ipstr)
-        except socket.herror as e:
-            log.debug("Exception caught trying to get host name of %s: %s", ipstr, e)
-            self.name = network.getHostname()
-        else:
-            if len(hinfo) == 3:
-                self.name = hinfo[0]
-
         if self.ip.find(':') != -1:
             ipstr = "[%s]" % (self.ip,)
+        else:
+            ipstr = self.ip
 
-        name_ips = [i[4][0] for i in socket.getaddrinfo(self.name, 0)]
-        if self.name is not None and not self.name.startswith('localhost') \
-           and ipstr is not None and self.ip in name_ips:
+        try:
+            hinfo = socket.gethostbyaddr(ipstr)
+            if len(hinfo) == 3:
+                # Consider as coming from a valid DNS record only if single IP is returned
+                if len(hinfo[2]) == 1:
+                    self.name = hinfo[0]
+        except socket.herror as e:
+            log.debug("Exception caught trying to get host name of %s: %s", ipstr, e)
+
+        if self.name is not None and not self.name.startswith('localhost'):
             self.connxinfo = "%s:%s (%s:%s)" % \
                     (socket.getfqdn(name=self.name), constants.X_DISPLAY_NUMBER,
                      ipstr, constants.X_DISPLAY_NUMBER)
+            host = self.name
         elif ipstr is not None:
             self.connxinfo = "%s:%s" % (ipstr, constants.X_DISPLAY_NUMBER)
+            host = ipstr
         else:
             self.connxinfo = None
+            host = ""
 
         # figure out product info
-        if self.name is not None:
+        if host:
             self.desktop = _("%(productName)s %(productVersion)s installation "
                              "on host %(name)s") \
                            % {'productName': product.productName,
                               'productVersion': product.productVersion,
-                              'name': self.name}
+                              'name': host}
 
     def openlogfile(self):
         try:
@@ -162,7 +166,7 @@ class VncServer:
 
         for _i in range(maxTries):
             vncconfp = iutil.startProgram(vncconfigcommand, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # vncconfig process
-            err = vncconfp.communicate()[1]
+            err = vncconfp.communicate()[1].decode("utf-8")
 
             if err == '':
                 self.log.info(_("Connected!"))
@@ -227,11 +231,11 @@ class VncServer:
             self.setVNCPassword()
 
         # Lets start the xvnc.
-        xvnccommand =  [ XVNC_BINARY_NAME, ":%s" % constants.X_DISPLAY_NUMBER,
-                        "-depth", "16", "-br",
-                        "IdleTimeout=0", "-auth", "/dev/null", "-once",
-                        "DisconnectClients=false", "desktop=%s" % (self.desktop,),
-                        "SecurityTypes=%s" % SecurityTypes, "rfbauth=%s" % rfbauth ]
+        xvnccommand = [XVNC_BINARY_NAME, ":%s" % constants.X_DISPLAY_NUMBER,
+                       "-depth", "16", "-br",
+                       "IdleTimeout=0", "-auth", "/dev/null", "-once",
+                       "DisconnectClients=false", "desktop=%s" % (self.desktop,),
+                       "SecurityTypes=%s" % SecurityTypes, "rfbauth=%s" % rfbauth]
 
         try:
             iutil.startX(xvnccommand, output_redirect=self.openlogfile())

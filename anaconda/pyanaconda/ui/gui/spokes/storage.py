@@ -39,10 +39,17 @@
 
 """
 
+import gi
+gi.require_version("Gdk", "3.0")
+gi.require_version("GLib", "2.0")
+gi.require_version("AnacondaWidgets", "3.0")
+gi.require_version("BlockDev", "1.0")
+
 from gi.repository import Gdk, GLib, AnacondaWidgets
+from gi.repository import BlockDev as blockdev
 
 from pyanaconda.ui.communication import hubQ
-from pyanaconda.ui.lib.disks import getDisks, isLocalDisk, applyDiskSelection
+from pyanaconda.ui.lib.disks import getDisks, isLocalDisk, applyDiskSelection, checkDiskSelection
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.gui.spokes.lib.cart import SelectedDisksDialog
@@ -59,9 +66,8 @@ from blivet import arch
 from blivet import autopart
 from blivet.size import Size
 from blivet.devices import MultipathDevice, ZFCPDiskDevice
-from blivet.errors import StorageError, DasdFormatError
+from blivet.errors import StorageError
 from blivet.platform import platform
-from blivet.devicelibs.dasd import make_unformatted_dasd_list, format_dasd
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.product import productName
 from pyanaconda.flags import flags
@@ -234,6 +240,10 @@ class NoSpaceDialog(InstallOptionsDialogBase):
         self._add_modify_watcher(label)
 
 class StorageSpoke(NormalSpoke, StorageChecker):
+    """
+       .. inheritance-diagram:: StorageSpoke
+          :parts: 3
+    """
     builderObjects = ["storageWindow", "addSpecializedImage"]
     mainWidgetName = "storageWindow"
     uiFile = "spokes/storage.glade"
@@ -257,6 +267,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.selected_disks = self.data.ignoredisk.onlyuse[:]
         self._last_selected_disks = None
         self._back_clicked = False
+        self.autopart_missing_passphrase = False
+        self.disks_errors = []
 
         # This list contains all possible disks that can be included in the install.
         # All types of advanced disks should be set up for us ahead of time, so
@@ -295,15 +307,17 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.data.autopart.encrypted = self.encrypted
         self.data.autopart.passphrase = self.passphrase
 
-        self.clearPartType = CLEARPART_TYPE_NONE
-
         if self.data.bootloader.bootDrive and \
            self.data.bootloader.bootDrive not in self.selected_disks:
             self.data.bootloader.bootDrive = ""
             self.storage.bootloader.reset()
 
         self.data.clearpart.initAll = True
-        self.data.clearpart.type = self.clearPartType
+
+        if not self.autopart_missing_passphrase:
+            self.clearPartType = CLEARPART_TYPE_NONE
+            self.data.clearpart.type = self.clearPartType
+
         self.storage.config.update(self.data)
         self.storage.autoPartType = self.data.autopart.type
         self.storage.encryptedAutoPart = self.data.autopart.encrypted
@@ -329,6 +343,12 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # on the off-chance dasdfmt is running, we can't proceed further
         threadMgr.wait(constants.THREAD_DASDFMT)
         hubQ.send_message(self.__class__.__name__, _("Saving storage configuration..."))
+        if flags.automatedInstall and self.data.autopart.encrypted and not self.data.autopart.passphrase:
+            self.autopart_missing_passphrase = True
+            StorageChecker.errors = [_("Passphrase for autopart encryption not specified.")]
+            self._ready = True
+            hubQ.send_ready(self.__class__.__name__, True)
+            return
         try:
             doKickstartStorage(self.storage, self.data, self.instclass)
         except (StorageError, KickstartValueError) as e:
@@ -349,7 +369,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             hubQ.send_message(self.__class__.__name__, _("Failed to save storage configuration..."))
             self.data.bootloader.bootDrive = ""
         else:
-            if self.autopart:
+            if self.autopart or (flags.automatedInstall and (self.data.autopart.autopart or self.data.partition.seen)):
+                # run() executes StorageChecker.checkStorage in a seperate threat
                 self.run()
         finally:
             resetCustomStorageData(self.data)
@@ -523,14 +544,18 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             name = overview.get_property("name")
             overview.set_chosen(name in self.selected_disks)
 
+        # if encrypted is specified in kickstart, select the encryptionCheckbox in the GUI
+        if self.encrypted:
+            self._encrypted.set_active(True)
+
         self._customPart.set_active(not self.autopart)
 
         self._update_summary()
 
         if self.errors:
-            self.set_warning(_("Error checking storage configuration.  Click for details."))
+            self.set_warning(_("Error checking storage configuration.  <a href=\"\">Click for details.</a>"))
         elif self.warnings:
-            self.set_warning(_("Warning checking storage configuration.  Click for details."))
+            self.set_warning(_("Warning checking storage configuration.  <a href=\"\">Click for details.</a>"))
 
     def initialize(self):
         NormalSpoke.initialize(self)
@@ -597,7 +622,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         overview.show_all()
 
     def _initialize(self):
-        hubQ.send_message(self.__class__.__name__, _("Probing storage..."))
+        hubQ.send_message(self.__class__.__name__, _(constants.PAYLOAD_STATUS_PROBING_STORAGE))
 
         threadMgr.wait(constants.THREAD_STORAGE)
         threadMgr.wait(constants.THREAD_CUSTOM_STORAGE_INIT)
@@ -674,7 +699,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # actions on storage devices
         threadMgr.wait(constants.THREAD_STORAGE)
 
-        to_format = make_unformatted_dasd_list(d.name for d in getDisks(self.storage.devicetree))
+        to_format = self.storage.devicetree.make_unformatted_dasd_list(d for d in getDisks(self.storage.devicetree))
         if not to_format:
             # nothing to do here; bail
             return
@@ -682,8 +707,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         hubQ.send_message(self.__class__.__name__, _("Formatting DASDs"))
         for disk in to_format:
             try:
-                format_dasd(disk)
-            except DasdFormatError as err:
+                blockdev.s390.dasd_format(disk.name)
+            except blockdev.S390Error as err:
                 # Log errors if formatting fails, but don't halt the installer
                 log.error(str(err))
                 continue
@@ -702,7 +727,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.selected_disks = [d.name for d in dialog.disks]
 
         # update the UI to reflect changes to self.selected_disks
-        for overview in self.localOverviews:
+        for overview in self.localOverviews + self.advancedOverviews:
             name = overview.get_property("name")
 
             overview.set_chosen(name in self.selected_disks)
@@ -759,7 +784,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
     def _check_dasd_formats(self):
         rc = DASD_FORMAT_NO_CHANGE
-        dasds = make_unformatted_dasd_list(self.selected_disks)
+        dasds = self.storage.devicetree.make_unformatted_dasd_list(self.storage.devicetree.dasd)
         if len(dasds) > 0:
             # We want to apply current selection before running dasdfmt to
             # prevent this information from being lost afterward
@@ -800,9 +825,10 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         log.debug("disk free: %s  fs free: %s  sw needs: %s  auto swap: %s",
                   disk_free, fs_free, required_space, auto_swap)
 
-        if disk_free >= required_space + auto_swap:
+        # compare only to 90% of disk space because fs takes some space for a metadata
+        if (disk_free * 0.9) >= required_space + auto_swap:
             dialog = None
-        elif disks_size >= required_space:
+        elif (disks_size * 0.9) >= required_space:
             dialog = NeedSpaceDialog(self.data, payload=self.payload)
             dialog.refresh(required_space, auto_swap, disk_free, fs_free)
         else:
@@ -843,6 +869,11 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         if not on_disk_storage.created:
             on_disk_storage.create_snapshot(self.storage)
 
+        if self.autopart_missing_passphrase:
+            self._setup_passphrase()
+            NormalSpoke.on_back_clicked(self, button)
+            return
+
         # No disks selected?  The user wants to back out of the storage spoke.
         if not self.selected_disks:
             NormalSpoke.on_back_clicked(self, button)
@@ -870,6 +901,19 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
         # hide disks as requested
         self._hide_disks()
+
+        # make sure no containers were split up by the user's disk selection
+        self.clear_info()
+
+        # if there are some disk selection errors we don't let user to leave the
+        # spoke, so these errors don't have to go to self.errors
+        self.disks_errors = checkDiskSelection(self.storage, self.selected_disks)
+        if self.disks_errors:
+            # The disk selection has to make sense before we can proceed.
+            self.set_error(_("There was a problem with your disk selection. "
+                             "Click here for details."))
+            self._back_clicked = False
+            return
 
         if arch.isS390():
             # check for unformatted DASDs and launch dasdfmt if any discovered
@@ -974,7 +1018,28 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         NormalSpoke.on_back_clicked(self, button)
 
     def on_info_bar_clicked(self, *args):
-        if self.errors:
+        if self.disks_errors:
+            label = _("The following errors were encountered when checking your disk "
+                      "selection. You can modify your selection or quit the "
+                      "installer.")
+
+            dialog = DetailedErrorDialog(self.data, buttons=[
+                    C_("GUI|Storage|Error Dialog", "_Quit"),
+                    C_("GUI|Storage|Error Dialog", "_Modify Disk Selection")],
+                label=label)
+            with self.main_window.enlightbox(dialog.window):
+                errors = "\n".join(self.disks_errors)
+                dialog.refresh(errors)
+                rc = dialog.run()
+
+            dialog.window.destroy()
+
+            if rc == 0:
+                # Quit.
+                iutil.ipmi_report(constants.IPMI_ABORTED)
+                sys.exit(0)
+
+        elif self.errors:
             label = _("The following errors were encountered when checking your storage "
                       "configuration.  You can modify your storage layout or quit the "
                       "installer.")
@@ -992,14 +1057,15 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
             if rc == 0:
                 # Quit.
-                sys.exit(0)
                 iutil.ipmi_report(constants.IPMI_ABORTED)
+                sys.exit(0)
         elif self.warnings:
             label = _("The following warnings were encountered when checking your storage "
                       "configuration.  These are not fatal, but you may wish to make "
                       "changes to your storage layout.")
 
-            dialog = DetailedErrorDialog(self.data, buttons=[_("_OK")], label=label)
+            dialog = DetailedErrorDialog(self.data,
+                    buttons=[C_("GUI|Storage|Warning Dialog", "_OK")], label=label)
             with self.main_window.enlightbox(dialog.window):
                 warnings = "\n".join(self.warnings)
                 dialog.refresh(warnings)

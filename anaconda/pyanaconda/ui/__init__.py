@@ -82,7 +82,7 @@ class UserInterface(object):
     def update_paths(cls, pathdict):
         """Receives pathdict and appends it's contents to the current
            class defined search path dictionary."""
-        for k,v in pathdict.items():
+        for k, v in pathdict.items():
             cls.paths.setdefault(k, [])
             cls.paths[k].extend(v)
 
@@ -119,6 +119,9 @@ class UserInterface(object):
            In the code, this method should be used sparingly and only for
            critical errors that anaconda cannot figure out how to recover from.
         """
+        raise NotImplementedError
+
+    def showDetailedError(self, message, details, buttons=None):
         raise NotImplementedError
 
     def showYesNoQuestion(self, message):

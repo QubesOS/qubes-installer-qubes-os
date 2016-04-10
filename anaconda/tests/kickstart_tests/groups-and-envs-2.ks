@@ -5,9 +5,7 @@ network --bootproto=dhcp
 bootloader --timeout=1
 zerombr
 clearpart --all
-part --fstype=ext4 --size=4400 /
-part --fstype=ext4 --size=500 /boot
-part --fstype=swap --size=500 swap
+autopart
 
 keyboard us
 lang en
@@ -48,7 +46,7 @@ rpm -q RepetierHost
 if [[ $? == 0 ]]; then
     echo '*** 3d-printing group should not have been installed' > /root/RESULT
     exit 1
-f
+fi
 
 # Testing #3 - docker-registry is only part of container-management, where
 # it is optional, so it should be installed.

@@ -28,6 +28,11 @@ from pyanaconda import iutil
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _
 from pyanaconda.progress import progressQ
+
+import gi
+gi.require_version("GLib", "2.0")
+gi.require_version("Gio", "2.0")
+
 from gi.repository import GLib
 from gi.repository import Gio
 
@@ -128,6 +133,7 @@ class RPMOSTreePayload(ArchivePayload):
         mainctx.push_thread_default()
 
         cancellable = None
+        gi.require_version("OSTree", "1.0")
         from gi.repository import OSTree
         ostreesetup = self.data.ostreesetup
         log.info("executing ostreesetup=%r", ostreesetup)
@@ -147,9 +153,7 @@ class RPMOSTreePayload(ArchivePayload):
 
         self._remoteOptions = {}
 
-        # Handle variations in pykickstart
-        if ((hasattr(ostreesetup, 'noGpg') and ostreesetup.noGpg) or
-            (hasattr(ostreesetup, 'nogpg') and ostreesetup.nogpg)):
+        if hasattr(ostreesetup, 'nogpg') and ostreesetup.nogpg:
             self._remoteOptions['gpg-verify'] = GLib.Variant('b', False)
 
         if flags.noverifyssl:
@@ -263,6 +267,7 @@ class RPMOSTreePayload(ArchivePayload):
     def postInstall(self):
         super(RPMOSTreePayload, self).postInstall()
 
+        gi.require_version("OSTree", "1.0")
         from gi.repository import OSTree
         cancellable = None
 
@@ -301,3 +306,6 @@ class RPMOSTreePayload(ArchivePayload):
         set_kargs_args.extend(self.storage.bootloader.boot_args)
         set_kargs_args.append("root=" + self.storage.rootDevice.fstabSpec)
         self._safeExecWithRedirect("ostree", set_kargs_args, root=iutil.getSysroot())
+
+    def writeStorageEarly(self):
+        pass

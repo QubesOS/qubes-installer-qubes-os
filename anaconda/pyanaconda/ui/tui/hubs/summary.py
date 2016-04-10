@@ -32,6 +32,10 @@ import logging
 log = logging.getLogger("anaconda")
 
 class SummaryHub(TUIHub):
+    """
+       .. inheritance-diagram:: SummaryHub
+          :parts: 3
+    """
     title = N_("Installation")
 
     def __init__(self, app, data, storage, payload, instclass):
@@ -87,10 +91,22 @@ class SummaryHub(TUIHub):
             log.error("CmdlineError: %s", errtxt)
             raise CmdlineError(errtxt)
 
+        # if we ever need to halt the flow of a ks install to prompt users for
+        # input, flip off the automatedInstall flag -- this way installation
+        # does not automatically proceed once all spokes are complete, and a
+        # user must confirm they want to begin installation
+        flags.automatedInstall = False
 
         # override the default prompt since we want to offer the 'b' to begin
         # installation option here
-        return _("  Please make your choice from above ['q' to quit | 'b' to begin installation |\n  'r' to refresh]: ")
+        return _("  Please make your choice from above ['%(quit)s' to quit | '%(begin)s' to begin installation |\n  '%(refresh)s' to refresh]: ") % {
+            # TRANSLATORS: 'q' to quit
+            'quit': C_('TUI|Spoke Navigation', 'q'),
+            # TRANSLATORS: 'b' to begin installation
+            'begin': C_('TUI|Spoke Navigation', 'b'),
+            # TRANSLATORS: 'r' to refresh
+            'refresh': C_('TUI|Spoke Navigation', 'r')
+        }
 
     def input(self, args, key):
         """Handle user input. Numbers are used to show a spoke, the rest is passed
@@ -123,4 +139,4 @@ class SummaryHub(TUIHub):
                 # which is the global TUI key to close the current screen
                 return False
             else:
-                super(SummaryHub, self).input(args, key)
+                return super(SummaryHub, self).input(args, key)

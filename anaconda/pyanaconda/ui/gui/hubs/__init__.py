@@ -19,6 +19,9 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
+import gi
+gi.require_version("GLib", "2.0")
+
 from gi.repository import GLib
 
 from pyanaconda.flags import flags
@@ -52,7 +55,12 @@ class Hub(GUIObject, common.Hub):
 
        Installation may consist of multiple chained Hubs, or Hubs with
        additional standalone screens either before or after them.
+
+       .. inheritance-diagram:: Hub
+          :parts: 3
     """
+
+    handles_autostep = True
 
     def __init__(self, data, storage, payload, instclass):
         """Create a new Hub instance.
@@ -89,9 +97,18 @@ class Hub(GUIObject, common.Hub):
         self._notReadySpokes = []
         self._spokes = {}
 
+        # Used to store the last result of _updateContinue
+        self._warningMsg = None
+
         self._checker = None
 
+        self._spokesToStepIn = []
+        self._spokeAutostepIndex = 0
+
     def _createBox(self):
+        gi.require_version("Gtk", "3.0")
+        gi.require_version("AnacondaWidgets", "3.0")
+
         from gi.repository import Gtk, AnacondaWidgets
 
         cats_and_spokes = self._collectCategoriesAndSpokes()
@@ -216,14 +233,21 @@ class Hub(GUIObject, common.Hub):
             self._updateContinue()
 
     def _updateContinue(self):
-        self.clear_info()
+        warning = None
         if len(self._incompleteSpokes) == 0:
             if self._checker and not self._checker.check():
-                self.set_warning(self._checker.error_message)
+                warning = self._checker.error_message
         else:
-            msg = _("Please complete items marked with this icon before continuing to the next step.")
+            warning = _("Please complete items marked with this icon before continuing to the next step.")
 
-            self.set_warning(msg)
+        # Check that this warning isn't already set to avoid spamming the
+        # info bar with incomplete spoke messages when the hub starts
+        if warning != self._warningMsg:
+            self.clear_info()
+            self._warningMsg = warning
+
+            if warning:
+                self.set_warning(warning)
 
         self._updateContinueButton()
 
@@ -236,7 +260,7 @@ class Hub(GUIObject, common.Hub):
 
     def _update_spokes(self):
         from pyanaconda.ui.communication import hubQ
-        import Queue
+        import queue
 
         q = hubQ.q
 
@@ -250,7 +274,7 @@ class Hub(GUIObject, common.Hub):
         while True:
             try:
                 (code, args) = q.get(False)
-            except Queue.Empty:
+            except queue.Empty:
                 break
 
             # The first argument to all codes is the name of the spoke we are
@@ -324,6 +348,7 @@ class Hub(GUIObject, common.Hub):
     ### SIGNAL HANDLERS
 
     def _on_spoke_clicked(self, selector, event, spoke):
+        gi.require_version("Gdk", "3.0")
         from gi.repository import Gdk
 
         # This handler only runs for these two kinds of events, and only for
@@ -360,6 +385,11 @@ class Hub(GUIObject, common.Hub):
 
         spoke.visitedSinceApplied = True
 
+        # don't apply any actions if the spoke was visited automatically
+        if spoke.automaticEntry:
+            spoke.automaticEntry = False
+            return
+
         # Don't take visitedSinceApplied into account here.  It will always be
         # True from the line above.
         if spoke.changed and (not spoke.skipTo or (spoke.skipTo and spoke.applyOnSkip)):
@@ -391,3 +421,48 @@ class Hub(GUIObject, common.Hub):
         else:
             self.main_window.returnToHub()
 
+    def _doAutostep(self):
+        """Autostep through all spokes managed by this hub"""
+        log.info("autostepping through all spokes on hub %s", self.__class__.__name__)
+
+        # create a list of all spokes in reverse alphabetic order, we will pop() from it when
+        # processing all the spokes so the screenshots will actually be in alphabetic order
+        self._spokesToStepIn = list(reversed(sorted(self._spokes.values(), key=lambda x: x.__class__.__name__)))
+
+        # we can't just loop over all the spokes due to the asynchronous nature of GtkStack, so we start by
+        # autostepping to the first spoke, this will trigger a callback that steps to the next spoke,
+        # until we run out of unvisited spokes
+        self._autostepSpoke()
+
+    def _autostepSpoke(self):
+        """Process a single spoke, if no more spokes are available report autostep as finished for the hub."""
+        # do we have some spokes to work on ?
+        if self._spokesToStepIn:
+            # take one of them
+            spoke = self._spokesToStepIn.pop()
+
+            # increment the number of processed spokes
+            self._spokeAutostepIndex += 1
+
+            log.debug("stepping to spoke %s (%d/%d)", spoke.__class__.__name__, self._spokeAutostepIndex, len(self._spokes))
+
+            # notify the spoke about the upcoming automatic entry and set a callback that will be called
+            # once the spoke has been successfully processed
+            spoke.automaticEntry = True
+            spoke.autostepDoneCallback = lambda x: self._autostepSpoke()
+
+            # if this is the last spoke, tell it to return to hub once processed
+            if self._spokesToStepIn == []:
+                spoke.lastAutostepSpoke = True
+            gtk_call_once(self._on_spoke_clicked, None, None, spoke)
+        else:
+            log.info("autostep for hub %s finished", self.__class__.__name__)
+            gtk_call_once(self._doPostAutostep)
+
+    def _doPostAutostep(self):
+        if self._spokesToStepIn:
+            # there are still spokes that need to be stepped in
+            return
+        # we are done, re-emit the continue clicked signal we "consumed" previously
+        # so that the Anaconda GUI can switch to the next screen (or quit)
+        self.window.emit("continue-clicked")

@@ -34,17 +34,21 @@ from pyanaconda.regexes import GECOS_VALID, USERNAME_VALID, GROUPLIST_SIMPLE_VAL
 __all__ = ["UserSpoke"]
 
 class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
+    """
+       .. inheritance-diagram:: UserSpoke
+          :parts: 3
+    """
     title = N_("User creation")
     category = UserSettingsCategory
 
     edit_fields = [
         Entry("Create user", "_create", EditTUISpoke.CHECK, True),
-        Entry("Fullname", "gecos", GECOS_VALID, lambda self,args: args._create),
-        Entry("Username", "name", USERNAME_VALID, lambda self,args: args._create),
-        Entry("Use password", "_use_password", EditTUISpoke.CHECK, lambda self,args: args._create),
-        Entry("Password", "_password", EditTUISpoke.PASSWORD, lambda self,args: args._use_password and args._create),
-        Entry("Administrator", "_admin", EditTUISpoke.CHECK, lambda self,args: args._create),
-        Entry("Groups", "_groups", GROUPLIST_SIMPLE_VALID, lambda self,args: args._create)
+        Entry("Fullname", "gecos", GECOS_VALID, lambda self, args: args._create),
+        Entry("Username", "name", USERNAME_VALID, lambda self, args: args._create),
+        Entry("Use password", "_use_password", EditTUISpoke.CHECK, lambda self, args: args._create),
+        Entry("Password", "_password", EditTUISpoke.PASSWORD, lambda self, args: args._use_password and args._create),
+        Entry("Administrator", "_admin", EditTUISpoke.CHECK, lambda self, args: args._create),
+        Entry("Groups", "_groups", GROUPLIST_SIMPLE_VALID, lambda self, args: args._create)
         ]
 
     @classmethod
@@ -67,6 +71,9 @@ class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
     def __init__(self, app, data, storage, payload, instclass):
         FirstbootSpokeMixIn.__init__(self)
         EditTUISpoke.__init__(self, app, data, storage, payload, instclass, "user")
+        self.dialog.wrong_input_message = _("You have provided an invalid user name.\n"
+                                            "Tip: Keep your user name shorter than 32 "
+                                            "characters and do not use spaces.\n")
 
         if self.data.user.userList:
             self.args = self.data.user.userList[0]
@@ -81,9 +88,16 @@ class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
         # so that all of the properties are set at once
         self.args._password = ""
 
-    def refresh(self, args = None):
+        self.errors = []
+
+    def refresh(self, args=None):
         self.args._admin = "wheel" in self.args.groups
         self.args._groups = ", ".join(self.args.groups)
+
+        # if we have any errors, display them
+        while self.errors:
+            print(self.errors.pop())
+
         return EditTUISpoke.refresh(self, args)
 
     @property
@@ -123,7 +137,9 @@ class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
     def apply(self):
         if self.args.gecos and not self.args.name:
             username = guess_username(self.args.gecos)
-            if USERNAME_VALID.match(username):
+            if not USERNAME_VALID.match(username):
+                self.errors.append(_("Invalid user name: %s.\n") % username)
+            else:
                 self.args.name = guess_username(self.args.gecos)
 
         self.args.groups = [g.strip() for g in self.args._groups.split(",") if g]
@@ -135,7 +151,7 @@ class UserSpoke(FirstbootSpokeMixIn, EditTUISpoke):
             self.args.groups.remove("wheel")
 
         # Add or remove the user from userlist as needed
-        if self.args._create and (self.args not in self.data.user.userList):
+        if self.args._create and (self.args not in self.data.user.userList and self.args.name):
             self.data.user.userList.append(self.args)
         elif (not self.args._create) and (self.args in self.data.user.userList):
             self.data.user.userList.remove(self.args)

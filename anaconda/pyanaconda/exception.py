@@ -42,6 +42,9 @@ from pyanaconda.i18n import _
 from pyanaconda import flags
 from pyanaconda import startup_utils
 
+import gi
+gi.require_version("GLib", "2.0")
+
 from gi.repository import GLib
 
 import logging
@@ -82,6 +85,8 @@ class AnacondaExceptionHandler(ExceptionHandler):
                              "The installer will now terminate.") % str(value)
             self.intf.messageWindow(_("Hardware error occured"), hw_error_msg)
             sys.exit(0)
+        elif isinstance(value, blivet.errors.UnusableConfigurationError):
+            sys.exit(0)
         else:
             super(AnacondaExceptionHandler, self).handleException(dump_info)
             return False
@@ -104,6 +109,8 @@ class AnacondaExceptionHandler(ExceptionHandler):
         value = dump_info.exc_info.value
 
         try:
+            gi.require_version("Gtk", "3.0")
+
             from gi.repository import Gtk
 
             # XXX: Gtk stopped raising RuntimeError if it fails to
@@ -126,7 +133,7 @@ class AnacondaExceptionHandler(ExceptionHandler):
                          "exception handler in it")
                 self._main_loop_handleException(dump_info)
 
-        except (RuntimeError, ImportError):
+        except (RuntimeError, ImportError, ValueError):
             log.debug("Gtk cannot be initialized")
             # X not running (Gtk cannot be initialized)
             if threadMgr.in_main_thread():
@@ -194,11 +201,11 @@ class AnacondaExceptionHandler(ExceptionHandler):
             iutil.vtActivate(1)
 
         iutil.eintr_retry_call(os.open, "/dev/console", os.O_RDWR)   # reclaim stdin
-        iutil.eintr_retry_call(os.dup2, 0, 1)                        # reclaim stdout
-        iutil.eintr_retry_call(os.dup2, 0, 2)                        # reclaim stderr
-        #                          ^
-        #                          |
-        #                          +------ dup2 is magic, I tells ya!
+        iutil.eintr_ignore(os.dup2, 0, 1)                        # reclaim stdout
+        iutil.eintr_ignore(os.dup2, 0, 2)                        # reclaim stderr
+        #                      ^
+        #                      |
+        #                      +------ dup2 is magic, I tells ya!
 
         # bring back the echo
         import termios
@@ -218,11 +225,11 @@ class AnacondaExceptionHandler(ExceptionHandler):
             iutil.vtActivate(self._intf_tty_num)
 
 def initExceptionHandling(anaconda):
-    fileList = [ "/tmp/anaconda.log", "/tmp/packaging.log",
-                 "/tmp/program.log", "/tmp/storage.log", "/tmp/ifcfg.log",
-                 "/tmp/dnf.log", "/tmp/dnf.rpm.log",
-                 "/tmp/yum.log", iutil.getSysroot() + "/root/install.log",
-                 "/proc/cmdline" ]
+    fileList = ["/tmp/anaconda.log", "/tmp/packaging.log",
+                "/tmp/program.log", "/tmp/storage.log", "/tmp/ifcfg.log",
+                "/tmp/dnf.log", "/tmp/dnf.rpm.log",
+                "/tmp/yum.log", iutil.getSysroot() + "/root/install.log",
+                "/proc/cmdline"]
 
     if os.path.exists("/tmp/syslog"):
         fileList.extend(["/tmp/syslog"])
@@ -249,9 +256,8 @@ def initExceptionHandling(anaconda):
                                 "_intf.storage.encryptionPassphrase",
                                 "_bootloader.encrypted_password",
                                 "_bootloader.password",
-                                "payload._groups",
-                                "payload._yum"],
-                  localSkipList=[ "passphrase", "password", "_oldweak", "_password" ],
+                                "payload._groups"],
+                  localSkipList=["passphrase", "password", "_oldweak", "_password", "try_passphrase"],
                   fileList=fileList)
 
     conf.register_callback("lsblk_output", lsblk_callback, attchmnt_only=True)

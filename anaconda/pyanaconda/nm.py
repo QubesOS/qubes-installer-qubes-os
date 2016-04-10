@@ -19,6 +19,11 @@
 # Red Hat Author(s): Radek Vykydal <rvykydal@redhat.com>
 #
 
+import gi
+gi.require_version("GLib", "2.0")
+gi.require_version("Gio", "2.0")
+gi.require_version("NetworkManager", "1.0")
+
 from gi.repository import Gio, GLib
 from gi.repository import NetworkManager
 import struct
@@ -295,6 +300,15 @@ def nm_device_type_is_ethernet(name):
     """
     return nm_device_type(name) == NetworkManager.DeviceType.ETHERNET
 
+def nm_device_type_is_infiniband(name):
+    """Is the type of device infiniband?
+
+       Exceptions:
+       UnknownDeviceError if device is not found
+       PropertyNotFoundError if type is not found
+    """
+    return nm_device_type(name) == NetworkManager.DeviceType.INFINIBAND
+
 def nm_device_type_is_bond(name):
     """Is the type of device bond?
 
@@ -369,16 +383,33 @@ def nm_device_hwaddress(name):
     return nm_device_property(name, "HwAddress")
 
 def nm_device_perm_hwaddress(name):
-    """Return active hardware address of device ('HwAddress' property)
+    """Return active hardware address of device ('PermHwAddress' property)
 
        :param name: name of device
        :type name: str
-       :return: active hardware address of device ('HwAddress' property)
+       :return: active hardware address of device ('PermHwAddress' property)
        :rtype: str
        :raise UnknownDeviceError: if device is not found
-       :raise PropertyNotFoundError: if 'HwAddress' property is not found
+       :raise PropertyNotFoundError: if 'PermHwAddress' property is not found
     """
     return nm_device_property(name, "PermHwAddress")
+
+def nm_device_valid_hwaddress(name):
+    """Return valid hardware address of device depending on type of the device
+       ('PermHwAddress' property or 'HwAddress' property for infiniband)
+
+       :param name: name of device
+       :type name: str
+       :return: active hardware address of device
+                ('HwAddress' or 'PermHwAddress' property)
+       :rtype: str
+       :raise UnknownDeviceError: if device is not found
+       :raise PropertyNotFoundError: if property is not found
+    """
+    if nm_device_type_is_infiniband(name):
+        return nm_device_hwaddress(name)
+    else:
+        return nm_device_perm_hwaddress(name)
 
 def nm_device_active_con_uuid(name):
     """Return uuid of device's active connection
@@ -443,7 +474,7 @@ def nm_device_active_ssid(name):
 
        :param name: name of device
        :type name: str
-       :return ssid of active access point, None if device has no active AP
+       :return: ssid of active access point, ``None`` if device has no active AP
        :rtype: str
        :raise UnknownDeviceError: if device is not found
     """
@@ -470,10 +501,12 @@ def nm_device_ip_config(name, version=4):
        :type version: int
        :return: IP configuration of device, empty list if device is not
                 in ACTIVATED state
-       :rtype: [[[address1, prefix1, gateway1], [address2, prefix2, gateway2], ...],
-                [nameserver1, nameserver2]]
-               addressX, gatewayX: string
-               prefixX: int
+       :rtype:
+               | [[[address1, prefix1, gateway1], [address2, prefix2, gateway2], ...],
+               | [nameserver1, nameserver2]]
+               | addressX, gatewayX: string
+               | prefixX: int
+
        :raise UnknownDeviceError: if device is not found
        :raise PropertyNotFoundError: if ip configuration is not found
     """
@@ -483,10 +516,10 @@ def nm_device_ip_config(name, version=4):
 
     if version == 4:
         dbus_iface = ".IP4Config"
-        prop= "Ip4Config"
+        prop = "Ip4Config"
     elif version == 6:
         dbus_iface = ".IP6Config"
-        prop= "Ip6Config"
+        prop = "Ip6Config"
     else:
         return []
 
@@ -502,7 +535,7 @@ def nm_device_ip_config(name, version=4):
 
     addr_list = []
     for addr, prefix, gateway in addresses:
-        # NOTE: There is IPy for python2, ipaddress for python3 but
+        # NOTE: There is an ipaddress for IP validation but
         # byte order of dbus value would need to be switched
         if version == 4:
             addr_str = nm_dbus_int_to_ipv4(addr)
@@ -560,7 +593,7 @@ def nm_hwaddr_to_device_name(hwaddr):
         :rtype: str
     """
     for device in nm_devices():
-        if nm_device_perm_hwaddress(device).upper() == hwaddr.upper():
+        if nm_device_valid_hwaddress(device).upper() == hwaddr.upper():
             return device
     return None
 
@@ -612,7 +645,7 @@ def _device_settings(name):
         settings = _find_settings(name, 'connection', 'interface-name')
         if not settings:
             try:
-                hwaddr_str = nm_device_perm_hwaddress(name)
+                hwaddr_str = nm_device_valid_hwaddress(name)
             except PropertyNotFoundError:
                 settings = []
             else:
@@ -628,8 +661,7 @@ def _settings_for_ap(ssid):
        :return: list of paths of settings of access point
        :rtype: list
 `   """
-    return _find_settings(ssid, '802-11-wireless', 'ssid',
-            format_value=lambda ba: "".join(chr(b) for b in ba))
+    return _find_settings(ssid, '802-11-wireless', 'ssid')
 
 def _settings_for_hwaddr(hwaddr):
     """Return list of object paths of settings of device specified by hw address.
@@ -642,7 +674,7 @@ def _settings_for_hwaddr(hwaddr):
     return _find_settings(hwaddr, '802-3-ethernet', 'mac-address',
             format_value=lambda ba: ":".join("%02X" % b for b in ba))
 
-def _find_settings(value, key1, key2, format_value=lambda x:x):
+def _find_settings(value, key1, key2, format_value=lambda x: x):
     """Return list of object paths of settings having given value of key1, key2 setting
 
        :param value: required value of setting
@@ -674,7 +706,7 @@ def _find_settings(value, key1, key2, format_value=lambda x:x):
 
     return retval
 
-def nm_get_settings(value, key1, key2, format_value=lambda x:x):
+def nm_get_settings(value, key1, key2, format_value=lambda x: x):
     """Return settings having given value of key1, key2 setting
 
        Returns list of settings(dicts) , None if settings were not found.
@@ -827,17 +859,19 @@ def nm_activate_device_connection(dev_name, con_uuid):
 def nm_add_connection(values):
     """Add new connection specified by values.
 
-       :param values: list of settings with new values and its types
-                      [[key1, key2, value, type_str], ...]
-                      key1: first-level key of setting (eg "connection")
-                      key2: second-level key of setting (eg "uuid")
-                      value: new value
-                      type_str: dbus type of new value (eg "ay")
-       :type values: [[key1, key2, value, type_str], ...]
-                     key1: str
-                     key2: str
-                     value: object
-                     type_str: str
+       :param values:
+                     | list of settings with new values and its types
+                     | [[key1, key2, value, type_str], ...]
+                     | key1: first-level key of setting (eg "connection")
+                     | key2: second-level key of setting (eg "uuid")
+                     | value: new value
+                     | type_str: dbus type of new value (eg "ay")
+       :type values:
+                     | [[key1, key2, value, type_str], ...]
+                     | key1: str
+                     | key2: str
+                     | value: object
+                     | type_str: str
     """
 
     settings = {}
@@ -877,27 +911,31 @@ def nm_update_settings_of_device(name, new_values):
 
        The type of value is determined from existing settings of device.
        If setting for key1, key2 does not exist, default_type_str is used or
-       if None, the type is inferred from the value supplied (string and bool only).
+       if ``None``, the type is inferred from the value supplied (string and bool only).
 
        :param name: name of device
        :type name: str
-       :param new_values: list of settings with new values and its types
-                          [[key1, key2, value, default_type_str]]
-                          key1: first-level key of setting (eg "connection")
-                          key2: second-level key of setting (eg "uuid")
-                          value: new value
-                          default_type_str: dbus type of new value to be used
-                                            if the setting does not already exist;
-                                            if None, the type is inferred from
-                                            value (string and bool only)
-       :type new_values: [[key1, key2, value, default_type_str], ...]
-                         key1: str
-                         key2: str
-                         value:
-                         default_type_str: str
+       :param new_values:
+                          | list of settings with new values and its types
+                          | [[key1, key2, value, default_type_str]]
+                          | key1: first-level key of setting (eg "connection")
+                          | key2: second-level key of setting (eg "uuid")
+                          | value: new value
+                          | default_type_str:
+
+                              dbus type of new value to be used
+                              if the setting does not already exist;
+                              if ``None``, the type is inferred from
+                              value (string and bool only)
+       :type new_values:
+                         | [[key1, key2, value, default_type_str], ...]
+                         | key1: str
+                         | key2: str
+                         | value:
+                         | default_type_str: str
        :raise UnknownDeviceError: if device is not found
        :raise SettingsNotFoundError: if settings were not found
-                                           (eg for "wlan0")
+                                     (eg for "wlan0")
     """
     settings_paths = _device_settings(name)
     if not settings_paths:
@@ -984,9 +1022,9 @@ def _gvariant_settings(settings, updated_key1, updated_key2, value, default_type
 
     if type_str is None:
         # infer the new value type for string and boolean
-        if type(value) is type(True):
+        if isinstance(value, bool):
             type_str = 'b'
-        if type(value) is type(''):
+        elif isinstance(value, str):
             type_str = 's'
 
     if type_str is not None:
@@ -1024,7 +1062,7 @@ def nm_dbus_ay_to_ipv6(bytelist):
     :return: IPv6 address
     :rtype: str
     """
-    return socket.inet_ntop(socket.AF_INET6, "".join(chr(byte) for byte in bytelist))
+    return socket.inet_ntop(socket.AF_INET6, bytes(bytelist))
 
 def nm_dbus_int_to_ipv4(address):
     """Convert ipv4 address from dus int 'u' (switched endianess) to string.

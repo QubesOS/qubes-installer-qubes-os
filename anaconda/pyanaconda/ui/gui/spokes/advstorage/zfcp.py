@@ -19,16 +19,22 @@
 # Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
 #
 
+import gi
+gi.require_version("BlockDev", "1.0")
+
+from gi.repository import BlockDev as blockdev
+
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import gtk_action_nowait
-
-from blivet.zfcp import ZFCPDevice
 
 __all__ = ["ZFCPDialog"]
 
 class ZFCPDialog(GUIObject):
     """ Gtk dialog which allows users to manually add zFCP devices without
         having previously specified them in a parm file.
+
+       .. inheritance-diagram:: ZFCPDialog
+          :parts: 3
     """
     builderObjects = ["zfcpDialog"]
     mainWidgetName = "zfcpDialog"
@@ -44,14 +50,13 @@ class ZFCPDialog(GUIObject):
         self._update_devicetree = False
 
         # grab all of the ui objects
-        self._zfcpNotebook = self.builder.get_object("zfcpNotebook")
-
         self._configureGrid = self.builder.get_object("configureGrid")
         self._conditionNotebook = self.builder.get_object("conditionNotebook")
 
         self._startButton = self.builder.get_object("startButton")
         self._okButton = self.builder.get_object("okButton")
         self._cancelButton = self.builder.get_object("cancelButton")
+        self._retryButton = self.builder.get_object("retryButton")
 
         self._deviceEntry = self.builder.get_object("deviceEntry")
         self._wwpnEntry = self.builder.get_object("wwpnEntry")
@@ -89,18 +94,15 @@ class ZFCPDialog(GUIObject):
         self._set_configure_sensitive(False)
         self._deviceEntry.set_sensitive(False)
 
-        # Make a zFCP object with some dummy credentials so we can validate our
-        # actual input
         self._conditionNotebook.set_current_page(1)
-        dev = ZFCPDevice("0.0.0000", "0x0000000000000000", "0x0000000000000000")
         # below really, really is ugly and needs to be re-factored, but this
         # should give a good base idea as far as expected behavior should go
         try:
-            device = dev.sanitizeDeviceInput(self._deviceEntry.get_text())
-            wwpn = dev.sanitizeWWPNInput(self._wwpnEntry.get_text())
-            lun = dev.sanitizeFCPLInput(self._lunEntry.get_text())
-        except ValueError as e:
-            _config_error = str(e)
+            device = blockdev.s390.sanitize_dev_input(self._deviceEntry.get_text())
+            wwpn = blockdev.s390.zfcp_sanitize_wwpn_input(self._wwpnEntry.get_text())
+            lun = blockdev.s390.zfcp_sanitize_lun_input(self._lunEntry.get_text())
+        except blockdev.S390Error as err:
+            _config_error = str(err)
             self.builder.get_object("deviceErrorLabel").set_text(_config_error)
             self._conditionNotebook.set_current_page(2)
 
@@ -146,3 +148,11 @@ class ZFCPDialog(GUIObject):
         except ValueError as e:
             self._discoveryError = str(e)
             return
+
+    def on_entry_activated(self, entry, user_data=None):
+        # When an entry is activated, press the discover or retry button
+        current_page = self._conditionNotebook.get_current_page()
+        if current_page == 0:
+            self._startButton.clicked()
+        elif current_page == 2:
+            self._retryButton.clicked()

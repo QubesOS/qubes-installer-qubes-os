@@ -19,7 +19,11 @@
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 #
 
-from __future__ import division
+
+
+import gi
+gi.require_version("GLib", "2.0")
+gi.require_version("Gtk", "3.0")
 
 from gi.repository import GLib, Gtk
 
@@ -42,6 +46,10 @@ from pyanaconda.ui.gui.utils import gtk_action_nowait, gtk_call_once
 __all__ = ["ProgressHub"]
 
 class ProgressHub(Hub):
+    """
+       .. inheritance-diagram:: ProgressHub
+          :parts: 3
+    """
     builderObjects = ["progressWindow"]
     mainWidgetName = "progressWindow"
     uiFile = "hubs/progress.glade"
@@ -56,7 +64,7 @@ class ProgressHub(Hub):
 
         self._rnotes_id = None
 
-    def _do_configuration(self, widget = None, reenable_ransom = True):
+    def _do_configuration(self, widget=None, reenable_ransom=True):
         from pyanaconda.install import doConfiguration
         from pyanaconda.threads import threadMgr, AnacondaThread
 
@@ -82,9 +90,9 @@ class ProgressHub(Hub):
         self._cycle_rnotes()
         self._rnotes_id = GLib.timeout_add_seconds(60, self._cycle_rnotes)
 
-    def _update_progress(self, callback = None):
+    def _update_progress(self, callback=None):
         from pyanaconda.progress import progressQ
-        import Queue
+        import queue
 
         q = progressQ.q
 
@@ -94,7 +102,7 @@ class ProgressHub(Hub):
             # the progress bar.  If there's no message, don't error out.
             try:
                 (code, args) = q.get(False)
-            except Queue.Empty:
+            except queue.Empty:
                 break
 
             if code == progressQ.PROGRESS_CODE_INIT:
@@ -132,6 +140,7 @@ class ProgressHub(Hub):
 
         GLib.source_remove(self._rnotes_id)
         self._progressNotebook.set_current_page(1)
+        self.window.set_may_continue(True)
 
         iutil.ipmi_report(IPMI_FINISHED)
 
@@ -143,8 +152,7 @@ class ProgressHub(Hub):
         # package installation done, check personalization spokes
         # and start the configuration step if all is ready
         if not self._inSpoke and self.continuePossible:
-            self._do_configuration(reenable_ransom = False)
-
+            self._do_configuration(reenable_ransom=False)
         else:
             # some mandatory spokes are not ready
             # switch to configure and finish page

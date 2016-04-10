@@ -20,7 +20,12 @@
 #                    Vratislav Podzimek <vpodzime@redhat.com>
 #
 
+import gi
+gi.require_version("Pango", "1.0")
+gi.require_version("Gdk", "3.0")
+
 from gi.repository import Pango, Gdk
+
 from pyanaconda.flags import flags
 from pyanaconda.i18n import CN_
 from pyanaconda.ui.gui.spokes import NormalSpoke
@@ -42,6 +47,10 @@ __all__ = ["LangsupportSpoke"]
 _HIGHLIGHT_COLOR = Gdk.RGBA(red=0.992157, green=0.984314, blue=0.752941, alpha=1.0)
 
 class LangsupportSpoke(LangLocaleHandler, NormalSpoke):
+    """
+       .. inheritance-diagram:: LangsupportSpoke
+          :parts: 3
+    """
     builderObjects = ["languageStore", "languageStoreFilter", "localeStore", "langsupportWindow"]
     mainWidgetName = "langsupportWindow"
     focusWidgetName = "languageEntry"

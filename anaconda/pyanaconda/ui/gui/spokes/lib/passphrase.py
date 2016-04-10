@@ -19,6 +19,9 @@
 # Red Hat Author(s): David Lehman <dlehman@redhat.com>
 #
 
+import gi
+gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk
 
 import pwquality
@@ -70,8 +73,10 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         self._pwq_error = None
         self.passphrase = ""
 
-        self._passphrase_match_check = self.add_check(self._passphrase_entry, self._checkMatch)
-        self._confirm_match_check = self.add_check(self._confirm_entry, self._checkMatch)
+        # the passphrase confirmation needs to be checked whenever either of the password
+        # fields change. attach to the confirm field and check changes to the
+        # password field in on_passphrase_changed
+        self._passphrase_match_check = self.add_check(self._confirm_entry, self._checkMatch)
         self._strength_check = self.add_check(self._passphrase_entry, self._checkStrength)
         self._ascii_check = self.add_check(self._passphrase_entry, self._checkASCII)
 
@@ -98,16 +103,34 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
 
         self._update_passphrase_strength()
 
-        # Update the check states and force a status update
+        # Update the check states
         self._passphrase_match_check.update_check_status()
         self._strength_check.update_check_status()
         self._ascii_check.update_check_status()
-        self.set_status(None)
 
     def run(self):
         self.refresh()
         self.window.show_all()
-        rc = self.window.run()
+
+        while True:
+            rc = self.window.run()
+            if rc == 1:
+                # Force an update of all the checks and then see what set_status
+                # did to the sensitivity of the save button
+                for check in self.checks:
+                    check.update_check_status.run_now()
+
+                if self._save_button.get_sensitive():
+                    # Input ok, save the passphrase
+                    self.passphrase = self._passphrase_entry.get_text()
+                    break
+                else:
+                    # Input not ok, try again
+                    continue
+            else:
+                # Cancel, destroy the window
+                break
+
         self.window.destroy()
         return rc
 
@@ -152,7 +175,6 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
 
         # The save button should only be sensitive if the match check passes
         if self._passphrase_match_check.check_status == InputCheck.CHECK_OK and \
-                self._confirm_match_check.check_status == InputCheck.CHECK_OK and \
                 (not self.policy.strict or self._strength_check.check_status == InputCheck.CHECK_OK):
             self._save_button.set_sensitive(True)
         else:
@@ -180,23 +202,21 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         else:
             result = InputCheck.CHECK_OK
 
-        # If the check succeeded, reset the status of the other check object
-        # Disable the current check to prevent a cycle
-        if result == InputCheck.CHECK_OK:
-            inputcheck.enabled = False
-            if inputcheck == self._passphrase_match_check:
-                self._confirm_match_check.update_check_status()
-            else:
-                self._passphrase_match_check.update_check_status()
-            inputcheck.enabled = True
-
         return result
 
     def on_passphrase_changed(self, entry):
         self._update_passphrase_strength()
 
-    def on_save_clicked(self, button):
-        self.passphrase = self._passphrase_entry.get_text()
+        # Update the match check for changes in the main passphrase field
+        self._passphrase_match_check.update_check_status()
+
+        # Set the OK button to sensitive any time the passphrase or confirm
+        # entries change, so that the user can attempt to exit the dialog
+        # without waiting for the input validation timer
+        self._save_button.set_sensitive(True)
+
+    def on_confirm_changed(self, entry):
+        self._save_button.set_sensitive(True)
 
     def on_entry_activated(self, entry):
         if self._save_button.get_sensitive() and \

@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # anaconda: The Red Hat Linux Installation program
 #
@@ -33,7 +33,8 @@
 
 coverage = None
 
-proc_cmdline = open("/proc/cmdline", "r").read()
+# If we get a signal immediately after starting that would be pretty messed up
+proc_cmdline = open("/proc/cmdline", "r").read()    # pylint: disable=interruptible-system-call
 proc_cmdline = proc_cmdline.split()
 if ("debug=1" in proc_cmdline) or ("debug" in proc_cmdline):
     import coverage
@@ -44,7 +45,8 @@ if ("debug=1" in proc_cmdline) or ("debug" in proc_cmdline):
     cov.start()
 
 
-import atexit, sys, os, time, signal, stat, errno
+import atexit, sys, os, time, signal
+import pid
 
 def exitHandler(rebootData, storage):
     # Clear the list of watched PIDs.
@@ -86,8 +88,8 @@ def exitHandler(rebootData, storage):
         anaconda.payload.unsetup()
 
     # Clean up the PID file
-    if pidfile_created:
-        os.unlink(pidfile_path)
+    if pidfile:
+        pidfile.close()
 
     if not flags.imageInstall and not flags.livecdInstall \
        and not flags.dirInstall:
@@ -99,7 +101,11 @@ def exitHandler(rebootData, storage):
                 if get_mount_paths(cdrom.path):
                     dracut_eject(cdrom.path)
 
-        if rebootData.action == KS_SHUTDOWN:
+        if flags.kexec:
+            execWithRedirect("systemctl", ["--no-wall", "kexec"])
+            while True:
+                time.sleep(10000)
+        elif rebootData.action == KS_SHUTDOWN:
             execWithRedirect("systemctl", ["--no-wall", "poweroff"])
         elif rebootData.action == KS_WAIT:
             execWithRedirect("systemctl", ["--no-wall", "halt"])
@@ -115,20 +121,17 @@ def startSpiceVDAgent():
         log.info("Started spice-vdagent.")
 
 def startX11():
-    # Open /dev/tty5 for stdout and stderr redirects
-    xfd = open("/dev/tty5", "a")
+    import subprocess
 
     # Start Xorg and wait for it become ready
     iutil.startX(["Xorg", "-br", "-logfile", "/tmp/X.log",
                   ":%s" % constants.X_DISPLAY_NUMBER, "vt6", "-s", "1440", "-ac",
                   "-nolisten", "tcp", "-dpi", "96",
-                  "-noreset"], output_redirect=xfd)
+                  "-noreset"], output_redirect=subprocess.DEVNULL)
 
 # function to handle X startup special issues for anaconda
 def doStartupX11Actions():
     """Start window manager"""
-    from copy import copy
-
     # When metacity actually connects to the X server is unknowable, but
     # fortunately it doesn't matter. metacity does not need to be the first
     # connection to Xorg, and if anaconda starts up before metacity, metacity
@@ -136,7 +139,6 @@ def doStartupX11Actions():
     # fingers crossed.
     # Add XDG_DATA_DIRS to the environment to pull in our overridden schema
     # files.
-    env_bak = copy(os.environ)
     if 'XDG_DATA_DIRS' in os.environ:
         xdg_data_dirs = '/usr/share/anaconda/window-manager:' + os.environ['XDG_DATA_DIRS']
     else:
@@ -144,7 +146,6 @@ def doStartupX11Actions():
 
     childproc = iutil.startProgram(["metacity", "--display", ":1", "--sm-disable"],
             env_add={'XDG_DATA_DIRS': xdg_data_dirs})
-    os.environ = env_bak
     iutil.watchProcess(childproc, "metacity")
 
 def set_x_resolution(runres):
@@ -363,10 +364,10 @@ def parseArguments(argv=None, boot_cmdline=None):
                     help=help_parser.help_text("extlinux"))
     ap.add_argument("--nombr", action="store_true", default=False,
                     help=help_parser.help_text("nombr"))
-    ap.add_argument("--nodnf", action="store_false", dest="dnf", default=True,
-                    help=help_parser.help_text("nodnf"))
     ap.add_argument("--mpathfriendlynames", action="store_true", default=True,
                     help=help_parser.help_text("mpathfriendlynames"))
+    ap.add_argument("--kexec", action="store_true", default=False,
+                    help=help_parser.help_text("kexec"))
 
     # some defaults change based on cmdline flags
     if boot_cmdline is not None:
@@ -385,8 +386,6 @@ def setupPythonPath():
     sys.path.extend(ADDON_PATHS)
 
 def setupEnvironment():
-    from pyanaconda.users import createLuserConf
-
     # This method is run before any threads are started, so this is the one
     # point where it's ok to modify the environment.
     # pylint: disable=environment-modify
@@ -414,10 +413,6 @@ def setupEnvironment():
         flags.preexisting_x11 = True
     else:
         os.environ["DISPLAY"] = ":%s" % constants.X_DISPLAY_NUMBER
-
-    # Call createLuserConf now to setup $LIBUSER_CONF
-    # the config file can change later but the environment variable cannot
-    createLuserConf(iutil.getSysroot())
 
 def setupLoggingFromOpts(options):
     if (options.debug or options.updateSrc) and not options.loglevel:
@@ -447,6 +442,9 @@ def setupLoggingFromOpts(options):
             log.error("Could not setup remotelog with %s", options.remotelog)
 
 def gtk_warning(title, reason):
+    import gi
+    gi.require_version("Gtk", "3.0")
+
     from gi.repository import Gtk
     dialog = Gtk.MessageDialog(type=Gtk.MessageType.ERROR,
                                buttons=Gtk.ButtonsType.CLOSE,
@@ -500,18 +498,16 @@ def check_memory(anaconda, options, display_mode=None):
                    "needed_ram": needed_ram,
                    "total_ram": total_ram}
     if needed_ram > total_ram:
-        from snack import SnackScreen, ButtonChoiceWindow
         if options.liveinst:
             # pylint: disable=logging-not-lazy
             stdoutLog.warning(reason % reason_args)
             gtk_warning(livecd_title, reason % reason_args)
         else:
             reason += reboot_extra
-            screen = SnackScreen()
-            ButtonChoiceWindow(screen, _('Fatal Error'),
-                               reason % reason_args,
-                               buttons = (_("OK"),))
-            screen.finish()
+            print(reason % reason_args)
+            print(_("The installation cannot continue and the system will be rebooted"))
+            print(_("Press ENTER to continue"))
+            input()
 
         iutil.ipmi_report(constants.IPMI_ABORTED)
         sys.exit(1)
@@ -663,6 +659,9 @@ def setupDisplay(anaconda, options, addons=None):
             anaconda.displayMode = 'g'
             flags.usevnc = True
             vncS.password = anaconda.ksdata.vnc.password
+        else:
+            # user has explicitly specified text mode
+            flags.vncquestion = False
 
     log.info("Display mode = %s", anaconda.displayMode)
     check_memory(anaconda, options)
@@ -704,6 +703,9 @@ def setupDisplay(anaconda, options, addons=None):
     anaconda.initInterface(addons)
 
     anaconda.instClass.configure(anaconda)
+
+    # report if starting the GUI failed
+    anaconda.gui_startup_failed = bool(graphical_failed)
 
 def prompt_for_ssh():
     # Do some work here to get the ip addr / hostname to pass
@@ -859,6 +861,7 @@ if __name__ == "__main__":
     from pyanaconda import ntp
     from pyanaconda import keyboard
     from pyanaconda.iutil import ProxyString, ProxyStringError
+    from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
     verdesc = "%s for %s %s" % (getAnacondaVersionString(),
                                 product.productName, product.productVersion)
@@ -917,61 +920,13 @@ if __name__ == "__main__":
     # make sure we have /var/log soon, some programs fail to start without it
     iutil.mkdirChain("/var/log")
 
-    # Share these with the exit handler, installed later
-    pidfile_path = '/var/run/anaconda.pid'
-    pidfile_created = False
+    # Create a PID file. The exit handler, installed later, will clean it up.
+    pidfile = pid.PidFile(pidname='anaconda', register_term_signal_handler=False)
 
-    # Look for a stale pid file
     try:
-        with open(pidfile_path, 'r') as pidfile:
-            pid = int(pidfile.read())
-    except IOError as e:
-        # Ignore errors due to the file not existing. Other errors mean (most
-        # likely) that we're not running as root, there's a filesystem error,
-        # or someone filled our PID file with garbage, so just let those be
-        # raised.
-        if e.errno != errno.ENOENT:
-            raise
-    else:
-        # Is the PID still running?
-        if not os.path.isdir("/proc/%s" % pid):
-            log.info("Removing stale PID file: %s no longer running", pid)
-            os.unlink(pidfile_path)
-        # Is the PID anaconda?
-        else:
-            try:
-                with open("/proc/%s/stat" % pid, "r") as pidstat:
-                    # The part we care about is in the start, "PID (name) ..."
-                    procname = pidstat.read().split(' ', 2)[1]
-                    if procname != "(anaconda)":
-                        log.info("Removing stale PID file: PID %s is now %s", pid, procname)
-                        os.unlink(pidfile_path)
-                    # If it is anaconda, let the pidfile creation below fail
-                    # and print an error
-            except IOError as e:
-                # Ignore failures due to the file not existing in case the
-                # process ended while we were trying to read about it. Assume
-                # in this case that the process was another anaconda instance,
-                # and the PID file was cleaned up.
-                # If the process ended between open and read, we'll get ESRCH
-                if e.errno not in (errno.ENOENT, errno.ESRCH):
-                    raise
-
-    # Attempt to create the pidfile
-    try:
-        # Set all of the read/write bits and let umask make it make sense
-        pidfile = iutil.eintr_retry_call(os.open, pidfile_path, os.O_WRONLY|os.O_CREAT|os.O_EXCL,
-                stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IWGRP|stat.S_IROTH|stat.S_IWOTH)
-        pidfile_created = True
-        iutil.eintr_retry_call(os.write, pidfile, "%s\n" % os.getpid())
-        iutil.eintr_retry_call(os.close, pidfile)
-    except OSError as e:
-        # If the failure was anything other than EEXIST during the open call,
-        # just re-raise the exception
-        if e.errno != errno.EEXIST:
-            raise
-
-        log.error("%s already exists, exiting", pidfile_path)
+        pidfile.create()
+    except pid.PidFileError as e:
+        log.error("Unable to create %s, exiting", pidfile.filename)
 
         # If we had a $DISPLAY at start and zenity is available, we may be
         # running in a live environment and we can display an error dialog.
@@ -985,9 +940,9 @@ if __name__ == "__main__":
                 ["--error", "--title", _("Unable to create PID file"), "--text",
                     _("Anaconda is unable to create %s because the file" +
                       " already exists. Anaconda is already running, or a previous instance" +
-                      " of anaconda has crashed.") % pidfile_path])
+                      " of anaconda has crashed.") % pidfile.filename])
         else:
-            print("%s already exists, exiting" % pidfile_path)
+            print("%s already exists, exiting" % pidfile.filename)
 
         iutil.ipmi_report(constants.IPMI_FAILED)
         sys.exit(1)
@@ -1033,7 +988,6 @@ if __name__ == "__main__":
     flags.armPlatform = opts.armPlatform
     flags.extlinux = opts.extlinux
     flags.nombr = opts.nombr
-    flags.dnf = opts.dnf
     flags.mpathFriendlyNames = opts.mpathfriendlynames
     flags.debug = opts.debug
     flags.askmethod = opts.askmethod
@@ -1042,6 +996,7 @@ if __name__ == "__main__":
     flags.ibft = opts.ibft
     flags.selinux = opts.selinux
     flags.eject = opts.eject
+    flags.kexec = opts.kexec
 
     # Switch to tty1 on exception in case something goes wrong during X start.
     # This way if, for example, metacity doesn't start, we switch back to a
@@ -1118,6 +1073,10 @@ if __name__ == "__main__":
     if ksdata.rescue.rescue:
         flags.rescue_mode = True
 
+    # reboot with kexec
+    if ksdata.reboot.kexec:
+        flags.kexec = True
+
     # Some kickstart commands must be executed immediately, as they affect
     # how anaconda operates.
     ksdata.logging.execute()
@@ -1165,7 +1124,7 @@ if __name__ == "__main__":
     if flags.noverifyssl:
         ksdata.method.noverifyssl = flags.noverifyssl
     if opts.multiLib:
-        # sets yum's multilib_policy to "all" (as opposed to "best")
+        # sets dnf's multilib_policy to "all" (as opposed to "best")
         ksdata.packages.multiLib = opts.multiLib
 
     # set ksdata.method based on anaconda.method if it isn't already set
@@ -1202,8 +1161,9 @@ if __name__ == "__main__":
             # the kickstart might have specified a mirror list,
             # so we need to clear it here if plain url source is provided
             # by a bootoption, because having both url & mirror list
-            # set at once is not supported and breaks Yum in
+            # set at once is not supported and breaks dnf in
             # unpredictable ways
+            # FIXME: Is this still needed for dnf?
             ksdata.method.mirrorlist = None
         elif anaconda.methodstr.startswith("livecd"):
             ksdata.method.method = "harddrive"
@@ -1219,47 +1179,20 @@ if __name__ == "__main__":
     from pyanaconda import localization
     # Set the language before loading an interface, when it may be too late.
 
-    # GNU defines four (four!) ways to set the locale via the environment.
-    # At least three of those are just going to get in the way of anaconda's
-    # ability to set the language and locale after startup. If any of, in
-    # order, $LANGUAGE, $LC_ALL, or $LC_MESSAGES is in the environment, copy
-    # the information to $LANG, and then clear the rest.
-    for varname in ("LANGUAGE", "LC_ALL", "LC_MESSAGES"):
-        if varname in os.environ:
-            os.environ["LANG"] = os.environ[varname] # pylint: disable=environment-modify
-            break
-
-    for varname in ("LANGUAGE", "LC_ALL", "LC_MESSAGES"):
-        if varname in os.environ:
-            del os.environ[varname] # pylint: disable=environment-modify
-
-    # first, try to load firmware language if nothing is already set in
-    # the environment
-    if "LANG" not in os.environ:
-        localization.load_firmware_language(ksdata.lang)
-
-    # If command line options or kickstart set LANG, override the environment
+    # If the language was set on the command line, copy that to kickstart
     if opts.lang:
-        os.environ["LANG"] = opts.lang # pylint: disable=environment-modify
+        ksdata.lang.lang = opts.lang
         ksdata.lang.seen = True
-    elif ksdata.lang.lang:
-        os.environ["LANG"] = ksdata.lang.lang # pylint: disable=environment-modify
 
-    # Make sure LANG is set to something
-    if "LANG" not in os.environ:
-        os.environ["LANG"] = constants.DEFAULT_LANG # pylint: disable=environment-modify
-
-    # parse it using langtable and update the environment
-    # If langtable returns no locales, fall back to the default
-    env_langs = localization.get_language_locales(os.environ["LANG"])
-    if env_langs:
-        # the first language is the best match
-        os.environ["LANG"] = env_langs[0]  # pylint: disable=environment-modify
+    # Setup the locale environment
+    if ksdata.lang.seen:
+        locale_option = ksdata.lang.lang
     else:
-        log.error("Invalid locale '%s' given on command line or in kickstart", os.environ["LANG"])
-        os.environ["LANG"] = constants.DEFAULT_LANG # pylint: disable=environment-modify
+        locale_option = None
+    localization.setup_locale_environment(locale_option, opts.display_mode != "g")
 
-    localization.setup_locale(os.environ["LANG"], ksdata.lang)
+    # Now that LANG is set, do something with it
+    localization.setup_locale(os.environ["LANG"], ksdata.lang, opts.display_mode != "g")
 
     import blivet
     blivet.enable_installer_mode()
@@ -1272,6 +1205,12 @@ if __name__ == "__main__":
 
     # now start the interface
     setupDisplay(anaconda, opts, addon_paths)
+    if anaconda.gui_startup_failed:
+        # we need to reinitialize the locale if GUI startup failed,
+        # as we might now be in text mode, which might not be able to display
+        # the characters from our current locale
+        log.warning("reinitializing locale due to failed attempt to start the GUI")
+        localization.setup_locale(os.environ["LANG"], ksdata.lang, anaconda.displayMode != "g")
 
     # we now know in which mode we are going to run so store the information
     from pykickstart.constants import DISPLAY_MODE_GRAPHICAL, DISPLAY_MODE_CMDLINE, DISPLAY_MODE_TEXT
@@ -1282,10 +1221,6 @@ if __name__ == "__main__":
     # ...unless the kickstart specified otherwise
     if anaconda.displayMode != 'g' and not anaconda.ksdata.xconfig.startX:
         anaconda.ksdata.skipx.skipx = True
-
-    if flags.rescue_mode:
-        from pyanaconda import rescue
-        anaconda.intf = rescue.RescueInterface()
 
     # Set flag to prompt for missing ks data
     if anaconda.displayMode == 'c':
@@ -1308,8 +1243,32 @@ if __name__ == "__main__":
     if image_count:
         anaconda.storage.setupDiskImages()
 
-    from pyanaconda import exception
-    anaconda.mehConfig = exception.initExceptionHandling(anaconda)
+    from blivet.osinstall import storageInitialize
+    from pyanaconda.packaging import payloadMgr
+    from pyanaconda.timezone import time_initialize
+
+    if not flags.dirInstall:
+        threadMgr.add(AnacondaThread(name=constants.THREAD_STORAGE, target=storageInitialize,
+                                     args=(anaconda.storage, ksdata, anaconda.protected)))
+
+    if can_touch_runtime_system("initialize time", touch_live=True):
+        threadMgr.add(AnacondaThread(name=constants.THREAD_TIME_INIT, target=time_initialize,
+                                     args=(ksdata.timezone, anaconda.storage, anaconda.bootloader)))
+
+    if flags.rescue_mode:
+        from pyanaconda.ui.tui.simpleline import App
+        from pyanaconda.rescue import RescueMode
+        app = App("Rescue Mode")
+        spoke = RescueMode(app, anaconda.ksdata, anaconda.storage)
+        app.schedule_screen(spoke)
+        app.run()
+    else:
+        cleanPStore()
+
+    # only install interactive exception handler in interactive modes
+    if ksdata.displaymode.displayMode != DISPLAY_MODE_CMDLINE or flags.debug:
+        from pyanaconda import exception
+        anaconda.mehConfig = exception.initExceptionHandling(anaconda)
 
     # add our own additional signal handlers
     signal.signal(signal.SIGUSR1, lambda signum, frame:
@@ -1317,21 +1276,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGUSR2, lambda signum, frame: anaconda.dumpState())
     atexit.register(exitHandler, ksdata.reboot, anaconda.storage)
 
-    from blivet.osinstall import storageInitialize
-    from pyanaconda.packaging import payloadMgr
-    from pyanaconda.timezone import time_initialize
-
-    if flags.rescue_mode:
-        rescue.doRescue(anaconda.intf, anaconda.rescue_mount, ksdata)
-    else:
-        cleanPStore()
-
-    if not flags.dirInstall:
-        threadMgr.add(AnacondaThread(name=constants.THREAD_STORAGE, target=storageInitialize,
-                                     args=(anaconda.storage, ksdata, anaconda.protected)))
-        threadMgr.add(AnacondaThread(name=constants.THREAD_TIME_INIT, target=time_initialize,
-                                     args=(ksdata.timezone, anaconda.storage, anaconda.bootloader)))
-
+    from pyanaconda import exception
+    anaconda.mehConfig = exception.initExceptionHandling(anaconda)
 
     # Fallback to default for interactive or for a kickstart with no installation method.
     fallback = not (flags.automatedInstall and ksdata.method.method)

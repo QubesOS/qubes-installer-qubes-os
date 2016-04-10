@@ -22,7 +22,12 @@
 # which has the same license and authored by David Lehman <dlehman@redhat.com>
 #
 
-from pyanaconda.ui.lib.disks import getDisks, applyDiskSelection
+import gi
+gi.require_version("BlockDev", "1.0")
+
+from gi.repository import BlockDev as blockdev
+
+from pyanaconda.ui.lib.disks import getDisks, applyDiskSelection, checkDiskSelection
 from pyanaconda.ui.categories.system import SystemCategory
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget, CheckboxWidget
@@ -31,13 +36,13 @@ from pyanaconda.storage_utils import AUTOPART_CHOICES, sanity_check, SanityError
 
 from blivet import arch
 from blivet.size import Size
-from blivet.errors import StorageError, DasdFormatError
+from blivet.errors import StorageError
 from blivet.devices import DASDDevice, FcoeDiskDevice, iScsiDiskDevice, MultipathDevice, ZFCPDiskDevice
-from blivet.devicelibs.dasd import format_dasd, make_unformatted_dasd_list
 from pyanaconda.flags import flags
 from pyanaconda.kickstart import doKickstartStorage, resetCustomStorageData
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.constants import THREAD_STORAGE, THREAD_STORAGE_WATCHER, THREAD_DASDFMT, DEFAULT_AUTOPART_TYPE
+from pyanaconda.constants import PAYLOAD_STATUS_PROBING_STORAGE
 from pyanaconda.constants_text import INPUT_PROCESSED
 from pyanaconda.i18n import _, P_, N_
 from pyanaconda.bootloader import BootLoaderError
@@ -60,9 +65,11 @@ PARTTYPES = {CLEARALL: CLEARPART_TYPE_ALL, CLEARLINUX: CLEARPART_TYPE_LINUX,
              CLEARNONE: CLEARPART_TYPE_NONE}
 
 class StorageSpoke(NormalTUISpoke):
-    """
-    Storage spoke where users proceed to customize storage features such
-    as disk selection, partitioning, and fs type.
+    """Storage spoke where users proceed to customize storage features such
+       as disk selection, partitioning, and fs type.
+
+       .. inheritance-diagram:: StorageSpoke
+          :parts: 3
     """
     title = N_("Installation Destination")
     category = SystemCategory
@@ -89,7 +96,7 @@ class StorageSpoke(NormalTUISpoke):
             # dasds, automatically format them. pass in storage.devicetree here
             # instead of storage.disks since mediaPresent is checked on disks;
             # a dasd needing dasdfmt will fail this media check though
-            to_format = make_unformatted_dasd_list(d.name for d in getDisks(self.storage.devicetree))
+            to_format = storage.devicetree.make_unformatted_dasd_list(getDisks(self.storage.devicetree))
             if to_format:
                 self.run_dasdfmt(to_format)
 
@@ -185,12 +192,12 @@ class StorageSpoke(NormalTUISpoke):
 
         return summary
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         NormalTUISpoke.refresh(self, args)
 
         # Join the initialization thread to block on it
         # This print is foul.  Need a better message display
-        print(_("Probing storage..."))
+        print(_(PAYLOAD_STATUS_PROBING_STORAGE))
         threadMgr.wait(THREAD_STORAGE_WATCHER)
 
         # synchronize our local data store with the global ksdata
@@ -244,7 +251,7 @@ class StorageSpoke(NormalTUISpoke):
         elif isinstance(disk, DASDDevice):
             if hasattr(disk, "busid"):
                 disk_attrs.append(disk.busid)
-        elif isinstance (disk, ZFCPDiskDevice):
+        elif isinstance(disk, ZFCPDiskDevice):
             if hasattr(disk, "fcp_lun"):
                 disk_attrs.append(disk.fcp_lun)
             if hasattr(disk, "wwpn"):
@@ -260,9 +267,11 @@ class StorageSpoke(NormalTUISpoke):
 
     def input(self, args, key):
         """Grab the disk choice and update things"""
-
+        self.errors = []
         try:
             keyid = int(key) - 1
+            if keyid < 0:
+                return key
             self.selection = keyid
             if len(self.disks) > 1 and keyid == len(self.disks):
                 self._select_all_disks()
@@ -276,10 +285,20 @@ class StorageSpoke(NormalTUISpoke):
                     # if we're on s390x, since they need to be formatted before we
                     # can use them.
                     if arch.isS390():
-                        to_format = make_unformatted_dasd_list(self.selected_disks)
+                        _disks = [d for d in self.disks if d.name in self.selected_disks]
+                        to_format = self.storage.devicetree.make_unformatted_dasd_list(_disks)
                         if to_format:
                             self.run_dasdfmt(to_format)
                             return None
+
+                    # make sure no containers were split up by the user's disk
+                    # selection
+                    self.errors.extend(checkDiskSelection(self.storage,
+                                                          self.selected_disks))
+                    if self.errors:
+                        # The disk selection has to make sense before we can
+                        # proceed.
+                        return None
 
                     newspoke = AutoPartSpoke(self.app, self.data, self.storage,
                                              self.payload, self.instclass)
@@ -308,7 +327,7 @@ class StorageSpoke(NormalTUISpoke):
 
             warntext = _("Warning: All storage changes made using the installer will be lost when you choose to format.\n\nProceed to run dasdfmt?\n")
 
-            displaytext = summary + "\n".join("/dev/" + d for d in to_format) + "\n" + warntext
+            displaytext = summary + "\n".join("/dev/" + d.name for d in to_format) + "\n" + warntext
 
             # now show actual prompt; note -- in cmdline mode, auto-answer for
             # this is 'no', so unformatted DASDs will remain so unless zerombr
@@ -321,9 +340,9 @@ class StorageSpoke(NormalTUISpoke):
 
         for disk in to_format:
             try:
-                print(_("Formatting /dev/%s. This may take a moment.") % disk)
-                format_dasd(disk)
-            except DasdFormatError as err:
+                print(_("Formatting /dev/%s. This may take a moment.") % disk.name)
+                blockdev.s390.dasd_format(disk.name)
+            except blockdev.S390Error as err:
                 # Log errors if formatting fails, but don't halt the installer
                 log.error(str(err))
                 continue
@@ -388,8 +407,8 @@ class StorageSpoke(NormalTUISpoke):
         else:
             print(_("Checking storage configuration..."))
             exns = sanity_check(self.storage)
-            errors = [exn.message for exn in exns if isinstance(exn, SanityError)]
-            warnings = [exn.message for exn in exns if isinstance(exn, SanityWarning)]
+            errors = [str(exn) for exn in exns if isinstance(exn, SanityError)]
+            warnings = [str(exn) for exn in exns if isinstance(exn, SanityWarning)]
             (self.errors, self.warnings) = (errors, warnings)
             for e in self.errors:
                 log.error(e)
@@ -428,7 +447,11 @@ class StorageSpoke(NormalTUISpoke):
         self._ready = True
 
 class AutoPartSpoke(NormalTUISpoke):
-    """ Autopartitioning options are presented here. """
+    """ Autopartitioning options are presented here.
+
+       .. inheritance-diagram:: AutoPartSpoke
+          :parts: 3
+    """
     title = N_("Autopartitioning Options")
     category = SystemCategory
 
@@ -441,7 +464,7 @@ class AutoPartSpoke(NormalTUISpoke):
     def indirect(self):
         return True
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         NormalTUISpoke.refresh(self, args)
         # synchronize our local data store with the global ksdata
         self.clearPartType = self.data.clearpart.type
@@ -542,5 +565,5 @@ class PartitionSchemeSpoke(NormalTUISpoke):
     def apply(self):
         """ Apply our selections. """
 
-        schemelist = self.partschemes.values()
+        schemelist = list(self.partschemes.values())
         self.data.autopart.type = schemelist[self._selection]

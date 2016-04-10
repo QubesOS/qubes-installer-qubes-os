@@ -26,6 +26,18 @@ from collections import OrderedDict
 import logging
 log = logging.getLogger("anaconda")
 
+# Importing iutil in this module would cause an import loop, so just
+# reimplement the open override
+import functools
+def eintr_retry_call(func, *args, **kwargs):
+    """Retry an interruptible system call if interrupted."""
+    while True:
+        try:
+            return func(*args, **kwargs)
+        except InterruptedError:
+            continue
+open = functools.partial(eintr_retry_call, open) # pylint: disable=redefined-builtin
+
 # A lot of effort, but it only allows a limited set of flags to be referenced
 class Flags(object):
     def __setattr__(self, attr, val):
@@ -65,12 +77,12 @@ class Flags(object):
         self.gpt = False
         self.leavebootorder = False
         self.testing = False
-        self.dnf = True
         self.mpathFriendlyNames = True
         # ksprompt is whether or not to prompt for missing ksdata
         self.ksprompt = True
         self.rescue_mode = False
         self.noefi = False
+        self.kexec = False
         # parse the boot commandline
         self.cmdline = BootArgs()
         # Lock it down: no more creating new flags!
@@ -80,7 +92,7 @@ class Flags(object):
 
     def read_cmdline(self):
         for f in ("selinux", "debug", "leavebootorder", "testing", "extlinux",
-                  "nombr", "gpt", "dnf", "noefi"):
+                  "nombr", "gpt", "noefi"):
             self.set_cmdline_bool(f)
 
         if not selinux.is_selinux_enabled():
@@ -110,10 +122,11 @@ class BootArgs(OrderedDict):
         Read and parse a filename (or a list of filenames).
         Files that can't be read are silently ignored.
         Returns a list of successfully read files.
-        filenames can contain *, ?, and character ranges expressed with []
+        filenames can contain \\*, ?, and character ranges expressed with []
         """
+
         readfiles = []
-        if type(filenames) == str:
+        if isinstance(filenames, str):
             filenames = [filenames]
 
         # Expand any filename globs

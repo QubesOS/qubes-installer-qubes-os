@@ -21,7 +21,7 @@
 from pyanaconda.errors import ScriptError, errorHandler
 from blivet.deviceaction import ActionCreateFormat, ActionDestroyFormat, ActionResizeDevice, ActionResizeFormat
 from blivet.devices import LUKSDevice
-from blivet.devices.lvm import LVMVolumeGroupDevice
+from blivet.devices.lvm import LVMVolumeGroupDevice, LVMCacheRequest
 from blivet.devicelibs.lvm import LVM_PE_SIZE, KNOWN_THPOOL_PROFILES
 from blivet.devicelibs.crypto import MIN_CREATE_ENTROPY
 from blivet.formats import getFormat
@@ -39,14 +39,15 @@ import blivet.arch
 
 import glob
 from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import os
 import os.path
 import tempfile
 from pyanaconda.flags import flags, can_touch_runtime_system
 from pyanaconda.constants import ADDON_PATHS, IPMI_ABORTED
 import shlex
+import requests
 import sys
-import urlgrabber
 import pykickstart.commands as commands
 from pyanaconda import keyboard
 from pyanaconda import ntp
@@ -65,13 +66,13 @@ from pyanaconda.bootloader import GRUB2, get_bootloader
 from pyanaconda.pwpolicy import F22_PwPolicy, F22_PwPolicyData
 
 from pykickstart.constants import CLEARPART_TYPE_NONE, FIRSTBOOT_SKIP, FIRSTBOOT_RECONFIG, KS_SCRIPT_POST, KS_SCRIPT_PRE, \
-                                  KS_SCRIPT_TRACEBACK, SELINUX_DISABLED, SELINUX_ENFORCING, SELINUX_PERMISSIVE
+                                  KS_SCRIPT_TRACEBACK, KS_SCRIPT_PREINSTALL, SELINUX_DISABLED, SELINUX_ENFORCING, SELINUX_PERMISSIVE
 from pykickstart.base import BaseHandler
 from pykickstart.errors import formatErrorMsg, KickstartError, KickstartValueError
 from pykickstart.parser import KickstartParser
 from pykickstart.parser import Script as KSScript
 from pykickstart.sections import Section
-from pykickstart.sections import NullSection, PackageSection, PostScriptSection, PreScriptSection, TracebackScriptSection
+from pykickstart.sections import NullSection, PackageSection, PostScriptSection, PreScriptSection, PreInstallScriptSection, TracebackScriptSection
 from pykickstart.version import returnClassForVersion
 
 import logging
@@ -87,7 +88,7 @@ class AnacondaKSScript(KSScript):
         This will write the script to a file named /tmp/ks-script- before
         execution.
         Output is logged by the program logger, the path specified by --log
-        or to /tmp/ks-script-*.log
+        or to /tmp/ks-script-\\*.log
     """
     def run(self, chroot):
         """ Run the kickstart script
@@ -98,13 +99,10 @@ class AnacondaKSScript(KSScript):
         else:
             scriptRoot = "/"
 
-        # Environment variables that cause problems for %post scripts
-        env_prune = ["LIBUSER_CONF"]
-
         (fd, path) = tempfile.mkstemp("", "ks-script-", scriptRoot + "/tmp")
 
-        iutil.eintr_retry_call(os.write, fd, self.script)
-        iutil.eintr_retry_call(os.close, fd)
+        iutil.eintr_retry_call(os.write, fd, self.script.encode("utf-8"))
+        iutil.eintr_ignore(os.close, fd)
         iutil.eintr_retry_call(os.chmod, path, 0o700)
 
         # Always log stdout/stderr from scripts.  Using --log just lets you
@@ -127,8 +125,7 @@ class AnacondaKSScript(KSScript):
         with open(messages, "w") as fp:
             rc = iutil.execWithRedirect(self.interp, ["/tmp/%s" % os.path.basename(path)],
                                         stdout=fp,
-                                        root = scriptRoot,
-                                        env_prune = env_prune)
+                                        root=scriptRoot)
 
         if rc != 0:
             log.error("Error code %s running the kickstart script at line %s", rc, self.lineno)
@@ -167,15 +164,18 @@ def getEscrowCertificate(escrowCerts, url):
     log.info("escrow: downloading %s", url)
 
     try:
-        f = urlgrabber.urlopen(url)
-    except urlgrabber.grabber.URLGrabError as e:
+        request = iutil.requests_session().get(url, verify=True)
+    except requests.exceptions.SSLError as e:
+        msg = _("SSL error while downloading the escrow certificate:\n\n%s") % e
+        raise KickstartError(msg)
+    except requests.exceptions.RequestException as e:
         msg = _("The following error was encountered while downloading the escrow certificate:\n\n%s") % e
         raise KickstartError(msg)
 
     try:
-        escrowCerts[url] = f.read()
+        escrowCerts[url] = request.content
     finally:
-        f.close()
+        request.close()
 
     return escrowCerts[url]
 
@@ -244,6 +244,8 @@ def getAvailableDiskSpace(storage):
     """
 
     free_space = storage.freeSpaceSnapshot
+    # blivet creates a new free space dict to instead of modifying the old one,
+    # so there is no worry about the dictionary changing during iteration.
     return sum(disk_free for disk_free, fs_free in free_space.values())
 
 def refreshAutoSwapSize(storage):
@@ -345,7 +347,7 @@ class AutoPart(commands.autopart.F21_AutoPart):
         doAutoPartition(storage, ksdata, min_luks_entropy=MIN_CREATE_ENTROPY)
         errors = sanity_check(storage)
         if errors:
-            raise PartitioningError("autopart failed:\n" + "\n".join(error.message for error in errors))
+            raise PartitioningError("autopart failed:\n" + "\n".join(str(error) for error in errors))
 
 class Bootloader(commands.bootloader.F21_Bootloader):
     def __init__(self, *args, **kwargs):
@@ -432,12 +434,12 @@ class Bootloader(commands.bootloader.F21_Bootloader):
         if self.nombr:
             flags.nombr = True
 
-class BTRFS(commands.btrfs.F17_BTRFS):
+class BTRFS(commands.btrfs.F23_BTRFS):
     def execute(self, storage, ksdata, instClass):
         for b in self.btrfsList:
             b.execute(storage, ksdata, instClass)
 
-class BTRFSData(commands.btrfs.F17_BTRFSData):
+class BTRFSData(commands.btrfs.F23_BTRFSData):
     def execute(self, storage, ksdata, instClass):
         devicetree = storage.devicetree
 
@@ -513,9 +515,10 @@ class BTRFSData(commands.btrfs.F17_BTRFSData):
                                        mountpoint=self.mountpoint,
                                        metaDataLevel=self.metaDataLevel,
                                        dataLevel=self.dataLevel,
-                                       parents=members)
+                                       parents=members,
+                                       createOptions=self.mkfsopts)
             except BTRFSValueError as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
 
             storage.createDevice(request)
 
@@ -678,16 +681,16 @@ class Firewall(commands.firewall.F20_Firewall):
             args += ["--service=ssh"]
 
         for dev in self.trusts:
-            args += [ "--trust=%s" % (dev,) ]
+            args += ["--trust=%s" % (dev,)]
 
         for port in self.ports:
-            args += [ "--port=%s" % (port,) ]
+            args += ["--port=%s" % (port,)]
 
         for remove_service in self.remove_services:
-            args += [ "--remove-service=%s" % (remove_service,) ]
+            args += ["--remove-service=%s" % (remove_service,)]
 
         for service in self.services:
-            args += [ "--service=%s" % (service,) ]
+            args += ["--service=%s" % (service,)]
 
         cmd = "/usr/bin/firewall-offline-cmd"
         if not os.path.exists(iutil.getSysroot()+cmd):
@@ -708,22 +711,19 @@ class Firstboot(commands.firstboot.FC3_Firstboot):
         services = ["initial-setup-graphical.service",
                     "initial-setup-text.service"]
 
-        if not any(os.path.exists(iutil.getSysroot() + "/lib/systemd/system/" + path)
-                   for path in services):
-            # none of the first boot utilities installed, nothing to do here
-            return
+        # find if the unit files for the Initial Setup services are installed
+        services = [name for name in services if os.path.exists(os.path.join(iutil.getSysroot(), "lib/systemd/system/", name))]
+        if services and self.firstboot == FIRSTBOOT_RECONFIG:
+            # write the reconfig trigger file
+            f = open(os.path.join(iutil.getSysroot(), "/etc/reconfigSys"), "w+")
+            f.close()
 
         if self.firstboot == FIRSTBOOT_SKIP:
             action = "disable"
-        elif self.firstboot == FIRSTBOOT_RECONFIG:
-            f = open(iutil.getSysroot() + "/etc/reconfigSys", "w+")
-            f.close()
 
-        for unit in [
-                "firstboot-graphical.service",
-                "initial-setup-graphical.service",
-                "initial-setup-text.service"]:
-            iutil.execInSysroot("systemctl", [action, unit])
+        # enable/disable all installed Initial Setup services
+        for service in services:
+            iutil.execInSysroot("systemctl", [action, service])
 
 class Group(commands.group.F12_Group):
     def execute(self, storage, ksdata, instClass, users):
@@ -808,7 +808,7 @@ class Lang(commands.lang.F19_Lang):
 # no overrides needed here
 Eula = commands.eula.F20_Eula
 
-class LogVol(commands.logvol.F21_LogVol):
+class LogVol(commands.logvol.F23_LogVol):
     def execute(self, storage, ksdata, instClass):
         for l in self.lvList:
             l.execute(storage, ksdata, instClass)
@@ -816,7 +816,7 @@ class LogVol(commands.logvol.F21_LogVol):
         if self.lvList:
             growLVM(storage)
 
-class LogVolData(commands.logvol.F21_LogVolData):
+class LogVolData(commands.logvol.F23_LogVolData):
     def execute(self, storage, ksdata, instClass):
         devicetree = storage.devicetree
 
@@ -938,6 +938,7 @@ class LogVolData(commands.logvol.F21_LogVolData):
                         mountpoint=self.mountpoint,
                         label=self.label,
                         fsprofile=self.fsprofile,
+                        createOptions=self.mkfsopts,
                         mountopts=self.fsopts)
         if not fmt.type and not self.thin_pool:
             raise KickstartValueError(formatErrorMsg(self.lineno,
@@ -1006,6 +1007,14 @@ class LogVolData(commands.logvol.F21_LogVolData):
             else:
                 maxsize = None
 
+            if self.cache_size and self.cache_pvs:
+                pv_devices = [lookupAlias(devicetree, pv) for pv in self.cache_pvs]
+                cache_size = Size("%d MiB" % self.cache_size)
+                cache_mode = self.cache_mode or None
+                cache_request = LVMCacheRequest(cache_size, pv_devices, cache_mode)
+            else:
+                cache_request = None
+
             try:
                 request = storage.newLV(fmt=fmt,
                                     name=self.name,
@@ -1016,9 +1025,10 @@ class LogVolData(commands.logvol.F21_LogVolData):
                                     grow=self.grow,
                                     maxsize=maxsize,
                                     percent=self.percent,
+                                    cacheRequest=cache_request,
                                     **pool_args)
             except (StorageError, ValueError) as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
 
             storage.createDevice(request)
             if ty == "swap":
@@ -1032,10 +1042,6 @@ class LogVolData(commands.logvol.F21_LogVolData):
             # XXX: we require the LV/part with --passphrase to be processed
             # before this one to setup the storage.encryptionPassphrase
             self.passphrase = self.passphrase or storage.encryptionPassphrase
-
-            if not self.passphrase:
-                raise KickstartValueError(formatErrorMsg(self.lineno,
-                                                         msg=_("No passphrase given for encrypted LV")))
 
             cert = getEscrowCertificate(storage.escrowCertificates, self.escrowcert)
             if self.preexist:
@@ -1084,6 +1090,14 @@ class Logging(commands.logging.FC6_Logging):
             logger.updateRemote(remote_server)
 
 class Network(commands.network.F22_Network):
+    def __init__(self, *args, **kwargs):
+        commands.network.F22_Network.__init__(self, *args, **kwargs)
+        self.packages = []
+
+    def setup(self):
+        if network.is_using_team_device():
+            self.packages = ["teamd"]
+
     def execute(self, storage, ksdata, instClass):
         network.write_network_config(storage, ksdata, instClass, iutil.getSysroot())
 
@@ -1095,7 +1109,7 @@ class DmRaid(commands.dmraid.FC6_DmRaid):
     def parse(self, args):
         raise NotImplementedError(_("The %s kickstart command is not currently supported.") % "dmraid")
 
-class Partition(commands.partition.F20_Partition):
+class Partition(commands.partition.F23_Partition):
     def execute(self, storage, ksdata, instClass):
         for p in self.partitions:
             p.execute(storage, ksdata, instClass)
@@ -1103,7 +1117,7 @@ class Partition(commands.partition.F20_Partition):
         if self.partitions:
             doPartitioning(storage)
 
-class PartitionData(commands.partition.F18_PartData):
+class PartitionData(commands.partition.F23_PartData):
     def execute(self, storage, ksdata, instClass):
         devicetree = storage.devicetree
         kwargs = {}
@@ -1111,6 +1125,8 @@ class PartitionData(commands.partition.F18_PartData):
         storage.doAutoPart = False
 
         if self.onbiosdisk != "":
+            # eddDict is only modified during storage.reset(), so don't do that
+            # while executing storage.
             for (disk, biosdisk) in storage.eddDict.items():
                 if "%x" % biosdisk == self.onbiosdisk:
                     self.disk = disk
@@ -1245,6 +1261,7 @@ class PartitionData(commands.partition.F18_PartData):
            label=self.label,
            fsprofile=self.fsprofile,
            mountopts=self.fsopts,
+           createOptions=self.mkfsopts,
            size=size)
         if not kwargs["fmt"].type:
             raise KickstartValueError(formatErrorMsg(self.lineno,
@@ -1324,7 +1341,7 @@ class PartitionData(commands.partition.F18_PartData):
             try:
                 request = storage.newTmpFS(**kwargs)
             except (StorageError, ValueError) as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
             storage.createDevice(request)
         else:
             # If a previous device has claimed this mount point, delete the
@@ -1339,7 +1356,7 @@ class PartitionData(commands.partition.F18_PartData):
             try:
                 request = storage.newPartition(**kwargs)
             except (StorageError, ValueError) as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
 
             storage.createDevice(request)
             if ty == "swap":
@@ -1353,10 +1370,6 @@ class PartitionData(commands.partition.F18_PartData):
             # XXX: we require the LV/part with --passphrase to be processed
             # before this one to setup the storage.encryptionPassphrase
             self.passphrase = self.passphrase or storage.encryptionPassphrase
-
-            if not self.passphrase:
-                raise KickstartValueError(formatErrorMsg(self.lineno,
-                                                         msg=_("No passphrase given for encrypted part")))
 
             cert = getEscrowCertificate(storage.escrowCertificates, self.escrowcert)
             if self.onPart:
@@ -1390,12 +1403,12 @@ class PartitionData(commands.partition.F18_PartData):
         if add_fstab_swap:
             storage.addFstabSwap(add_fstab_swap)
 
-class Raid(commands.raid.F20_Raid):
+class Raid(commands.raid.F23_Raid):
     def execute(self, storage, ksdata, instClass):
         for r in self.raidList:
             r.execute(storage, ksdata, instClass)
 
-class RaidData(commands.raid.F18_RaidData):
+class RaidData(commands.raid.F23_RaidData):
     def execute(self, storage, ksdata, instClass):
         raidmems = []
         devicetree = storage.devicetree
@@ -1460,6 +1473,8 @@ class RaidData(commands.raid.F18_RaidData):
 
             dev.format.mountpoint = self.mountpoint
             dev.format.mountopts = self.fsopts
+            if ty == "swap":
+                storage.addFstabSwap(dev)
             return
 
         # Get a list of all the RAID members.
@@ -1491,7 +1506,8 @@ class RaidData(commands.raid.F18_RaidData):
            label=self.label,
            fsprofile=self.fsprofile,
            mountpoint=self.mountpoint,
-           mountopts=self.fsopts)
+           mountopts=self.fsopts,
+           createOptions=self.mkfsopts)
         if not kwargs["fmt"].type:
             raise KickstartValueError(formatErrorMsg(self.lineno,
                     msg=_("The \"%s\" file system type is not supported.") % ty))
@@ -1514,6 +1530,8 @@ class RaidData(commands.raid.F18_RaidData):
 
             removeExistingFormat(device, storage)
             devicetree.registerAction(ActionCreateFormat(device, kwargs["fmt"]))
+            if ty == "swap":
+                storage.addFstabSwap(device)
         else:
             if devicename and devicename in (a.name for a in storage.mdarrays):
                 raise KickstartValueError(formatErrorMsg(self.lineno,
@@ -1531,9 +1549,11 @@ class RaidData(commands.raid.F18_RaidData):
             try:
                 request = storage.newMDArray(**kwargs)
             except (StorageError, ValueError) as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
 
             storage.createDevice(request)
+            if ty == "swap":
+                storage.addFstabSwap(request)
 
         if self.encrypted:
             if self.passphrase and not storage.encryptionPassphrase:
@@ -1568,8 +1588,31 @@ class RepoData(commands.repo.F21_RepoData):
             :type enabled: bool
         """
         self.enabled = kwargs.pop("enabled", True)
+        self.repo_id = kwargs.pop("repo_id", None)
 
         commands.repo.F21_RepoData.__init__(self, *args, **kwargs)
+
+class ReqPart(commands.reqpart.F23_ReqPart):
+    def execute(self, storage, ksdata, instClass):
+        from blivet.autopart import doReqPartition
+
+        if not self.reqpart:
+            return
+
+        reqs = platform.setPlatformBootloaderReqs()
+        if self.addBoot:
+            bootPartitions = platform.setPlatformBootPartition()
+
+            # blivet doesn't know this - anaconda sets up the default boot fstype
+            # in various places in this file, as well as in setDefaultPartitioning
+            # in the install classes.  We need to duplicate that here.
+            for part in bootPartitions:
+                if part.mountpoint == "/boot":
+                    part.fstype = storage.defaultBootFSType
+
+            reqs += bootPartitions
+
+        doReqPartition(storage, reqs)
 
 class RootPw(commands.rootpw.F18_RootPw):
     def __init__(self, writePriority=100, *args, **kwargs):
@@ -1582,13 +1625,13 @@ class RootPw(commands.rootpw.F18_RootPw):
             self.lock = True
 
         algo = getPassAlgo(ksdata.authconfig.authconfig)
-        users.setRootPassword(self.password, self.isCrypted, self.lock, algo)
+        users.setRootPassword(self.password, self.isCrypted, self.lock, algo, iutil.getSysroot())
 
 class SELinux(commands.selinux.FC3_SELinux):
     def execute(self, *args):
-        selinux_states = { SELINUX_DISABLED: "disabled",
-                           SELINUX_ENFORCING: "enforcing",
-                           SELINUX_PERMISSIVE: "permissive" }
+        selinux_states = {SELINUX_DISABLED: "disabled",
+                          SELINUX_ENFORCING: "enforcing",
+                          SELINUX_PERMISSIVE: "permissive"}
 
         if self.selinux is None:
             # Use the defaults set by the installed (or not) selinux package
@@ -1603,7 +1646,7 @@ class SELinux(commands.selinux.FC3_SELinux):
             selinux_cfg.set(("SELINUX", selinux_states[self.selinux]))
             selinux_cfg.write()
         except IOError as msg:
-            log.error ("Error setting selinux mode: %s", msg)
+            log.error("Error setting selinux mode: %s", msg)
 
 class Services(commands.services.FC6_Services):
     def execute(self, storage, ksdata, instClass):
@@ -1624,9 +1667,9 @@ class SshKey(commands.sshkey.F22_SshKey):
         for usr in self.sshUserList:
             users.setUserSshKey(usr.username, usr.key)
 
-class Timezone(commands.timezone.F18_Timezone):
+class Timezone(commands.timezone.F23_Timezone):
     def __init__(self, *args):
-        commands.timezone.F18_Timezone.__init__(self, *args)
+        commands.timezone.F23_Timezone.__init__(self, *args)
 
         self._added_chrony = False
         self._enabled_chrony = False
@@ -1685,8 +1728,8 @@ class Timezone(commands.timezone.F18_Timezone):
         timezone.write_timezone_config(self, iutil.getSysroot())
 
         # write out NTP configuration (if set)
-        if not self.nontp and self.ntpservers:
-            chronyd_conf_path = os.path.normpath(iutil.getSysroot() + ntp.NTP_CONFIG_FILE)
+        chronyd_conf_path = os.path.normpath(iutil.getSysroot() + ntp.NTP_CONFIG_FILE)
+        if self.ntpservers and os.path.exists(chronyd_conf_path):
             pools, servers = ntp.internal_to_pools_and_servers(self.ntpservers)
             try:
                 ntp.save_servers_to_config(pools, servers, conf_file_path=chronyd_conf_path)
@@ -1780,7 +1823,7 @@ class VolGroupData(commands.volgroup.F21_VolGroupData):
                                     name=self.vgname,
                                     peSize=pesize)
             except (StorageError, ValueError) as e:
-                raise KickstartValueError(formatErrorMsg(self.lineno, msg=e.message))
+                raise KickstartValueError(formatErrorMsg(self.lineno, msg=str(e)))
 
             storage.createDevice(request)
             if self.reserved_space:
@@ -1853,6 +1896,8 @@ class AnacondaSectionHandler(BaseHandler):
     def __str__(self):
         """Return the %anaconda section"""
         retval = ""
+        # This dictionary should only be modified during __init__, so if it
+        # changes during iteration something has gone horribly wrong.
         lst = sorted(self._writeOrder.keys())
         for prio in lst:
             for obj in self._writeOrder[prio]:
@@ -1920,6 +1965,7 @@ commandMap = {
         "partition": Partition,
         "raid": Raid,
         "realm": Realm,
+        "reqpart": ReqPart,
         "rootpw": RootPw,
         "selinux": SELinux,
         "services": Services,
@@ -1947,7 +1993,7 @@ superclass = returnClassForVersion()
 class AnacondaKSHandler(superclass):
     AddonClassType = AddonData
 
-    def __init__ (self, addon_paths=None, commandUpdates=None, dataUpdates=None):
+    def __init__(self, addon_paths=None, commandUpdates=None, dataUpdates=None):
         if addon_paths is None:
             addon_paths = []
 
@@ -1975,7 +2021,7 @@ class AnacondaKSHandler(superclass):
 
             classes = collect(module_name, path, lambda cls: issubclass(cls, self.AddonClassType))
             if classes:
-                addons[addon_id] = classes[0](name = addon_id)
+                addons[addon_id] = classes[0](name=addon_id)
 
         # Prepare the final structures for 3rd party addons
         self.addons = AddonRegistry(addons)
@@ -1989,15 +2035,16 @@ class AnacondaKSHandler(superclass):
 class AnacondaPreParser(KickstartParser):
     # A subclass of KickstartParser that only looks for %pre scripts and
     # sets them up to be run.  All other scripts and commands are ignored.
-    def __init__ (self, handler, followIncludes=True, errorsAreFatal=True,
-                  missingIncludeIsFatal=True):
+    def __init__(self, handler, followIncludes=True, errorsAreFatal=True,
+                 missingIncludeIsFatal=True):
         KickstartParser.__init__(self, handler, missingIncludeIsFatal=False)
 
-    def handleCommand (self, lineno, args):
+    def handleCommand(self, lineno, args):
         pass
 
     def setupSections(self):
         self.registerSection(PreScriptSection(self.handler, dataObj=AnacondaKSScript))
+        self.registerSection(NullSection(self.handler, sectionOpen="%pre-install"))
         self.registerSection(NullSection(self.handler, sectionOpen="%post"))
         self.registerSection(NullSection(self.handler, sectionOpen="%traceback"))
         self.registerSection(NullSection(self.handler, sectionOpen="%packages"))
@@ -2006,12 +2053,12 @@ class AnacondaPreParser(KickstartParser):
 
 
 class AnacondaKSParser(KickstartParser):
-    def __init__ (self, handler, followIncludes=True, errorsAreFatal=True,
-                  missingIncludeIsFatal=True, scriptClass=AnacondaKSScript):
+    def __init__(self, handler, followIncludes=True, errorsAreFatal=True,
+                 missingIncludeIsFatal=True, scriptClass=AnacondaKSScript):
         self.scriptClass = scriptClass
         KickstartParser.__init__(self, handler)
 
-    def handleCommand (self, lineno, args):
+    def handleCommand(self, lineno, args):
         if not self.handler:
             return
 
@@ -2019,6 +2066,7 @@ class AnacondaKSParser(KickstartParser):
 
     def setupSections(self):
         self.registerSection(PreScriptSection(self.handler, dataObj=self.scriptClass))
+        self.registerSection(PreInstallScriptSection(self.handler, dataObj=self.scriptClass))
         self.registerSection(PostScriptSection(self.handler, dataObj=self.scriptClass))
         self.registerSection(TracebackScriptSection(self.handler, dataObj=self.scriptClass))
         self.registerSection(PackageSection(self.handler))
@@ -2093,7 +2141,8 @@ def runPostScripts(scripts):
         return
 
     log.info("Running kickstart %%post script(s)")
-    map (lambda s: s.run(iutil.getSysroot()), postScripts)
+    for script in postScripts:
+        script.run(iutil.getSysroot())
     log.info("All kickstart %%post script(s) have been run")
 
 def runPreScripts(scripts):
@@ -2105,19 +2154,33 @@ def runPreScripts(scripts):
     log.info("Running kickstart %%pre script(s)")
     stdoutLog.info(_("Running pre-installation scripts"))
 
-    map (lambda s: s.run("/"), preScripts)
+    for script in preScripts:
+        script.run("/")
 
     log.info("All kickstart %%pre script(s) have been run")
 
+def runPreInstallScripts(scripts):
+    preInstallScripts = [s for s in scripts if s.type == KS_SCRIPT_PREINSTALL]
+
+    if len(preInstallScripts) == 0:
+        return
+
+    log.info("Running kickstart %%pre-install script(s)")
+
+    for script in preInstallScripts:
+        script.run("/")
+
+    log.info("All kickstart %%pre-install script(s) have been run")
+
 def runTracebackScripts(scripts):
     log.info("Running kickstart %%traceback script(s)")
-    for script in filter (lambda s: s.type == KS_SCRIPT_TRACEBACK, scripts):
+    for script in filter(lambda s: s.type == KS_SCRIPT_TRACEBACK, scripts):
         script.run("/")
     log.info("All kickstart %%traceback script(s) have been run")
 
 def resetCustomStorageData(ksdata):
-    cmds = ["partition", "raid", "volgroup", "logvol", "btrfs"]
-    map(ksdata.resetCommand, cmds)
+    for command in ["partition", "raid", "volgroup", "logvol", "btrfs"]:
+        ksdata.resetCommand(command)
 
     ksdata.clearpart.type = CLEARPART_TYPE_NONE
 
@@ -2133,6 +2196,7 @@ def doKickstartStorage(storage, ksdata, instClass):
 
     ksdata.bootloader.execute(storage, ksdata, instClass)
     ksdata.autopart.execute(storage, ksdata, instClass)
+    ksdata.reqpart.execute(storage, ksdata, instClass)
     ksdata.partition.execute(storage, ksdata, instClass)
     ksdata.raid.execute(storage, ksdata, instClass)
     ksdata.volgroup.execute(storage, ksdata, instClass)
@@ -2140,4 +2204,3 @@ def doKickstartStorage(storage, ksdata, instClass):
     ksdata.btrfs.execute(storage, ksdata, instClass)
     # also calls ksdata.bootloader.execute
     storage.setUpBootLoader()
-

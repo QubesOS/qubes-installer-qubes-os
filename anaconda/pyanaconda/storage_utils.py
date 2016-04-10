@@ -172,7 +172,7 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
     checkSizes = [('/usr', Size("250 MiB")), ('/tmp', Size("50 MiB")), ('/var', Size("384 MiB")),
                   ('/home', Size("100 MiB")), ('/boot', Size("200 MiB"))]
     mustbeonlinuxfs = ['/', '/var', '/tmp', '/usr', '/home', '/usr/share', '/usr/lib']
-    mustbeonroot = ['/bin','/dev','/sbin','/etc','/lib','/root', '/mnt', 'lost+found', '/proc']
+    mustbeonroot = ['/bin', '/dev', '/sbin', '/etc', '/lib', '/root', '/mnt', 'lost+found', '/proc']
 
     filesystems = storage.mountpoints
     root = storage.fsset.rootDevice
@@ -216,6 +216,8 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
                             % {'mount': mount, 'size': size,
                                'productName': productName}))
 
+    # storage.mountpoints is a property that returns a new dict each time, so
+    # iterating over it is thread-safe.
     for (mount, device) in filesystems.items():
         problem = filesystems[mount].checkSize()
         if problem < 0:

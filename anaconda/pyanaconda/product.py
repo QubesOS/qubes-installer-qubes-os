@@ -17,14 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import ConfigParser
+import configparser
 import os
 
 from pyanaconda.i18n import _
 
 # First, load in the defaults.  In order of precedence:  contents of
 # .buildstamp, environment, stupid last ditch hardcoded defaults.
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.add_section("Main")
 config.set("Main", "Arch", os.environ.get("ANACONDA_PRODUCTARCH", os.uname()[4]))
 config.set("Main", "BugURL", os.environ.get("ANACONDA_BUGURL", "your distribution provided bug reporting tool"))
@@ -34,7 +34,7 @@ config.set("Main", "UUID", "")
 config.set("Main", "Version", os.environ.get("ANACONDA_PRODUCTVERSION", "bluesky"))
 
 # Now read in the .buildstamp file, wherever it may be.
-config.read(["/tmp/product/.buildstamp", "/.buildstamp", os.environ.get("PRODBUILDPATH", "")])
+config.read(["/.buildstamp", "/tmp/product/.buildstamp", os.environ.get("PRODBUILDPATH", "")])
 
 # Set up some variables we import throughout, applying a couple transforms as necessary.
 bugUrl = config.get("Main", "BugURL")

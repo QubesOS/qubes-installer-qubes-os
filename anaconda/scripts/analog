@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # analog: Remote logging manager for the Red Hat Installer
 #
@@ -21,13 +21,12 @@
 # Author: Ales Kozumplik <akozumpl@redhat.com>
 #
 
-from __future__ import print_function
-
 import getpass
 import optparse
 import os
 import os.path
 import sys
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 DEFAULT_PORT = 6080
 DEFAULT_ANALOG_DIR = '.analog'

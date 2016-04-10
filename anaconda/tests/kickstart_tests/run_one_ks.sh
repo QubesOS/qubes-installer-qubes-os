@@ -24,6 +24,12 @@
 # not for direct use, though as long as you pass the right arguments there's
 # no reason it couldn't work.
 
+# Possible return values:
+# 0  - Everything worked
+# 1  - Test failed for unspecified reasons
+# 2  - Test failed due to time out
+# 77 - Something needed by the test doesn't exist, so skip
+
 IMAGE=
 KEEPIT=0
 
@@ -36,7 +42,7 @@ cleanup() {
     if [[ ${KEEPIT} == 2 ]]; then
         return
     elif [[ ${KEEPIT} == 1 ]]; then
-        rm -f ${d}/*img ${d}/*ks
+        rm -f ${d}/disk-*.img ${d}/*ks
     elif [[ ${KEEPIT} == 0 ]]; then
         rm -rf ${d}
     fi
@@ -44,6 +50,8 @@ cleanup() {
 
 runone() {
     t=$1
+
+    export KSTESTDIR=$(pwd)/kickstart_tests
 
     ks=${t/.sh/.ks}
     . $t
@@ -64,7 +72,7 @@ runone() {
 
     ksfile=$(prepare ${ks} ${tmpdir})
     if [[ $? != 0 ]]; then
-        echo Test prep failed: ${ksfile}
+        echo RESULT:${name}:FAILED:Test prep failed: ${ksfile}
         cleanup ${tmpdir}
         return 1
     fi
@@ -74,46 +82,39 @@ runone() {
         kargs="--kernel-args \"$kargs\""
     fi
 
-    eval livemedia-creator ${kargs} \
-                      --make-disk \
-                      --iso "${tmpdir}/$(basename ${IMAGE})" \
-                      --ks ${ksfile} \
-                      --tmp ${tmpdir} \
-                      --logfile ${tmpdir}/livemedia.log \
-                      --title Fedora \
-                      --project Fedora \
-                      --releasever 22 \
-                      --ram 2048 \
-                      --vcpus 2 \
-                      --vnc vnc \
-                      --timeout 60
-    if [[ $? != 0 ]]; then
-        echo $(grep CRIT ${tmpdir}/virt-install.log)
+    disks=$(prepare_disks ${tmpdir})
+    disk_args=$(for d in $disks; do echo --disk $d; done)
+
+    echo "PYTHONPATH=$PYTHONPATH"
+    eval ${KSTESTDIR}/kstest-runner ${kargs} \
+                       --iso "${tmpdir}/$(basename ${IMAGE})" \
+                       --ks ${ksfile} \
+                       --tmp ${tmpdir} \
+                       --logfile ${tmpdir}/livemedia.log \
+                       --ram 2048 \
+                       --vnc vnc \
+                       --timeout 60 \
+                       ${disk_args}
+    if [[ -f ${tmpdir}/virt-install.log && "$(grep CRIT ${tmpdir}/virt-install.log)" != "" ]]; then
+        echo RESULT:${name}:FAILED:$(grep CRIT ${tmpdir}/virt-install.log)
         cleanup ${tmpdir}
         return 1
     elif [[ -f ${tmpdir}/livemedia.log ]]; then
-        img=$(grep disk_img ${tmpdir}/livemedia.log | cut -d= -f2)
-        trimmed=${img## }
-
-        if [[ $(grep "due to timeout" ${tmpdir}/livemedia.log) != "" ]]; then
-           echo FAILED - Test timed out.
-           cleanup ${tmpdir}
-           return 1
-        elif [[ ! -f ${trimmed} ]]; then
-            echo FAILED - Disk image ${trimmed} does not exist.
+        if [[ "$(grep 'due to timeout' ${tmpdir}/livemedia.log)" != "" ]]; then
+            echo RESULT:${name}:FAILED:Test timed out.
             cleanup ${tmpdir}
-            return 1
+            return 2
         fi
 
-        result=$(validate ${trimmed})
+        result=$(validate ${tmpdir})
         if [[ $? != 0 ]]; then
-            echo FAILED - "${result}"
+            echo RESULT:${name}:FAILED:"${result}"
             cleanup ${tmpdir}
             return 1
         fi
     fi
 
-    echo SUCCESS
+    echo RESULT:${name}:SUCCESS
     cleanup ${tmpdir}
     return 0
 }
@@ -135,7 +136,7 @@ while getopts ":i:k:" opt; do
             ;;
 
         *)
-            echo "Usage: run_one_ks.sh -i ISO [-k KEEPIT] ks.cfg"
+            echo "Usage: run_one_ks.sh -i ISO [-k KEEPIT] ks-test.sh"
             exit 1
             ;;
     esac

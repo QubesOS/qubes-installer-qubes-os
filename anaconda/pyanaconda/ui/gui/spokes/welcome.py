@@ -46,6 +46,10 @@ log = logging.getLogger("anaconda")
 __all__ = ["WelcomeLanguageSpoke"]
 
 class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
+    """
+       .. inheritance-diagram:: WelcomeLanguageSpoke
+          :parts: 3
+    """
     mainWidgetName = "welcomeWindow"
     focusWidgetName = "languageEntry"
     uiFile = "spokes/welcome.glade"
@@ -67,7 +71,7 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
 
         locale = store[itr][1]
         self._set_lang(locale)
-        localization.setup_locale(locale, self.data.lang)
+        localization.setup_locale(locale, self.data.lang, text_mode=False)
 
         # Skip timezone and keyboard default setting for kickstart installs.
         # The user may have provided these values via kickstart and if not, we
@@ -197,7 +201,7 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
         # use default
         if not langs_with_translations:
             self._set_lang(DEFAULT_LANG)
-            localization.setup_locale(DEFAULT_LANG, self.data.lang)
+            localization.setup_locale(DEFAULT_LANG, self.data.lang, text_mode=False)
             lang_itr, _locale_itr = self._select_locale(self.data.lang.lang)
             langs_with_translations[DEFAULT_LANG] = lang_itr
             locales = [DEFAULT_LANG]
@@ -314,12 +318,13 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
     # Override the default in StandaloneSpoke so we can display the beta
     # warning dialog first.
     def _on_continue_clicked(self, window, user_data=None):
-        # Don't display the betanag dialog if this is the final release.
-        if not isFinal:
+        # Don't display the betanag dialog if this is the final release or
+        # when autostep has been requested as betanag breaks the autostep logic.
+        if not isFinal and not self.data.autostep.seen:
             dlg = self.builder.get_object("betaWarnDialog")
             with self.main_window.enlightbox(dlg):
                 rc = dlg.run()
-                dlg.destroy()
+                dlg.hide()
             if rc != 1:
                 ipmi_report(IPMI_ABORTED)
                 sys.exit(0)

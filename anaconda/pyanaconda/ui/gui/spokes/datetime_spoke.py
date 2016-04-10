@@ -22,6 +22,12 @@
 import logging
 log = logging.getLogger("anaconda")
 
+import gi
+gi.require_version("GLib", "2.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("TimezoneMap", "1.0")
+
 from gi.repository import GLib, Gdk, Gtk, TimezoneMap
 
 from pyanaconda.ui.communication import hubQ
@@ -49,6 +55,7 @@ import datetime
 import re
 import threading
 import locale as locale_mod
+import functools
 
 __all__ = ["DatetimeSpoke"]
 
@@ -112,7 +119,16 @@ def _compare_cities(city_xlated1, city_xlated2):
 
     if prefix1 == prefix2:
         # same prefixes, let signs determine
-        return cmp(int(sign1 + suffix1), int(sign2 + suffix2))
+
+        def _cmp(a, b):
+            if a < b:
+                return -1
+            elif a > b:
+                return 1
+            else:
+                return 0
+
+        return _cmp(int(sign1 + suffix1), int(sign2 + suffix2))
     else:
         # compare prefixes
         return locale_mod.strcoll(prefix1, prefix2)
@@ -145,7 +161,11 @@ class NTPconfigDialog(GUIObject, GUIDialogInputCheckHandler):
 
     def __init__(self, *args):
         GUIObject.__init__(self, *args)
-        GUIDialogInputCheckHandler.__init__(self)
+
+        # Use GUIDIalogInputCheckHandler to manipulate the sensitivity of the
+        # add button, and check for valid input in on_entry_activated
+        add_button = self.builder.get_object("addButton")
+        GUIDialogInputCheckHandler.__init__(self, add_button)
 
         #epoch is increased when serversStore is repopulated
         self._epoch = 0
@@ -235,13 +255,6 @@ class NTPconfigDialog(GUIObject, GUIDialogInputCheckHandler):
             return "'%s' is not a valid hostname: %s" % (server, error)
         else:
             return InputCheck.CHECK_OK
-
-    def set_status(self, inputcheck):
-        # Use GUIDialogInputCheckHandler to set the error message
-        GUIDialogInputCheckHandler.set_status(self, inputcheck)
-
-        # Set the sensitivity of the add button based on the result
-        self._addButton.set_sensitive(inputcheck.check_status == InputCheck.CHECK_OK)
 
     def refresh(self):
         self._serverEntry.grab_focus()
@@ -383,6 +396,10 @@ class NTPconfigDialog(GUIObject, GUIDialogInputCheckHandler):
         self._refresh_server_working(itr)
 
 class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+    """
+       .. inheritance-diagram:: DatetimeSpoke
+          :parts: 3
+    """
     builderObjects = ["datetimeWindow",
                       "days", "months", "years", "regions", "cities",
                       "upImage", "upImage1", "upImage2", "downImage",
@@ -501,12 +518,12 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         cities = set()
         xlated_regions = ((region, get_xlated_timezone(region))
                           for region in self._regions_zones.keys())
-        for region, xlated in sorted(xlated_regions, cmp=_compare_regions):
+        for region, xlated in sorted(xlated_regions, key=functools.cmp_to_key(_compare_regions)):
             self.add_to_store_xlated(self._regionsStore, region, xlated)
             for city in self._regions_zones[region]:
                 cities.add((city, get_xlated_timezone(city)))
 
-        for city, xlated in sorted(cities, cmp=_compare_cities):
+        for city, xlated in sorted(cities, key=functools.cmp_to_key(_compare_cities)):
             self.add_to_store_xlated(self._citiesStore, city, xlated)
 
         self._update_datetime_timer_id = None

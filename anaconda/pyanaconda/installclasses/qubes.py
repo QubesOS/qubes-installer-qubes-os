@@ -38,12 +38,8 @@ class InstallClass(BaseInstallClass):
     sortPriority = 20000
     hidden = 0
     efi_dir = 'qubes'
-
     _l10n_domain = "anaconda"
-
     installUpdates = False
-
-    efi_dir = "qubes"
 
     bootloaderTimeoutDefault = 5
 

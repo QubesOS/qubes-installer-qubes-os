@@ -30,6 +30,7 @@ import langtable
 from collections import OrderedDict
 
 from pyanaconda import iutil
+from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda.constants import THREAD_STORAGE
 from pyanaconda.flags import flags
 from pyanaconda.threads import threadMgr
@@ -127,7 +128,7 @@ def write_timezone_config(timezone, root):
         lines = fobj.readlines()
         fobj.close()
     except IOError:
-        lines = [ "0.0 0 0.0\n", "0\n" ]
+        lines = ["0.0 0 0.0\n", "0\n"]
 
     try:
         with open(os.path.normpath(root + "/etc/adjtime"), "w") as fobj:

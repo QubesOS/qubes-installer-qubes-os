@@ -24,22 +24,30 @@ import glob
 import os
 import stat
 import os.path
-import errno
 import subprocess
 import unicodedata
 # Used for ascii_lowercase, ascii_uppercase constants
 import string # pylint: disable=deprecated-module
+import shutil
 import tempfile
-import types
 import re
-from urllib import quote, unquote
+from urllib.parse import quote, unquote
 import gettext
 import signal
+import sys
+
+import requests
+from requests_file import FileAdapter
+from requests_ftp import FTPAdapter
+
+import gi
+gi.require_version("GLib", "2.0")
 
 from gi.repository import GLib
 
 from pyanaconda.flags import flags
 from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW
+from pyanaconda.constants import SCREENSHOTS_DIRECTORY, SCREENSHOTS_TARGET_DIRECTORY
 from pyanaconda.regexes import URL_PARSE
 
 from pyanaconda.i18n import _
@@ -148,6 +156,11 @@ def startProgram(argv, root='/', stdin=None, stdout=subprocess.PIPE, stderr=subp
     # Check for and save a preexec_fn argument
     preexec_fn = kwargs.pop("preexec_fn", None)
 
+    # Map reset_handlers to the restore_signals Popen argument.
+    # restore_signals handles SIGPIPE, and preexec below handles any additional
+    # signals ignored by anaconda.
+    restore_signals = reset_handlers
+
     def preexec():
         # If a target root was specificed, chroot into it
         if target_root and target_root != '/':
@@ -184,6 +197,7 @@ def startProgram(argv, root='/', stdin=None, stdout=subprocess.PIPE, stderr=subp
                             stdout=stdout,
                             stderr=stderr,
                             close_fds=True,
+                            restore_signals=restore_signals,
                             preexec_fn=preexec, cwd=root, env=env, **kwargs)
 
 def startX(argv, output_redirect=None):
@@ -241,6 +255,10 @@ def startX(argv, output_redirect=None):
 def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None, log_output=True,
         binary_output=False, filter_stderr=False):
     """ Run an external program, log the output and return it to the caller
+
+        NOTE/WARNING: UnicodeDecodeError will be raised if the output of the of the
+                      external command can't be decoded as UTF-8.
+
         :param argv: The command to run and argument
         :param root: The directory to chroot to before running command.
         :param stdin: The file object to read stdin from.
@@ -265,13 +283,22 @@ def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None, log_ou
             if binary_output:
                 output_lines = [output_string]
             else:
+                output_string = output_string.decode("utf-8")
                 if output_string[-1] != "\n":
                     output_string = output_string + "\n"
                 output_lines = output_string.splitlines(True)
 
             if log_output:
                 with program_log_lock:
-                    for line in output_lines:
+                    if binary_output:
+                        # try to decode as utf-8 and replace all undecodable data by
+                        # "safe" printable representations when logging binary output
+                        decoded_output_lines = output_lines.decode("utf-8", "replace")
+                    else:
+                        # output_lines should already be a Unicode string
+                        decoded_output_lines = output_lines
+
+                    for line in decoded_output_lines:
                         program_log.info(line.strip())
 
             if stdout:
@@ -279,7 +306,10 @@ def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None, log_ou
 
         # If stderr was filtered, log it separately
         if filter_stderr and err_string and log_output:
-            err_lines = err_string.splitlines(True)
+            # try to decode as utf-8 and replace all undecodable data by
+            # "safe" printable representations when logging binary output
+            decoded_err_string = err_string.decode("utf-8", "replace")
+            err_lines = decoded_err_string.splitlines(True)
 
             with program_log_lock:
                 for line in err_lines:
@@ -346,7 +376,27 @@ def execWithCapture(command, argv, stdin=None, root='/', log_output=True, filter
     return _run_program(argv, stdin=stdin, root=root, log_output=log_output,
             filter_stderr=filter_stderr)[1]
 
-def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
+def execWithCaptureBinary(command, argv, stdin=None, root='/', log_output=False, filter_stderr=False):
+    """ Run an external program and capture standard out and err as binary data.
+        The binary data output is not logged by default but logging can be enabled.
+        :param command: The command to run
+        :param argv: The argument list
+        :param stdin: The file object to read stdin from.
+        :param root: The directory to chroot to before running command.
+        :param log_output: Whether to log the binary output of the command
+        :param filter_stderr: Whether stderr should be excluded from the returned output
+        :return: The output of the command
+    """
+    if flags.testing:
+        log.info("not running command because we're testing: %s %s",
+                 command, " ".join(argv))
+        return ""
+
+    argv = [command] + argv
+    return _run_program(argv, stdin=stdin, root=root, log_output=log_output,
+                        filter_stderr=filter_stderr, binary_output=True)[1]
+
+def execReadlines(command, argv, stdin=None, root='/', env_prune=None, filter_stderr=False):
     """ Execute an external command and return the line output of the command
         in real-time.
 
@@ -354,13 +404,16 @@ def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
         end of output and the process exiting. If the child process closes
         stdout and then keeps on truckin' there will be problems.
 
+        NOTE/WARNING: UnicodeDecodeError will be raised if the output of the
+                      external command can't be decoded as UTF-8.
+
         :param command: The command to run
         :param argv: The argument list
         :param stdin: The file object to read stdin from.
         :param stdout: Optional file object to redirect stdout and stderr to.
-        :param stderr: not used
         :param root: The directory to chroot to before running command.
         :param env_prune: environment variable to remove before execution
+        :param filter_stderr: Whether stderr should be excluded from the returned output
 
         Output from the file is not logged to program.log
         This returns an iterator with the lines from the command until it has finished
@@ -387,9 +440,9 @@ def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
                 except OSError:
                     pass
 
-        def next(self):
+        def __next__(self):
             # Read the next line, blocking if a line is not yet available
-            line = self._proc.stdout.readline()
+            line = self._proc.stdout.readline().decode("utf-8")
             if line == '':
                 # Output finished, wait for the process to end
                 self._proc.communicate()
@@ -407,8 +460,13 @@ def execReadlines(command, argv, stdin=None, root='/', env_prune=None):
 
     argv = [command] + argv
 
+    if filter_stderr:
+        stderr = subprocess.DEVNULL
+    else:
+        stderr = subprocess.STDOUT
+
     try:
-        proc = startProgram(argv, root=root, stdin=stdin, env_prune=env_prune, bufsize=1)
+        proc = startProgram(argv, root=root, stdin=stdin, stderr=stderr, env_prune=env_prune, bufsize=1)
     except OSError as e:
         with program_log_lock:
             program_log.error("Error running %s: %s", argv[0], e.strerror)
@@ -460,9 +518,8 @@ def _sigchld_handler(num=None, frame=None):
     for child_pid in _forever_pids:
         try:
             pid_result, status = eintr_retry_call(os.waitpid, child_pid, os.WNOHANG)
-        except OSError as e:
-            if e.errno == errno.ECHILD:
-                continue
+        except ChildProcessError:
+            continue
 
         if pid_result:
             proc_name = _forever_pids[child_pid][0]
@@ -604,7 +661,7 @@ def getDirSize(directory):
                 dsize += sinfo[stat.ST_SIZE]
 
         return dsize
-    return getSubdirSize(directory)/1024
+    return getSubdirSize(directory) // 1024
 
 ## Create a directory path.  Don't fail if the directory already exists.
 def mkdirChain(directory):
@@ -613,16 +670,7 @@ def mkdirChain(directory):
 
     """
 
-    try:
-        os.makedirs(directory, 0o755)
-    except OSError as e:
-        try:
-            if e.errno == errno.EEXIST and stat.S_ISDIR(os.stat(directory).st_mode):
-                return
-        except OSError:
-            pass
-
-        log.error("could not create directory %s: %s", dir, e.strerror)
+    os.makedirs(directory, 0o755, exist_ok=True)
 
 def get_active_console(dev="console"):
     '''Find the active console device.
@@ -685,11 +733,11 @@ def add_po_path(directory):
     """ Looks to see what translations are under a given path and tells
     the gettext module to use that path as the base dir """
     for d in os.listdir(directory):
-        if not os.path.isdir("%s/%s" %(directory,d)):
+        if not os.path.isdir("%s/%s" %(directory, d)):
             continue
-        if not os.path.exists("%s/%s/LC_MESSAGES" %(directory,d)):
+        if not os.path.exists("%s/%s/LC_MESSAGES" %(directory, d)):
             continue
-        for basename in os.listdir("%s/%s/LC_MESSAGES" %(directory,d)):
+        for basename in os.listdir("%s/%s/LC_MESSAGES" %(directory, d)):
             if not basename.endswith(".mo"):
                 continue
             log.info("setting %s as translation source for %s", directory, basename[:-3])
@@ -739,7 +787,7 @@ def dracut_eject(device):
     try:
         if not os.path.exists(DRACUT_SHUTDOWN_EJECT):
             mkdirChain(os.path.dirname(DRACUT_SHUTDOWN_EJECT))
-            f = open(DRACUT_SHUTDOWN_EJECT, "w")
+            f = open_with_perm(DRACUT_SHUTDOWN_EJECT, "w", 0o755)
             f.write("#!/bin/sh\n")
             f.write("# Created by Anaconda\n")
         else:
@@ -747,7 +795,6 @@ def dracut_eject(device):
 
         f.write("eject %s\n" % (device,))
         f.close()
-        eintr_retry_call(os.chmod, DRACUT_SHUTDOWN_EJECT, 0o755)
         log.info("Wrote dracut shutdown eject hook for %s", device)
     except (IOError, OSError) as e:
         log.error("Error writing dracut shutdown eject hook for %s: %s", device, e)
@@ -796,12 +843,12 @@ class ProxyString(object):
         ProxyString.url is the full url including username:password@
         ProxyString.noauth_url is the url without username:password@
         """
-        self.url = url
-        self.protocol = protocol
-        self.host = host
+        self.url = ensure_str(url, keep_none=True)
+        self.protocol = ensure_str(protocol, keep_none=True)
+        self.host = ensure_str(host, keep_none=True)
         self.port = str(port)
-        self.username = username
-        self.password = password
+        self.username = ensure_str(username, keep_none=True)
+        self.password = ensure_str(password, keep_none=True)
         self.proxy_auth = ""
         self.noauth_url = None
 
@@ -835,10 +882,10 @@ class ProxyString(object):
         self.protocol = m.group("protocol") or "http://"
 
         if m.group("username"):
-            self.username = unquote(m.group("username"))
+            self.username = ensure_str(unquote(m.group("username")))
 
         if m.group("password"):
-            self.password = unquote(m.group("password"))
+            self.password = ensure_str(unquote(m.group("password")))
 
         if m.group("host"):
             self.host = m.group("host")
@@ -853,8 +900,8 @@ class ProxyString(object):
         """ Parse the components of a proxy url into url and noauth_url
         """
         if self.username or self.password:
-            self.proxy_auth = "%s:%s@" % (quote(self.username) or "",
-                                          quote(self.password) or "")
+            self.proxy_auth = "%s:%s@" % (quote(self.username or ""),
+                                          quote(self.password or ""))
 
         self.url = self.protocol + self.proxy_auth + self.host + ":" + self.port
         self.noauth_url = self.protocol + self.host + ":" + self.port
@@ -912,10 +959,10 @@ def strip_accents(s):
     and returns it with all the diacritics removed.
 
     :param s: arbitrary string
-    :type s: unicode
+    :type s: str
 
     :return: s with diacritics removed
-    :rtype: unicode
+    :rtype: str
 
     """
     return ''.join((c for c in unicodedata.normalize('NFD', s)
@@ -1022,7 +1069,7 @@ def chown_dir_tree(root, uid, gid, from_uid_only=None, from_gid_only=None):
 def is_unsupported_hw():
     """ Check to see if the hardware is supported or not.
 
-        :returns:   True if this is unsupported hardware, False otherwise
+        :returns:   ``True`` if this is unsupported hardware, ``False`` otherwise
         :rtype:     bool
     """
     try:
@@ -1035,24 +1082,45 @@ def is_unsupported_hw():
         log.debug("Installing on Unsupported Hardware")
     return status
 
+def ensure_str(str_or_bytes, keep_none=True):
+    """
+    Returns a str instance for given string or ``None`` if requested to keep it.
+
+    :param str_or_bytes: string to be kept or converted to str type
+    :type str_or_bytes: str or bytes
+    :param bool keep_none: whether to keep None as it is or raise ValueError if
+                           ``None`` is passed
+    :raises ValueError: if applied on an object not being of type bytes nor str
+                        (nor NoneType if ``keep_none`` is ``False``)
+    """
+
+    if keep_none and str_or_bytes is None:
+        return None
+    elif isinstance(str_or_bytes, str):
+        return str_or_bytes
+    elif isinstance(str_or_bytes, bytes):
+        return str_or_bytes.decode(sys.getdefaultencoding())
+    else:
+        raise ValueError("str_or_bytes must be of type 'str' or 'bytes', not '%s'" % type(str_or_bytes))
+
 # Define translations between ASCII uppercase and lowercase for
 # locale-independent string conversions. The tables are 256-byte string used
-# with string.translate. If string.translate is used with a unicode string,
-# even if the string contains only 7-bit characters, string.translate will
+# with str.translate. If str.translate is used with a unicode string,
+# even if the string contains only 7-bit characters, str.translate will
 # raise a UnicodeDecodeError.
-_ASCIIupper_table = string.maketrans(string.ascii_lowercase, string.ascii_uppercase)
-_ASCIIlower_table = string.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+_ASCIIlower_table = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+_ASCIIupper_table = str.maketrans(string.ascii_lowercase, string.ascii_uppercase)
 
 def _toASCII(s):
     """Convert a unicode string to ASCII"""
-    if type(s) == types.UnicodeType:
+    if isinstance(s, str):
         # Decompose the string using the NFK decomposition, which in addition
         # to the canonical decomposition replaces characters based on
         # compatibility equivalence (e.g., ROMAN NUMERAL ONE has its own code
         # point but it's really just a capital I), so that we can keep as much
         # of the ASCII part of the string as possible.
-        s = unicodedata.normalize('NKFD', s).encode('ascii', 'ignore')
-    elif type(s) != types.StringType:
+        s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode("ascii")
+    elif not isinstance(s, bytes):
         s = ''
     return s
 
@@ -1062,7 +1130,12 @@ def upperASCII(s):
     The returned string will contain only ASCII characters. This function is
     locale-independent.
     """
-    return string.translate(_toASCII(s), _ASCIIupper_table)
+
+    # XXX: Python 3 has str.maketrans() and bytes.maketrans() so we should
+    # ideally use one or the other depending on the type of 's'. But it turns
+    # out we expect this function to always return string even if given bytes.
+    s = ensure_str(s)
+    return str.translate(_toASCII(s), _ASCIIupper_table)
 
 def lowerASCII(s):
     """Convert a string to lowercase using only ASCII character definitions.
@@ -1070,7 +1143,12 @@ def lowerASCII(s):
     The returned string will contain only ASCII characters. This function is
     locale-independent.
     """
-    return string.translate(_toASCII(s), _ASCIIlower_table)
+
+    # XXX: Python 3 has str.maketrans() and bytes.maketrans() so we should
+    # ideally use one or the other depending on the type of 's'. But it turns
+    # out we expect this function to always return string even if given bytes.
+    s = ensure_str(s)
+    return str.translate(_toASCII(s), _ASCIIlower_table)
 
 def upcase_first_letter(text):
     """
@@ -1079,9 +1157,9 @@ def upcase_first_letter(text):
     lowercases all the others. string.title() capitalizes all words in the
     string.
 
-    :type text: either a str or unicode object
+    :type text: str
     :return: the given text with the first letter upcased
-    :rtype: str or unicode (depends on the input)
+    :rtype: str
 
     """
 
@@ -1096,7 +1174,7 @@ def upcase_first_letter(text):
 def get_mount_paths(devnode):
     '''given a device node, return a list of all active mountpoints.'''
     devno = os.stat(devnode).st_rdev
-    majmin = "%d:%d" % (os.major(devno),os.minor(devno))
+    majmin = "%d:%d" % (os.major(devno), os.minor(devno))
     mountinfo = (line.split() for line in open("/proc/self/mountinfo"))
     return [info[4] for info in mountinfo if info[2] == majmin]
 
@@ -1114,11 +1192,9 @@ def have_word_match(str1, str2):
         # non-empty string cannot be found in an empty string
         return False
 
-    # Convert both arguments to unicode if not already
-    if isinstance(str1, str):
-        str1 = str1.decode('utf-8')
-    if isinstance(str2, str):
-        str2 = str2.decode('utf-8')
+    # Convert both arguments to string if not already
+    str1 = ensure_str(str1)
+    str2 = ensure_str(str2)
 
     str1 = str1.lower()
     str1_words = str1.split()
@@ -1143,20 +1219,6 @@ class DataHolder(dict):
 
     def copy(self):
         return DataHolder(**dict.copy(self))
-
-def xprogressive_delay():
-    """ A delay generator, the delay starts short and gets longer
-        as the internal counter increases.
-        For example for 10 retries, the delay will increases from
-        0.5 to 256 seconds.
-
-        :param int retry_number: retry counter
-        :returns float: time to wait in seconds
-    """
-    counter = 1
-    while True:
-        yield 0.25*(2**counter)
-        counter += 1
 
 def get_platform_groupid():
     """ Return a platform group id string
@@ -1204,27 +1266,109 @@ def ipmi_report(event):
 
     # EVM revision - always 0x4
     # Sensor type - always 0x1F for Base OS Boot/Installation Status
-    # Sensor num - passed in event
-    # Event dir & type - always 0x0 for anaconda's purposes
-    # Event data 1, 2, 3 - 0x0 for now
-    eintr_retry_call(os.write, fd, "0x4 0x1F %#x 0x0 0x0 0x0 0x0\n" % event)
-    eintr_retry_call(os.close, fd)
+    # Sensor num - always 0x0 for us
+    # Event dir & type - always 0x6f for us
+    # Event data 1 - the event code passed in
+    # Event data 2 & 3 - always 0x0 for us
+    event_string = "0x4 0x1F 0x0 0x6f %#x 0x0 0x0\n" % event
+    eintr_retry_call(os.write, fd, event_string.encode("utf-8"))
+    eintr_ignore(os.close, fd)
 
     execWithCapture("ipmitool", ["sel", "add", path])
 
     os.remove(path)
 
 # Copied from python's subprocess.py
-def eintr_retry_call(func, *args):
+def eintr_retry_call(func, *args, **kwargs):
     """Retry an interruptible system call if interrupted."""
     while True:
         try:
-            return func(*args)
-        except (OSError, IOError) as e:
-            if e.errno == errno.EINTR:
-                continue
-            raise
+            return func(*args, **kwargs)
+        except InterruptedError:
+            continue
+
+def eintr_ignore(func, *args, **kwargs):
+    """Call a function and ignore EINTR.
+
+       This is useful for calls to close() and dup2(), which can return EINTR
+       but which should *not* be retried, since by the time they return the
+       file descriptor is already closed.
+    """
+    try:
+        return func(*args, **kwargs)
+    except InterruptedError:
+        pass
 
 def parent_dir(directory):
     """Return the parent's path"""
     return "/".join(os.path.normpath(directory).split("/")[:-1])
+
+def requests_session():
+    """Return a requests.Session object with file and ftp support."""
+    session = requests.Session()
+    session.mount("file://", FileAdapter())
+    session.mount("ftp://", FTPAdapter())
+    return session
+
+_open = open
+def open(*args, **kwargs):  # pylint: disable=redefined-builtin
+    """Open a file, and retry on EINTR.
+
+       The arguments are the same as those to python's builtin open.
+
+       This is equivalent to eintr_retry_call(open, ...).  Some other
+       high-level languages handle this for you, like C's fopen.
+    """
+    return eintr_retry_call(_open, *args, **kwargs)
+
+def open_with_perm(path, mode='r', perm=0o777, **kwargs):
+    """Open a file with the given permission bits.
+
+       This is more or less the same as using os.open(path, flags, perm), but
+       with the builtin open() semantics and return type instead of a file
+       descriptor.
+
+       :param str path: The path of the file to be opened
+       :param str mode: The same thing as the mode argument to open()
+       :param int perm: What permission bits to use if creating a new file
+    """
+    def _opener(path, open_flags):
+        return eintr_retry_call(os.open, path, open_flags, perm)
+
+    return open(path, mode, opener=_opener, **kwargs)
+
+def id_generator():
+    """ Id numbers generator.
+        Generating numbers from 0 to X and increments after every call.
+
+        :returns: Generator which gives you unique numbers.
+    """
+    actual_id = 0
+    while(True):
+        yield actual_id
+        actual_id += 1
+
+def sysroot_path(path):
+    """Make the given relative or absolute path "sysrooted"
+       :param str path: path to be sysrooted
+       :returns: sysrooted path
+       :rtype: str
+    """
+    return os.path.join(getSysroot(), path.lstrip(os.path.sep))
+
+def save_screenshots():
+    """Save screenshots to the installed system"""
+    if not os.path.exists(SCREENSHOTS_DIRECTORY):
+        # there are no screenshots to copy
+        return
+    target_path = sysroot_path(SCREENSHOTS_TARGET_DIRECTORY)
+    log.info("saving screenshots taken during the installation to: %s", target_path)
+    try:
+        # create the screenshots directory
+        mkdirChain(target_path)
+        # copy all screenshots
+        for filename in os.listdir(SCREENSHOTS_DIRECTORY):
+            shutil.copy(os.path.join(SCREENSHOTS_DIRECTORY, filename), target_path)
+
+    except OSError:
+        log.exception("saving screenshots to installed system failed")

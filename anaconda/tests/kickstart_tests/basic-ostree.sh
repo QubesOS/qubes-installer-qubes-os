@@ -18,38 +18,38 @@
 #
 # Red Hat Author(s): Chris Lumens <clumens@redhat.com>
 
-kernel_args() {
-    echo vnc
-}
+. ${KSTESTDIR}/functions.sh
 
 prepare() {
     ks=$1
     tmpdir=$2
 
-    if [[ "${TEST_OSTREE_REPO}" == "" ]]; then
-        echo \$TEST_OSTREE_REPO is not set.
+    if [[ "${KSTEST_OSTREE_REPO}" == "" ]]; then
+        echo \$KSTEST_OSTREE_REPO is not set.
         return 1
     fi
 
-    sed -e "/ostreesetup/ s|REPO|${TEST_OSTREE_REPO}|" ${ks} > ${tmpdir}/kickstart.ks
+    sed -e "/ostreesetup/ s|REPO|${KSTEST_OSTREE_REPO}|" ${ks} > ${tmpdir}/kickstart.ks
     echo ${tmpdir}/kickstart.ks
 }
 
 validate() {
-    img=$1
+    disksdir=$1
+    qemuArgs=$(for d in ${disksdir}/disk-*img; do echo -drive file=${d}; done)
+    virtCatArgs=$(for d in ${disksdir}/disk-*img; do echo -a ${d}; done)
 
     # Now attempt to boot the resulting VM and see if the install
     # actually worked.  The VM will shut itself down so there's no
     # need to worry with that here.
     timeout 5m /usr/bin/qemu-kvm -m 2048 \
                                  -smp 2 \
-                                 -hda ${img} \
+                                 ${qemuArgs} \
                                  -vnc localhost:3
 
     # There should be a /root/RESULT file with results in it.  Check
     # its contents and decide whether the test finally succeeded or
     # not.
-    result=$(virt-cat -a ${img} -m /dev/sda2 /ostree/deploy/fedora-atomic/var/roothome/RESULT)
+    result=$(virt-cat ${virtCatArgs} -m /dev/mapper/fedora-root /ostree/deploy/fedora-atomic/var/roothome/RESULT)
     if [[ $? != 0 ]]; then
         status=1
         echo '*** /root/RESULT does not exist in VM image.'

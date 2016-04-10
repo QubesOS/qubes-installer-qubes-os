@@ -85,7 +85,6 @@ else
 fi
 
 export PATH=/sbin:/usr/sbin:$PATH
-export PYTHONPATH=/usr/share/anaconda/site-python
 
 if [ -x /usr/sbin/getenforce ]; then
     current=$(/usr/sbin/getenforce)
@@ -172,6 +171,12 @@ if [ ! -z "$UPDATES" ]; then
     export PYTHONPATH=/tmp/updates:$PYTHONPATH
     export LD_LIBRARY_PATH=/tmp/updates:$LD_LIBRARY_PATH
     export PATH=/tmp/updates:$PATH
+fi
+
+if [ -z $LC_ALL ]; then
+    # LC_ALL not set, set it to $LANG to make Python's default encoding
+    # detection work
+    export LC_ALL=$LANG
 fi
 
 if [ -x /usr/bin/udisks ]; then

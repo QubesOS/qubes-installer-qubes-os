@@ -26,15 +26,17 @@ from pyanaconda.i18n import _, C_, N_
 
 class TUIHub(TUIObject, common.Hub):
     """Base Hub class implementing the pyanaconda.ui.common.Hub interface.
-    It uses text based categories to look for relevant Spokes and manages
-    all the spokes it finds to have the proper category.
+       It uses text based categories to look for relevant Spokes and manages
+       all the spokes it finds to have the proper category.
 
-    :param categories: list all the spoke categories to be displayed in this Hub
-    :type categories: list of strings
+       :param categories: list all the spoke categories to be displayed in this Hub
+       :type categories: list of strings
 
-    :param title: title for this Hub
-    :type title: unicode
+       :param title: title for this Hub
+       :type title: str
 
+       .. inheritance-diagram:: TUIHub
+          :parts: 3
     """
 
     categories = []
@@ -77,7 +79,7 @@ class TUIHub(TUIObject, common.Hub):
         # only schedule the hub if it has some spokes
         return self._spoke_count != 0
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         """This methods fills the self._window list by all the objects
         we want shown on this screen. Title and Spokes mostly."""
         TUIObject.refresh(self, args)
@@ -87,8 +89,8 @@ class TUIHub(TUIObject, common.Hub):
             return tui.ColumnWidget([(3, [number]), (None, [w])], 1)
 
         # split spokes to two columns
-        left = [_prep(i, w) for i,w in self._keys.items() if i % 2 == 1]
-        right = [_prep(i, w) for i,w in self._keys.items() if i % 2 == 0]
+        left = [_prep(i, w) for i, w in self._keys.items() if i % 2 == 1]
+        right = [_prep(i, w) for i, w in self._keys.items() if i % 2 == 0]
 
         c = tui.ColumnWidget([(39, left), (39, right)], 2)
         self._window.append(c)
@@ -114,3 +116,29 @@ class TUIHub(TUIObject, common.Hub):
                         print(_("Please complete all spokes before continuing"))
                         return False
             return key
+
+    def prompt(self, args=None):
+        """Show an alternative prompt if the hub contains only one spoke.
+        Otherwise it is not readily apparent that the user needs to press
+        1 to enter the single visible spoke.
+
+        :param args: optional argument passed from switch_screen calls
+        :type args: anything
+
+        :return: returns text to be shown next to the prompt for input or None
+                 to skip further input processing
+        :rtype: str|None
+        """
+        if self._spoke_count == 1:
+            return _(u"  Please make your choice from [ '1' to enter the %(spoke_title)s spoke | '%(quit)s' to quit |\n"
+                     "  '%(continue)s' to continue | '%(refresh)s' to refresh]: ") % {
+                         'spoke_title': list(self._spokes.values())[0].title,
+                         # TRANSLATORS: 'q' to quit
+                         'quit': C_('TUI|Spoke Navigation', 'q'),
+                         # TRANSLATORS:'c' to continue
+                         'continue': C_('TUI|Spoke Navigation', 'c'),
+                         # TRANSLATORS:'r' to refresh
+                         'refresh': C_('TUI|Spoke Navigation', 'r')
+                     }
+        else:
+            return super(TUIHub, self).prompt(args)

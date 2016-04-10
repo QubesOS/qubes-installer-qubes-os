@@ -19,7 +19,7 @@
 # Red Hat Author(s): Martin Sivak <msivak@redhat.com>
 #
 
-from pyanaconda.i18n import N_, _
+from pyanaconda.i18n import N_, _, C_
 from pyanaconda.ui import common
 from pyanaconda.ui.tui import simpleline as tui
 from pyanaconda.constants_text import INPUT_PROCESSED
@@ -35,25 +35,72 @@ class ErrorDialog(tui.UIScreen):
         :type app: instance of App class
 
         :param message: the message to show to the user
-        :type message: unicode
+        :type message: str
         """
 
         tui.UIScreen.__init__(self, app)
         self._message = message
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         tui.UIScreen.refresh(self, args)
         text = tui.TextWidget(self._message)
         self._window.append(tui.CenterWidget(text))
         return True
 
-    def prompt(self, args = None):
+    def prompt(self, args=None):
         return _("Press enter to exit.")
 
     def input(self, args, key):
         """This dialog is closed by any input."""
         self.close()
         return INPUT_PROCESSED
+
+class PasswordDialog(tui.UIScreen):
+    """Dialog screen for password input."""
+
+    title = N_("Password")
+
+    def __init__(self, app, device):
+        """
+        :param app: the running application reference
+        :type app: instance of App class
+        """
+
+        tui.UIScreen.__init__(self, app)
+        self._device = device
+        self._message = "You must enter your LUKS passphrase to decrypt device %s" % device
+        self._password = None
+
+    def refresh(self, args=None):
+        tui.UIScreen.refresh(self, args)
+        text = tui.TextWidget(self._message)
+        self._window.append(tui.CenterWidget(text))
+        self._window.append(u"")
+        return True
+
+    def prompt(self, args=None):
+        self._password = self.app.raw_input(_("Passphrase: "), hidden=True)
+        if not self._password:
+            return None
+        else:
+            # this may seem innocuous, but it's really a giant hack; we should
+            # not be calling close() from prompt(), but the input handling code
+            # in the TUI is such that without this very simple workaround, we
+            # would be forever pelting users with a prompt to enter their pw
+            self.close()
+
+    @property
+    def answer(self):
+        """The response can be None (no response) or the password entered."""
+        return self._password
+
+    def input(self, args, key):
+        if key:
+            self._password = key
+            self.close()
+            return True
+        else:
+            return False
 
 class YesNoDialog(tui.UIScreen):
     """Dialog screen for Yes - No questions."""
@@ -73,7 +120,7 @@ class YesNoDialog(tui.UIScreen):
         self._message = message
         self._response = None
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         tui.UIScreen.refresh(self, args)
         text = tui.TextWidget(self._message)
         self._window.append(tui.CenterWidget(text))
@@ -81,15 +128,22 @@ class YesNoDialog(tui.UIScreen):
         return True
 
     def prompt(self, args = None):
-        return _("Please respond 'yes' or 'no': ")
+        return _("Please respond '%(yes)s' or '%(no)s': ") % {
+            # TRANSLATORS: 'yes' as positive reply
+            "yes": C_('TUI|Spoke Navigation', 'yes'),
+            # TRANSLATORS: 'no' as negative reply
+            "no": C_('TUI|Spoke Navigation', 'no')
+        }
 
     def input(self, args, key):
-        if key == _("yes"):
+        # TRANSLATORS: 'yes' as positive reply
+        if key == C_('TUI|Spoke Navigation', 'yes'):
             self._response = True
             self.close()
             return None
 
-        elif key == _("no"):
+        # TRANSLATORS: 'no' as negative reply
+        elif key == C_('TUI|Spoke Navigation', 'no'):
             self._response = False
             self.close()
             return None
@@ -116,6 +170,6 @@ class TUIObject(tui.UIScreen, common.UIObject):
     def showable(self):
         return True
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         """Put everything to display into self.window list."""
         tui.UIScreen.refresh(self, args)

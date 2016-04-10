@@ -49,7 +49,7 @@ DD_ALL = "/tmp/DD"
 DD_FIRMWARE = "/tmp/DD/lib/firmware"
 DD_RPMS = "/tmp/DD-*"
 
-TRANSLATIONS_UPDATE_DIR="/tmp/updates/po"
+TRANSLATIONS_UPDATE_DIR = "/tmp/updates/po"
 
 ANACONDA_CLEANUP = "anaconda-cleanup"
 MOUNT_DIR = "/run/install"
@@ -139,7 +139,7 @@ PASSWORD_EMPTY_ERROR = N_("The password is empty.")
 PASSWORD_CONFIRM_ERROR_GUI = N_("The passwords do not match.")
 PASSWORD_CONFIRM_ERROR_TUI = N_("The passwords you entered were different.  Please try again.")
 PASSWORD_WEAK = N_("The password you have provided is weak. %s")
-PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s. %s")
+PASSWORD_WEAK_WITH_ERROR = N_("The password you have provided is weak: %s.")
 PASSWORD_WEAK_CONFIRM = N_("You have provided a weak password. Press Done again to use anyway.")
 PASSWORD_WEAK_CONFIRM_WITH_ERROR = N_("You have provided a weak password: %s. Press Done again to use anyway.")
 PASSWORD_ASCII = N_("The password you have provided contains non-ASCII characters. You may not be able to switch between keyboard layouts to login. Press Done to continue.")
@@ -156,6 +156,10 @@ PW_ASCII_CHARS = string.digits + string.ascii_letters + string.punctuation + " "
 # Recognizing a tarfile
 TAR_SUFFIX = (".tar", ".tbz", ".tgz", ".txz", ".tar.bz2", "tar.gz", "tar.xz")
 
+# screenshots
+SCREENSHOTS_DIRECTORY = "/tmp/anaconda-screenshots"
+SCREENSHOTS_TARGET_DIRECTORY = "/root/anaconda-screenshots"
+
 # cmdline arguments that append instead of overwrite
 CMDLINE_APPEND = ["modprobe.blacklist"]
 
@@ -168,10 +172,10 @@ import logging
 LOGLVL_LOCK = logging.DEBUG-1
 
 # Constants for reporting status to IPMI.  These are from the IPMI spec v2 rev1.1, page 512.
-IPMI_STARTED  = 0x7         # installation started
+IPMI_STARTED = 0x7          # installation started
 IPMI_FINISHED = 0x8         # installation finished successfully
-IPMI_ABORTED  = 0x9         # installation finished unsuccessfully, due to some non-exn error
-IPMI_FAILED   = 0xA         # installation hit an exception
+IPMI_ABORTED = 0x9          # installation finished unsuccessfully, due to some non-exn error
+IPMI_FAILED = 0xA           # installation hit an exception
 
 
 # for how long (in seconds) we try to wait for enough entropy for LUKS
@@ -180,3 +184,8 @@ MAX_ENTROPY_WAIT = 10 * 60
 
 # X display number to use
 X_DISPLAY_NUMBER = 1
+
+# Payload status messages
+PAYLOAD_STATUS_PROBING_STORAGE = N_("Probing storage...")
+PAYLOAD_STATUS_PACKAGE_MD = N_("Downloading package metadata...")
+PAYLOAD_STATUS_GROUP_MD = N_("Downloading group metadata...")

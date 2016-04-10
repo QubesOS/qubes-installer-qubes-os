@@ -24,7 +24,7 @@ from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
 from pyanaconda.ui.tui.tuiobject import YesNoDialog
 from pyanaconda.constants import USEVNC, USETEXT, IPMI_ABORTED
 from pyanaconda.constants_text import INPUT_PROCESSED
-from pyanaconda.i18n import N_, _
+from pyanaconda.i18n import N_, _, C_
 from pyanaconda.ui.communication import hubQ
 from pyanaconda.ui.tui import exception_msg_handler
 from pyanaconda.iutil import execWithRedirect
@@ -39,6 +39,10 @@ def exception_msg_handler_and_exit(event, data):
     sys.exit(1)
 
 class AskVNCSpoke(NormalTUISpoke):
+    """
+       .. inheritance-diagram:: AskVNCSpoke
+          :parts: 3
+    """
     title = N_("VNC")
 
     # This spoke is kinda standalone, not meant to be used with a hub
@@ -70,7 +74,7 @@ class AskVNCSpoke(NormalTUISpoke):
     def indirect(self):
         return True
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         NormalTUISpoke.refresh(self, args)
 
         self._window += [TextWidget(self._message), ""]
@@ -103,7 +107,8 @@ class AskVNCSpoke(NormalTUISpoke):
         except ValueError:
             pass
 
-        if key.lower() == _('q'):
+        # TRANSLATORS: 'q' to quit
+        if key.lower() == C_('TUI|Spoke Navigation', 'q'):
             d = YesNoDialog(self.app, _(self.app.quit_message))
             self.app.switch_screen_modal(d)
             if d.answer:
@@ -111,7 +116,7 @@ class AskVNCSpoke(NormalTUISpoke):
                 if can_touch_runtime_system("Quit and Reboot"):
                     execWithRedirect("systemctl", ["--no-wall", "reboot"])
                 else:
-                    exit(1)
+                    sys.exit(1)
         else:
             return key
 
@@ -119,6 +124,10 @@ class AskVNCSpoke(NormalTUISpoke):
         self.data.vnc.enabled = self._usevnc
 
 class VNCPassSpoke(NormalTUISpoke):
+    """
+       .. inheritance-diagram:: VNCPassSpoke
+          :parts: 3
+    """
     title = N_("VNC Password")
 
     def __init__(self, app, data, storage, payload, instclass, message=None):
@@ -138,13 +147,13 @@ class VNCPassSpoke(NormalTUISpoke):
     def completed(self):
         return True # We're always complete
 
-    def refresh(self, args = None):
+    def refresh(self, args=None):
         NormalTUISpoke.refresh(self, args)
         self._window += [TextWidget(self._message), ""]
 
         return True
 
-    def prompt(self, args = None):
+    def prompt(self, args=None):
         """Override prompt as password typing is special."""
         p1 = getpass.getpass(_("Password: "))
         p2 = getpass.getpass(_("Password (confirm): "))

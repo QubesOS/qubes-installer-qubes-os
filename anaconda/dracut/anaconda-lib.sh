@@ -86,7 +86,7 @@ anaconda_live_root_dir() {
         iso=${isodir}/${iso#$mnt}
         mount -o loop,ro $iso $repodir
         img=$(find_runtime $repodir) || { warn "$iso has no suitable runtime"; }
-        anaconda_auto_updates $isodir/$path/images
+        anaconda_auto_updates $repodir/images
     fi
     # FIXME: make rd.live.ram clever enough to do this for us
     if [ "$1" = "--copy-to-ram" ]; then
@@ -97,7 +97,17 @@ anaconda_live_root_dir() {
         umount $repodir
         [ -n "$iso" ] && umount $isodir
     fi
-    [ -e "$img" ] && /sbin/dmsquash-live-root $img
+    anaconda_mount_sysroot $img
+}
+
+anaconda_mount_sysroot() {
+    local img="$1"
+    if [ -e "$img" ]; then
+        /sbin/dmsquash-live-root $img
+        # dracut & systemd only mount things with root=live: so we have to do this ourselves
+        # See https://bugzilla.redhat.com/show_bug.cgi?id=1232411
+        printf 'mount /dev/mapper/live-rw %s\n' "$NEWROOT" > $hookdir/mount/01-$$-anaconda.sh
+    fi
 }
 
 # find updates.img/product.img/RHUpdates and unpack/copy them so they'll
@@ -203,6 +213,15 @@ parse_kickstart() {
     [ -e "$parsed_kickstart" ] && cp $parsed_kickstart /run/install/ks.cfg
 }
 
+# print a list of net devices that dracut says are set up.
+online_netdevs() {
+    local netif=""
+    for netif in /tmp/net.*.did-setup; do
+        netif=${netif#*.}; netif=${netif%.*}
+        [ -d "/sys/class/net/$netif" ] && echo $netif
+    done
+}
+
 # This is where we actually run the kickstart. Whee!
 # We can't just add udev rules (we'll miss devices that are already active),
 # and we can't just run the scripts manually (we'll miss devices that aren't
@@ -226,44 +245,33 @@ run_kickstart() {
     # re-parse new cmdline stuff from the kickstart
     . $hookdir/cmdline/*parse-anaconda-repo.sh
     . $hookdir/cmdline/*parse-livenet.sh
-    # TODO: parse for other stuff ks might set (dd? other stuff?)
-    case "$repotype" in
-        http*|ftp|nfs*) do_net=1 ;;
-        cdrom|hd|bd)    do_disk=1 ;;
+    . $hookdir/cmdline/*parse-anaconda-dd.sh
+
+    # Figure out whether we need to retry disk/net stuff
+    case "$root" in
+        anaconda-net:*)   do_net=1 ;;
+        anaconda-disk:*)  do_disk=1 ;;
+        anaconda-auto-cd) do_disk=1 ;;
     esac
-    [ "$root" = "anaconda-auto-cd" ] && do_disk=1
+    [ -f /tmp/dd_net ] && do_net=1
+    [ -f /tmp/dd_disk ] && do_disk=1
 
-    # kickstart Driver Disk Handling
-    # parse-kickstart may have added network inst.dd entries to the cmdline
-    # Or it may have written devices to /tmp/dd_ks
-
-    # Does network need to be rerun?
-    dd_args="$(getargs dd= inst.dd=)"
-    for dd in $dd_args; do
-        case "${dd%%:*}" in
-            http|https|ftp|nfs|nfs4)
-                do_net=1
-                rm /tmp/dd_net.done
-                break
-            ;;
-        esac
-    done
-
-    # Run the driver update UI for disks
-    if [ -e "/tmp/dd_args_ks" ]; then
-        # TODO: Seems like this should be a function, a mostly same version is used in 3 places
-        start_driver_update "Kickstart Driver Update Disk"
-        rm /tmp/dd_args_ks
-    fi
-
-    # replay udev events to trigger actions
+    # disk: replay udev events to trigger actions
     if [ "$do_disk" ]; then
+        # set up new rules
         . $hookdir/pre-trigger/*repo-genrules.sh
+        . $hookdir/pre-trigger/*driver-updates-genrules.sh
         udevadm control --reload
+        # trigger the rules for all the block devices we see
         udevadm trigger --action=change --subsystem-match=block
     fi
+
+    # net: re-run online hook
     if [ "$do_net" ]; then
-        udevadm trigger --action=online --subsystem-match=net
+        udevadm trigger --action=change --subsystem-match=net
+        for netif in $(online_netdevs); do
+            source_hook initqueue/online $netif
+        done
     fi
 
     # and that's it - we're back to the mainloop.
@@ -278,16 +286,6 @@ wait_for_updates() {
     echo "[ -e /tmp/liveupdates.done ]" > $hookdir/initqueue/finished/updates.sh
 }
 
-start_driver_update() {
-    local title="$1"
-
-    tty=$(find_tty)
-
-    # save module state
-    cat /proc/modules > /tmp/dd_modules
-
-    info "Starting $title Service on $tty"
-    systemctl start driver-updates@$tty.service
-    status=$(systemctl -p ExecMainStatus show driver-updates@$tty.service)
-    info "DD status=$status"
+wait_for_dd() {
+    echo "[ -e /tmp/dd.done ]" > $hookdir/initqueue/finished/dd.sh
 }

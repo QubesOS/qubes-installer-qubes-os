@@ -35,14 +35,13 @@ import functools
 import re
 
 from pyanaconda.constants import SIZE_UNITS_DEFAULT
-from pyanaconda.product import productName
 from pyanaconda.iutil import lowerASCII
 from pyanaconda.storage_utils import size_from_input
 from pyanaconda.ui.helpers import InputCheck
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.helpers import GUIDialogInputCheckHandler
 from pyanaconda.ui.gui.utils import fancy_set_sensitive, really_hide, really_show
-from pyanaconda.i18n import _, N_, C_
+from pyanaconda.i18n import _, N_, C_, CN_
 
 from blivet.size import Size
 from blivet.platform import platform
@@ -71,9 +70,9 @@ CONTAINER_DIALOG_TEXT = N_("Please create a name for this %(container_type)s "
 
 ContainerType = namedtuple("ContainerType", ["name", "label"])
 
-CONTAINER_TYPES = {DEVICE_TYPE_LVM:       ContainerType(N_("Volume Group"), N_("_Volume Group:")),
-                   DEVICE_TYPE_LVM_THINP: ContainerType(N_("Volume Group"), N_("_Volume Group:")),
-                   DEVICE_TYPE_BTRFS:     ContainerType(N_("Volume"), N_("_Volume:"))}
+CONTAINER_TYPES = {DEVICE_TYPE_LVM:       ContainerType(N_("Volume Group"), CN_("GUI|Custom Partitioning|Configure|Devices", "_Volume Group:")),
+                   DEVICE_TYPE_LVM_THINP: ContainerType(N_("Volume Group"), CN_("GUI|Custom Partitioning|Configure|Devices", "_Volume Group:")),
+                   DEVICE_TYPE_BTRFS:     ContainerType(N_("Volume"), CN_("GUI|Custom Partitioning|Configure|Devices", "_Volume:"))}
 
 # These cannot be specified as mountpoints
 system_mountpoints = ["/dev", "/proc", "/run", "/sys"]
@@ -94,7 +93,7 @@ def size_from_entry(entry, lower_bound=None, units=None):
         to a smaller value. The default for lower_bound is None, yielding
         no rounding.
     """
-    size_text = entry.get_text().decode("utf-8").strip()
+    size_text = entry.get_text().strip()
     size = size_from_input(size_text, units=units)
     if size is None:
         return None
@@ -307,7 +306,7 @@ def containerRaidLevelsSupported(device_type):
     return set()
 
 def get_container_type(device_type):
-    return CONTAINER_TYPES.get(device_type, ContainerType(_("container"), _("container")))
+    return CONTAINER_TYPES.get(device_type, ContainerType(N_("container"), CN_("GUI|Custom Partitioning|Configure|Devices", "container")))
 
 class AddDialog(GUIObject):
     builderObjects = ["addDialog", "mountPointStore", "mountPointCompletion", "mountPointEntryBuffer"]
@@ -384,9 +383,13 @@ class ConfirmDeleteDialog(GUIObject):
 
         if rootName and "_" in rootName:
             rootName = rootName.replace("_", "__")
+        delete_all_text = (C_("GUI|Custom Partitioning|Confirm Delete Dialog",
+                               "Delete _all other file systems in the %s root as well.") +
+                           "\n" +
+                           C_("GUI|Custom Partitioning|Confirm Delete Dialog",
+                               "(This includes those shared with other installed operating systems.)"))
         self._removeAll.set_label(
-                C_("GUI|Custom Partitioning|Confirm Delete Dialog",
-                    "Delete _all other file systems in the %s root as well.")
+                delete_all_text
                 % rootName)
         self._removeAll.set_sensitive(rootName is not None)
 
@@ -471,8 +474,6 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
     MIN_SIZE_ENTRY = Size("1 MiB")
 
     def __init__(self, *args, **kwargs):
-        GUIDialogInputCheckHandler.__init__(self)
-
         # these are all absolutely required. not getting them is fatal.
         self._disks = kwargs.pop("disks")
         free = kwargs.pop("free")
@@ -493,13 +494,14 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         GUIObject.__init__(self, *args, **kwargs)
 
         self._grabObjects()
+        GUIDialogInputCheckHandler.__init__(self, self._save_button)
 
         # set up the dialog labels with device-type-specific text
         container_type = get_container_type(self.device_type)
-        title_text = _(CONTAINER_DIALOG_TITLE) % {"container_type": container_type.name.upper()}
+        title_text = _(CONTAINER_DIALOG_TITLE) % {"container_type": _(container_type.name).upper()}
         self._title_label.set_text(title_text)
 
-        dialog_text = _(CONTAINER_DIALOG_TEXT) % {"container_type": container_type.name.lower()}
+        dialog_text = _(CONTAINER_DIALOG_TEXT) % {"container_type": _(container_type.name).lower()}
         self._dialog_label.set_text(dialog_text)
 
         # populate the dialog widgets
@@ -580,9 +582,8 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
             if disk.id == disk_id:
                 return disk
 
-    def on_save_clicked(self, button):
+    def _save_clicked(self):
         if self.exists:
-            self.window.destroy()
             return
 
         model, paths = self._treeview.get_selection().get_selected_rows()
@@ -629,14 +630,30 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         self.size_policy = size
 
         self._error_label.set_text("")
-        self.window.destroy()
 
     def run(self):
         while True:
             self._error = None
             rc = self.window.run()
-            if not self._error:
-                return rc
+            if rc == 1:
+                # Save clicked and input validation passed, try saving it
+                if self.on_ok_clicked():
+                    self._save_clicked()
+
+                    # If that failed, try again
+                    if self._error:
+                        continue
+                    else:
+                        break
+                # Save clicked with invalid input, try again
+                else:
+                    continue
+            else:
+                # Cancel or something similar, just exit
+                break
+
+        self.window.destroy()
+        return rc
 
     def on_size_changed(self, combo):
         active_index = combo.get_active()
@@ -660,7 +677,8 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
             Choose a default RAID level.
         """
         if not containerRaidLevelsSupported(self.device_type):
-            map(really_hide, [self._raidLevelLabel, self._raidLevelCombo])
+            for widget in [self._raidLevelLabel, self._raidLevelCombo]:
+                really_hide(widget)
             return
 
         raid_level = self.raid_level or defaultContainerRaidLevel(self.device_type)
@@ -673,7 +691,8 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
                 self._raidLevelCombo.set_active(i)
                 break
 
-        map(really_show, [self._raidLevelLabel, self._raidLevelCombo])
+        for widget in [self._raidLevelLabel, self._raidLevelCombo]:
+            really_show(widget)
         fancy_set_sensitive(self._raidLevelCombo, not self.exists)
 
     def _checkNameEntry(self, inputcheck):
@@ -685,10 +704,3 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
             return _("Invalid container name")
 
         return InputCheck.CHECK_OK
-
-    def set_status(self, inputcheck):
-        # Use the superclass set_status to set the error message
-        GUIDialogInputCheckHandler.set_status(self, inputcheck)
-
-        # Change the sensitivity of the Save button
-        self._save_button.set_sensitive(next(self.failed_checks, None) == None)
