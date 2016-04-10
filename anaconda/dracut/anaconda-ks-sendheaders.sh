@@ -2,7 +2,15 @@
 # anaconda-ks-sendheaders.sh - set various HTTP headers for kickstarting
 
 [ -f /tmp/.ks_sendheaders ] && return
-command -v set_http_header >/dev/null || . /lib/url-lib.sh
+
+if ! command -v set_http_header >/dev/null; then
+    if ! [ -r /lib/url-lib.sh ]; then
+        alias set_http_header=:
+        return
+    fi
+
+    . /lib/url-lib.sh
+fi
 
 # inst.ks.sendmac: send MAC addresses in HTTP headers
 if getargbool 0 kssendmac inst.ks.sendmac; then
