@@ -1,6 +1,6 @@
 <%page args="configdir, KERNELDIR, efiarch, isolabel, kver"/>
 <%
-from string import lower
+EFIARCH_LOWER=efiarch.lower()
 EFIBOOTDIR="EFI/BOOT"
 APPLE_EFI_ICON=inroot+"/usr/share/pixmaps/bootloader/fedora.icns"
 APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
@@ -8,16 +8,16 @@ APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
 
 mkdir ${EFIBOOTDIR}
 mkdir ${EFIBOOTDIR}/fonts/
-install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
+install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
 ## keep also under original name to make mkefiboot --apple happy
-##install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
+##install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/grub${EFIARCH_LOWER}.efi
 install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
 
 
 # For Secure Boot restore those files (keep in mind 32MB limit on efiboot.img
 # imposed by ISO9660, details in #794):
 #install boot/efi/EFI/*/shim.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
-#install boot/efi/EFI/*/gcd${efiarch|lower}.efi ${EFIBOOTDIR}/grub${efiarch|lower}.efi
+#install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/grub${EFIARCH_LOWER}.efi
 #install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
 
 
