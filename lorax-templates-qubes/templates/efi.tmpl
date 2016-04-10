@@ -34,15 +34,26 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
     eficonf = "%s/grub.cfg" % (EFIBOOTDIR, )
     xenconf = "%s/xen.cfg" % (EFIBOOTDIR, )
     args = "--label=ANACONDA --debug"
-    scsi_modules = "3w-9xxx 3w-sas 3w-xxxx BusLogic a100u2w aacraid advansys aic79xx aic7xxx am53c974 arcmsr atp870u bfa bnx2fc csiostor dc395x dmx3191d esas2r esp_scsi fcoe fnic gdth hpsa hptiop hv_storvsc initio ipr ips isci iscsi_boot_sysfs libfc libfcoe libiscsi libosd libsas lpfc megaraid megaraid_mbox megaraid_mm megaraid_sas mpt2sas mpt3sas mvsas mvumi osd pm80xx pmcraid qla1280 qla2xxx qla4xxx raid_class scsi_debug scsi_dh_emc scsi_dh_rdac scsi_transport_fc scsi_transport_iscsi scsi_transport_sas scsi_transport_spi scsi_transport_srp stex sym53c8xx ufshcd virtio_scsi vmw_pvscsi wd719x"
-    extra_modules = "affs befs coda cuse dlm gfs2 mptfc ncpfs nilfs2 ocfs2 ocfs2_dlm ocfs2_dlmfs ocfs2_nodemanager ocfs2_stack_o2cb ocfs2_stack_user ocfs2_stackglue sctp sysv ubifs ufs"
+    scsi_modules   = " 3w-9xxx 3w-sas 3w-xxxx BusLogic a100u2w aacraid advansys aic79xx aic7xxx am53c974 arcmsr atp870u bfa bnx2fc csiostor dc395x dmx3191d esas2r esp_scsi fcoe fnic gdth hpsa hptiop hv_storvsc initio ipr ips isci iscsi_boot_sysfs libfc libfcoe libiscsi libosd libsas lpfc megaraid megaraid_mbox megaraid_mm megaraid_sas mpt2sas mpt3sas mvsas mvumi osd pm80xx pmcraid qla1280 qla2xxx qla4xxx raid_class scsi_debug scsi_dh_emc scsi_dh_rdac scsi_transport_fc scsi_transport_iscsi scsi_transport_sas scsi_transport_spi scsi_transport_srp stex sym53c8xx ufshcd virtio_scsi vmw_pvscsi wd719x"
+    extra_modules  = " affs befs coda cuse dlm gfs2 mptfc ncpfs nilfs2 ocfs2 ocfs2_dlm ocfs2_dlmfs ocfs2_nodemanager ocfs2_stack_o2cb ocfs2_stack_user ocfs2_stackglue sctp sysv ubifs ufs"
+    extra_modules += " 9p cachefiles ceph cramfs fscache minix blocklayoutdriver grace nfs nfsv4 objlayoutdriver romfs btrfs xfs cifs drbd sunrpc sctp mwifiex f2fs reiserfs jfs"
+    extra_modules += " dns_resolver udp_tunnel ip6_udp_tunnel rfkill cfg80211 virtio virtio_mmio virtio_pci virtio_ring  libertas libertas_sdio 9pnet libceph rc-core memstick mspro_block mptbase mptsas mptscsih mptspi rtsx_pci rtsx_usb cb710 mic_bus scif_bus mic_card tifm_core mmc_block mmc_core cb710-mmc mtk-sd rtsx_pci_sdmmc rtsx_usb_sdmmc sdhci-acpi sdhci sdhci-pci sdhci-pltfm sdricoh_cs tifm_sd toshsd ushc via-sdmmc vub300 wbsd mtd_blkdevs mtdblock mtd mdio vxlan libertas libertas_sdio nd_blk nd_btt nd_pmem i82092 pd6729 yenta_socket pps_core ptp"
+    # The word boundaries are needed to avoid matching squashfs
+    extra_modules += " \\<hfs\\> hfsplus"
+    extra_modules += " ib_addr ib_cm ib_core ib_mad ib_sa ib_ucm ib_umad ib_uverbs iw_cm rdma_cm rdma_ucm iw_cxgb3 iw_cxgb4 mlx4_ib ib_mthca iw_nes ib_qib ib_ipoib ib_iser ib_isert ib_srp ib_srpt"
+    extra_modules += " cxgb3 cxgb4 mlx4_core mlx4_en"
+    extra_dracut_modules  = " multipath modsign crypt shutdown plymouth fcoe fcoe-uefi nfs iscsi ifcfg"
+    extra_dracut_modules += " btrfs lvm qemu qemu-net systemd-bootchart systemd-networkd virtfs mlx4 rdma cifs livenet network kernel-network-modules"
     if disk: args += " --disk"
     if imgtype == "apple": args += ' --apple --icon=%s --diskname=%s --product="%s %s"' % (APPLE_EFI_ICON, APPLE_EFI_DISKNAME, product.name, product.version)
     %>
     %if include_kernel:
         copy ${KERNELDIR}/vmlinuz ${EFIBOOTDIR}
         runcmd chroot ${inroot} mkdir /boot/efi/EFI/qubes
-        runcmd chroot ${inroot} dracut --nomdadmconf --nolvmconf --xz --install '/.buildstamp' --add 'anaconda pollcdrom' --omit "multipath modsign systemd crypt shutdown plymouth fcoe fcoe-uefi nfs iscsi ifcfg" --omit-drivers="${scsi_modules}" --omit-drivers="${extra_modules}" /boot/efi/EFI/qubes/initrd-small.img ${kver}
+        runcmd chroot ${inroot} dracut --nomdadmconf --nolvmconf --nofscks --no-early-microcode --no-hostonly --xz --install '/.buildstamp' \
+          --add 'anaconda pollcdrom dmsquash-live' \
+          --omit="${extra_dracut_modules}" --omit-drivers="${scsi_modules}" --omit-drivers="${extra_modules}" \
+          /boot/efi/EFI/qubes/initrd-small.img ${kver}
         install boot/efi/EFI/qubes/initrd-small.img ${EFIBOOTDIR}/initrd.img
     %endif
     install ${configdir}/grub2-efi.cfg ${eficonf}
