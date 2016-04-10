@@ -1080,7 +1080,6 @@
     <default>true</default>
     <uservisible>false</uservisible>
     <packagelist>
-      <packagereq>desktop-backgrounds-compat</packagereq>
       <packagereq>xfce4-panel</packagereq>
       <packagereq>xfce4-session</packagereq>
       <packagereq>xfce4-settings</packagereq>
