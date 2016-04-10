@@ -23,8 +23,8 @@ Url:       http://fedoraproject.org/wiki/pykickstart
 # make po-pull && make archive
 # The tarball will be in the current directory.
 Source0:   %{name}-%{version}.tar.gz
-Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
-Patch1: 0002-disable-test.patch
+#Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
+#Patch1: 0002-disable-test.patch
 Patch2: repo-gpgkey-option.patch
 BuildArch: noarch
 
@@ -75,8 +75,8 @@ the pykickstart package.
 %prep
 %setup -q
 
-%patch0 -p1
-%patch1 -p1
+#patch0 -p1
+#patch1 -p1
 %patch2 -p1
 
 rm -rf %{py3dir}
