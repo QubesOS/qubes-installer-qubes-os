@@ -121,7 +121,7 @@ SHUT_UP_GCC="-Wno-unused-result"
 CFLAGS="$CFLAGS -Wall -Werror $SHUT_UP_GCC"
 
 # Get the release number from the spec file
-rel="`awk '/Release:/ { split($2, r, "%"); print r[[1]] }' $srcdir/anaconda.spec`"
+rel="`awk '/^Release:/ { split($2, r, "%"); print r[[1]] }' $srcdir/anaconda.spec`"
 AC_SUBST(PACKAGE_RELEASE, [$rel])
 
 # Perform arch related tests
