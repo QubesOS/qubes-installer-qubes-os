@@ -164,7 +164,7 @@
       <packagereq type="mandatory">coreutils</packagereq>
       <packagereq type="mandatory">cronie</packagereq>
       <packagereq type="mandatory">curl</packagereq>
-      <packagereq type="mandatory">dhclient</packagereq>
+      <packagereq type="mandatory">dhcp-client</packagereq>
       <packagereq type="mandatory">e2fsprogs</packagereq>
       <packagereq type="mandatory">filesystem</packagereq>
       <packagereq type="mandatory">glibc</packagereq>
@@ -230,8 +230,6 @@
       <packagereq type="mandatory">pcmciautils</packagereq>
       <packagereq type="mandatory">perf</packagereq>
       <packagereq type="mandatory">pinfo</packagereq>
-      <packagereq type="mandatory">pm-utils</packagereq>
-      <packagereq type="mandatory">prelink</packagereq>
       <packagereq type="mandatory">qubes-release-notes</packagereq>
       <packagereq type="mandatory">quota</packagereq>
       <packagereq type="mandatory">systemd</packagereq>
@@ -247,7 +245,6 @@
       <packagereq type="mandatory">usbutils</packagereq>
       <packagereq type="mandatory">vim-enhanced</packagereq>
       <packagereq type="mandatory">which</packagereq>
-      <packagereq type="mandatory">yum-presto</packagereq>
       <packagereq type="mandatory">yum-utils</packagereq>
       <packagereq type="mandatory">zip</packagereq>
     </packagelist>
@@ -438,11 +435,11 @@
       <packagereq type="default">lohit-gujarati-fonts</packagereq>
       <packagereq type="default">lohit-gurmukhi-fonts</packagereq>
       <packagereq type="default">lohit-kannada-fonts</packagereq>
-      <packagereq type="default">lohit-odia-fonts</packagereq>
       <packagereq type="default">lohit-tamil-fonts</packagereq>
       <packagereq type="default">lohit-telugu-fonts</packagereq>
-      <packagereq type="default">naver-nanum-gothic-fonts</packagereq>
-      <packagereq type="default">paktype-naskh-basic-fonts</packagereq>
+      <packagereq type="default">nhn-nanum-gothic-coding-fonts</packagereq>
+      <packagereq type="default">nhn-nanum-gothic-light-fonts</packagereq>
+      <packagereq type="default">paktype-naqsh-fonts</packagereq>
       <packagereq type="default">paratype-pt-sans-fonts</packagereq>
       <packagereq type="default">sil-abyssinica-fonts</packagereq>
       <packagereq type="default">sil-mingzat-fonts</packagereq>
@@ -567,62 +564,8 @@
       <packagereq type="optional">google-droid-sans-fonts</packagereq>
       <packagereq type="optional">google-droid-sans-mono-fonts</packagereq>
       <packagereq type="optional">google-droid-serif-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-armenian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-avestan-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-bengali-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-bengali-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-brahmi-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-carian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-cherokee-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-coptic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-deseret-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-devanagari-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-devanagari-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-egyptian-hieroglyphs-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-ethiopic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-georgian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-glagolitic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-gujarati-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-gujarati-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-hanunno-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-hebrew-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-imperial-aramaic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-kaithi-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-kannada-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-kannada-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-kayah-li-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-kharoshthi-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-khmer-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-khmer-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-lao-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-lao-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-lycian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-lydian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-malayalam-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-malayalam-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-nko-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-old-south-arabian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-old-turkic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-osmanya-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-phoenician-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-shavian-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-symbols-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-tamil-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-tamil-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-telugu-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-telugu-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-thai-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-thai-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-ugaritic-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-ui-fonts</packagereq>
-      <packagereq type="optional">google-noto-sans-vai-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-armenian-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-georgian-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-khmer-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-lao-fonts</packagereq>
-      <packagereq type="optional">google-noto-serif-thai-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-oriya-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-oriya-ui-fonts</packagereq>
       <packagereq type="optional">grimmer-proggy-tinysz-fonts</packagereq>
       <packagereq type="optional">gubbi-fonts</packagereq>
       <packagereq type="optional">hanazono-fonts</packagereq>
@@ -1065,7 +1008,7 @@
     <uservisible>false</uservisible>
     <packagelist>
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
-      <packagereq type="mandatory">firstboot</packagereq>
+      <packagereq type="mandatory">initial-setup</packagereq>
       <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">gnome-packagekit</packagereq>
       <packagereq type="mandatory">mesa-dri-drivers</packagereq>
@@ -1082,7 +1025,6 @@
     <default>true</default>
     <uservisible>false</uservisible>
     <packagelist>
-      <packagereq type="mandatory">kcm_touchpad</packagereq>
       <packagereq type="mandatory">ksnapshot</packagereq>
       <packagereq type="mandatory">kdm</packagereq>
       <packagereq type="mandatory">mesa-libEGL</packagereq>
@@ -1108,8 +1050,7 @@
       <packagereq>xfconf</packagereq>
       <packagereq>xfwm4</packagereq>
       <packagereq>xfdesktop</packagereq>
-      <packagereq>ConsoleKit</packagereq>
-      <packagereq>firstboot</packagereq>
+      <packagereq>initial-setup</packagereq>
       <!-- FIXME? <packagereq>fedora-icon-theme</packagereq>-->
       <packagereq>lightdm-gtk</packagereq>
       <packagereq>gtk-xfce-engine</packagereq>
@@ -1122,11 +1063,9 @@
       <packagereq>xfce4-terminal</packagereq>
       <packagereq>xfwm4-theme-nodoka</packagereq>
       <packagereq>xscreensaver-base</packagereq>
-      <packagereq>ConsoleKit-x11</packagereq>
       <packagereq>xdg-user-dirs-gtk</packagereq>
       <packagereq>adwaita-cursor-theme</packagereq>
       <packagereq>adwaita-gtk2-theme</packagereq>
-      <packagereq>adwaita-gtk3-theme</packagereq>
       <packagereq>greybird-gtk2-theme</packagereq>
       <packagereq>greybird-gtk3-theme</packagereq>
       <packagereq>greybird-xfce4-notifyd-theme</packagereq>
@@ -1139,7 +1078,6 @@
       <packagereq>bluebird-xfwm4-theme</packagereq>
       <packagereq>xfce4-datetime-plugin</packagereq>
       <packagereq>xfce4-places-plugin</packagereq>
-      <packagereq>xfce4-quicklauncher-plugin</packagereq>
       <packagereq>xfce4-screenshooter-plugin</packagereq>
       <packagereq>xfwm4-themes</packagereq>
       <packagereq>yumex</packagereq>
