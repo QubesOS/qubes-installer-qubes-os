@@ -222,7 +222,6 @@
       <packagereq type="mandatory">microcode_ctl</packagereq>
       <packagereq type="mandatory">mlocate</packagereq>
       <packagereq type="mandatory">nano</packagereq>
-      <packagereq type="mandatory">ntp</packagereq>
       <packagereq type="mandatory">ntsysv</packagereq>
       <packagereq type="mandatory">numactl</packagereq>
       <packagereq type="mandatory">parted</packagereq>
