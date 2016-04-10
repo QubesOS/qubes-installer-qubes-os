@@ -40,7 +40,7 @@ from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON,\
         PW_ASCII_CHARS, PASSWORD_ASCII
 from pyanaconda.regexes import GECOS_VALID, USERNAME_VALID, GROUPNAME_VALID, GROUPLIST_FANCY_PARSE
 
-__all__ = ["UserSpoke", "AdvancedUserDialog"]
+__all__ = ["UserSpoke"]
 
 class AdvancedUserDialog(GUIObject, GUIDialogInputCheckHandler):
     """
@@ -232,7 +232,7 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
     builderObjects = ["userCreationWindow"]
 
     mainWidgetName = "userCreationWindow"
-    focusWidgetName = "t_fullname"
+    focusWidgetName = "t_username"
     uiFile = "spokes/user.glade"
     helpFile = "UserSpoke.xml"
 
@@ -243,9 +243,6 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
 
     @classmethod
     def should_run(cls, environment, data):
-        # The Qubes installer still uses old firstboot to create users (TODO)
-        return False
-
         # the user spoke should run always in the anaconda and in firstboot only
         # when doing reconfig or if no user has been created in the installation
         if environment == ANACONDA_ENVIRON:
@@ -271,17 +268,17 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
             self._user = self.data.user.userList[0]
         else:
             self._user = self.data.UserData()
+
         self._wheel = self.data.GroupData(name="wheel")
-        self._groupDict = {"wheel": self._wheel}
+        self._qubes = self.data.GroupData(name="qubes")
+
+        self._groupDict = {"wheel": self._wheel, "qubes": self._qubes}
 
         # placeholders for the text boxes
-        self.fullname = self.builder.get_object("t_fullname")
         self.username = self.builder.get_object("t_username")
         self.pw = self.builder.get_object("t_password")
         self.confirm = self.builder.get_object("t_verifypassword")
-        self.admin = self.builder.get_object("c_admin")
         self.usepassword = self.builder.get_object("c_usepassword")
-        self.b_advanced = self.builder.get_object("b_advanced")
 
         # Counters for checks that ask the user to click Done to confirm
         self._waiveStrengthClicks = 0
@@ -336,8 +333,6 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
         self.add_re_check(self.username, re.compile(USERNAME_VALID.pattern + r'|^$'),
                 _("Invalid user name"))
 
-        self.add_re_check(self.fullname, GECOS_VALID, _("Full name cannot contain colon characters"))
-
         # Modify the GUI based on the kickstart and policy information
         # This needs to happen after the input checks have been created, since
         # the Gtk signal handlers use the input check variables.
@@ -358,18 +353,12 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
             # User isn't allowed to change whether password is required or not
             self.usepassword.set_sensitive(False)
 
-        self._advanced = AdvancedUserDialog(self._user, self._groupDict,
-                                            self.data)
-        self._advanced.initialize()
-
     def refresh(self):
         # Enable the input checks in case they were disabled on the last exit
         for check in self.checks:
             check.enabled = True
 
         self.username.set_text(self._user.name)
-        self.fullname.set_text(self._user.gecos)
-        self.admin.set_active(self._wheel.name in self._user.groups)
 
         self.pw.emit("changed")
         self.confirm.emit("changed")
@@ -377,12 +366,8 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
         if self.username.get_text() and self.usepassword.get_active() and \
            self._user.password == "":
             self.pw.grab_focus()
-        elif self.fullname.get_text():
-            self.username.grab_focus()
         else:
-            self.fullname.grab_focus()
-
-        self.b_advanced.set_sensitive(bool(self._user.name))
+            self.username.grab_focus()
 
     @property
     def status(self):
@@ -420,7 +405,6 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
             self._user.password_kickstarted = False
 
         self._user.name = self.username.get_text()
-        self._user.gecos = self.fullname.get_text()
 
         # Remove any groups that were created in a previous visit to this spoke
         self.data.group.groupList = [g for g in self.data.group.groupList \
@@ -428,15 +412,14 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
 
         # the user will be created only if the username is set
         if self._user.name:
-            if self.admin.get_active() and \
-               self._wheel.name not in self._user.groups:
+            if self._wheel.name not in self._user.groups:
                 self._user.groups.append(self._wheel.name)
-            elif not self.admin.get_active() and \
-                 self._wheel.name in self._user.groups:
-                self._user.groups.remove(self._wheel.name)
+
+            if self._qubes.name not in self._user.groups:
+                self._user.groups.append(self._qubes.name)
 
             anaconda_groups = [self._groupDict[g] for g in self._user.groups
-                                if g != self._wheel.name]
+                                if g not in (self._wheel.name, self._qubes.name)]
 
             self.data.group.groupList += anaconda_groups
 
@@ -515,27 +498,12 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
 
         if editable.get_text() == "":
             self.guesser[editable] = True
-            self.b_advanced.set_sensitive(False)
         else:
             self.guesser[editable] = False
-            self.b_advanced.set_sensitive(True)
 
             # Re-run the password checks against the new username
             self.pw.emit("changed")
             self.confirm.emit("changed")
-
-    def full_name_changed(self, editable=None, data=None):
-        """Called by Gtk callback when the full name field changes.
-        It guesses the username and hostname, strips diacritics
-        and make those lowercase.
-        """
-
-        # after the text is updated in guesser, the guess has to be reenabled
-        if self.guesser[self.username]:
-            fullname = self.fullname.get_text()
-            username = guess_username(fullname)
-            self.username.set_text(username)
-            self.guesser[self.username] = True
 
     def _checkPasswordEmpty(self, inputcheck):
         """Check whether a password has been specified at all.
@@ -636,26 +604,6 @@ class UserSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler):
             return _(PASSWORD_ASCII)
 
         return InputCheck.CHECK_OK
-
-    def on_advanced_clicked(self, _button, data=None):
-        """Handler for the Advanced.. button. It starts the Advanced dialog
-        for setting homedit, uid, gid and groups.
-        """
-
-        self._user.name = self.username.get_text()
-
-        if self.admin.get_active() and \
-           self._wheel.name not in self._user.groups:
-            self._user.groups.append(self._wheel.name)
-        elif not self.admin.get_active() and \
-             self._wheel.name in self._user.groups:
-            self._user.groups.remove(self._wheel.name)
-
-        self._advanced.refresh()
-        with self.main_window.enlightbox(self._advanced.window):
-            self._advanced.run()
-
-        self.admin.set_active(self._wheel.name in self._user.groups)
 
     def on_back_clicked(self, button):
         # If the failed check is for non-ASCII characters,
