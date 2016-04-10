@@ -232,6 +232,7 @@
       <packagereq type="mandatory">pinfo</packagereq>
       <packagereq type="mandatory">qubes-release</packagereq>
       <packagereq type="mandatory">qubes-release-notes</packagereq>
+      <packagereq type="mandatory">qubes-anaconda-addon</packagereq>
       <packagereq type="mandatory">quota</packagereq>
       <packagereq type="mandatory">systemd</packagereq>
       <packagereq type="mandatory">rsyslog</packagereq>
