@@ -1036,7 +1036,6 @@
       <packagereq type="mandatory">initial-setup-gui</packagereq>
       <packagereq type="mandatory">kcm-gtk</packagereq>
       <packagereq type="mandatory">kcm_systemd</packagereq>
-      <packagereq type="mandatory">kdeaccessibility</packagereq>
       <packagereq type="mandatory">kdelibs</packagereq>
       <packagereq type="mandatory">kdepasswd</packagereq>
       <packagereq type="mandatory">kdeplasma-addons</packagereq>
