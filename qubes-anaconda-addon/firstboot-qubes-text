@@ -91,6 +91,11 @@ done
 
 set -e
 
+for service in rdisc kdump; do
+    systemctl disable ${service}.service || :
+    systemctl stop    ${service}.service || :
+done
+
 if [ "$vms_template" == "yes" ]; then
     for template in `ls /var/lib/qubes/vm-templates`; do
         echo "-> Configuring template $template..."

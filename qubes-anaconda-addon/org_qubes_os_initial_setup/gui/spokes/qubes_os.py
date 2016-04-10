@@ -423,6 +423,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
                 except Exception as e:
                     errors.append((self.stage, str(e)))
 
+            self.configure_dom0()
             self.configure_default_template()
             self.configure_qubes()
             self.configure_network()
@@ -479,6 +480,13 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             raise Exception(process_error)
 
         return (stdout, stderr)
+
+    def configure_dom0(self):
+        self.set_stage("Setting up administration VM (dom0)")
+
+        for service in [ 'rdisc', 'kdump' ]:
+            self.run_command(['systemctl', 'disable', '{}.service'.format(service) ], ignore_failure=True)
+            self.run_command(['systemctl', 'stop',    '{}.service'.format(service) ], ignore_failure=True)
 
     def configure_qubes(self):
         self.set_stage('Executing qubes configuration')
