@@ -230,6 +230,7 @@
       <packagereq type="mandatory">pcmciautils</packagereq>
       <packagereq type="mandatory">perf</packagereq>
       <packagereq type="mandatory">pinfo</packagereq>
+      <packagereq type="mandatory">qubes-release</packagereq>
       <packagereq type="mandatory">qubes-release-notes</packagereq>
       <packagereq type="mandatory">quota</packagereq>
       <packagereq type="mandatory">systemd</packagereq>
@@ -1017,6 +1018,7 @@
       <packagereq type="mandatory">xorg-x11-utils</packagereq>
       <packagereq type="mandatory">xorg-x11-xauth</packagereq>
       <packagereq type="mandatory">xorg-x11-xinit</packagereq>
+      <packagereq type="mandatory">xterm</packagereq>
     </packagelist>
   </group>
   <group>
