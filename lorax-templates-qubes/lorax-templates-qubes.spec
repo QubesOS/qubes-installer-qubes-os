@@ -4,7 +4,7 @@
 
 Name:		lorax-templates-qubes
 Version:	3.1.2
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	Lorax templates for Qubes installation ISO
 
 Group:		Applications/System

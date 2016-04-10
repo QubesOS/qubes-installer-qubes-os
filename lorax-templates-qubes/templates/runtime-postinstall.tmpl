@@ -10,7 +10,6 @@ configdir = configdir + "/common"
 
 ## move_stubs()
 move usr/share/anaconda/restart-anaconda usr/bin
-move ${PYTHONDIR}/site-packages/pyanaconda/sitecustomize.py ${PYTHONDIR}/site-packages
 %for stub in stubs:
     -move usr/share/anaconda/${stub}-stub usr/bin/${stub}
 %endfor
@@ -35,14 +34,20 @@ systemctl disable systemd-readahead-collect.service \
                   systemd-readahead-replay.service \
                   mdmonitor.service \
                   mdmonitor-takeover.service \
-                  NetworkManager.service \
                   lvm2-monitor.service \
-                  dnf-makecache.timer
+                  dnf-makecache.timer \
+                  NetworkManager.service
 ## These services can't be disabled normally (they're linked into place in
 ## /usr/lib/systemd rather than /etc/systemd), so we have to mask them.
 systemctl mask fedora-configure.service fedora-loadmodules.service \
                fedora-autorelabel.service fedora-autorelabel-mark.service \
-               fedora-wait-storage.service media.mount
+               fedora-wait-storage.service media.mount \
+               systemd-tmpfiles-clean.service systemd-tmpfiles-clean.timer \
+               ldconfig.service
+
+## Make logind activate anaconda-shell@.service on switch to empty VT
+symlink anaconda-shell@.service lib/systemd/system/autovt@.service
+replace "#ReserveVT=6" "ReserveVT=2" etc/systemd/logind.conf
 
 ## Make logind activate anaconda-shell@.service on switch to empty VT
 symlink anaconda-shell@.service lib/systemd/system/autovt@.service
@@ -60,9 +65,10 @@ install ${configdir}/bash_history root/.bash_history
 install ${configdir}/profile root/.profile
 install ${configdir}/libuser.conf etc
 install ${configdir}/sysctl.conf etc/sysctl.d/anaconda.conf
-%if exists(root+"/etc/selinux/targeted"):
-    install ${configdir}/selinux.config etc/selinux/config
-%endif
+install ${configdir}/spice-vdagentd etc/sysconfig
+mkdir etc/NetworkManager/conf.d
+install ${configdir}/91-anaconda-autoconnect-slaves.conf etc/NetworkManager/conf.d
+install ${configdir}/vconsole.conf etc
 
 ## disable NetworkManager
 install ${configdir}/NetworkManager.state var/lib/NetworkManager/NetworkManager.state
@@ -90,24 +96,7 @@ replace "root:\*:" "root::" etc/shadow
 %endif
 
 ## gconf settings
-gconfset /apps/metacity/general/button_layout string :
-gconfset /apps/metacity/general/action_right_click_titlebar string none
-gconfset /apps/metacity/general/num_workspaces int 1
-gconfset /apps/metacity/window_keybindings/close string disabled
-gconfset /apps/metacity/global_keybindings/run_command_window_screenshot string disabled
-gconfset /apps/metacity/global_keybindings/run_command_screenshot string disabled
-gconfset /apps/metacity/global_keybindings/switch_to_workspace_up string disabled
-gconfset /apps/metacity/global_keybindings/switch_to_workspace_down string disabled
-gconfset /apps/metacity/global_keybindings/switch_to_workspace_left string disabled
-gconfset /apps/metacity/global_keybindings/switch_to_workspace_right string disabled
-gconfset /apps/metacity/global_keybindings/switch_windows string disabled
 gconfset /desktop/gnome/interface/accessibility bool true
-gconfset /desktop/gnome/interface/at-spi-corba bool true
-
-## Some settings are controlled by gsettings now.
-install ${configdir}/org.gnome.desktop.wm.keybindings.gschema.override usr/share/glib-2.0/schemas
-install ${configdir}/org.gnome.desktop.wm.preferences.gschema.override usr/share/glib-2.0/schemas
-runcmd chroot ${root} glib-compile-schemas /usr/share/glib-2.0/schemas
 
 move usr/libexec/anaconda/auditd sbin
 
@@ -121,6 +110,7 @@ append etc/depmod.d/dd.conf "search updates built-in"
 
 ## include additional modules in initramfs
 append etc/dracut.conf.d/extra-install-modules.conf "add_drivers+=' ehci-pci xhci-hcd xhci-pci '"
+
 ## no longer hard dependencies of anaconda module (for smaller EFI initrd), so add them here
 append etc/dracut.conf.d/extra-install-modules.conf "add_dracutmodules+=' livenet nfs img-lib convertfs ifcfg '"
 
