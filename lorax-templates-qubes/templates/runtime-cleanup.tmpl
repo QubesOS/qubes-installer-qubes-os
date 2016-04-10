@@ -344,7 +344,7 @@ removefrom xorg-x11-server-utils --allbut /usr/bin/xrandr /usr/share/X11/rgb.txt
 removefrom yum /etc/* /usr/share/locale/* /usr/share/yum-cli/*
 removefrom ${product.name}-logos /etc/*
 removefrom ${product.name}-logos /usr/share/icons/{Bluecurve,oxygen}/*
-removefrom ${product.name}-logos /usr/share/{firstboot,gnome-screensaver,kde4,pixmaps}/*
+removefrom ${product.name}-logos /usr/share/{gnome-screensaver,kde4,pixmaps}/*
 
 ## cleanup_python_files()
 runcmd find ${root} -name "*.pyo" -type f -delete
