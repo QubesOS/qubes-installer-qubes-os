@@ -17,6 +17,7 @@ URL:            https://github.com/rhinstaller/lorax
 # git checkout -b archive-branch lorax-%%{version}-%%{release}
 # tito build --tgz
 Source0:        %{name}-%{version}.tar.gz
+Patch0:         Drop-multiprocessing-for-do_transaction-1208296.patch
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-pocketlint >= 0.5
@@ -107,6 +108,8 @@ to run Anaconda.
 
 %prep
 %setup -q -n %{name}-%{version}
+
+%patch0 -p1
 
 %build
 
