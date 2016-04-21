@@ -51,16 +51,10 @@ sortedkernels = [ kernel for kernel in sortedkernels if 'qubes' in kernel.versio
         ## i386 PAE
         installkernel images-xen ${kernel.path} ${KERNELDIR}/vmlinuz-${kernel.flavor}
         installinitrd images-xen ${kernel.initrd.path} ${KERNELDIR}/initrd-${kernel.flavor}.img
-        %if doupgrade:
-            installupgradeinitrd images-xen ${kernel.upgrade.path} ${KERNELDIR}/upgrade-${kernel.flavor}.img
-        %endif
     %else:
         ## normal i386, x86_64
         installkernel images-${basearch} ${kernel.path} ${KERNELDIR}/vmlinuz
         installinitrd images-${basearch} ${kernel.initrd.path} ${KERNELDIR}/initrd.img
-        %if doupgrade:
-            installupgradeinitrd images-${basearch} ${kernel.upgrade.path} ${KERNELDIR}/upgrade.img
-        %endif
     %endif
     installkernel images-alt-${shortkver} ${kernel.path} ${BOOTDIR}/vmlinuz-${shortkver}
     installinitrd images-alt-${shortkver} ${kernel.initrd.path} ${BOOTDIR}/initrd-${shortkver}.img
@@ -77,15 +71,9 @@ replace @EXTRAKERNELS@ '' ${BOOTDIR}/isolinux.cfg
 
 hardlink ${KERNELDIR}/vmlinuz ${BOOTDIR}
 hardlink ${KERNELDIR}/initrd.img ${BOOTDIR}
-%if doupgrade:
-    hardlink ${KERNELDIR}/upgrade.img ${BOOTDIR}
-%endif
 %if basearch == 'x86_64':
     treeinfo images-xen kernel ${KERNELDIR}/vmlinuz
     treeinfo images-xen initrd ${KERNELDIR}/initrd.img
-    %if doupgrade:
-        treeinfo images-xen upgrade ${KERNELDIR}/upgrade.img
-    %endif
 %endif
 
 ## WHeeeeeeee, EFI.
