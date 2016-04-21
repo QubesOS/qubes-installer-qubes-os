@@ -1,5 +1,9 @@
 %define debug_package %{nil}
 
+%if 0%{?qubes_builder}
+%define _sourcedir %(pwd)/lorax
+%endif
+
 Name:           lorax
 Version:        23.20
 Release:        1%{?dist}
