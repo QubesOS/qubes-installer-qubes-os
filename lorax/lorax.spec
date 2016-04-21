@@ -18,6 +18,8 @@ URL:            https://github.com/rhinstaller/lorax
 # tito build --tgz
 Source0:        %{name}-%{version}.tar.gz
 Patch0:         Drop-multiprocessing-for-do_transaction-1208296.patch
+Patch1:         0001-Allow-specify-gpg-key-for-a-repository.patch
+Patch2:         0002-verify-packages-signature.patch
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-pocketlint >= 0.5
@@ -110,6 +112,8 @@ to run Anaconda.
 %setup -q -n %{name}-%{version}
 
 %patch0 -p1
+%patch1 -p1
+%patch2 -p1
 
 %build
 

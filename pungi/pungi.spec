@@ -14,6 +14,7 @@ Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name
 Patch1:         0001-Set-repository-gpgkey-option.patch
 Patch2:         0002-Verify-downloaded-packages.patch
 Patch3:         disable-efi.patch
+Patch4:         Hacky-way-to-pass-gpgkey-to-lorax.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 #Patch6:         disable-upgrade.patch
 BuildRequires:  python-nose, python-nose-cov, python-mock
@@ -53,6 +54,7 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 #%%patch5 -p1
 #%%patch6 -p1
 
