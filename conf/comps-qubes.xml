@@ -1009,6 +1009,7 @@
     <packagelist>
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
       <packagereq type="mandatory">initial-setup</packagereq>
+      <packagereq type="mandatory">initial-setup-launcher</packagereq>
       <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">gnome-packagekit</packagereq>
       <packagereq type="mandatory">mesa-dri-drivers</packagereq>
