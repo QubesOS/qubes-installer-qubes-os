@@ -708,8 +708,7 @@ class Firstboot(commands.firstboot.FC3_Firstboot):
 
     def execute(self, *args):
         action = "enable"
-        services = ["initial-setup-graphical.service",
-                    "initial-setup-text.service"]
+        services = ["initial-setup.service"]
 
         # find if the unit files for the Initial Setup services are installed
         services = [name for name in services if os.path.exists(os.path.join(iutil.getSysroot(), "lib/systemd/system/", name))]
