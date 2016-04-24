@@ -204,7 +204,7 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
             self._password = None
             self.clear_info()
             self._error = False
-            result = GUICheck.CHECK_OK
+            result = InputCheck.CHECK_OK
 
         # Skip the check if no password is required
         elif (not pw and not confirm) and self._kickstarted:
