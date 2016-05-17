@@ -1721,21 +1721,11 @@ class EFIGRUB(GRUB2):
 
     def remove_efi_boot_target(self):
         buf = self.efibootmgr(capture=True)
-        bootorder = None
         for line in buf.splitlines():
             try:
                 (slot, _product) = line.split(None, 1)
             except ValueError:
                 continue
-
-            # Workaround for bug in efibootmgr that causes abort() when
-            # removing an entry not present in BootOrder.
-            # This is already fixed in efibootmgr-0.12, so can be removed when
-            # we upgrade it one day
-            # The fix (with bug details):
-            # https://github.com/rhinstaller/efibootmgr/commit/f575bf87
-            if slot == "BootOrder:":
-                bootorder = _product
 
             if _product == productName.split("-")[0]:
                 slot_id = slot[4:8]
@@ -1743,11 +1733,6 @@ class EFIGRUB(GRUB2):
                 if not re.match("^[0-9a-fA-F]+$", slot_id):
                     log.warning("failed to parse efi boot slot (%s)", slot)
                     continue
-
-                if bootorder.count(slot_id) == 0:
-                    rc = self.efibootmgr("-o", bootorder + "," + slot_id)
-                    if rc:
-                        raise BootLoaderError("failed to update BootOrder while removing old boot entry")
 
                 rc = self.efibootmgr("-b", slot_id, "-B",
                                      root=iutil.getSysroot())
