@@ -6,7 +6,8 @@
 
 Name:           lorax
 Version:        23.20
-Release:        1%{?dist}
+Release:        2%{?dist}
+Epoch:          1000
 Summary:        Tool for creating the anaconda install images
 
 Group:          Applications/System

@@ -3,7 +3,7 @@
 Summary: Graphical system installer
 Name:    anaconda
 Version: 23.19.10
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2+ and MIT
 Epoch:   1000
 Group:   Applications/System
