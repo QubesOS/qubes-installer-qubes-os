@@ -9,7 +9,7 @@
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
-Release:	0.1
+Release:	0.24
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
@@ -19,7 +19,7 @@ Obsoletes:	redhat-release
 Provides:	fedora-release = %{fedora_base_version}-%{release}
 Provides:	redhat-release = %{fedora_base_version}-%{release}
 Provides:	system-release = %{fedora_base_version}-%{release}
-Obsoletes:	qubes-dom0-dist-upgrade <= 2.0
+Obsoletes:	qubes-dom0-dist-upgrade <= 3.2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
