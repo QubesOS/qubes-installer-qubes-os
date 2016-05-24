@@ -3,8 +3,9 @@
 %endif
 
 Name:           pungi
-Version:        4.0.7
+Version:        4.0.15
 Release:        1%{?dist}
+Epoch:          1000
 Summary:        Distribution compose tool
 
 Group:          Development/Tools
@@ -22,6 +23,8 @@ BuildRequires:  python-devel, python-setuptools, python2-productmd
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
 BuildRequires:  python-lxml, libselinux-python, yum-utils, lorax
 BuildRequires:  yum => 3.4.3-28, createrepo >= 0.4.11
+#deps for doc building
+BuildRequires:  python-sphinx
 
 Requires:       createrepo >= 0.4.11
 Requires:       yum => 3.4.3-28
@@ -60,17 +63,22 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 
 %build
 %{__python} setup.py build
+cd doc
+make man
+gzip _build/man/pungi.1
 
 %install
-%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
-%{__install} -d $RPM_BUILD_ROOT/var/cache/pungi
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+%{__install} -d %{buildroot}/var/cache/pungi
+%{__install} -d %{buildroot}%{_mandir}/man1
+%{__install} doc/_build/man/pungi.1.gz %{buildroot}%{_mandir}/man1
+sed -i 's|/usr/bin/python$|/usr/bin/python3|' %{buildroot}/%{_bindir}/pungi-pylorax-find-templates
 
 %check
 ./tests/data/specs/build.sh
 %{__python} setup.py test
 nosetests --exe --with-cov --cov-report html --cov-config tox.ini
-#TODO: enable compose test
-#cd tests && ./test_compose.sh
+cd tests && ./test_compose.sh
 
 %files
 %license COPYING GPL
@@ -78,10 +86,146 @@ nosetests --exe --with-cov --cov-report html --cov-config tox.ini
 %{python_sitelib}/%{name}
 %{python_sitelib}/%{name}-%{version}-py?.?.egg-info
 %{_bindir}/*
+%{_mandir}/man1/pungi.1.gz
 %{_datadir}/pungi
 /var/cache/pungi
 
 %changelog
+* Fri Apr 29 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.15-1
+- [createiso] Add back running isohybrid on x86 disk images (dennis)
+- [createiso] Remove chdir() (lsedlar)
+- Pungi should log when it tries to publish notifications. (rbean)
+- [createrepo] Use more verbose output (lsedlar)
+- [ostree-installer] Drop filename setting (lsedlar)
+- [ostree] Set each repo to point to current compose (lsedlar)
+- [ostree-installer] Install ostree in runroot (lsedlar)
+- [pkgset] Print more detailed logs when rpm is not found (lsedlar)
+- [ostree-installer] Clone repo with templates (lsedlar)
+
+* Mon Apr 18 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-4
+- add patch for ostree installer filename
+- add patch to make sure the repo urls are set for ostree
+
+* Tue Apr 12 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-3
+- add patch to make sure that ostree is in the ostree_installer runroot
+
+* Mon Apr 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-2
+- add patch to print more infor for missing rpms
+- add patch to clone repo with extra lorax templates for ostree_installer
+
+* Fri Apr 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-1
+- [ostree-installer] Copy all lorax outputs (lsedlar)
+- [ostree] Log to stdout as well (lsedlar)
+- [ostree-installer] Use separate directory for logs (lsedlar)
+- [ostree-installer] Put lorax output into work dir (lsedlar)
+- [ostree] Add test check for modified repo baseurl (lsedlar)
+- [ostree] Move cloning repo back to compose box (lsedlar)
+- [ostree] Mount ostree directory in koji (lsedlar)
+
+* Thu Apr 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.13-2
+- make sure that the shebang of pungi-pylorax-find-templates is python3
+
+* Wed Apr 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.13-1
+- [ostree] Enable marking ostree phase as failable (lsedlar)
+- [koji-wrapper] Initialize wrappers sequentially (lsedlar)
+- [createiso] Simplify code, test phase (lsedlar)
+- [createiso] Move runroot work to separate script (lsedlar)
+- [ostree] Use explicit work directory (lsedlar)
+- [ostree] Rename atomic to ostree (lsedlar)
+- [ostree] Move cloning config repo to chroot (lsedlar)
+- [ostree] Fix call to kobo.shortcuts.run (lsedlar)
+- [atomic] Stop creating the os directory (lsedlar)
+- [checksum] Add arch to file name (lsedlar)
+- install scripts (dennis)
+
+* Tue Apr 05 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-3
+- add some more ostree fixes
+- add a bandaid for ppc until we get a proper fix
+
+* Mon Apr 04 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-2
+- add upstream patches with fixes for ostree and checksum
+
+* Fri Apr 01 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-1
+- Add a utility to validate config (lsedlar)
+- [variants] Stop printing stuff to stderr unconditionally (lsedlar)
+- Fix atomic/ostree config validations (lsedlar)
+- [pungi-wrapper] Remove duplicated code (lsedlar)
+- [checks] Add a check for too restrictive umask (lsedlar)
+- [util] Remove umask manipulation from makedirs (lsedlar)
+- Filter variants and architectures (lsedlar)
+- Refactor checking for failable deliverables (lsedlar)
+- [buildinstall] Do not crash on failure (lsedlar)
+
+* Mon Mar 28 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.11-1
+- make and install docs and manpage
+- Reuse helper in all tests (lsedlar)
+- [atomic] Add atomic_installer phase (lsedlar)
+- [ostree] Add ostree phase (lsedlar)
+- [atomic] Add a script to create ostree repo (lsedlar)
+- Add compose type to release for images (lsedlar)
+- [image-build] Add traceback on failure (lsedlar)
+- [image-build] Use subvariants in logging output (lsedlar)
+- [live-media] Use subvariants in logging (lsedlar)
+- Add tracebacks to all failable phases (lsedlar)
+- ppc no longer needs magic bits in the iso (pbrobinson)
+- [buildinstall] Add more debugging output (lsedlar)
+- [metadata] Stop crashing on empty path from .treeinfo (lsedlar)
+- [checksums] Add label to file name (lsedlar)
+- image_build: fix subvariant handling (awilliam)
+
+* Wed Mar 16 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-3
+- add patch to enable use of label in checksums
+
+* Sun Mar 13 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-2
+- add patch for bug in subvariant handling
+
+* Fri Mar 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-1
+- Remove check for disc type (lsedlar)
+- Update tests to match the subvariant (lsedlar)
+- add 'subvariant' image property, create live/appliance names (awilliam)
+- Simplify koji pkgset (lsedlar)
+- enable the compose tests
+
+* Thu Mar 10 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.9-2
+- new tarball with upstream commits for test suite and pkgset
+
+* Thu Mar 10 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.9-1
+- [init] Update documentation (lsedlar)
+- [init] Iterate over arches just once (lsedlar)
+- [init] Remove duplicated checks for comps (lsedlar)
+- [init] Break long lines (lsedlar)
+- [init] Don't overwrite the same log file (lsedlar)
+- [init] Add config option for keeping original comps (lsedlar)
+- Add tests for the init phase (lsedlar)
+- [checks] Test printing in all cases (lsedlar)
+- [checks] Reduce code duplication (lsedlar)
+- [checks] Relax check for genisoimage (lsedlar)
+- [checks] Remove duplicate msgfmt line (lsedlar)
+- [checks] Relax check for isohybrid command (lsedlar)
+- [checks] Add tests for dependency checking (lsedlar)
+- [checks] Don't always require jigdo (lsedlar)
+- [pkgset] Respect inherit setting (lsedlar)
+- specify that the 4.0 docs are for 4.0.8 (dennis)
+- [live-media] Support release set to None globally (lsedlar)
+- include tests/fixtures/* in the tarball (dennis)
+
+* Wed Mar 09 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.8-2
+- add patch to allow livemedia_release to be None globally
+
+* Tue Mar 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.8-1
+- Add README (lsedlar)
+- [doc] Fix formatting (lsedlar)
+- [createiso] Add customizing disc type (lsedlar)
+- [live-images] Add customizing disc type (lsedlar)
+- [buildinstall] Add customizing disc type (lsedlar)
+- [buildinstall] Rename method to not mention symlinks (lsedlar)
+- [gather] Fix documentation of multilib white- and blacklist (lsedlar)
+- [paths] Document and test translate_path (lsedlar)
+- [createrepo] Compute delta RPMS against old compose (lsedlar)
+- [util] Add function to search for old composes (lsedlar)
+- [live-media] Add global settings (lsedlar)
+- [live-media] Rename test case (lsedlar)
+
 * Thu Mar 03 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.7-1
 - Limit the variants with config option 'tree_variants' (dennis)
 - [createrepo-wrapper] Fix --deltas argument (lsedlar)
