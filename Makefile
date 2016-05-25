@@ -31,6 +31,9 @@ else
 endif
 PUNGI_OPTS += --ver="$(ISO_VERSION)"
 
+INSTALLER_KICKSTART ?= $(PWD)/conf/qubes-kickstart.cfg
+LIVE_KICKSTART ?= $(PWD)/conf/liveusb.ks
+
 help:
 	@echo "make iso              <== \o/";\
 	    echo; \
@@ -53,7 +56,7 @@ iso-prepare:
 
 iso-installer: iso-prepare
 	mkdir -p work
-	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(PWD)/conf/qubes-kickstart.cfg && popd
+	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(INSTALLER_KICKSTART) && popd
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
 	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD*.iso build/ISO/qubes-x86_64/iso/
@@ -62,7 +65,7 @@ iso-installer: iso-prepare
 	chown --reference=Makefile -R build yum
 	rm -rf work
 
-iso-liveusb: conf/liveusb.ks iso-prepare
+iso-liveusb: $(LIVE_KICKSTART) iso-prepare
 	mkdir -p work
 	pushd work && ../livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config ../$< && popd
 	# Move result files to known-named directories
