@@ -1,0 +1,40 @@
+From 93d1aceb41bc2f57cbf3269d165c29438ced0fe7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Wed, 25 May 2016 11:24:14 +0200
+Subject: [PATCH] Update package verification for dnf API
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ src/pylorax/ltmpl.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/pylorax/ltmpl.py b/src/pylorax/ltmpl.py
+index 661790d..8454566 100644
+--- a/src/pylorax/ltmpl.py
++++ b/src/pylorax/ltmpl.py
+@@ -581,14 +581,14 @@ class LoraxTemplateRunner(object):
+         try:
+             for po in pkgs_to_download:
+                 # before doing anything with the package, verify its signature
+-                result, errmsg = self.dbo.sigCheckPkg(po)
++                result, errmsg = self.dbo._sig_check_pkg(po)
+                 if result == 0:
+                     # Verified ok, or verify not req'd
+                     pass
+                 elif result == 1:
+                     # keys are provided through kickstart, so treat this as consent
+                     # for importing them
+-                    self.dbo.getKeyForPackage(po, lambda x, y, z: True)
++                    self.dbo._get_key_for_package(po, lambda x, y, z: True)
+                 else:
+                     # Fatal error
+                     raise dnf.exceptions.Error(errmsg)
+-- 
+2.5.5
+
