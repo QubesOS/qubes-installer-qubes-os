@@ -484,7 +484,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
     def configure_dom0(self):
         self.set_stage("Setting up administration VM (dom0)")
 
-        for service in [ 'rdisc', 'kdump', 'libvirt-guests' ]:
+        for service in [ 'rdisc', 'kdump', 'libvirt-guests', 'salt-minion' ]:
             self.run_command(['systemctl', 'disable', '{}.service'.format(service) ], ignore_failure=True)
             self.run_command(['systemctl', 'stop',    '{}.service'.format(service) ], ignore_failure=True)
 
@@ -498,11 +498,11 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             pass
 
         # Refresh minion configuration to make sure all installed formulas are included
-        self.run_command(['qubesctl', 'state.sls', 'config', '-l', 'quiet', '--out', 'quiet'])
+        self.run_command(['qubesctl', 'saltutil.sync_all'])
 
         for state in QubesChoice.get_states():
             print("Setting up state: {}".format(state))
-            self.run_command(['qubesctl', 'top.enable', state, 'saltenv=dom0', '-l', 'quiet', '--out', 'quiet'])
+            self.run_command(['qubesctl', 'top.enable', state])
 
         try:
             self.run_command(['qubesctl', 'state.highstate'])

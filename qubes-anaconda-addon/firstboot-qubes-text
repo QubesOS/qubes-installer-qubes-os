@@ -91,7 +91,7 @@ done
 
 set -e
 
-for service in rdisc kdump libvirt-guests; do
+for service in rdisc kdump libvirt-guests salt-minion; do
     systemctl disable ${service}.service || :
     systemctl stop    ${service}.service || :
 done
@@ -114,7 +114,7 @@ if [ "$vms_service" == "yes" -o "$vms_app" == "yes" ]; then
         mv /var/log/salt/minion /var/log/salt/minion.install || :
     fi
 
-    qubesctl state.sls config -l quiet --out quiet
+    qubesctl saltutil.sync_all -l quiet --out quiet
 fi
 
 states=()
@@ -130,7 +130,7 @@ fi
 if [ "$vms_service" == "yes" -o "$vms_app" == "yes" ]; then
     for state in "${states[@]}"; do
         echo "-> Requesting creation of VM: ${state#qvm.}"
-        qubesctl top.enable "${state}" saltenv=dom0 -l quiet --out quiet
+        qubesctl top.enable "${state}" -l quiet --out quiet
     done
 
     echo "-> Creating VMs"
