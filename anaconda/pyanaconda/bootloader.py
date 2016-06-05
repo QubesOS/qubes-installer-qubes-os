@@ -1865,6 +1865,10 @@ class XenEFI(EFIGRUB):
     def write_config_post(self):
         pass
 
+    def is_valid_stage2_device(self, device, linux=True, non_linux=False):
+        """ XenEFI doesn't use stage2 at all, so allow anything here """
+        return True
+
     write_config = BootLoader.write_config
 
 class MacEFIGRUB(EFIGRUB):
