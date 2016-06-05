@@ -2099,12 +2099,6 @@ def parseKickstart(f):
 
     # We need this so all the /dev/disk/* stuff is set up before parsing.
     udev.trigger(subsystem="block", action="change")
-    # So that drives onlined by these can be used in the ks file
-    blivet.iscsi.iscsi().startup()
-    blivet.fcoe.fcoe().startup()
-    blivet.zfcp.ZFCP().startup()
-    # Note we do NOT call dasd.startup() here, that does not online drives, but
-    # only checks if they need formatting, which requires zerombr to be known
 
     try:
         ksparser.readKickstart(f)

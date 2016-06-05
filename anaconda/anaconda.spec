@@ -102,7 +102,6 @@ Requires: python3-kickstart >= %{pykickstartver}
 Requires: langtable-data >= %{langtablever}
 Requires: langtable-python3 >= %{langtablever}
 Requires: authconfig
-Requires: firewalld >= %{firewalldver}
 Requires: util-linux >= %{utillinuxver}
 Requires: python3-dbus
 Requires: python3-pwquality
@@ -126,16 +125,9 @@ Requires: python3-ntplib
 Requires: rsync
 Requires: systemd
 %ifarch %{ix86} x86_64
-Requires: fcoe-utils >= %{fcoeutilsver}
-%endif
-Requires: python3-iscsi-initiator-utils >= %{iscsiver}
-%ifarch %{ix86} x86_64
 %if ! 0%{?rhel}
 Requires: hfsplus-tools
 %endif
-%endif
-%ifnarch aarch64
-Requires: kexec-tools
 %endif
 Requires: python3-pid
 
