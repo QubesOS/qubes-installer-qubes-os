@@ -18,5 +18,5 @@
 # Author: Chris Lumens <clumens@redhat.com>
 
 postscriptsdir = $(datadir)/$(PACKAGE_NAME)/post-scripts
-dist_postscripts_DATA = 40-qubes-alt-kernels.ks 50-qubes.ks 80-setfilecons.ks 90-copy-screenshots.ks 99-copy-logs.ks
+dist_postscripts_DATA = 40-qubes-alt-kernels.ks 50-qubes.ks 60-systemd-preset.ks 80-setfilecons.ks 90-copy-screenshots.ks 99-copy-logs.ks
 MAINTAINERCLEANFILES = Makefile.in
