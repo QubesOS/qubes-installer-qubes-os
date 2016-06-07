@@ -1852,7 +1852,7 @@ class XenEFI(EFIGRUB):
         for image in self.images:
             config.write("\n")
             config.write("[{}]\n".format(image.version))
-            config.write("options=loglvl=all\n")
+            config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M\n")
             config.write("kernel={} root={} {}\n".format(
                 image.kernel,
                 image.device.fstabSpec,
