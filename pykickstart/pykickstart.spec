@@ -6,7 +6,7 @@
 
 Name:      pykickstart
 Version:   2.13
-Release:   2%{?dist}
+Release:   3%{?dist}
 Epoch: 1000
 License:   GPLv2 and MIT
 Group:     System Environment/Libraries
