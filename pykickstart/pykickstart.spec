@@ -30,10 +30,10 @@ BuildArch: noarch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: gettext
-BuildRequires: python-devel
-BuildRequires: python-nose
-BuildRequires: python-setuptools
-BuildRequires: python-requests
+BuildRequires: python2-devel
+BuildRequires: python2-nose
+BuildRequires: python2-setuptools
+BuildRequires: python2-requests
 %if ! 0%{?rhel}
 BuildRequires: transifex-client
 %endif
