@@ -6,7 +6,7 @@
 %packages
 
 gdb
-ipython
+python-ipython
 netplug
 openssh-server
 rpm-build
