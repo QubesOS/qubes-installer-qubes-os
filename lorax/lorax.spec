@@ -22,6 +22,7 @@ Patch0:         Drop-multiprocessing-for-do_transaction-1208296.patch
 Patch1:         0001-Allow-specify-gpg-key-for-a-repository.patch
 Patch2:         0002-verify-packages-signature.patch
 Patch3:         0003-Update-package-verification-for-dnf-API.patch
+Patch4:         0004-Remove-branding-code.patch
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-pocketlint >= 0.5
@@ -117,6 +118,7 @@ to run Anaconda.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 %build
 
