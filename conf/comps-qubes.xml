@@ -1044,6 +1044,7 @@
       <packagereq type="mandatory">kinfocenter</packagereq>
       <packagereq type="mandatory">kmenuedit</packagereq>
       <packagereq type="mandatory">konsole5</packagereq>
+      <packagereq type="mandatory">kscreen</packagereq>
       <packagereq type="mandatory">ksnapshot</packagereq>
       <packagereq type="mandatory">ksysguard</packagereq>
       <packagereq type="mandatory">kwin</packagereq>
