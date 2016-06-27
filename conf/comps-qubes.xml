@@ -1007,6 +1007,7 @@
       <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
       <packagereq type="mandatory">initial-setup</packagereq>
       <packagereq type="mandatory">initial-setup-launcher</packagereq>
+      <packagereq type="mandatory">initial-setup-gui</packagereq>
       <packagereq type="mandatory">glx-utils</packagereq>
       <packagereq type="mandatory">gnome-packagekit</packagereq>
       <packagereq type="mandatory">mesa-dri-drivers</packagereq>
@@ -1029,7 +1030,6 @@
       <packagereq type="mandatory">breeze-icon-theme</packagereq>
       <packagereq type="mandatory">colord-kde</packagereq>
       <packagereq type="mandatory">dolphin</packagereq>
-      <packagereq type="mandatory">initial-setup-gui</packagereq>
       <packagereq type="mandatory">kcm-gtk</packagereq>
       <packagereq type="mandatory">kcm_systemd</packagereq>
       <packagereq type="mandatory">kdelibs</packagereq>
@@ -1087,7 +1087,6 @@
       <packagereq>xfconf</packagereq>
       <packagereq>xfwm4</packagereq>
       <packagereq>xfdesktop</packagereq>
-      <packagereq>initial-setup</packagereq>
       <!-- FIXME? <packagereq>fedora-icon-theme</packagereq>-->
       <packagereq>lightdm-gtk</packagereq>
       <packagereq>gtk-xfce-engine</packagereq>
