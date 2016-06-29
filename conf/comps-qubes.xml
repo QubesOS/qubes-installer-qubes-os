@@ -1143,6 +1143,7 @@
     <packagelist>
       <packagereq>pavucontrol</packagereq>
       <packagereq>xfce4-mixer</packagereq>
+      <packagereq>xfce4-volumed</packagereq>
       <packagereq type="default">alsa-utils</packagereq>
     </packagelist>
   </group>
