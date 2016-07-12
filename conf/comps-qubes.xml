@@ -1191,26 +1191,6 @@
   </group>
 
   <environment>
-   <id>qubes-kde</id>
-   <display_order>2</display_order>
-   <name>Qubes OS with KDE</name>
-   <description>Standard installation with KDE enviroment in Dom0.</description>
-    <grouplist>
-     <groupid>base</groupid>
-     <groupid>base-x</groupid>
-     <groupid>hardware-support</groupid>
-     <groupid>fonts</groupid>
-     <groupid>sound-basic</groupid>
-     <groupid>qubes</groupid>
-     <groupid>kde-desktop-qubes</groupid>
-    </grouplist>
-    <optionlist>
-     <groupid default='true'>debian-8</groupid>
-     <groupid default='true'>whonix</groupid>
-    </optionlist>
-  </environment>
-
-  <environment>
    <id>qubes-xfce</id>
    <display_order>3</display_order>
    <name>Qubes OS with Xfce</name>
@@ -1225,28 +1205,6 @@
      <groupid>xfce-desktop-qubes</groupid>
      <groupid>xfce-extra-plugins</groupid>
      <groupid>xfce-media</groupid>
-    </grouplist>
-    <optionlist>
-     <groupid default='true'>debian-8</groupid>
-     <groupid default='true'>whonix</groupid>
-    </optionlist>
-  </environment>
-  <environment>
-   <id>qubes-kde-xfce</id>
-   <display_order>1</display_order>
-   <name>Qubes OS with KDE and Xfce</name>
-   <description>Standard installation with both KDE and Xfce enviroments in Dom0 (selectable on startup).</description>
-    <grouplist>
-     <groupid>base</groupid>
-     <groupid>base-x</groupid>
-     <groupid>hardware-support</groupid>
-     <groupid>fonts</groupid>
-     <groupid>sound-basic</groupid>
-     <groupid>qubes</groupid>
-     <groupid>xfce-desktop-qubes</groupid>
-     <groupid>xfce-extra-plugins</groupid>
-     <groupid>xfce-media</groupid>
-     <groupid>kde-desktop-qubes</groupid>
     </grouplist>
     <optionlist>
      <groupid default='true'>debian-8</groupid>
