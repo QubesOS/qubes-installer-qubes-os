@@ -1075,7 +1075,7 @@
   </group>
   <group>
     <id>xfce-desktop-qubes</id>
-    <name>Xfce (EXPERIMENTAL)</name>
+    <name>Xfce4</name>
     <description>A lightweight desktop environment that works well on low end machines.</description>
     <default>true</default>
     <uservisible>false</uservisible>
