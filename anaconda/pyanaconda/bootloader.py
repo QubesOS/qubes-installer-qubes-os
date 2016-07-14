@@ -46,6 +46,8 @@ from pyanaconda.i18n import _, N_
 from pyanaconda.orderedset import OrderedSet
 
 import logging
+import subprocess
+
 log = logging.getLogger("anaconda")
 
 class serial_opts(object):
@@ -1412,15 +1414,18 @@ class GRUB2(GRUB):
                           raid.RAID5, raid.RAID6, raid.RAID10]
     stage2_raid_metadata = ["0", "0.90", "1.0", "1.2"]
 
-    @property
-    def stage2_format_types(self):
-        if productName.startswith("Red Hat "):
-            return ["xfs", "ext4", "ext3", "ext2", "btrfs"]
-        else:
-            return ["ext4", "ext3", "ext2", "btrfs", "xfs"]
+    stage2_format_types = ["ext4", "ext3", "ext2", "btrfs", "xfs"]
 
     def __init__(self):
         super(GRUB2, self).__init__()
+
+        if subprocess.check_output(
+                ['dmidecode', '-s', 'bios-vendor'],
+                universal_newlines=True) == "coreboot\n":
+            log.info("dmidecode -s bios-vendor returns coreboot")
+            self.encryption_support = True
+            self.skip_bootloader = True
+            self.stage2_format_types += ["lvmlv"]
 
     # XXX we probably need special handling for raid stage1 w/ gpt disklabel
     #     since it's unlikely there'll be a bios boot partition on each disk

@@ -130,6 +130,7 @@ Requires: hfsplus-tools
 %endif
 %endif
 Requires: python3-pid
+Requires: dmidecode
 
 Requires: python3-coverage
 
