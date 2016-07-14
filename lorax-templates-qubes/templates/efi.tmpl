@@ -13,11 +13,6 @@ install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
 ##install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/grub${EFIARCH_LOWER}.efi
 install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
 
-# place those files to prevent Windows recreating them while writing ISO image
-# on Windows (this would break image verification)
-mkdir "System Volume Information"
-install "${configdir}/System Volume Information/*" "System Volume Information/"
-
 # For Secure Boot restore those files (keep in mind 32MB limit on efiboot.img
 # imposed by ISO9660, details in #794):
 #install boot/efi/EFI/*/shim.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
@@ -81,4 +76,11 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
         copy ${eficonf} ${EFIBOOTDIR}/BOOT.conf
     %endif
     runcmd mkefiboot ${args} ${outroot}/${EFIBOOTDIR} ${outroot}/${img}
+    # place those files to prevent Windows recreating them while writing ISO image
+    # on Windows (this would break image verification)
+    runcmd mount ${outroot}/${img} ${outroot}/${EFIBOOTDIR} -o loop
+    mkdir "${EFIBOOTDIR}/System Volume Information"
+    install "${configdir}/System Volume Information/*" "${EFIBOOTDIR}/System Volume Information/"
+    runcmd umount ${outroot}/${img}
+
 </%def>
