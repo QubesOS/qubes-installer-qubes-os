@@ -507,6 +507,11 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         try:
             self.run_command(['qubesctl', 'state.highstate'])
+            # After successful call disable all the states to not leave them
+            # enabled, to not interfere with later user changes (like assigning
+            # additional PCI devices)
+            for state in QubesChoice.get_states():
+                self.run_command(['qubesctl', 'top.disable', state])
         except Exception:
             raise Exception(
                     ("Qubes initial configuration failed. Login to the system and " +
