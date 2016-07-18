@@ -343,7 +343,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # on the off-chance dasdfmt is running, we can't proceed further
         threadMgr.wait(constants.THREAD_DASDFMT)
         hubQ.send_message(self.__class__.__name__, _("Saving storage configuration..."))
-        if flags.automatedInstall and self.data.autopart.encrypted and not self.data.autopart.passphrase:
+        if flags.automatedInstall and self.data.autopart.autopart and self.data.autopart.encrypted and not self.data.autopart.passphrase:
             self.autopart_missing_passphrase = True
             StorageChecker.errors = [_("Passphrase for autopart encryption not specified.")]
             self._ready = True
