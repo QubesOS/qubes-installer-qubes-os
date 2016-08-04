@@ -499,6 +499,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             pass
 
         # Refresh minion configuration to make sure all installed formulas are included
+        self.run_command(['qubesctl', 'saltutil.clear_cache'])
         self.run_command(['qubesctl', 'saltutil.sync_all'])
 
         for state in QubesChoice.get_states():

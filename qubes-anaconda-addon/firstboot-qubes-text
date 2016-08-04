@@ -114,6 +114,7 @@ if [ "$vms_service" == "yes" -o "$vms_app" == "yes" ]; then
         mv /var/log/salt/minion /var/log/salt/minion.install || :
     fi
 
+    qubesctl saltutil.clear_cache -l quiet --out quiet
     qubesctl saltutil.sync_all -l quiet --out quiet
 fi
 
