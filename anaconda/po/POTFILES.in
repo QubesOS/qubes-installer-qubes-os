@@ -54,7 +54,6 @@ pyanaconda/ui/tui/simpleline/base.py
 pyanaconda/ui/tui/simpleline/__init__.py
 pyanaconda/ui/tui/spokes/askvnc.py
 pyanaconda/ui/tui/spokes/langsupport.py
-pyanaconda/ui/tui/spokes/network.py
 pyanaconda/ui/tui/spokes/password.py
 pyanaconda/ui/tui/spokes/storage.py
 pyanaconda/ui/tui/spokes/time_spoke.py
@@ -76,7 +75,6 @@ pyanaconda/ui/gui/spokes/datetime_spoke.py
 pyanaconda/ui/gui/spokes/filter.py
 pyanaconda/ui/gui/spokes/keyboard.py
 pyanaconda/ui/gui/spokes/langsupport.py
-pyanaconda/ui/gui/spokes/network.py
 pyanaconda/ui/gui/spokes/password.py
 pyanaconda/ui/gui/spokes/software.py
 pyanaconda/ui/gui/spokes/source.py
