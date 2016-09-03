@@ -18,7 +18,7 @@ Patch3:         disable-efi.patch
 Patch4:         Hacky-way-to-pass-gpgkey-to-lorax.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 #Patch6:         disable-upgrade.patch
-BuildRequires:  python-nose, python-nose-cov, python-mock
+BuildRequires:  python-nose, python-nose-cov, python2-mock
 BuildRequires:  python-devel, python-setuptools, python2-productmd
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
 BuildRequires:  python-lxml, libselinux-python, yum-utils, lorax
