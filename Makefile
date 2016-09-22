@@ -67,7 +67,7 @@ iso-installer: iso-prepare
 
 iso-liveusb: $(LIVE_KICKSTART) iso-prepare
 	mkdir -p work
-	pushd work && ../livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config ../$< && popd
+	pushd work && ../livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config $(LIVE_KICKSTART) && popd
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
 	mv work/*.iso build/ISO/qubes-x86_64/iso/
