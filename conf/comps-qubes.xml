@@ -1012,6 +1012,7 @@
       <packagereq type="mandatory">gnome-packagekit</packagereq>
       <packagereq type="mandatory">mesa-dri-drivers</packagereq>
       <packagereq type="mandatory">xorg-x11-drivers</packagereq>
+      <packagereq type="mandatory">xorg-x11-drv-libinput</packagereq>
       <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
       <packagereq type="mandatory">xorg-x11-utils</packagereq>
       <packagereq type="mandatory">xorg-x11-xauth</packagereq>
