@@ -523,7 +523,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
     def configure_default_template(self):
         self.set_stage('Setting default template')
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-template', self.default_template])
+        self.run_command(['/usr/bin/qubes-prefs', '--force-root', 'default-template', self.default_template])
 
     def configure_default_dvm(self):
         self.set_stage("Creating default DisposableVM")
@@ -543,10 +543,10 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         if self.choice_whonix_default.get_selected():
             default_netvm = 'sys-whonix'
 
-        self.run_command(['/usr/bin/qvm-prefs', '--force-root', '--set', 'sys-firewall', 'netvm', 'sys-net'])
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'default-netvm', default_netvm])
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'updatevm', default_netvm])
-        self.run_command(['/usr/bin/qubes-prefs', '--set', 'clockvm', 'sys-net'])
+        self.run_command(['/usr/bin/qvm-prefs', '--force-root', 'sys-firewall', 'netvm', 'sys-net'])
+        self.run_command(['/usr/bin/qubes-prefs', '--force-root', 'default-netvm', default_netvm])
+        self.run_command(['/usr/bin/qubes-prefs', '--force-root', 'updatevm', default_netvm])
+        self.run_command(['/usr/bin/qubes-prefs', '--force-root', 'clockvm', 'sys-net'])
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
     def configure_template(self, template):
