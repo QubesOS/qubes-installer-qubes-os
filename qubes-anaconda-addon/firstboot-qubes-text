@@ -59,7 +59,7 @@ echo
 echo "2. Create default VMs"
 echo
 echo "Choose one option:"
-echo "  1. Create default service VMs, and pre-defined AppVMs (work, banking, personal, untrusted)"
+echo "  1. Create default service VMs, and pre-defined AppVMs (personal, work, untrusted, vault)"
 echo "  2. Just create default service VMs"
 echo "  3. Do not create any VMs right now, but configure template(s)"
 echo "  4. Do not do anything (not recommended, for advanced users only)"
