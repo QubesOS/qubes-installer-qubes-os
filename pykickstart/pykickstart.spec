@@ -26,6 +26,7 @@ Source0:   %{name}-%{version}.tar.gz
 #Patch0: 0001-Default-to-the-F21-version-of-kickstart-syntax.patch
 #Patch1: 0002-disable-test.patch
 Patch2: repo-gpgkey-option.patch
+Patch3: standard-xgettext.patch
 BuildArch: noarch
 
 
@@ -81,6 +82,7 @@ the pykickstart package.
 #patch0 -p1
 #patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 rm -rf %{py3dir}
 mkdir %{py3dir}
