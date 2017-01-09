@@ -1,7 +1,7 @@
 # dnfpayload.py
 # DNF/rpm software payload management.
 #
-# Copyright (C) 2013  Red Hat, Inc.
+# Copyright (C) 2013-2015  Red Hat, Inc.
 #
 # This copyrighted material is made available to anyone wishing to use,
 # modify, copy, or redistribute it subject to the terms and conditions of
@@ -17,16 +17,13 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Ales Kozumplik <akozumpl@redhat.com>
-#
 import os
 
 from blivet.size import Size
 import blivet.arch
 from pyanaconda.flags import flags
-from pyanaconda.i18n import _
-from pyanaconda.progress import progressQ
-from pyanaconda.simpleconfig import simple_replace
+from pyanaconda.i18n import _, N_
+from pyanaconda.progress import progressQ, progress_message
 
 import configparser
 import collections
@@ -44,22 +41,25 @@ import shutil
 import sys
 import time
 import threading
-from pyanaconda.iutil import ProxyString, ProxyStringError
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
+from pyanaconda.iutil import ProxyString, ProxyStringError, ipmi_abort
 
 log = logging.getLogger("packaging")
 
 import dnf
+import dnf.logging
 import dnf.exceptions
 import dnf.repo
 import dnf.callback
 import rpm
+import librepo
 
 DNF_CACHE_DIR = '/tmp/dnf.cache'
 DNF_PLUGINCONF_DIR = '/tmp/dnf.pluginconf'
 DNF_PACKAGE_CACHE_DIR_SUFFIX = 'dnf.package.cache'
+DNF_LIBREPO_LOG = '/tmp/dnf.librepo.log'
 DOWNLOAD_MPOINTS = {'/tmp',
                     '/',
+                    '/var/tmp',
                     '/mnt/sysimage',
                     '/mnt/sysimage/home',
                     '/mnt/sysimage/tmp',
@@ -71,8 +71,12 @@ REPO_DIRS = ['/etc/yum.repos.d',
              '/tmp/product/anaconda.repos.d']
 YUM_REPOS_DIR = "/etc/yum.repos.d/"
 
-_DNF_INSTALLER_LANGPACK_CONF = DNF_PLUGINCONF_DIR + "/langpacks.conf"
-_DNF_TARGET_LANGPACK_CONF = "/etc/dnf/plugins/langpacks.conf"
+# Bonus to required free space which depends on block size and rpm database size estimation.
+# Every file could be aligned to fragment size so 4KiB * number_of_files should be a worst
+# case scenario. 2KiB for RPM DB was acquired by testing.
+# 6KiB = 4K(max default fragment size) + 2K(rpm db could be taken for a header file)
+BONUS_SIZE_ON_FILE = Size("6 KiB")
+
 
 def _failure_limbo():
     progressQ.send_quit(1)
@@ -92,6 +96,11 @@ def _df_map():
         if not key.startswith('/'):
             continue
         structured[key] = Size(int(val)*1024)
+
+    # Add /var/tmp/ if this is a directory or image installation
+    if flags.dirInstall or flags.imageInstall:
+        var_tmp = os.statvfs("/var/tmp")
+        structured["/var/tmp"] = Size(var_tmp.f_frsize * var_tmp.f_bfree)
     return structured
 
 def _paced(fn):
@@ -104,47 +113,82 @@ def _paced(fn):
         return fn(self, *args)
     return paced_fn
 
-def _pick_mpoint(df, download_size, install_size):
+def _pick_mpoint(df, download_size, install_size, download_only):
     def reasonable_mpoint(mpoint):
         return mpoint in DOWNLOAD_MPOINTS
 
     requested = download_size
     requested_root = requested + install_size
     root_mpoint = pyanaconda.iutil.getSysroot()
+    log.debug('Input mount points: %s', df)
+    log.info('Estimated size: download %s & install %s', requested,
+              (requested_root - requested))
+
+    # Find sufficient mountpoint to download and install packages.
     sufficients = {key : val for (key, val) in df.items()
-                   # for root we need to take in count both download and install size
-                   if ((key != root_mpoint and val > requested)
-                   or val > requested_root) and reasonable_mpoint(key)}
-    log.debug('Estimated size: download %s & install %s - df: %s', requested,
-              (requested_root - requested), df)
-    log.info('Sufficient mountpoints found: %s', sufficients)
+                   if ((key != root_mpoint and val > requested) or val > requested_root)
+                      and reasonable_mpoint(key)}
 
-    if not len(sufficients):
+    # If no sufficient mountpoints for download and install were found and we are looking
+    # for download mountpoint only, ignore install size and try to find mountpoint just
+    # to download packages. This fallback is required when user skipped space check.
+    if not sufficients and download_only:
+        sufficients = {key : val for (key, val) in df.items()
+                       if val > requested and reasonable_mpoint(key)}
+        if sufficients:
+            log.info('Sufficient mountpoint for download only found: %s', sufficients)
+    elif sufficients:
+        log.info('Sufficient mountpoints found: %s', sufficients)
+
+    if not sufficients:
+        log.debug("No sufficient mountpoints found")
         return None
-    # default to the biggest one:
-    return sorted(sufficients.items(), key=operator.itemgetter(1),
-                  reverse=True)[0][0]
 
-class PayloadRPMDisplay(dnf.callback.LoggingTransactionDisplay):
+    sorted_mpoints = sorted(sufficients.items(), key=operator.itemgetter(1),
+                            reverse=True)
+
+    # try to pick something else than root mountpoint for downloading
+    if download_only and len(sorted_mpoints) >= 2 and sorted_mpoints[0][0] == root_mpoint:
+        return sorted_mpoints[1][0]
+    else:
+        # default to the biggest one:
+        return sorted_mpoints[0][0]
+
+
+class PayloadRPMDisplay(dnf.callback.TransactionProgress):
     def __init__(self, queue_instance):
         super(PayloadRPMDisplay, self).__init__()
         self._queue = queue_instance
         self._last_ts = None
         self.cnt = 0
 
-    def event(self, package, action, te_current, te_total, ts_current, ts_total):
-        if action == self.PKG_INSTALL and te_current == 0:
+    def progress(self, package, action, ti_done, ti_total, ts_done, ts_total):
+        # Process DNF actions, communicating with anaconda via the queue
+        # A normal installation consists of 'install' messages followed by
+        # the 'post' message.
+        if action == self.PKG_INSTALL and ti_done == 0:
             # do not report same package twice
-            if self._last_ts == ts_current:
+            if self._last_ts == ts_done:
                 return
-            self._last_ts = ts_current
+            self._last_ts = ts_done
 
             msg = '%s.%s (%d/%d)' % \
-                (package.name, package.arch, ts_current, ts_total)
+                (package.name, package.arch, ts_done, ts_total)
             self.cnt += 1
             self._queue.put(('install', msg))
+
+            # Log the exact package nevra, build time and checksum
+            nevra = "%s-%s.%s" % (package.name, package.evr, package.arch)
+            log_msg = "Installed: %s %s %s" % (nevra, package.buildtime, package.returnIdSum()[1])
+            self._queue.put(('log', log_msg))
         elif action == self.TRANS_POST:
             self._queue.put(('post', None))
+
+    def error(self, message):
+        """ Report an error that occurred during the transaction. Message is a
+            string which describes the error.
+        """
+        self._queue.put(('error', message))
 
 class DownloadProgress(dnf.callback.DownloadProgress):
     def __init__(self):
@@ -172,7 +216,7 @@ class DownloadProgress(dnf.callback.DownloadProgress):
             self.downloads[nevra] = payload.download_size
             self._update()
             return
-        log.critical("Failed to download '%s': %d - %s", nevra, status, err_msg)
+        log.warning("Failed to download '%s': %d - %s", nevra, status, err_msg)
 
     def progress(self, payload, done):
         nevra = str(payload)
@@ -184,13 +228,20 @@ class DownloadProgress(dnf.callback.DownloadProgress):
         self.total_size = Size(total_size)
 
 def do_transaction(base, queue_instance):
+    # Execute the DNF transaction and catch any errors. An error doesn't
+    # always raise a BaseException, so presence of 'quit' without a preceeding
+    # 'post' message also indicates a problem.
     try:
         display = PayloadRPMDisplay(queue_instance)
         base.do_transaction(display=display)
+        exit_reason = "DNF quit"
     except BaseException as e:
         log.error('The transaction process has ended abruptly')
         log.info(e)
-        queue_instance.put(('quit', str(e)))
+        import traceback
+        exit_reason = str(e) + traceback.format_exc()
+    finally:
+        queue_instance.put(('quit', str(exit_reason)))
 
 class DNFPayload(packaging.PackagePayload):
     def __init__(self, data):
@@ -198,6 +249,7 @@ class DNFPayload(packaging.PackagePayload):
 
         self._base = None
         self._download_location = None
+        self._updates_enabled = True
         self._configure()
 
         # Protect access to _base.repos to ensure that the dictionary is not
@@ -225,7 +277,7 @@ class DNFPayload(packaging.PackagePayload):
             return url
 
         url = url.replace("$releasever", self._base.conf.releasever)
-        url = url.replace("$basearch", blivet.arch.getArch())
+        url = url.replace("$basearch", blivet.arch.get_arch())
 
         return url
 
@@ -356,6 +408,7 @@ class DNFPayload(packaging.PackagePayload):
                 self._miss(e)
 
         self._select_kernel_package()
+        self._select_langpacks()
 
         for pkg_name in self.requiredPackages:
             try:
@@ -378,27 +431,10 @@ class DNFPayload(packaging.PackagePayload):
             self.txID += 1
         return self.txID
 
-    def _configure(self):
-        self._base = dnf.Base()
+
+    def _configure_proxy(self):
+        """ Configure the proxy on the dnf.Base object."""
         conf = self._base.conf
-        conf.cachedir = DNF_CACHE_DIR
-        conf.pluginconfpath = DNF_PLUGINCONF_DIR
-        conf.logdir = '/tmp/'
-        # disable console output completely:
-        conf.debuglevel = 0
-        conf.errorlevel = 0
-        self._base.logging.setup_from_dnf_conf(conf)
-
-        conf.releasever = self._getReleaseVersion(None)
-        conf.installroot = pyanaconda.iutil.getSysroot()
-        conf.prepend_installroot('persistdir')
-
-        # NSS won't survive the forking we do to shield out chroot during
-        # transaction, disable it in RPM:
-        conf.tsflags.append('nocrypto')
-
-        if self.data.packages.multiLib:
-            conf.multilib_policy = "all"
 
         if hasattr(self.data.method, "proxy") and self.data.method.proxy:
             try:
@@ -412,6 +448,31 @@ class DNFPayload(packaging.PackagePayload):
             except ProxyStringError as e:
                 log.error("Failed to parse proxy for dnf configure %s: %s",
                           self.data.method.proxy, e)
+        else:
+            # No proxy configured
+            conf.proxy = None
+            conf.proxy_username = None
+            conf.proxy_password = None
+
+    def _configure(self):
+        self._base = dnf.Base()
+        conf = self._base.conf
+        conf.cachedir = DNF_CACHE_DIR
+        conf.pluginconfpath = DNF_PLUGINCONF_DIR
+        conf.logdir = '/tmp/'
+
+        conf.releasever = self._getReleaseVersion(None)
+        conf.installroot = pyanaconda.iutil.getSysroot()
+        conf.prepend_installroot('persistdir')
+
+        # NSS won't survive the forking we do to shield out chroot during
+        # transaction, disable it in RPM:
+        conf.tsflags.append('nocrypto')
+
+        if self.data.packages.multiLib:
+            conf.multilib_policy = "all"
+
+        self._configure_proxy()
 
         # Start with an empty comps so we can go ahead and use the environment
         # and group properties. Unset reposdir to ensure dnf has nothing it can
@@ -420,6 +481,20 @@ class DNFPayload(packaging.PackagePayload):
         self._base.read_comps()
 
         conf.reposdir = REPO_DIRS
+
+        # Two reasons to turn this off:
+        # 1. Minimal installs don't want all the extras this brings in.
+        # 2. Installs aren't reproducible due to weak deps. failing silently.
+        if self.data.packages.excludeWeakdeps:
+            conf.install_weak_deps = False
+
+        # Setup librepo logging
+        librepo.log_set_file(DNF_LIBREPO_LOG)
+
+        # Increase dnf log level to custom DDEBUG level
+        # Do this here to prevent import side-effects in anaconda_log
+        dnf_logger = logging.getLogger("dnf")
+        dnf_logger.setLevel(dnf.logging.DDEBUG)
 
     @property
     def _download_space(self):
@@ -448,18 +523,19 @@ class DNFPayload(packaging.PackagePayload):
             # Doing a sys.exit also ensures the running thread quits before
             # it can do anything else.
             progressQ.send_quit(1)
-            pyanaconda.iutil.ipmi_report(constants.IPMI_ABORTED)
+            ipmi_abort(scripts=self.data.scripts)
             sys.exit(1)
 
     def _pick_download_location(self):
         download_size = self._download_space
         install_size = self._spaceRequired()
         df_map = _df_map()
-        mpoint = _pick_mpoint(df_map, download_size, install_size)
+        mpoint = _pick_mpoint(df_map, download_size, install_size, download_only=True)
         if mpoint is None:
-            msg = "Not enough disk space to download the packages."
+            msg = ("Not enough disk space to download the packages; size %s." % download_size)
             raise packaging.PayloadError(msg)
 
+        log.info("Mountpoint %s picked as download location", mpoint)
         pkgdir = '%s/%s' % (mpoint, DNF_PACKAGE_CACHE_DIR_SUFFIX)
         with self._repos_lock:
             for repo in self._base.repos.iter_enabled():
@@ -479,6 +555,9 @@ class DNFPayload(packaging.PackagePayload):
         exclude = self.data.packages.excludedList
         try:
             self._base.group_install(grp, types, exclude=exclude)
+        except dnf.exceptions.MarkingError as e:
+            # dnf-1.1.9 raises this error when a package is missing from a group
+            raise packaging.NoSuchPackage(str(e), required=True)
         except dnf.exceptions.CompsError as e:
             # DNF raises this when it is already selected
             log.debug(e)
@@ -502,6 +581,21 @@ class DNFPayload(packaging.PackagePayload):
                 break
         else:
             log.error('kernel: failed to select a kernel from %s', kernels)
+
+    def _select_langpacks(self):
+        # get all available languages in repos
+        available_langpacks = self._base.sack.query().available() \
+            .filter(name__glob="langpacks-*")
+        alangs = [p.name.split('-', 1)[1] for p in available_langpacks]
+
+        # add base langpacks into transaction
+        for lang in [self.data.lang.lang] + self.data.lang.addsupport:
+            loc = pyanaconda.localization.find_best_locale_match(lang, alangs)
+            if not loc:
+                log.warning("Selected lang %s does not match any available langpack", lang)
+                continue
+            log.info("Installing langpacks-%s", loc)
+            self._base.install("langpacks-" + loc)
 
     def _sync_metadata(self, dnf_repo):
         try:
@@ -544,6 +638,10 @@ class DNFPayload(packaging.PackagePayload):
     @property
     def spaceRequired(self):
         size = self._spaceRequired()
+        if not self.storage:
+            log.warning("Payload doesn't have storage")
+            return size
+
         download_size = self._download_space
         valid_points = _df_map()
         root_mpoint = pyanaconda.iutil.getSysroot()
@@ -553,13 +651,16 @@ class DNFPayload(packaging.PackagePayload):
                 new_key = key[:-1]
             # we can ignore swap
             if key.startswith('/') and ((root_mpoint + new_key) not in valid_points):
-                valid_points[root_mpoint + new_key] = val.format.freeSpaceEstimate(val.size)
+                valid_points[root_mpoint + new_key] = val.format.free_space_estimate(val.size)
 
-        m_points = _pick_mpoint(valid_points, download_size, size)
-        if not m_points or m_points == root_mpoint:
+        m_point = _pick_mpoint(valid_points, download_size, size, download_only=False)
+        if not m_point or m_point == root_mpoint:
             # download and install to the same mount point
             size = size + download_size
-        log.debug("Instalation space required %s for mpoints %s", size, m_points)
+            log.debug("Install + download space required %s", size)
+        else:
+            log.debug("Download space required %s for mpoint %s (non-chroot)", download_size, m_point)
+            log.debug("Installation space required %s", size)
         return size
 
     def _spaceRequired(self):
@@ -567,11 +668,23 @@ class DNFPayload(packaging.PackagePayload):
         if transaction is None:
             return Size("3000 MB")
 
-        size = sum(tsi.installed.installsize for tsi in transaction)
-        # add 35% to account for the fact that the above method is laughably
-        # inaccurate:
-        size *= 1.35
-        return Size(size)
+        size = 0
+        files_nm = 0
+        for tsi in transaction:
+            # space taken by all files installed by the packages
+            size += tsi.installed.installsize
+            # number of files installed on the system
+            files_nm += len(tsi.installed.files)
+
+        # append bonus size depending on number of files
+        bonus_size = files_nm * BONUS_SIZE_ON_FILE
+        size = Size(size)
+        # add another 10% as safeguard
+        total_space = (size + bonus_size) * 1.1
+        log.debug("Size from DNF: %s", size)
+        log.debug("Bonus size %s by number of files %s", bonus_size, files_nm)
+        log.debug("Total size required %s", total_space)
+        return total_space
 
     def _isGroupVisible(self, grpid):
         grp = self._base.comps.group_by_pattern(grpid)
@@ -590,9 +703,9 @@ class DNFPayload(packaging.PackagePayload):
 
         try:
             if self._base.resolve():
-                log.debug("checking dependencies: success.")
+                log.info("checking dependencies: success")
             else:
-                log.debug("empty transaction")
+                log.info("empty transaction")
         except dnf.exceptions.DepsolveError as e:
             msg = str(e)
             log.warning(msg)
@@ -600,6 +713,22 @@ class DNFPayload(packaging.PackagePayload):
 
         log.info("%d packages selected totalling %s",
                  len(self._base.transaction), self.spaceRequired)
+
+    def setUpdatesEnabled(self, state):
+        """ Enable or Disable the repos used to update closest mirror.
+
+            :param bool state: True to enable updates, False to disable.
+        """
+        self._updates_enabled = state
+
+        if self._updates_enabled:
+            self.enableRepo("updates")
+            if not constants.isFinal:
+                self.enableRepo("updates-testing")
+        else:
+            self.disableRepo("updates")
+            if not constants.isFinal:
+                self.disableRepo("updates-testing")
 
     def disableRepo(self, repo_id):
         try:
@@ -672,7 +801,7 @@ class DNFPayload(packaging.PackagePayload):
         self._refreshEnvironmentAddons()
 
     def install(self):
-        progressQ.send_message(_('Starting package installation process'))
+        progress_message(N_('Starting package installation process'))
 
         # Add the rpm macros to the global transaction environment
         for macro in self.rpmMacros:
@@ -685,10 +814,11 @@ class DNFPayload(packaging.PackagePayload):
             self._download_location = self._pick_download_location()
         except packaging.PayloadError as e:
             if errors.errorHandler.cb(e) == errors.ERROR_RAISE:
+                log.error("Installation failed: %r", e)
                 _failure_limbo()
 
         pkgs_to_download = self._base.transaction.install_set
-        log.info('Downloading packages.')
+        log.info('Downloading packages to %s.', self._download_location)
         progressQ.send_message(_('Downloading packages'))
         progress = DownloadProgress()
         try:
@@ -697,29 +827,42 @@ class DNFPayload(packaging.PackagePayload):
             msg = 'Failed to download the following packages: %s' % str(e)
             exc = packaging.PayloadInstallError(msg)
             if errors.errorHandler.cb(exc) == errors.ERROR_RAISE:
+                log.error("Installation failed: %r", exc)
                 _failure_limbo()
 
         log.info('Downloading packages finished.')
 
-        pre_msg = _("Preparing transaction from installation source")
-        progressQ.send_message(pre_msg)
+        pre_msg = (N_("Preparing transaction from installation source"))
+        progress_message(pre_msg)
 
         queue_instance = multiprocessing.Queue()
         process = multiprocessing.Process(target=do_transaction,
                                           args=(self._base, queue_instance))
         process.start()
         (token, msg) = queue_instance.get()
-        while token not in ('post', 'quit'):
+        # When the installation works correctly it will get 'install' updates
+        # followed by a 'post' message and then a 'quit' message.
+        # If the installation fails it will send 'quit' without 'post'
+        while token:
             if token == 'install':
                 msg = _("Installing %s") % msg
                 progressQ.send_message(msg)
+            elif token == 'log':
+                log.info(msg)
+            elif token == 'post':
+                break # Installation finished successfully
+            elif token == 'quit':
+                msg = ("Payload error - 'quit' was received before 'post': %s" % msg)
+                raise packaging.PayloadError(msg)
+            elif token == 'error':
+                exc = packaging.PayloadInstallError("DNF error: %s" % msg)
+                if errors.errorHandler.cb(exc) == errors.ERROR_RAISE:
+                    log.error("Installation failed: %r", exc)
+                    _failure_limbo()
             (token, msg) = queue_instance.get()
 
-        if token == 'quit':
-            _failure_limbo()
-
-        post_msg = _("Performing post-installation setup tasks")
-        progressQ.send_message(post_msg)
+        post_msg = (N_("Performing post-installation setup tasks"))
+        progress_message(post_msg)
         process.join()
         self._base.close()
         if os.path.exists(self._download_location):
@@ -756,28 +899,9 @@ class DNFPayload(packaging.PackagePayload):
 
     def preInstall(self, packages=None, groups=None):
         super(DNFPayload, self).preInstall(packages, groups)
-        self.requiredPackages += ["dnf"]
         if packages:
             self.requiredPackages += packages
         self.requiredGroups = groups
-
-        # Write the langpacks config
-        pyanaconda.iutil.mkdirChain(DNF_PLUGINCONF_DIR)
-        langs = [self.data.lang.lang] + self.data.lang.addsupport
-
-        # Start with the file in /etc, if one exists. Otherwise make an empty config
-        if os.path.exists(_DNF_TARGET_LANGPACK_CONF):
-            shutil.copy2(_DNF_TARGET_LANGPACK_CONF, _DNF_INSTALLER_LANGPACK_CONF)
-        else:
-            with open(_DNF_INSTALLER_LANGPACK_CONF, "w") as f:
-                f.write("[main]\n")
-
-        # langpacks.conf is an INI style config file, read it and
-        # add or change the enabled and langpack_locales entries without
-        # changing anything else.
-        keys=[("langpack_locales", "langpack_locales=" + ", ".join(langs)),
-              ("enabled", "enabled=1")]
-        simple_replace(_DNF_INSTALLER_LANGPACK_CONF, keys)
 
     def reset(self):
         super(DNFPayload, self).reset()
@@ -785,6 +909,7 @@ class DNFPayload(packaging.PackagePayload):
         shutil.rmtree(DNF_PLUGINCONF_DIR, ignore_errors=True)
         self.txID = None
         self._base.reset(sack=True, repos=True)
+        self._configure_proxy()
 
     def updateBaseRepo(self, fallback=True, checkmount=True):
         log.info('configuring base repo')
@@ -797,6 +922,10 @@ class DNFPayload(packaging.PackagePayload):
         # are enabled, and then disable them all.  If the user gave us a method, we want
         # to use that instead of the default repos.
         self._base.read_all_repos()
+
+        # Repos on disk are always enabled. When reloaded their state needs to
+        # be synchronized with the user selection.
+        self.setUpdatesEnabled(self._updates_enabled)
 
         enabled = []
         with self._repos_lock:
@@ -826,6 +955,7 @@ class DNFPayload(packaging.PackagePayload):
             except (packaging.MetadataError, packaging.PayloadError) as e:
                 log.error("base repo (%s/%s) not valid -- removing it",
                           method.method, url)
+                log.error("reason for repo removal: %s", e)
                 with self._repos_lock:
                     self._base.repos.pop(constants.BASE_REPO_NAME, None)
                 if not fallback:
@@ -854,8 +984,9 @@ class DNFPayload(packaging.PackagePayload):
             log.debug("repo %s: mirrorlist %s, baseurl %s",
                       ksrepo.name, ksrepo.mirrorlist, ksrepo.baseurl)
             # one of these must be set to create new repo
-            if not (ksrepo.mirrorlist or ksrepo.baseurl):
-                raise packaging.PayloadSetupError("Repository %s has no mirror or baseurl set"
+            if not (ksrepo.mirrorlist or ksrepo.baseurl or ksrepo.name in self._base.repos):
+                raise packaging.PayloadSetupError("Repository %s has no mirror or baseurl set "
+                                                  "and is not one of the pre-defined repositories"
                                                   % ksrepo.name)
 
             self._add_repo(ksrepo)
@@ -925,6 +1056,10 @@ class DNFPayload(packaging.PackagePayload):
         """ Perform post-installation tasks. """
         # Write selected kickstart repos to target system
         for ks_repo in (ks for ks in (self.getAddOnRepo(r) for r in self.addOns) if ks.install):
+            if ks_repo.baseurl.startswith("nfs://"):
+                log.info("Skip writing nfs repo %s to target system.", ks_repo.name)
+                continue
+
             try:
                 repo = self.getRepo(ks_repo.name)
                 if not repo:
@@ -937,11 +1072,6 @@ class DNFPayload(packaging.PackagePayload):
                 self._writeDNFRepo(repo, repo_path)
             except packaging.PayloadSetupError as e:
                 log.error(e)
-
-        # Write the langpacks config to the target system
-        target_langpath = pyanaconda.iutil.getSysroot() + _DNF_TARGET_LANGPACK_CONF
-        pyanaconda.iutil.mkdirChain(os.path.dirname(target_langpath))
-        shutil.copy2(_DNF_INSTALLER_LANGPACK_CONF, target_langpath)
 
         super(DNFPayload, self).postInstall()
 

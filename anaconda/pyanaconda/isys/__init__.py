@@ -17,10 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Matt Wilson <msw@redhat.com>
-#            Erik Troan <ewt@redhat.com>
-#            Jeremy Katz <katzj@redhat.com>
-#
 
 try:
     from pyanaconda import _isys
@@ -33,12 +29,11 @@ import blivet.arch
 import time
 import datetime
 import pytz
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import logging
 log = logging.getLogger("anaconda")
 
-if blivet.arch.getArch() in ["ppc64", "ppc64le"]:
+if blivet.arch.get_arch() in ["ppc64", "ppc64le"]:
     MIN_RAM = 768
     GUI_INSTALL_EXTRA_RAM = 512
 else:
@@ -73,7 +68,7 @@ def isPaeAvailable():
         return isPAE
 
     isPAE = False
-    if not blivet.arch.isX86():
+    if not blivet.arch.is_x86():
         return isPAE
 
     f = open("/proc/cpuinfo", "r")
@@ -104,6 +99,7 @@ def set_system_time(secs):
 
     """
 
+    # pylint: disable=no-member
     _isys.set_system_time(secs)
     log.info("System time set to %s UTC", time.asctime(time.gmtime(secs)))
 
@@ -131,10 +127,10 @@ def set_system_date_time(year=None, month=None, day=None, hour=None, minute=None
     minute = minute if minute is not None else now.minute
     second = second if second is not None else now.second
 
-    set_date = datetime.datetime(year, month, day, hour, minute, second, tzinfo=tz)
+    set_date = tz.localize(datetime.datetime(year, month, day, hour, minute, second))
 
     # Calculate the number of seconds between this time and timestamp 0
-    epoch = datetime.datetime.fromtimestamp(0, pytz.UTC)
+    epoch = tz.localize(datetime.datetime.fromtimestamp(0))
     timestamp = (set_date - epoch).total_seconds()
 
     set_system_time(int(timestamp))
@@ -173,4 +169,5 @@ def total_memory():
         log.error("MemTotal: line not found in /proc/meminfo")
         raise RuntimeError("MemTotal: line not found in /proc/meminfo")
 
+# pylint: disable=no-member
 installSyncSignalHandlers = _isys.installSyncSignalHandlers

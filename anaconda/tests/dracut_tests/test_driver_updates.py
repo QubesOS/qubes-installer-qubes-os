@@ -1,8 +1,5 @@
 # test_driver_updates.py - unittests for driver_updates.py
 
-# Ignore any interruptible calls
-# pylint: disable=interruptible-system-call
-
 import unittest
 try:
     import unittest.mock as mock
@@ -12,6 +9,7 @@ except ImportError:
 import os
 import tempfile
 import shutil
+import collections
 
 import sys
 sys.path.append(os.path.normpath(os.path.dirname(__file__)+'/../../dracut'))
@@ -19,23 +17,44 @@ sys.path.append(os.path.normpath(os.path.dirname(__file__)+'/../../dracut'))
 from driver_updates import copy_files, move_files, iter_files, ensure_dir
 from driver_updates import append_line, mkdir_seq
 
+
 def touch(path):
     try:
         open(path, 'a')
     except IOError as e:
         if e.errno != 17: raise
 
+
 def makedir(path):
     ensure_dir(path)
     return path
+
 
 def makefile(path):
     makedir(os.path.dirname(path))
     touch(path)
     return path
 
+
 def makefiles(*paths):
     return [makefile(p) for p in paths]
+
+
+def listfiles(path):
+    path = os.path.normpath(path)
+
+    # This could be a list comprehension, or it could be readable
+    for dirpath, _dirname, filenames in os.walk(path):
+        for filename in filenames:
+            # Strip "path" from dirname so that the paths are relative to path.
+            # If dirname != path, add one to the length to keep the slash
+            # in path/subdir.
+            if dirpath == path:
+                prefix = ''
+            else:
+                prefix = dirpath[len(path)+1:] + '/'
+            yield prefix + filename
+
 
 class FileTestCaseBase(unittest.TestCase):
     def setUp(self):
@@ -49,6 +68,7 @@ class FileTestCaseBase(unittest.TestCase):
     def makefiles(self, *paths):
         return [makefile(os.path.normpath(self.tmpdir+'/'+p)) for p in paths]
 
+
 class SelfTestCase(FileTestCaseBase):
     def test_makefiles(self):
         """check test helpers"""
@@ -57,14 +77,15 @@ class SelfTestCase(FileTestCaseBase):
         for f in filepaths:
             self.assertTrue(os.path.exists(self.tmpdir+'/'+f))
 
+
 class TestCopyFiles(FileTestCaseBase):
     def test_basic(self):
         """copy_file: copy files into destdir, leaving existing contents"""
         files = self.makefiles("src/file1", "src/subdir/file2")
         self.makefiles("dest/file3")
-        copy_files(files, self.destdir)
-        result = set(os.listdir(self.destdir))
-        self.assertEqual(result, set(["file1", "file2", "file3"]))
+        copy_files(files, self.destdir, self.srcdir)
+        result = set(listfiles(self.destdir))
+        self.assertEqual(result, set(["file1", "subdir/file2", "file3"]))
 
     def test_overwrite(self):
         """copy_file: overwrite files in destdir if they have the same name"""
@@ -73,8 +94,8 @@ class TestCopyFiles(FileTestCaseBase):
             outf.write("srcfile")
         with open(dest, 'w') as outf:
             outf.write("destfile")
-        copy_files([src], self.destdir)
-        self.assertEqual(os.listdir(self.destdir), ["file1"])
+        copy_files([src], self.destdir, self.srcdir)
+        self.assertEqual(list(listfiles(self.destdir)), ["file1"])
         self.assertEqual(open(dest).read(), "srcfile")
 
     def test_samefile(self):
@@ -82,15 +103,24 @@ class TestCopyFiles(FileTestCaseBase):
         (dest,) = self.makefiles("dest/file1")
         with open(dest, 'w') as outf:
             outf.write("destfile")
-        copy_files([dest], self.destdir)
-        self.assertEqual(os.listdir(self.destdir), ["file1"])
+        copy_files([dest], self.destdir, "src")
+        self.assertEqual(list(listfiles(self.destdir)), ["file1"])
         self.assertEqual(open(dest).read(), "destfile")
 
     def test_copy_to_parent(self):
         """copy_file: skip files in subdirs of destdir"""
         files = self.makefiles("dest/subdir/file1")
-        copy_files(files, self.destdir)
+        copy_files(files, self.destdir, "src")
         self.assertEqual(list(iter_files(self.destdir)), files)
+
+    def test_copy_kernel(self):
+        """copy_file: strip leading module directories"""
+        files = self.makefiles("src/lib/modules/3.2.1-900.fc47.x86_64/kernel/subdir/module.ko",
+                               "src/lib/modules/3.2.1-900.fc47.x86_64/kernel/other.ko.xz")
+        copy_files(files, self.destdir, self.srcdir+"/lib/modules")
+        result = set(listfiles(self.destdir))
+        self.assertEqual(result, set(["subdir/module.ko", "other.ko.xz"]))
+
 
 class TestIterFiles(FileTestCaseBase):
     def test_basic(self):
@@ -107,12 +137,13 @@ class TestIterFiles(FileTestCaseBase):
         result = set(iter_files(self.tmpdir, pattern="*.ko*"))
         self.assertEqual(result, goodfiles)
 
+
 class TestMoveFiles(FileTestCaseBase):
     def test_basic(self):
         """move_files: move files to destdir"""
         files = self.makefiles("src/file1", "src/subdir/file2")
-        move_files(files, self.destdir)
-        self.assertEqual(set(os.listdir(self.destdir)), set(["file1", "file2"]))
+        move_files(files, self.destdir, self.srcdir)
+        self.assertEqual(set(listfiles(self.destdir)), set(["file1", "subdir/file2"]))
         self.assertEqual(list(iter_files(self.srcdir)), [])
 
     def test_overwrite(self):
@@ -122,8 +153,8 @@ class TestMoveFiles(FileTestCaseBase):
             outf.write("srcfile")
         with open(dest, 'w') as outf:
             outf.write("destfile")
-        move_files([src], self.destdir)
-        self.assertEqual(os.listdir(self.destdir), ["file1"])
+        move_files([src], self.destdir, self.srcdir)
+        self.assertEqual(list(listfiles(self.destdir)), ["file1"])
         self.assertEqual(open(dest).read(), "srcfile")
         self.assertEqual(list(iter_files(self.srcdir)), [])
 
@@ -132,15 +163,16 @@ class TestMoveFiles(FileTestCaseBase):
         (dest,) = self.makefiles("dest/file1")
         with open(dest, 'w') as outf:
             outf.write("destfile")
-        move_files([dest], self.destdir)
-        self.assertEqual(os.listdir(self.destdir), ["file1"])
+        move_files([dest], self.destdir, self.srcdir)
+        self.assertEqual(list(listfiles(self.destdir)), ["file1"])
         self.assertEqual(open(dest).read(), "destfile")
 
     def test_move_to_parent(self):
         """move_files: leave files alone if they're in a subdir of destdir"""
         files = set(self.makefiles("dest/subdir/file1", "dest/file2"))
-        move_files(files, self.destdir)
+        move_files(files, self.destdir, self.srcdir)
         self.assertEqual(set(iter_files(self.destdir)), files)
+
 
 class TestAppendLine(FileTestCaseBase):
     def test_empty(self):
@@ -160,6 +192,7 @@ class TestAppendLine(FileTestCaseBase):
         line = "this line contains a newline already\n"
         append_line(outfile, line)
         self.assertEqual(open(outfile).read(), '\n'.join(oldlines+[line]))
+
 
 from driver_updates import read_lines
 class TestReadLine(FileTestCaseBase):
@@ -189,6 +222,7 @@ class TestReadLine(FileTestCaseBase):
             append_line(filename, i)
         self.assertEqual(items, read_lines(filename))
 
+
 class TestMkdirSeq(FileTestCaseBase):
     def test_basic(self):
         """mkdir_seq: first dir ends with 1"""
@@ -204,6 +238,7 @@ class TestMkdirSeq(FileTestCaseBase):
         self.assertTrue(os.path.isdir(newdir))
         self.assertTrue(os.path.isdir(firstdir))
 
+
 from driver_updates import find_repos, save_repo, ARCH
 # As far as we know, this is what makes a valid repo: rhdd3 + rpms/`uname -m`/
 def makerepo(topdir, desc=None):
@@ -213,6 +248,7 @@ def makerepo(topdir, desc=None):
     with open(descfile, "w") as outf:
         outf.write(desc+"\n")
     makedir(topdir+'/rpms/'+ARCH)
+
 
 class TestFindRepos(FileTestCaseBase):
     def test_basic(self):
@@ -230,15 +266,70 @@ class TestFindRepos(FileTestCaseBase):
         repos = find_repos(self.tmpdir)
         self.assertEqual(len(repos),3)
 
+
 class TestSaveRepo(FileTestCaseBase):
-    def test_basic(self):
-        """save_repo: copies a directory to /run/install/DD-X"""
+    def test_folder_repo(self):
+        """save_repo: copies directory contents to /run/install/DD-X"""
         makerepo(self.srcdir)
         repo = find_repos(self.srcdir)[0]
-        makefile(repo+'/fake-something.rpm')
+        makefile(repo + '/repodata')
+        makefile(repo + '/fake-something1.rpm')
+        makefile(repo + '/fake-something2.rpm')
+        makefile(repo + '/fake-something3.rpm')
         saved = save_repo(repo, target=self.destdir)
-        self.assertEqual(set(os.listdir(saved)), set(["fake-something.rpm"]))
+        expected_files = set(["fake-something1.rpm", "fake-something2.rpm", "fake-something3.rpm", "repodata"])
+        self.assertEqual(set(listfiles(saved)), expected_files)
         self.assertEqual(saved, os.path.join(self.destdir, "DD-1"))
+
+    def test_single_file(self):
+        """save_repo: copies a single file to /run/install/DD-X"""
+        makerepo(self.srcdir)
+        repo = find_repos(self.srcdir)[0]
+        file_path = makefile(repo + '/fake-something1.rpm')
+        makefile(repo + '/fake-something2.rpm')
+        makefile(repo + '/fake-something3.rpm')
+        saved = save_repo(file_path, target=self.destdir)
+        # check that only the single file was copied
+        self.assertEqual(set(listfiles(saved)), set(["fake-something1.rpm"]))
+        self.assertEqual(saved, os.path.join(self.destdir, "DD-1"))
+
+    def test_multiple_repo_folders(self):
+        """save_repo: copies directory contents to multiple /run/install/DD-X folders"""
+        # create multiple repos
+        repo_folder_1 = os.path.join(self.srcdir, "repo1")
+        repo_folder_2 = os.path.join(self.srcdir, "repo2")
+        repo_folder_3 = os.path.join(self.srcdir, "repo3")
+        makerepo(repo_folder_1)
+        makerepo(repo_folder_2)
+        makerepo(repo_folder_3)
+        repo1 = find_repos(repo_folder_1)[0]
+        repo2 = find_repos(repo_folder_2)[0]
+        repo3 = find_repos(repo_folder_3)[0]
+
+        # fill them with fake driver disk RPMs
+        for repo in [repo1, repo2, repo3]:
+            makefile(repo + '/repodata')
+            makefile(repo + '/fake-something1.rpm')
+            makefile(repo + '/fake-something2.rpm')
+            makefile(repo + '/fake-something3.rpm')
+
+        # copy their contents
+        # -> content of each repo should apprently end in a separate /run/install/DD-X folder
+        # -> we will attempt to copy the full content of the first two repos in full
+        #    and just a single RPM from the third repo
+        saved1 = save_repo(repo1, target=self.destdir)
+        saved2 = save_repo(repo2, target=self.destdir)
+        file_path = repo3 + "/fake-something2.rpm"
+        saved3 = save_repo(file_path, target=self.destdir)
+
+        # check that everything was copied correctly
+        full_copy_expected_files = set(["fake-something1.rpm", "fake-something2.rpm", "fake-something3.rpm", "repodata"])
+        self.assertEqual(set(listfiles(saved1)), full_copy_expected_files)
+        self.assertEqual(saved1, os.path.join(self.destdir, "DD-1"))
+        self.assertEqual(set(listfiles(saved2)), full_copy_expected_files)
+        self.assertEqual(saved2, os.path.join(self.destdir, "DD-2"))
+        self.assertEqual(set(listfiles(saved3)), set(["fake-something2.rpm"]))
+        self.assertEqual(saved3, os.path.join(self.destdir, "DD-3"))
 
 from driver_updates import mount, umount, mounted
 class MountTestCase(unittest.TestCase):
@@ -281,6 +372,7 @@ class MountTestCase(unittest.TestCase):
             self.assertEqual(mountpoint, mnt)
         mock_umount.assert_called_once_with(mnt)
 
+
 # NOTE: dd_list and dd_extract get tested pretty thoroughly in tests/dd_tests,
 # so this is a slightly higher-level test case
 from driver_updates import dd_list, dd_extract, Driver
@@ -298,9 +390,12 @@ fake_enhancement = Driver(
     description='This is enhancing the crap out of the installer.\n\nYeah.',
     repo=fake_module.repo
 )
+
+
 def dd_list_output(driver):
     out='{0.source}\n{0.name}\n{0.flags}\n{0.description}\n---\n'.format(driver)
     return out.encode('utf-8')
+
 
 class DDUtilsTestCase(unittest.TestCase):
     @mock.patch("driver_updates.subprocess.check_output")
@@ -332,6 +427,7 @@ class DDUtilsTestCase(unittest.TestCase):
         self.assertIn(outdir, cmd)
         self.assertIn("-blmf", cmd)
         self.assertTrue(cmd[0].endswith("dd_extract"))
+
 
 from driver_updates import extract_drivers, grab_driver_files, load_drivers
 
@@ -376,46 +472,114 @@ class ExtractDriversTestCase(unittest.TestCase):
         mock_append.assert_called_once_with(pkglist, fake_module.name)
         mock_save.assert_called_once_with(fake_module.repo)
 
+
 class GrabDriverFilesTestCase(FileTestCaseBase):
     def test_basic(self):
-        """grab_driver_files: copy drivers into place, return module list"""
+        """grab_driver_files: copy drivers into place, return module+alias dict"""
         # create a bunch of fake extracted files
         outdir = self.tmpdir + '/extract-outdir'
         moddir = outdir + "/lib/modules/%s/kernel/" % os.uname()[2]
         fwdir = outdir + "/lib/firmware/"
         modules = makefiles(moddir+"net/funk.ko", moddir+"fs/lolfs.ko.xz")
-        firmware = makefiles(fwdir+"funk.fw")
+        firmware = makefiles(fwdir+"funk.fw", fwdir+"fs/lolfs.fw")
         makefiles(outdir+"/usr/bin/monkey", outdir+"/other/dir/blah.ko")
         mod_upd_dir = self.tmpdir+'/module-updates'
         fw_upd_dir = self.tmpdir+'/fw-updates'
         # use our updates dirs instead of the default updates dirs
         with mock.patch.multiple("driver_updates",
                                  MODULE_UPDATES_DIR=mod_upd_dir,
-                                 FIRMWARE_UPDATES_DIR=fw_upd_dir):
-            modnames = grab_driver_files(outdir)
-        self.assertEqual(set(modnames), set(["funk", "lolfs"]))
-        modfiles = set(['funk.ko', 'lolfs.ko.xz'])
-        fwfiles = set(['funk.fw'])
+                                 FIRMWARE_UPDATES_DIR=fw_upd_dir,
+                                 list_aliases=lambda _x: []):
+            moddict = grab_driver_files(outdir)
+
+        self.assertEqual(moddict, {"funk": [], "lolfs": []})
+        modfiles = set(['net/funk.ko', 'fs/lolfs.ko.xz'])
+        fwfiles = set(['funk.fw', 'fs/lolfs.fw'])
         # modules/firmware are *not* in their old locations
         self.assertEqual([f for f in modules+firmware if os.path.exists(f)], [])
         # modules are in the system's updates dir
-        self.assertEqual(set(os.listdir(mod_upd_dir)), modfiles)
+        self.assertEqual(set(listfiles(mod_upd_dir)), modfiles)
         # modules are also in outdir's updates dir
-        self.assertEqual(set(os.listdir(outdir+'/'+mod_upd_dir)), modfiles)
+        self.assertEqual(set(listfiles(outdir+'/'+mod_upd_dir)), modfiles)
         # repeat for firmware
-        self.assertEqual(set(os.listdir(fw_upd_dir)), fwfiles)
-        self.assertEqual(set(os.listdir(outdir+'/'+fw_upd_dir)), fwfiles)
+        self.assertEqual(set(listfiles(fw_upd_dir)), fwfiles)
+        self.assertEqual(set(listfiles(outdir+'/'+fw_upd_dir)), fwfiles)
+
 
 class LoadDriversTestCase(unittest.TestCase):
     @mock.patch("driver_updates.subprocess.call")
-    def test_basic(self, call):
+    @mock.patch("driver_updates.rm_net_intfs_for_unload")
+    @mock.patch("driver_updates.list_net_intfs")
+    def test_basic(self, list_net_intfs, rm_net_intfs_for_unload, call):
         """load_drivers: runs depmod and modprobes all named modules"""
         modnames = ['mod1', 'mod2']
-        load_drivers(modnames)
+        moddict = collections.OrderedDict({name: [name] for name in modnames})
+        load_drivers(collections.OrderedDict(moddict))
         call.assert_has_calls([
             mock.call(["depmod", "-a"]),
-            mock.call(["modprobe", "-a"] + modnames)
+            mock.call(["modprobe", "-a"] + list(moddict.keys()))
         ])
+
+    @mock.patch("driver_updates.subprocess.call")
+    @mock.patch("driver_updates.subprocess.check_output", return_value="sorbet")
+    @mock.patch("driver_updates.rm_net_intfs_for_unload", return_value=set())
+    @mock.patch("driver_updates.list_net_intfs", return_value=set())
+    def test_basic_replace(self, list_net_intfs, rm_net_intfs_for_unload, check_output, call):
+        # "icecream" is the updated driver, replacing "sorbet"
+        # the check_output patch intercepts 'modprobe -R <alias>'
+        load_drivers({"icecream": ['pineapple', 'cherry', 'icecream']})
+        call.assert_has_calls([
+            mock.call(["modprobe", "-r", "sorbet"]),
+            mock.call(["depmod", "-a"]),
+            mock.call(["modprobe", "-a", "icecream"])
+        ])
+
+    @mock.patch("driver_updates.subprocess.call")
+    @mock.patch("driver_updates.subprocess.check_output", return_value="sorbet")
+    @mock.patch("driver_updates.rm_net_intfs_for_unload", return_value=set())
+    @mock.patch("driver_updates.list_net_intfs", return_value=set())
+    @mock.patch("driver_updates.get_all_loaded_modules")
+    def test_reload_module_dependencies(self, get_all_loaded_modules, list_net_intfs, rm_net_intfs_for_unload, check_output, call):
+        # "icecream" has module dependency "cornet" which will be unloaded because of
+        # dependencies and must be reload back
+        mod_dependencies=[["icecream", "cornet"], ["icecream"]]
+        get_all_loaded_modules.side_effect = lambda: mod_dependencies.pop(0)
+
+        load_drivers({"icecream": ['pineapple', 'cherry', 'icecream']})
+        call.assert_has_calls([
+            mock.call(["modprobe", "-r", "sorbet"]),
+            mock.call(["depmod", "-a"]),
+            mock.call(["modprobe", "-a", "icecream"]),
+            mock.call(["modprobe", "-a", "cornet"])
+        ])
+
+    @mock.patch("driver_updates.subprocess.call")
+    @mock.patch("driver_updates.subprocess.check_call")
+    @mock.patch("driver_updates.subprocess.check_output")
+    @mock.patch("driver_updates.list_net_intfs")
+    def test_interface_unload(self, list_net_intfs, check_output, check_call, call):
+        # mode is net mode, remove dracut configuration for interface,
+        # retrigger udev event
+        intfs = ["ens3", "", "ens3"]
+        list_net_intfs.side_effect = lambda: set(intfs.pop())
+
+        def patched_check_output(command, stderr=None):
+            if command[0] == "modprobe":
+                return "mod1"
+            elif command[0] == "find-net-intfs-by-driver":
+                return "ens3"
+        check_output.side_effect = patched_check_output
+
+        load_drivers({"mod1": ["mod1"]})
+        call.assert_has_calls([
+            mock.call(["modprobe", "-r", "mod1"]),
+            mock.call(["depmod", "-a"]),
+            mock.call(["modprobe", "-a", "mod1"]),
+        ])
+        check_call.assert_has_calls([
+            mock.call(["anaconda-ifdown", "ens3"])
+        ])
+
 
 from driver_updates import process_driver_disk
 class ProcessDriverDiskTestCase(unittest.TestCase):
@@ -438,16 +602,15 @@ class ProcessDriverDiskTestCase(unittest.TestCase):
             __enter__=mock.MagicMock(side_effect=self.fakemount), # mount
             __exit__=mock.MagicMock(return_value=None),           # umount
         )
-        self.modlist = []
+        self.moddict = {}
         # set up our patches
         patches = (
             mock.patch("driver_updates.mounted", return_value=mounted_ctx),
             mock.patch("driver_updates.find_repos", side_effect=self.frepo.get),
             mock.patch("driver_updates.find_isos", side_effect=self.fiso.get),
             mock.patch("driver_updates.extract_drivers", return_value=True),
-            mock.patch("driver_updates.load_drivers"),
             mock.patch('driver_updates.grab_driver_files',
-                                side_effect=lambda: self.modlist),
+                                side_effect=lambda: self.moddict),
         )
         self.mocks = {p.attribute:p.start() for p in patches}
         for p in patches: self.addCleanup(p.stop)
@@ -460,7 +623,6 @@ class ProcessDriverDiskTestCase(unittest.TestCase):
         self.mocks['mounted'].assert_called_once_with(dev)
         self.mocks['extract_drivers'].assert_called_once_with(repos=self.frepo['/mnt/DD-1'])
         self.mocks['grab_driver_files'].assert_called_once_with()
-        self.mocks['load_drivers'].assert_called_once_with(self.modlist)
 
     def test_recursive(self):
         """process_driver_disk: recursively process .isos at toplevel"""
@@ -478,7 +640,6 @@ class ProcessDriverDiskTestCase(unittest.TestCase):
         # we extracted drivers from the repo(s) in magic.iso
         self.mocks['extract_drivers'].assert_called_once_with(repos=self.frepo['/mnt/DD-2'])
         self.mocks['grab_driver_files'].assert_called_once_with()
-        self.mocks['load_drivers'].assert_called_once_with(self.modlist)
 
     def test_no_drivers(self):
         """process_driver_disk: don't run depmod etc. if no new drivers"""
@@ -486,7 +647,32 @@ class ProcessDriverDiskTestCase(unittest.TestCase):
         self.mocks['extract_drivers'].return_value = False
         process_driver_disk(dev)
         self.assertFalse(self.mocks['grab_driver_files'].called)
-        self.assertFalse(self.mocks['load_drivers'].called)
+
+
+from driver_updates import process_driver_rpm
+class ProcessDriverRPMTestCase(unittest.TestCase):
+    def setUp(self):
+        self.frepo = {
+            '/tmp/fake': ['/mnt/DD-1'],
+        }
+        self.moddict = {}
+        # set up our patches
+        patches = (
+            mock.patch("driver_updates.find_repos", side_effect=self.frepo.get),
+            mock.patch("driver_updates.extract_drivers", return_value=True),
+            mock.patch('driver_updates.grab_driver_files',
+                                side_effect=lambda: self.moddict),
+        )
+        self.mocks = {p.attribute:p.start() for p in patches}
+        for p in patches: self.addCleanup(p.stop)
+
+    def test_basic(self):
+        """process_driver_rpm: extract RPM, grab + load driver"""
+        rpm = '/tmp/fake/driver.rpm'
+        process_driver_rpm(rpm)
+        self.mocks['extract_drivers'].assert_called_once_with(repos=["/tmp/fake/driver.rpm"])
+        self.mocks['grab_driver_files'].assert_called_once_with()
+
 
 from driver_updates import finish, mark_finished, all_finished
 
@@ -530,6 +716,7 @@ class FinishedTestCase(FileTestCaseBase):
             finish(r, topdir=self.tmpdir)
         self.assertTrue(os.path.exists(done))
 
+
 from driver_updates import get_deviceinfo, DeviceInfo
 blkid_out = b'''\
 DEVNAME=/dev/sda2
@@ -564,6 +751,8 @@ devicelist = [
                LABEL='I\\x20\u262d\\x20COMMUNISM',
                UUID='6f16967e-0388-4276-bd8d-b88e5b217a55'),
 ]
+
+
 # also covers blkid, get_disk_labels, DeviceInfo
 class DeviceInfoTestCase(unittest.TestCase):
     @mock.patch('driver_updates.subprocess.check_output',return_value=blkid_out)
@@ -591,6 +780,7 @@ if sys.version_info.major == 3:
     from io import StringIO
 else:
     from io import BytesIO as StringIO
+
 
 from driver_updates import device_menu
 class DeviceMenuTestCase(unittest.TestCase):
@@ -631,3 +821,14 @@ class DeviceMenuTestCase(unittest.TestCase):
         line = match.pop(0)
         # the device name (at least) should be on this line
         self.assertIn(os.path.basename(dev.device), line)
+
+
+from driver_updates import list_aliases
+class ListAliasesTestCase(unittest.TestCase):
+    @mock.patch('driver_updates.subprocess.check_output', return_value="alias1\nalias2\n")
+    def test_basic(self, check_output):
+        modname = "fake_module"
+        alias_list = list_aliases(modname)
+
+        check_output.assert_called_once_with(["modinfo", "-F", "alias", modname])
+        self.assertEqual(alias_list, ["alias1", "alias2", modname])

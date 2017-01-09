@@ -15,8 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """
 Module providing functions for getting the list of timezones, writing timezone
@@ -30,7 +28,6 @@ import langtable
 from collections import OrderedDict
 
 from pyanaconda import iutil
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda.constants import THREAD_STORAGE
 from pyanaconda.flags import flags
 from pyanaconda.threads import threadMgr
@@ -67,7 +64,7 @@ def time_initialize(timezone, storage, bootloader):
 
     """
 
-    if arch.isS390():
+    if arch.is_s390():
         # nothing to do on s390(x) were hwclock doesn't exist
         return
 
@@ -119,7 +116,7 @@ def write_timezone_config(timezone, root):
             log.error("Error when symlinking timezone (from %s): %s",
                       rooted_tz_file, oserr.strerror)
 
-    if arch.isS390():
+    if arch.is_s390():
         # there is no HW clock on s390(x)
         return
 
@@ -150,7 +147,7 @@ def save_hw_clock(timezone):
 
     """
 
-    if arch.isS390():
+    if arch.is_s390():
         return
 
     cmd = "hwclock"

@@ -16,13 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Jeremy Katz <katzj@redhat.com>
-#
 
 import os, sys
 import time
 from pyanaconda import constants, network, product, iutil
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import socket
 import subprocess
 import dbus
@@ -81,15 +78,15 @@ class VncServer:
 
         r, w = os.pipe()
         password_string = "%s\n" % self.password
-        iutil.eintr_retry_call(os.write, w, password_string.encode("utf-8"))
+        os.write(w, password_string.encode("utf-8"))
 
         with open(self.pw_file, "wb") as pw_file:
             # the -f option makes sure vncpasswd does not ask for the password again
             rc = iutil.execWithRedirect("vncpasswd", ["-f"],
                     stdin=r, stdout=pw_file, binary_output=True, log_output=False)
 
-            iutil.eintr_ignore(os.close, r)
-            iutil.eintr_ignore(os.close, w)
+            os.close(r)
+            os.close(w)
 
         return rc
 
@@ -114,7 +111,7 @@ class VncServer:
             ipstr = self.ip
 
         try:
-            hinfo = socket.gethostbyaddr(ipstr)
+            hinfo = socket.gethostbyaddr(self.ip)
             if len(hinfo) == 3:
                 # Consider as coming from a valid DNS record only if single IP is returned
                 if len(hinfo[2]) == 1:
@@ -144,7 +141,7 @@ class VncServer:
 
     def openlogfile(self):
         try:
-            fd = iutil.eintr_retry_call(os.open, self.log_file, os.O_RDWR | os.O_CREAT)
+            fd = os.open(self.log_file, os.O_RDWR | os.O_CREAT)
         except OSError as e:
             sys.stderr.write("error opening %s: %s\n", (self.log_file, e))
             fd = None
@@ -177,7 +174,7 @@ class VncServer:
                 continue
             else:
                 log.critical(err)
-                iutil.ipmi_report(constants.IPMI_ABORTED)
+                iutil.ipmi_abort(scripts=self.anaconda.ksdata.scripts)
                 sys.exit(1)
         self.log.error(P_("Giving up attempting to connect after %d try!\n",
                           "Giving up attempting to connect after %d tries!\n",
@@ -202,9 +199,9 @@ class VncServer:
         if self.connxinfo != None:
             self.log.info(_("Please manually connect your vnc client to %s to begin the install."), self.connxinfo)
         else:
-            self.log.info(_("Please manually connect your vnc client to <IP ADDRESS>:%s "
+            self.log.info(_("Please manually connect your vnc client to IP-ADDRESS:%s "
                             "to begin the install. Switch to the shell (Ctrl-B 2) and "
-                            "run 'ip addr' to find the <IP ADDRESS>."), constants.X_DISPLAY_NUMBER)
+                            "run 'ip addr' to find the IP-ADDRESS."), constants.X_DISPLAY_NUMBER)
 
     def startServer(self):
         self.log.info(_("Starting VNC..."))
@@ -215,7 +212,7 @@ class VncServer:
             self.initialize()
         except (socket.herror, dbus.DBusException, ValueError) as e:
             stdoutLog.critical("Could not initialize the VNC server: %s", e)
-            iutil.ipmi_report(constants.IPMI_ABORTED)
+            iutil.ipmi_abort(scripts=self.anaconda.ksdata.scripts)
             sys.exit(1)
 
         if self.password and (len(self.password) < 6 or len(self.password) > 8):
@@ -241,7 +238,7 @@ class VncServer:
             iutil.startX(xvnccommand, output_redirect=self.openlogfile())
         except OSError:
             stdoutLog.critical("Could not start the VNC server.  Aborting.")
-            iutil.ipmi_report(constants.IPMI_ABORTED)
+            iutil.ipmi_abort(scripts=self.anaconda.ksdata.scripts)
             sys.exit(1)
 
         self.log.info(_("The VNC server is now running."))
@@ -254,13 +251,13 @@ class VncServer:
                                 "to the vncviewer is unsuccessful\n\n"))
         elif self.password == "":
             self.log.warning(_("\n\nWARNING!!! VNC server running with NO PASSWORD!\n"
-                                "You can use the vncpassword=<password> boot option\n"
+                                "You can use the vncpassword=PASSWORD boot option\n"
                                 "if you would like to secure the server.\n\n"))
         elif self.password != "":
             self.log.warning(_("\n\nYou chose to execute vnc with a password. \n\n"))
         else:
             self.log.warning(_("\n\nUnknown Error.  Aborting. \n\n"))
-            iutil.ipmi_report(constants.IPMI_ABORTED)
+            iutil.ipmi_abort(scripts=self.anaconda.ksdata.scripts)
             sys.exit(1)
 
         # Lets try to configure the vnc server to whatever the user specified

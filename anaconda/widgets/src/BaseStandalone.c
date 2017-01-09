@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: David Shea <dshea@redhat.com>
  */
 
 #include "config.h"
@@ -152,6 +150,8 @@ static void anaconda_base_standalone_class_init(AnacondaBaseStandaloneClass *kla
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
     g_type_class_add_private(object_class, sizeof(AnacondaBaseStandalonePrivate));
+
+    gtk_widget_class_set_css_name(widget_class, "AnacondaBaseStandalone");
 }
 
 static void anaconda_base_standalone_init(AnacondaBaseStandalone *win) {

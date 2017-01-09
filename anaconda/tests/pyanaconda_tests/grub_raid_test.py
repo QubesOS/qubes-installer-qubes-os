@@ -13,8 +13,6 @@
 # source code or documentation are not subject to the GNU General Public
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
-#
-# Red Hat Author(s): David Shea <dshea@redhat.com>
 
 # Test that grub installs involving raid work correctly
 # These tests do not write anything to the disk and do not require root
@@ -22,7 +20,7 @@
 from blivet.devices import DiskDevice, PartitionDevice, MDRaidArrayDevice
 from blivet.devices import BTRFSVolumeDevice, BTRFSSubVolumeDevice
 from blivet.devicelibs.raid import RAID1
-from blivet.formats import getFormat
+from blivet.formats import get_format
 from blivet.size import Size
 
 from pyanaconda.bootloader import GRUB
@@ -44,43 +42,43 @@ class GRUBRaidSimpleTest(unittest.TestCase):
 
         # Make some disks
         self.sda = DiskDevice(name="sda", size=Size("100 GiB"))
-        self.sda.format = getFormat("disklabel")
+        self.sda.format = get_format("disklabel")
         self.sdb = DiskDevice(name="sdb", size=Size("100 GiB"))
-        self.sdb.format = getFormat("disklabel")
+        self.sdb.format = get_format("disklabel")
 
         # Set up biosboot partitions, an mdarray for /boot, and a btrfs array on sda + sdb.
         # Start with the partitions
         self.sda1 = PartitionDevice(name="sda1", parents=[self.sda], size=Size("1 MiB"))
-        self.sda1.format = getFormat("biosboot")
+        self.sda1.format = get_format("biosboot")
         self.sda2 = PartitionDevice(name="sda2", parents=[self.sda], size=Size("500 MiB"))
-        self.sda2.format = getFormat("mdmember")
+        self.sda2.format = get_format("mdmember")
         self.sda4 = PartitionDevice(name="sda4", parents=[self.sda], size=Size("500 MiB"))
-        self.sda4.format = getFormat("btrfs")
+        self.sda4.format = get_format("btrfs")
 
         self.sdb1 = PartitionDevice(name="sdb1", parents=[self.sdb], size=Size("1 MiB"))
-        self.sdb1.format = getFormat("biosboot")
+        self.sdb1.format = get_format("biosboot")
         self.sdb2 = PartitionDevice(name="sdb2", parents=[self.sdb], size=Size("500 MiB"))
-        self.sdb2.format = getFormat("mdmember")
+        self.sdb2.format = get_format("mdmember")
         self.sdb4 = PartitionDevice(name="sdb4", parents=[self.sdb], size=Size("4 GiB"))
-        self.sdb4.format = getFormat("btrfs")
+        self.sdb4.format = get_format("btrfs")
 
         # Add an extra partition for /boot on not-RAID
         self.sda3 = PartitionDevice(name="sda3", parents=[self.sda], size=Size("500 MiB"))
-        self.sda3.format = getFormat("ext4", mountpoint="/boot")
+        self.sda3.format = get_format("ext4", mountpoint="/boot")
 
         # Pretend that the partitions are real with real parent disks
         for part in (self.sda1, self.sda2, self.sda3, self.sda4, self.sdb1, self.sdb2, self.sdb4):
             part.parents = part.req_disks
 
         self.boot_md = MDRaidArrayDevice(name="md1", parents=[self.sda2, self.sdb2], level=1)
-        self.boot_md.format = getFormat("ext4", mountpoint="/boot")
+        self.boot_md.format = get_format("ext4", mountpoint="/boot")
 
         # Set up the btrfs raid1 volume with a subvolume for /boot
-        self.btrfs_volume = BTRFSVolumeDevice(parents=[self.sda4, self.sdb4], dataLevel=RAID1)
-        self.btrfs_volume.format = getFormat("btrfs")
+        self.btrfs_volume = BTRFSVolumeDevice(parents=[self.sda4, self.sdb4], data_level=RAID1)
+        self.btrfs_volume.format = get_format("btrfs")
 
         self.boot_btrfs = BTRFSSubVolumeDevice(parents=[self.btrfs_volume])
-        self.boot_btrfs.format = getFormat("btrfs", mountpoint="/boot")
+        self.boot_btrfs.format = get_format("btrfs", mountpoint="/boot")
 
         self.grub = GRUB()
 
@@ -96,7 +94,7 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda, self.sda3)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)
 
     def grub_partition_partition_test(self):
         """Test installing GRUB to a partition stage1 and partition stage2"""
@@ -109,7 +107,7 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda1, self.sda3)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)
 
     def grub_mbr_raid1_test(self):
         """Test installing GRUB to a MBR stage1 and RAID1 stage2"""
@@ -123,7 +121,7 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda, self.boot_md), (self.sdb, self.boot_md)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)
 
     def grub_partition_raid1_test(self):
         """Test installing GRUB to a partition stage1 and MBR stage2"""
@@ -137,7 +135,7 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda1, self.boot_md)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)
 
     def grub_btrfs_test(self):
         """Test installing GRUB to a MBR stage1 and btrfs RAID stage2"""
@@ -152,7 +150,7 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda, self.boot_btrfs), (self.sdb, self.boot_btrfs)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)
 
     def grub_partition_btrfs_test(self):
         """Test installing GRUB to a partition stage1 and MBR stage2"""
@@ -166,4 +164,4 @@ class GRUBRaidSimpleTest(unittest.TestCase):
         install_targets = set(self.grub.install_targets)
         expected_targets = set([(self.sda1, self.boot_btrfs)])
 
-        self.assertEquals(install_targets, expected_targets)
+        self.assertEqual(install_targets, expected_targets)

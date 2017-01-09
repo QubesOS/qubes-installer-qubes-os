@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Cantrell <dcantrell@redhat.com>
 
 EXTRA_DIST = $(srcdir)/*.rst $(srcdir)/*.txt $(srcdir)/conf.py
 
@@ -73,6 +71,8 @@ apidoc:
 	if [ -f /usr/bin/$(SPHINXAPIDOC) ]; then \
 	    rm $(addprefix ./, $(MODULE_NAMES)) ; \
 	    $(SPHINXAPIDOC) -o . $(SOURCEDIR) ; \
+	    rm $(addprefix ./, tests/*.rst) ; \
+	    $(SPHINXAPIDOC) -o ./tests ../tests ../tests/storage/run_storage_tests.py ; \
 	fi
 
 html: apidoc

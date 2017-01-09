@@ -13,19 +13,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: David Shea <dshea@redhat.com>
  */
 
 #ifndef _WIDGETS_COMMON_H
 #define _WIDGETS_COMMON_H
 
-#include <glib.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
-const gchar *anaconda_get_widgets_datadir(void);
+#define ANACONDA_RESOURCE_PATH  "/org/fedoraproject/anaconda/widgets/"
+
+G_GNUC_INTERNAL void anaconda_widget_apply_stylesheet(GtkWidget *widget, const gchar *name);
+
+void anaconda_apply_language(GtkLabel *label, const gchar *language);
 
 G_END_DECLS
 

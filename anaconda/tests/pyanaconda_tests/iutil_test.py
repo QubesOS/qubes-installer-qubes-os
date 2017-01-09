@@ -15,12 +15,6 @@
 # source code or documentation are not subject to the GNU General Public
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
-#
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#                    Martin Kolman <mkolman@redhat.com>
-
-# Ignore any interruptible calls
-# pylint: disable=interruptible-system-call
 
 from pyanaconda import iutil
 import unittest
@@ -79,6 +73,15 @@ class RunProgramTests(unittest.TestCase):
         with self.assertRaises(OSError):
             iutil._run_program(['asdasdadasd'])
 
+    def run_program_binary_test(self):
+        """Test _run_program with binary output."""
+
+        # Echo something that cannot be decoded as utf-8
+        retcode, output = iutil._run_program(['echo', '-en', r'\xa0\xa1\xa2'], binary_output=True)
+
+        self.assertEqual(retcode, 0)
+        self.assertEqual(output, b'\xa0\xa1\xa2')
+
     def exec_with_redirect_test(self):
         """Test execWithRedirect."""
         # correct calling should return rc==0
@@ -114,6 +117,14 @@ echo "error" >&2
             # check that both output and error are captured
             self.assertEqual(iutil.execWithCapture("/bin/sh", [testscript.name]),
                     "output\nerror\n")
+
+    def exec_with_capture_empty_test(self):
+        """Test execWithCapture with no output"""
+
+        # check that the output is an empty string
+        self.assertEqual(
+                iutil.execWithCapture("/bin/sh", ["-c", "exit 0"]),
+                "")
 
     def exec_readlines_test(self):
         """Test execReadlines."""
@@ -631,31 +642,31 @@ class MiscTests(unittest.TestCase):
         """Test strip_accents."""
 
         # empty string
-        self.assertEquals(iutil.strip_accents(u""), u"")
-        self.assertEquals(iutil.strip_accents(""), "")
+        self.assertEqual(iutil.strip_accents(u""), u"")
+        self.assertEqual(iutil.strip_accents(""), "")
 
         # some Czech accents
-        self.assertEquals(iutil.strip_accents(u"ěščřžýáíéúů"), u"escrzyaieuu")
-        self.assertEquals(iutil.strip_accents(u"v češtině"), u"v cestine")
-        self.assertEquals(iutil.strip_accents(u"měšťánek rozšíří HÁČKY"),
+        self.assertEqual(iutil.strip_accents(u"ěščřžýáíéúů"), u"escrzyaieuu")
+        self.assertEqual(iutil.strip_accents(u"v češtině"), u"v cestine")
+        self.assertEqual(iutil.strip_accents(u"měšťánek rozšíří HÁČKY"),
                                               u"mestanek rozsiri HACKY")
-        self.assertEquals(iutil.strip_accents(u"nejneobhospodařovávatelnějšímu"),
+        self.assertEqual(iutil.strip_accents(u"nejneobhospodařovávatelnějšímu"),
                                               u"nejneobhospodarovavatelnejsimu")
 
         # some German umlauts
-        self.assertEquals(iutil.strip_accents(u"Lärmüberhörer"), u"Larmuberhorer")
-        self.assertEquals(iutil.strip_accents(u"Heizölrückstoßabdämpfung"),
+        self.assertEqual(iutil.strip_accents(u"Lärmüberhörer"), u"Larmuberhorer")
+        self.assertEqual(iutil.strip_accents(u"Heizölrückstoßabdämpfung"),
                                               u"Heizolrucksto\xdfabdampfung")
 
         # some Japanese
-        self.assertEquals(iutil.strip_accents(u"日本語"), u"\u65e5\u672c\u8a9e")
-        self.assertEquals(iutil.strip_accents(u"アナコンダ"),  # Anaconda
+        self.assertEqual(iutil.strip_accents(u"日本語"), u"\u65e5\u672c\u8a9e")
+        self.assertEqual(iutil.strip_accents(u"アナコンダ"),  # Anaconda
                           u"\u30a2\u30ca\u30b3\u30f3\u30bf")
 
         # combined
         input_string = u"ASCI měšťánek アナコンダ Heizölrückstoßabdämpfung"
         output_string =u"ASCI mestanek \u30a2\u30ca\u30b3\u30f3\u30bf Heizolrucksto\xdfabdampfung"
-        self.assertEquals(iutil.strip_accents(input_string), output_string)
+        self.assertEqual(iutil.strip_accents(input_string), output_string)
 
     def cmp_obj_attrs_test(self):
         """Test cmp_obj_attrs."""
@@ -769,7 +780,7 @@ class MiscTests(unittest.TestCase):
                 ("/home/extra/bcl/", "/home/extra"), ("/home/extra/../bcl/", "/home")]
 
         for d, r in dirs:
-            self.assertEquals(iutil.parent_dir(d), r)
+            self.assertEqual(iutil.parent_dir(d), r)
 
     def open_with_perm_test(self):
         """Test the open_with_perm function"""
@@ -788,5 +799,21 @@ class MiscTests(unittest.TestCase):
                 self.assertEqual(os.stat(test_dir + '/test2').st_mode & 0o777, 0o600)
             finally:
                 os.umask(old_umask)
+        finally:
+            shutil.rmtree(test_dir)
+
+    def touch_test(self):
+        """Test if the touch function correctly creates empty files"""
+        test_dir = tempfile.mkdtemp()
+        try:
+            file_path = os.path.join(test_dir, "EMPTY_FILE")
+            # try to create an empty file with touch()
+            iutil.touch(file_path)
+
+            # check if it exists & is a file
+            self.assertTrue(os.path.isfile(file_path))
+
+            # check if the file is empty
+            self.assertEqual(os.stat(file_path).st_size, 0)
         finally:
             shutil.rmtree(test_dir)

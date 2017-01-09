@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
-#
 
 import gi
 gi.require_version("BlockDev", "1.0")
@@ -26,6 +24,7 @@ from gi.repository import BlockDev as blockdev
 
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import gtk_action_nowait
+from pyanaconda.storage_utils import try_populate_devicetree
 
 __all__ = ["DASDDialog"]
 
@@ -43,7 +42,8 @@ class DASDDialog(GUIObject):
     def __init__(self, data, storage):
         GUIObject.__init__(self, data)
         self.storage = storage
-        self.dasd = self.storage.dasd
+        self.dasd = [d for d in self.storage.devices if d.type == "dasd"]
+        self.dasd.sort(key=lambda d: d.name)
 
         self._discoveryError = None
 
@@ -73,7 +73,7 @@ class DASDDialog(GUIObject):
         # We need to call this to get the device nodes to show up
         # in our devicetree.
         if self._update_devicetree:
-            self.storage.devicetree.populate()
+            try_populate_devicetree(self.storage.devicetree)
         return rc
 
     def on_start_clicked(self, *args):
@@ -117,10 +117,10 @@ class DASDDialog(GUIObject):
             self._discoveryError = None
             self._conditionNotebook.set_current_page(2)
         else:
-            # Great success. Just return to the advanced storage window and let the
-            # UI update with the newly-added device
-            self.window.response(1)
-            return True
+            # Great success. Since DASDs go under local disks, update dialog to
+            # show users that's where they'll be
+            self._conditionNotebook.set_current_page(3)
+            self._okButton.set_sensitive(True)
 
         self._cancelButton.set_sensitive(True)
         return False
@@ -135,6 +135,11 @@ class DASDDialog(GUIObject):
             self._update_devicetree = True
         except blockdev.S390Error as err:
             self._discoveryError = str(err)
+            return
+        except TypeError as err:
+            # this happens when a user doesn't pass any input, so pass a more
+            # informative error str back
+            self._discoveryError = "You must enter values for the device."
             return
 
     def on_device_entry_activate(self, entry, user_data=None):

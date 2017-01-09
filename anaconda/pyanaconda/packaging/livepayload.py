@@ -17,8 +17,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Lehman <dlehman@redhat.com>
-#
 
 """
     TODO
@@ -35,7 +33,6 @@ from time import sleep
 from threading import Lock
 import requests
 from pyanaconda.iutil import ProxyString, ProxyStringError, lowerASCII
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 import hashlib
 import glob
 import functools
@@ -74,7 +71,7 @@ class LiveImagePayload(ImagePayload):
         super(LiveImagePayload, self).setup(storage, instClass)
 
         # Mount the live device and copy from it instead of the overlay at /
-        osimg = storage.devicetree.getDeviceByPath(self.data.method.partition)
+        osimg = storage.devicetree.get_device_by_path(self.data.method.partition)
         if not osimg:
             raise PayloadInstallError("Unable to find osimg for %s" % self.data.method.partition)
 
@@ -89,7 +86,7 @@ class LiveImagePayload(ImagePayload):
         # Grab the kernel version list now so it's available after umount
         self._updateKernelVersionList()
 
-        source = iutil.eintr_retry_call(os.statvfs, INSTALL_TREE)
+        source = os.statvfs(INSTALL_TREE)
         self.source_size = source.f_frsize * (source.f_blocks - source.f_bfree)
 
     def unsetup(self):
@@ -115,7 +112,7 @@ class LiveImagePayload(ImagePayload):
         while self.pct < 100:
             dest_size = 0
             for mnt in mountpoints:
-                mnt_stat = iutil.eintr_retry_call(os.statvfs, iutil.getSysroot()+mnt)
+                mnt_stat = os.statvfs(iutil.getSysroot()+mnt)
                 dest_size += mnt_stat.f_frsize * (mnt_stat.f_blocks - mnt_stat.f_bfree)
             if dest_size >= self._adj_size:
                 dest_size -= self._adj_size
@@ -287,10 +284,8 @@ class LiveImageKSPayload(LiveImagePayload):
             log.error("Error opening liveimg: %s", e)
             error = e
         else:
-            # If it is a http request we need to check the code
-            method = self.data.method.url.split(":", 1)[0]
-            if method.startswith("http") and response.status_code != 200:
-                error = "http request returned %s" % response.getcode()
+            if response.status_code != 200:
+                error = "http request returned %s" % response.status_code
 
         return error
 
@@ -453,7 +448,7 @@ class LiveImageKSPayload(LiveImagePayload):
 
             self._updateKernelVersionList()
 
-            source = iutil.eintr_retry_call(os.statvfs, INSTALL_TREE)
+            source = os.statvfs(INSTALL_TREE)
             self.source_size = source.f_frsize * (source.f_blocks - source.f_bfree)
 
     def install(self):

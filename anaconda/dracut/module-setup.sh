@@ -37,6 +37,8 @@ install() {
     inst "$moddir/anaconda-diskroot" "/sbin/anaconda-diskroot"
     inst_hook pre-pivot 50 "$moddir/anaconda-copy-ks.sh"
     inst_hook pre-pivot 50 "$moddir/anaconda-copy-cmdline.sh"
+    inst_hook pre-pivot 50 "$moddir/anaconda-copy-s390ccwconf.sh"
+    inst_hook pre-pivot 90 "$moddir/anaconda-copy-dhclient.sh"
     inst_hook pre-pivot 99 "$moddir/save-initramfs.sh"
     inst_hook pre-shutdown 50 "$moddir/anaconda-pre-shutdown.sh"
     # kickstart parsing, WOOOO
@@ -49,7 +51,10 @@ install() {
     inst_hook pre-trigger 55 "$moddir/driver-updates-genrules.sh"
     inst_hook initqueue/online 20 "$moddir/fetch-driver-net.sh"
     inst_hook pre-pivot 50 "$moddir/anaconda-depmod.sh"
+    inst "$moddir/find-net-intfs-by-driver" "/bin/find-net-intfs-by-driver"
+    inst "$moddir/anaconda-ifdown" "/bin/anaconda-ifdown"
     inst "$moddir/driver_updates.py" "/bin/driver-updates"
+    inst "/usr/sbin/modinfo"
     inst_simple "$moddir/driver-updates@.service" "/etc/systemd/system/driver-updates@.service"
     # rpm configuration file (needed by dd_extract)
     inst "/usr/lib/rpm/rpmrc"

@@ -14,13 +14,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Cantrell <dcantrell@redhat.com>
 
 m4_define(python_required_version, 3.4)
 
 AC_PREREQ([2.63])
-AC_INIT([anaconda], [23.19.10], [anaconda-devel-list@redhat.com])
+AC_INIT([anaconda], [25.20.9], [anaconda-devel-list@redhat.com])
 
 # Disable building static libraries.
 # This needs to be set before initializing automake
@@ -43,34 +41,13 @@ AC_PROG_LN_S
 AC_PROG_LIBTOOL
 AC_PROG_MKDIR_P
 
-# Check for the intltool programs
-# These checks and subsitutions are adapted IT_PROG_INTLTOOL provided in
-# intltool.m4, but without the parts where it breaks gettext.
-AC_PATH_PROG([INTLTOOL_EXTRACT], [intltool-extract])
-AC_PATH_PROG([INTLTOOL_MERGE], [intltool-merge])
-AS_IF([test -z "$INTLTOOL_EXTRACT" -o -z "$INTLTOOL_MERGE"],
-      [ANACONDA_SOFT_FAILURE([intltool not found])])
-
-# Add the bits for Makefile rules
-INTLTOOL_V_MERGE='$(INTLTOOL__v_MERGE_$(V))'
-INTLTOOL__v_MERGE_='$(INTLTOOL__v_MERGE_$(AM_DEFAULT_VERBOSITY))'
-INTLTOOL__v_MERGE_0='@echo "  ITMRG " $@;'
-INTLTOOL_V_MERGE_OPTIONS='$(intltool__v_merge_options_$(V))'
-intltool__v_merge_options_='$(intltool__v_merge_options_$(AM_DEFAULT_VERBOSITY))'
-intltool__v_merge_options_0='-q'
-AC_SUBST(INTLTOOL_V_MERGE)
-AC_SUBST(INTLTOOL__v_MERGE_)
-AC_SUBST(INTLTOOL__v_MERGE_0)
-AC_SUBST(INTLTOOL_V_MERGE_OPTIONS)
-AC_SUBST(intltool__v_merge_options_)
-AC_SUBST(intltool__v_merge_options_0)
-
-INTLTOOL_DESKTOP_RULE='%.desktop:  %.desktop.in  $(INTLTOOL_MERGE) $(wildcard $(top_srcdir)/po/*.po) ; $(INTLTOOL_V_MERGE)LC_ALL=C $(INTLTOOL_MERGE) $(INTLTOOL_V_MERGE_OPTIONS) -d -u -c $(top_builddir)/po/.intltool-merge-cache $(top_srcdir)/po $< $@'
-AC_SUBST(INTLTOOL_DESKTOP_RULE)
-
-AM_GNU_GETTEXT([external])
-# Also update in gettextver in anaconda.spec.in
-AM_GNU_GETTEXT_VERSION([0.18.3])
+# Check for the gettext programs
+AC_PATH_PROG([XGETTEXT], [xgettext])
+AC_PATH_PROG([MSGFMT], [msgfmt])
+AC_PATH_PROG([MSGMERGE], [msgmerge])
+AC_PATH_PROG([MSGCAT], [msgcat])
+AS_IF([test -z "$XGETTEXT" -o -z "$MSGFMT" -o -z "$MSGMERGE" -o -z "$MSGCAT"],
+      [ANACONDA_SOFT_FAILURE([gettext not found])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h],
@@ -147,7 +124,7 @@ AC_CONFIG_FILES([Makefile
                  data/window-manager/Makefile
                  data/window-manager/config/Makefile
                  data/window-manager/theme/Makefile
-                 po/Makefile.in
+                 po/Makefile
                  scripts/Makefile
                  pyanaconda/Makefile
                  pyanaconda/version.py
@@ -166,6 +143,7 @@ AC_CONFIG_FILES([Makefile
                  pyanaconda/ui/tui/spokes/Makefile
                  pyanaconda/ui/tui/Makefile
                  data/post-scripts/Makefile
+                 data/pixmaps/Makefile
                  tests/Makefile
                  utils/Makefile
                  utils/dd/Makefile])

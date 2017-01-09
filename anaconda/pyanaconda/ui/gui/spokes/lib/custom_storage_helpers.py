@@ -16,10 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    David Lehman <dlehman@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """Helper functions and classes for custom partitioning."""
 
@@ -41,11 +37,11 @@ from pyanaconda.ui.helpers import InputCheck
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.helpers import GUIDialogInputCheckHandler
 from pyanaconda.ui.gui.utils import fancy_set_sensitive, really_hide, really_show
-from pyanaconda.i18n import _, N_, C_, CN_
+from pyanaconda.i18n import _, N_, CN_
 
 from blivet.size import Size
 from blivet.platform import platform
-from blivet.formats import getFormat
+from blivet.formats import get_format
 from blivet.devicefactory import SIZE_POLICY_AUTO
 from blivet.devicefactory import SIZE_POLICY_MAX
 from blivet.devicefactory import DEVICE_TYPE_LVM
@@ -104,7 +100,7 @@ def size_from_entry(entry, lower_bound=None, units=None):
 def populate_mountpoint_store(store, used_mountpoints):
     # sure, add whatever you want to this list. this is just a start.
     paths = ["/", "/boot", "/home", "/var"] + \
-            platform.bootStage1ConstraintDict["mountpoints"]
+            platform.boot_stage1_constraint_dict["mountpoints"]
 
     # Sort the list now so all the real mountpoints go to the front, then
     # add all the pseudo mountpoints we have.
@@ -112,7 +108,7 @@ def populate_mountpoint_store(store, used_mountpoints):
     paths += ["swap"]
 
     for fmt in ["appleboot", "biosboot", "prepboot"]:
-        if getFormat(fmt).supported:
+        if get_format(fmt).supported:
             paths += [fmt]
 
     for path in paths:
@@ -138,7 +134,7 @@ def validate_label(label, fmt):
             return ""
         else:
             return _("Cannot set label on file system.")
-    if not fmt.labelFormatOK(label):
+    if not fmt.label_format_ok(label):
         return _("Unacceptable label format for file system.")
     return ""
 
@@ -175,11 +171,11 @@ def get_raid_level(device):
     raid_level = None
     if hasattr(use_dev, "level"):
         raid_level = use_dev.level
-    elif hasattr(use_dev, "dataLevel"):
-        raid_level = use_dev.dataLevel
+    elif hasattr(use_dev, "data_level"):
+        raid_level = use_dev.data_level
     elif hasattr(use_dev, "volume"):
-        raid_level = use_dev.volume.dataLevel
-    elif hasattr(use_dev, "lvs") and len(use_dev.parents) == 1:
+        raid_level = use_dev.volume.data_level
+    elif not hasattr(use_dev, "vg") and hasattr(use_dev, "lvs") and len(use_dev.parents) == 1:
         raid_level = get_raid_level(use_dev.parents[0])
 
     return raid_level
@@ -204,7 +200,7 @@ def selectedRaidLevel(raidLevelCombo):
     if selected_level == "none":
         return None
     else:
-        return raid.getRaidLevel(selected_level)
+        return raid.get_raid_level(selected_level)
 
 def raidLevelSelection(raid_level):
     """ Returns a string corresponding to the RAID level.
@@ -224,7 +220,7 @@ def defaultRaidLevel(device_type):
         :rtype: blivet.devicelibs.raid.RAIDLevel or NoneType
     """
     if device_type == DEVICE_TYPE_MD:
-        return mdraid.RAID_levels.raidLevel("raid1")
+        return mdraid.raid_levels.raid_level("raid1")
 
     return None
 
@@ -236,7 +232,7 @@ def defaultContainerRaidLevel(device_type):
         :rtype: blivet.devicelibs.raid.RAIDLevel or NoneType
     """
     if device_type == DEVICE_TYPE_BTRFS:
-        return btrfs.RAID_levels.raidLevel("single")
+        return btrfs.raid_levels.raid_level("single")
 
     return None
 
@@ -367,38 +363,43 @@ class ConfirmDeleteDialog(GUIObject):
 
     def __init__(self, *args, **kwargs):
         GUIObject.__init__(self, *args, **kwargs)
-        self._removeAll = self.builder.get_object("removeAllCheckbox")
+        self._optional_checkbox = self.builder.get_object("optionalCheckbox")
 
     @property
-    def deleteAll(self):
-        return self._removeAll.get_active()
+    def option_checked(self):
+        return self._optional_checkbox.get_active()
 
     def on_delete_confirm_clicked(self, button, *args):
         self.window.destroy()
 
     # pylint: disable=arguments-differ
-    def refresh(self, mountpoint, device, rootName, snapshots=False):
+    def refresh(self, mountpoint, device, checkbox_text = "", snapshots=False, bootpart = False):
+        """ Show confirmation dialog with the optional checkbox. If the
+            `checkbox_text` for the checkbox is not set then the checkbox
+            will not be showed.
+
+            :param str mountpoint: Mountpoint for device.
+            :param str device: Name of the device.
+            :param str checkbox_text: Text for checkbox. If nothing set do
+                                      not display the checkbox.
+            :param bool snapshot: If true warn user he's going to delete snapshots too.
+        """
         GUIObject.refresh(self)
         label = self.builder.get_object("confirmLabel")
 
-        if rootName and "_" in rootName:
-            rootName = rootName.replace("_", "__")
-        delete_all_text = (C_("GUI|Custom Partitioning|Confirm Delete Dialog",
-                               "Delete _all other file systems in the %s root as well.") +
-                           "\n" +
-                           C_("GUI|Custom Partitioning|Confirm Delete Dialog",
-                               "(This includes those shared with other installed operating systems.)"))
-        self._removeAll.set_label(
-                delete_all_text
-                % rootName)
-        self._removeAll.set_sensitive(rootName is not None)
+        if checkbox_text:
+            self._optional_checkbox.set_label(checkbox_text)
+        else:
+            self._optional_checkbox.hide()
 
         if mountpoint:
             txt = "%s (%s)" % (mountpoint, device)
         else:
             txt = device
 
-        if not snapshots:
+        if bootpart:
+            label_text = _("%s may be a system boot partition! Deleting it may break other operating systems. Are you sure you want to delete it?") % txt
+        elif not snapshots:
             label_text = _("Are you sure you want to delete all of the data on %s?") % txt
         else:
             label_text = _("Are you sure you want to delete all of the data on %s, including snapshots and/or subvolumes?") % txt
@@ -512,7 +513,7 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
             self._store.append([disk.description,
                                 str(disk.size),
                                 str(free[disk.name][0]),
-                                disk.serial,
+                                disk.name,
                                 disk.id])
 
         model = self._treeview.get_model()
@@ -537,7 +538,7 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         self._populate_raid()
 
         self._original_size = self.size
-        self._original_size_text = self.size.humanReadable(max_places=2)
+        self._original_size_text = self.size.human_readable(max_places=2)
         self._sizeEntry.set_text(self._original_size_text)
         if self.size_policy == SIZE_POLICY_AUTO:
             self._sizeCombo.set_active(0)
@@ -667,7 +668,7 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
 
     def _raid_level_visible(self, model, itr, user_data):
         raid_level_str = model[itr][1]
-        raid_level = raid.getRaidLevel(raid_level_str) if raid_level_str != "none" else None
+        raid_level = raid.get_raid_level(raid_level_str) if raid_level_str != "none" else None
         return raid_level in containerRaidLevelsSupported(self.device_type)
 
     def _populate_raid(self):
@@ -699,7 +700,7 @@ class ContainerDialog(GUIObject, GUIDialogInputCheckHandler):
         container_name = self.get_input(inputcheck.input_obj).strip()
 
         # Check that the container name is valid
-        safename = self.storage.safeDeviceName(container_name)
+        safename = self.storage.safe_device_name(container_name)
         if container_name != safename:
             return _("Invalid container name")
 

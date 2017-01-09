@@ -15,8 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Kolman <mkolman@redhat.com>
-#
 """
 Anaconda built-in help module
 """
@@ -139,6 +137,7 @@ def kill_yelp():
 
     log.debug("killing yelp")
     yelp_process.kill()
+    yelp_process.wait()
     yelp_process = None
     return True
 

@@ -20,23 +20,11 @@
 import selinux
 import shlex
 import glob
-from pyanaconda.constants import SELINUX_DEFAULT, CMDLINE_APPEND
+from pyanaconda.constants import SELINUX_DEFAULT, CMDLINE_APPEND, ANACONDA_ENVIRON
 from collections import OrderedDict
 
 import logging
 log = logging.getLogger("anaconda")
-
-# Importing iutil in this module would cause an import loop, so just
-# reimplement the open override
-import functools
-def eintr_retry_call(func, *args, **kwargs):
-    """Retry an interruptible system call if interrupted."""
-    while True:
-        try:
-            return func(*args, **kwargs)
-        except InterruptedError:
-            continue
-open = functools.partial(eintr_retry_call, open) # pylint: disable=redefined-builtin
 
 # A lot of effort, but it only allows a limited set of flags to be referenced
 class Flags(object):
@@ -83,6 +71,14 @@ class Flags(object):
         self.rescue_mode = False
         self.noefi = False
         self.kexec = False
+        # nosave options
+        self.nosave_input_ks = False
+        self.nosave_output_ks = False
+        self.nosave_logs = False
+        # single language options
+        self.singlelang = False
+        # current runtime environments
+        self.environs = [ANACONDA_ENVIRON]
         # parse the boot commandline
         self.cmdline = BootArgs()
         # Lock it down: no more creating new flags!

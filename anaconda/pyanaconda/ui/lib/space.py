@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Lehman <dlehman@redhat.com>
-#
 import os
 from blivet.size import Size
 from pyanaconda import iutil
@@ -72,12 +70,13 @@ class FileSystemSpaceChecker(object):
                             in the info bar at the bottom of a Hub.
         """
         self.reset()
-        free = Size(self.storage.fileSystemFreeSpace)
+        free = Size(self.storage.file_system_free_space)
         needed = self.payload.spaceRequired
         log.info("fs space: %s  needed: %s", free, needed)
         self.success = (free > needed)
         if not self.success:
-            self.deficit = needed - free
+            dev_required_size = self.payload.requiredDeviceSize(self.storage.root_device.format)
+            self.deficit = dev_required_size - self.storage.root_device.size
             self.error_message = _(self.error_template) % self.deficit
 
         return self.success
@@ -102,13 +101,14 @@ class DirInstallSpaceChecker(FileSystemSpaceChecker):
                             in the info bar at the bottom of a Hub.
         """
         self.reset()
-        stat = iutil.eintr_retry_call(os.statvfs, iutil.getSysroot())
+        stat = os.statvfs(iutil.getSysroot())
         free = Size(stat.f_bsize * stat.f_bfree)
         needed = self.payload.spaceRequired
         log.info("fs space: %s  needed: %s", free, needed)
         self.success = (free > needed)
         if not self.success:
-            self.deficit = needed - free
+            dev_required_size = self.payload.requiredDeviceSize(self.storage.root_device.format)
+            self.deficit = dev_required_size - self.storage.root_device.size
             self.error_message = _(self.error_template) % self.deficit
 
         return self.success

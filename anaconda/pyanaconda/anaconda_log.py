@@ -17,19 +17,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Chris Lumens <clumens@redhat.com>
-#            Matt Wilson <msw@redhat.com>
-#            Michael Fulbright <msf@redhat.com>
-#
 
 import logging
 from logging.handlers import SysLogHandler, SocketHandler, SYSLOG_UDP_PORT
 import os
 import sys
 import warnings
+import wrapt
 
 from pyanaconda.flags import flags
-from pyanaconda.constants import LOGLVL_LOCK
 
 DEFAULT_LEVEL = logging.INFO
 ENTRY_FORMAT = "%(asctime)s,%(msecs)03d %(levelname)s %(name)s: %(message)s"
@@ -46,8 +42,7 @@ ANACONDA_SYSLOG_FACILITY = SysLogHandler.LOG_LOCAL1
 from threading import Lock
 program_log_lock = Lock()
 
-logLevelMap = {"lock": LOGLVL_LOCK,
-               "debug": logging.DEBUG,
+logLevelMap = {"debug": logging.DEBUG,
                "info": logging.INFO,
                "warning": logging.WARNING,
                "error": logging.ERROR,
@@ -62,11 +57,51 @@ def setHandlersLevel(logr, level):
     for handler in filter(lambda hdlr: hasattr(hdlr, "autoSetLevel") and hdlr.autoSetLevel, logr.handlers):
         handler.setLevel(level)
 
-class AnacondaSyslogHandler(SysLogHandler):
+class _AnacondaLogFixer(object):
+    """ A mixin for logging.StreamHandler that does not lock during format.
+
+        Add this mixin before the Handler type in the inheritance order.
+    """
+
+    # filter, emit, lock, and acquire need to be implemented in a subclass
+
+    def handle(self, record):
+        # copied from logging.Handler, minus the lock acquisition
+        rv = self.filter(record)    # pylint: disable=no-member
+        if rv:
+            self.emit(record)       # pylint: disable=no-member
+        return rv
+
+    @property
+    def stream(self):
+        return self._stream
+
+    @stream.setter
+    def stream(self, value):
+        # Wrap the stream write in a lock acquisition
+        # Use an object proxy in order to work with types that may not allow
+        # the write property to be set.
+        class WriteProxy(wrapt.ObjectProxy):
+            # pylint: disable=no-self-argument
+            # rename self so we can reference the Handler object
+            def write(wrapped_self, *args, **kwargs):
+                self.acquire()      # pylint: disable=no-member
+                try:
+                    wrapped_self.__wrapped__.write(*args, **kwargs)
+                finally:
+                    self.release()  # pylint: disable=no-member
+
+        # Live with this attribute being defined outside of init to avoid the
+        # hassle of having an init. If _stream is not set, then stream was
+        # never set on the StreamHandler object, so accessing it in that case
+        # is supposed to be an error.
+        self._stream = WriteProxy(value) # pylint: disable=attribute-defined-outside-init
+
+
+class AnacondaSyslogHandler(_AnacondaLogFixer, SysLogHandler):
     # syslog doesn't understand these level names
     levelMap = {"ERR": "error",
-                "CRIT": "critical",
-                "LOCK": "debug"}
+                "CRIT": "critical"}
 
     def __init__(self,
                  address=('localhost', SYSLOG_UDP_PORT),
@@ -85,9 +120,15 @@ class AnacondaSyslogHandler(SysLogHandler):
         """Map the priority level to a syslog level """
         return self.levelMap.get(level, SysLogHandler.mapPriority(self, level))
 
-class AnacondaSocketHandler(SocketHandler):
+class AnacondaSocketHandler(_AnacondaLogFixer, SocketHandler):
     def makePickle(self, record):
         return bytes(self.formatter.format(record) + "\n", "utf-8")
+
+class AnacondaFileHandler(_AnacondaLogFixer, logging.FileHandler):
+    pass
+
+class AnacondaStreamHandler(_AnacondaLogFixer, logging.StreamHandler):
+    pass
 
 class AnacondaLog:
     SYSLOG_CFGFILE = "/etc/rsyslog.conf"
@@ -100,16 +141,19 @@ class AnacondaLog:
         logging.addLevelName(logging.WARNING, "WARN")
         logging.addLevelName(logging.ERROR, "ERR")
         logging.addLevelName(logging.CRITICAL, "CRIT")
-        logging.addLevelName(LOGLVL_LOCK, "LOCK")
 
         # Create the base of the logger hierarchy.
+        # Disable propagation to the parent logger, since the root logger is
+        # handled by a FileHandler(/dev/null), which can deadlock.
         self.anaconda_logger = logging.getLogger("anaconda")
+        self.anaconda_logger.propagate = False
         self.addFileHandler(MAIN_LOG_FILE, self.anaconda_logger,
                             minLevel=logging.DEBUG)
         warnings.showwarning = self.showwarning
 
         # Create the storage logger.
         storage_logger = logging.getLogger("blivet")
+        storage_logger.propagate = False
         self.addFileHandler(STORAGE_LOG_FILE, storage_logger,
                             minLevel=logging.DEBUG)
 
@@ -120,6 +164,7 @@ class AnacondaLog:
 
         # External program output log
         program_logger = logging.getLogger("program")
+        program_logger.propagate = False
         program_logger.setLevel(logging.DEBUG)
         self.addFileHandler(PROGRAM_LOG_FILE, program_logger,
                             minLevel=logging.DEBUG)
@@ -127,24 +172,26 @@ class AnacondaLog:
 
         # Create the packaging logger.
         packaging_logger = logging.getLogger("packaging")
-        packaging_logger.setLevel(LOGLVL_LOCK)
+        packaging_logger.setLevel(logging.DEBUG)
+        packaging_logger.propagate = False
         self.addFileHandler(PACKAGING_LOG_FILE, packaging_logger,
                             minLevel=logging.INFO,
                             autoLevel=True)
         self.forwardToSyslog(packaging_logger)
 
-        # Create the yum logger and link it to packaging
-        yum_logger = logging.getLogger("yum")
-        yum_logger.setLevel(logging.DEBUG)
-        self.addFileHandler(PACKAGING_LOG_FILE, yum_logger,
-                            minLevel=logging.DEBUG)
-        self.forwardToSyslog(yum_logger)
+        # Create the dnf logger and link it to packaging
+        dnf_logger = logging.getLogger("dnf")
+        dnf_logger.setLevel(logging.DEBUG)
+        self.addFileHandler(PACKAGING_LOG_FILE, dnf_logger,
+                            minLevel=logging.NOTSET)
+        self.forwardToSyslog(dnf_logger)
 
         # Create the sensitive information logger
         # * the sensitive-info.log file is not copied to the installed
         # system, as it might contain sensitive information that
         # should not be persistently stored by default
         sensitive_logger = logging.getLogger("sensitive-info")
+        sensitive_logger.propagate = False
         self.addFileHandler(SENSITIVE_INFO_LOG_FILE, sensitive_logger,
                             minLevel=logging.DEBUG)
 
@@ -170,9 +217,9 @@ class AnacondaLog:
                         autoLevel=False):
         try:
             if isinstance(dest, str):
-                logfileHandler = logging.FileHandler(dest)
+                logfileHandler = AnacondaFileHandler(dest)
             else:
-                logfileHandler = logging.StreamHandler(dest)
+                logfileHandler = AnacondaStreamHandler(dest)
 
             logfileHandler.setLevel(minLevel)
             logfileHandler.setFormatter(logging.Formatter(fmtStr, DATE_FORMAT))
@@ -214,16 +261,14 @@ class AnacondaLog:
 
     def restartSyslog(self):
         # Import here instead of at the module level to avoid an import loop
-        from pyanaconda.iutil import execWithRedirect
-        execWithRedirect("systemctl", ["restart", "rsyslog.service"])
+        from pyanaconda.iutil import restart_service
+        restart_service("rsyslog")
 
     def updateRemote(self, remote_syslog):
         """Updates the location of remote rsyslogd to forward to.
 
         Requires updating rsyslogd config and restarting rsyslog
         """
-        # Import here instead of at the module level to avoid an import loop
-        from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
         TEMPLATE = "*.* @@%s\n"
 
@@ -236,8 +281,6 @@ class AnacondaLog:
     def setupVirtio(self):
         """Setup virtio rsyslog logging.
         """
-        # Import here instead of at the module level to avoid an import loop
-        from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
         TEMPLATE = "*.* %s;anaconda_syslog\n"
 

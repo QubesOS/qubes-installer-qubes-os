@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 ## Process this file with automake to produce Makefile.in
 
@@ -39,7 +37,7 @@ IGNORE_HFILES = config.h \
 SCAN_OPTIONS=--rebuild-types
 
 # Extra options to supply to gtkdoc-mkdb
-MKDB_OPTIONS=--sgml-mode
+MKDB_OPTIONS=
 
 # Only needed if you are using gtkdoc-scangobj to dynamically query widget
 # signals and properties (which we are).

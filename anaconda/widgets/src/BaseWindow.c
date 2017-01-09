@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Chris Lumens <clumens@redhat.com>
  */
 
 #include "config.h"
@@ -27,6 +25,7 @@
 #include "LayoutIndicator.h"
 #include "BaseWindow.h"
 #include "intl.h"
+#include "widgets-common.h"
 
  #include <atk/atk.h>
 
@@ -47,15 +46,14 @@
  * - An action area in the majority of the screen.  This area is where
  *   subclasses should add their particular widgets.
  *
- * <refsect2 id="AnacondaBaseWindow-BUILDER-UI"><title>AnacondaBaseWindow as GtkBuildable</title>
- * <para>
+ * # AnacondaBaseWindow as GtkBuildable
+ *
  * The AnacondaBaseWindow implementation of the #GtkBuildable interface exposes
  * the @nav_area as an internal child with the name "nav_area" and the
  * @action_area as an internal child with the name "action_area".
- * </para>
- * <example>
- * <title>A <structname>AnacondaBaseWindow</structname> UI definition fragment.</title>
- * <programlisting><![CDATA[
+ *
+ * A AnacondaBaseWindow UI definition fragment:
+ * |[
  * <object class="AnacondaBaseWindow" id="window1">
  *     <child internal-child="main_box">
  *         <object class="GtkBox" id="main_box1">
@@ -90,9 +88,47 @@
  *         </object>
  *     </child>
  * </object>
- * ]]></programlisting>
- * </example>
- * </refsect2>
+ * ]|
+ *
+ * # CSS nodes
+ *
+ * |[<!-- language="plain" -->
+ * AnacondaBaseWindow
+ * ╰── #nav-box
+ *     ├── #anaconda-name-label
+ *     ├── #anaconda-distro-label
+ *     ├── #anaconda-beta-label
+ *     ├── #layout-indicator
+ *     ╰── #anaconda-help-button
+ * ]|
+ *
+ * The internal widgets are accessible by name for the purposes of CSS
+ * selectors.
+ *
+ * - nav-box
+ *
+ *   The navigation area at the top of the screen.
+ *
+ * - anaconda-name-label
+ *
+ *   The window name. This is title of the window, such as "INSTALLATION
+ *   SUMMARY" or "SOFTWARE SELECTION".
+ *
+ * - anaconda-distro-label
+ *
+ *   The distrubtion name; e.g., "FEDORA 23 INSTALLATION"
+ *
+ * - anaconda-beta-label
+ *
+ *   The "PRE-RELEASE / TESTING" label shown in pre-release installers.
+ *
+ * - layout-indicator
+ *
+ *   The #AnacondaLayoutIndicator widget.
+ *
+ * - anaconda-help-button
+ *
+ *   The help #GtkButton.
  */
 
 enum {
@@ -131,7 +167,6 @@ struct _AnacondaBaseWindowPrivate {
 static void anaconda_base_window_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static void anaconda_base_window_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
 static void anaconda_base_window_buildable_init(GtkBuildableIface *iface);
-static void format_beta_label(AnacondaBaseWindow *window, const char *markup);
 static gboolean anaconda_base_window_info_activate_link(GtkLabel *label, gchar *uri, gpointer user_data);
 static void anaconda_base_window_info_child_revealed(GObject *object, GParamSpec *pspec, gpointer user_data);
 static void anaconda_base_window_reveal_info_bar(AnacondaBaseWindow *win);
@@ -144,6 +179,7 @@ G_DEFINE_TYPE_WITH_CODE(AnacondaBaseWindow, anaconda_base_window, GTK_TYPE_BIN,
 
 static void anaconda_base_window_class_init(AnacondaBaseWindowClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS(klass);
 
     object_class->set_property = anaconda_base_window_set_property;
     object_class->get_property = anaconda_base_window_get_property;
@@ -227,6 +263,8 @@ static void anaconda_base_window_class_init(AnacondaBaseWindowClass *klass) {
                                                               G_TYPE_NONE, 0);
 
     g_type_class_add_private(object_class, sizeof(AnacondaBaseWindowPrivate));
+
+    gtk_widget_class_set_css_name(widget_class, "AnacondaBaseWindow");
 }
 
 /**
@@ -243,7 +281,6 @@ GtkWidget *anaconda_base_window_new() {
 }
 
 static void anaconda_base_window_init(AnacondaBaseWindow *win) {
-    char *markup;
     AtkObject *atk;
     GtkStyleContext *context;
 
@@ -321,10 +358,7 @@ G_GNUC_END_IGNORE_DEPRECATIONS
      */
 
     /* Create the name label. */
-    win->priv->name_label = gtk_label_new(NULL);
-    markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", _(DEFAULT_WINDOW_NAME));
-    gtk_label_set_markup(GTK_LABEL(win->priv->name_label), markup);
-    g_free(markup);
+    win->priv->name_label = gtk_label_new(_(DEFAULT_WINDOW_NAME));
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     /*
      * GtkMisc is deprecated, but if you don't set the GtkMisc properties then they
@@ -333,27 +367,26 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(win->priv->name_label), 0, 0);
 G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_hexpand(win->priv->name_label, TRUE);
+    gtk_widget_set_name(win->priv->name_label, "anaconda-name-label");
 
     win->priv->orig_name = g_strdup(DEFAULT_WINDOW_NAME);
 
     /* Create the distribution label. */
-    win->priv->distro_label = gtk_label_new(NULL);
-    markup = g_markup_printf_escaped("<span size='large'>%s</span>", _(DEFAULT_DISTRIBUTION));
-    gtk_label_set_markup(GTK_LABEL(win->priv->distro_label), markup);
-    g_free(markup);
+    win->priv->distro_label = gtk_label_new(_(DEFAULT_DISTRIBUTION));
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(win->priv->distro_label), 0, 0);
 G_GNUC_END_IGNORE_DEPRECATIONS
+    gtk_widget_set_name(win->priv->distro_label, "anaconda-distro-label");
 
     win->priv->orig_distro = g_strdup(DEFAULT_DISTRIBUTION);
 
     /* Create the beta label. */
-    win->priv->beta_label = gtk_label_new(NULL);
-    format_beta_label(win, _(DEFAULT_BETA));
+    win->priv->beta_label = gtk_label_new(_(DEFAULT_BETA));
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(win->priv->beta_label), 0, 0);
 G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_no_show_all(win->priv->beta_label, TRUE);
+    gtk_widget_set_name(win->priv->beta_label, "anaconda-beta-label");
 
     win->priv->orig_beta = g_strdup(DEFAULT_BETA);
 
@@ -368,14 +401,15 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_margin_bottom(win->priv->layout_indicator, 6);
 
     /* Create the help button. */
-    win->priv->help_button = gtk_button_new_with_label(HELP_BUTTON_LABEL);
+    win->priv->help_button = gtk_button_new_with_label(_(HELP_BUTTON_LABEL));
     gtk_widget_set_halign(win->priv->help_button, GTK_ALIGN_END);
     gtk_widget_set_vexpand(win->priv->help_button, FALSE);
     gtk_widget_set_valign(win->priv->help_button, GTK_ALIGN_END);
     gtk_widget_set_margin_bottom(win->priv->help_button, 6);
+    gtk_widget_set_name(win->priv->help_button, "anaconda-help-button");
 
     atk = gtk_widget_get_accessible(win->priv->help_button);
-    atk_object_set_name(atk, HELP_BUTTON_LABEL);
+    atk_object_set_name(atk, _(HELP_BUTTON_LABEL));
 
     /* Hook up some signals for that button.  The signal handlers here will
      * just raise our own custom signals for the whole window.
@@ -401,6 +435,11 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     /* Watch child-revealed so we can destroy the info bar once the hide animation is finished */
     g_signal_connect(win->priv->info_revealer, "notify::child-revealed",
             G_CALLBACK(anaconda_base_window_info_child_revealed), win);
+
+    /* Add the style data to widgets with stylesheets */
+    anaconda_widget_apply_stylesheet(win->priv->name_label, "BaseWindow-name-label");
+    anaconda_widget_apply_stylesheet(win->priv->distro_label, "BaseWindow-distro-label");
+    anaconda_widget_apply_stylesheet(win->priv->beta_label, "BaseWindow-beta-label");
 }
 
 static void anaconda_base_window_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec) {
@@ -424,9 +463,7 @@ static void anaconda_base_window_set_property(GObject *object, guint prop_id, co
 
     switch(prop_id) {
         case PROP_DISTRIBUTION: {
-            char *markup = g_markup_printf_escaped("<span size='large'>%s</span>", _(g_value_get_string(value)));
-            gtk_label_set_markup(GTK_LABEL(priv->distro_label), markup);
-            g_free(markup);
+            gtk_label_set_text(GTK_LABEL(priv->distro_label), _(g_value_get_string(value)));
 
             if (priv->orig_distro)
                 g_free(priv->orig_distro);
@@ -435,16 +472,11 @@ static void anaconda_base_window_set_property(GObject *object, guint prop_id, co
         }
 
         case PROP_WINDOW_NAME: {
-            char *markup;
-
             /* Do not translate an empty string here. */
             if (strcmp(g_value_get_string(value), "") == 0)
-                markup = g_markup_printf_escaped("<span weight='bold' size='large'></span>");
+                gtk_label_set_text(GTK_LABEL(priv->name_label), "");
             else
-                markup = g_markup_printf_escaped("<span weight='bold' size='large'>%s</span>", _(g_value_get_string(value)));
-
-            gtk_label_set_markup(GTK_LABEL(priv->name_label), markup);
-            g_free(markup);
+                gtk_label_set_text(GTK_LABEL(priv->name_label), _(g_value_get_string(value)));
 
             if (priv->orig_name)
                 g_free(priv->orig_name);
@@ -805,7 +837,9 @@ void anaconda_base_window_retranslate(AnacondaBaseWindow *win) {
         anaconda_base_window_set_property((GObject *) win, PROP_WINDOW_NAME, &name, NULL);
     }
 
-    format_beta_label(win, _(win->priv->orig_beta));
+    gtk_label_set_text(GTK_LABEL(win->priv->beta_label), _(win->priv->orig_beta));
+
+    gtk_button_set_label(GTK_BUTTON(win->priv->help_button), _(HELP_BUTTON_LABEL));
 
     /* retranslate the layout indicator */
     anaconda_layout_indicator_retranslate(ANACONDA_LAYOUT_INDICATOR(win->priv->layout_indicator));
@@ -849,26 +883,3 @@ static void anaconda_base_window_buildable_init (GtkBuildableIface *iface) {
     iface->add_child = anaconda_base_window_buildable_add_child;
     iface->get_internal_child = anaconda_base_window_buildable_get_internal_child;
 }
-
-static void format_beta_label (AnacondaBaseWindow *window, const char *markup) {
-    gchar *escaped;
-    PangoAttrList *attrs;
-
-    /* define attributes -- medium size, bold weight and red text color */
-    attrs = pango_attr_list_new();
-    pango_attr_list_insert(attrs, pango_attr_scale_new(PANGO_SCALE_MEDIUM));
-    pango_attr_list_insert(attrs, pango_attr_weight_new(PANGO_WEIGHT_BOLD));
-    pango_attr_list_insert(attrs, pango_attr_foreground_new(0xfdfd, 0x1010, 0x1010));
-
-    /* Some characters may need to be escaped. */
-    escaped = g_markup_escape_text(markup, -1);
-
-    gtk_label_set_markup(GTK_LABEL(window->priv->beta_label), escaped);
-    gtk_label_set_attributes(GTK_LABEL(window->priv->beta_label), attrs);
-
-    pango_attr_list_unref(attrs);
-    g_free(escaped);
-}
-
-
-

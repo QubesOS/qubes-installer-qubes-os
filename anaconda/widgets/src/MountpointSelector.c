@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Chris Lumens <clumens@redhat.com>
  */
 
 #include "config.h"
@@ -43,17 +41,49 @@
  * may be caught.  However #GtkWidget::button-press-event is the most important
  * one and is how we determine what should be displayed on the rest of the
  * screen.
+ *
+ * # CSS nodes
+ *
+ * |[<!-- language="plain" -->
+ * AnacondaMountpointSelector
+ * ├── #anaconda-mountpoint-label
+ * ├── #anaconda-mountpoint-size-label
+ * ├── #anaconda-mountpoint-arrow
+ * ╰── #anaconda-mountpoint-name-label
+ * ]|
+ *
+ * The internal widgets are accessible by name for the purposes of CSS
+ * selectors
+ *
+ * - anaconda-mountpoint-name-label
+ *
+ *   The name of the mountpoint (e.g., /boot, /home, swap).
+ *
+ * - anaconda-mountpoint-size-label
+ *
+ *   The size of the mountpoint.
+ *
+ * - anaconda-mountpoint-arrow
+ *
+ *   The arrow image displayed on the selected mountpoint.
+ *
+ * - anaconda-mountpoint-name-label
+ *
+ *   The secondary text displayed for the mountpoint. This is commonly the
+ *   name of the device node containing the mountpoint.
  */
 
 enum {
     PROP_NAME = 1,
     PROP_SIZE,
-    PROP_MOUNTPOINT
+    PROP_MOUNTPOINT,
+    PROP_SHOW_ARROW
 };
 
 #define DEFAULT_NAME        ""
 #define DEFAULT_SIZE        N_("0 GB")
 #define DEFAULT_MOUNTPOINT  ""
+#define DEFAULT_SHOW_ARROW  TRUE
 
 struct _AnacondaMountpointSelectorPrivate {
     GtkWidget *grid;
@@ -63,7 +93,11 @@ struct _AnacondaMountpointSelectorPrivate {
     GdkCursor *cursor;
 
     gboolean   chosen;
+    gboolean   show_arrow;
+    GtkWidget *parent_page;
 };
+
+static guint chosen_changed_signal = 0;
 
 G_DEFINE_TYPE(AnacondaMountpointSelector, anaconda_mountpoint_selector, GTK_TYPE_EVENT_BOX)
 
@@ -77,6 +111,7 @@ static void anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSel
 
 static void anaconda_mountpoint_selector_class_init(AnacondaMountpointSelectorClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS(klass);
 
     object_class->set_property = anaconda_mountpoint_selector_set_property;
     object_class->get_property = anaconda_mountpoint_selector_get_property;
@@ -131,7 +166,43 @@ static void anaconda_mountpoint_selector_class_init(AnacondaMountpointSelectorCl
                                                         DEFAULT_MOUNTPOINT,
                                                         G_PARAM_READWRITE));
 
+    /**
+     * AnacondaMountpointSelector:show-arrow:
+     *
+     * The #AnacondaMountpointSelector:show-arrow boolean is used when arrow on the left should
+     * or shouldn't be visible.
+     *
+     * Since: 3.4
+     */
+    g_object_class_install_property(object_class,
+                                    PROP_SHOW_ARROW,
+                                    g_param_spec_boolean("show-arrow",
+                                                        P_("show-arrow"),
+                                                        P_("Show arrow when selected"),
+                                                        DEFAULT_SHOW_ARROW,
+                                                        G_PARAM_READWRITE));
+
+    /**
+     * AnacondaMountpointSelector::chosen-changed:
+     *
+     * The #AnacondaMountpointSelector:chosen-changed signals when set_chosen is called.
+     *
+     * Since: 3.4
+     */
+    chosen_changed_signal = g_signal_newv("chosen-changed", // name
+                                          G_TYPE_FROM_CLASS(object_class), // type
+                                          G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_NO_HOOKS, // flags
+                                          NULL,             // class closure
+                                          NULL,             // accumulator
+                                          NULL,             // accumulator user data
+                                          NULL,             // c_marshaller
+                                          G_TYPE_NONE,      // return type
+                                          0,                // length of the parameter type array
+                                          NULL);            // array of types, one for each parameter
+
     g_type_class_add_private(object_class, sizeof(AnacondaMountpointSelectorPrivate));
+
+    gtk_widget_class_set_css_name(widget_class, "AnacondaMountpointSelector");
 }
 
 /**
@@ -147,32 +218,8 @@ GtkWidget *anaconda_mountpoint_selector_new() {
     return g_object_new(ANACONDA_TYPE_MOUNTPOINT_SELECTOR, NULL);
 }
 
-static void format_mountpoint_label(AnacondaMountpointSelector *widget, const char *value) {
-    char *markup;
-
-    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", value);
-    gtk_label_set_markup(GTK_LABEL(widget->priv->mountpoint_label), markup);
-    g_free(markup);
-}
-
-static void format_size_label(AnacondaMountpointSelector *widget, const char *value) {
-    char *markup;
-
-    markup = g_markup_printf_escaped("<span fgcolor='black' size='large' weight='bold'>%s</span>", value);
-    gtk_label_set_markup(GTK_LABEL(widget->priv->size_label), markup);
-    g_free(markup);
-}
-
-static void format_name_label(AnacondaMountpointSelector *widget, const char *value) {
-    char *markup;
-
-    markup = g_markup_printf_escaped("<span fgcolor='black' size='small'>%s</span>", value);
-    gtk_label_set_markup(GTK_LABEL(widget->priv->name_label), markup);
-    g_free(markup);
-}
-
 static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountpoint) {
-    gchar *file;
+    GtkStyleContext *context;
 
     mountpoint->priv = G_TYPE_INSTANCE_GET_PRIVATE(mountpoint,
                                                    ANACONDA_TYPE_MOUNTPOINT_SELECTOR,
@@ -194,23 +241,21 @@ static void anaconda_mountpoint_selector_init(AnacondaMountpointSelector *mountp
     gtk_widget_set_margin_start(GTK_WIDGET(mountpoint->priv->grid), 30);
 
     /* Create the icon.  We don't need to check if it returned NULL since
-     * gtk_image_new_from_file will just display a broken image icon in that
+     * gtk_image_new_from_resource will just display a broken image icon in that
      * case.  That's good enough error notification.
      */
     if (gtk_get_locale_direction() == GTK_TEXT_DIR_LTR)
-        file = g_strdup_printf("%s/pixmaps/right-arrow-icon.png", anaconda_get_widgets_datadir());
+        mountpoint->priv->arrow = gtk_image_new_from_resource(ANACONDA_RESOURCE_PATH "right-arrow-icon.png");
     else
-        file = g_strdup_printf("%s/pixmaps/left-arrow-icon.png", anaconda_get_widgets_datadir());
-    mountpoint->priv->arrow = gtk_image_new_from_file(file);
-    g_free(file);
+        mountpoint->priv->arrow = gtk_image_new_from_resource(ANACONDA_RESOURCE_PATH "left-arrow-icon.png");
     gtk_widget_set_no_show_all(GTK_WIDGET(mountpoint->priv->arrow), TRUE);
+    gtk_widget_set_name(mountpoint->priv->arrow, "anaconda-mountpoint-arrow");
 
     /* Set some properties. */
     mountpoint->priv->chosen = FALSE;
 
     /* Create the name label. */
-    mountpoint->priv->name_label = gtk_label_new(NULL);
-    format_name_label(mountpoint, _(DEFAULT_NAME));
+    mountpoint->priv->name_label = gtk_label_new(_(DEFAULT_NAME));
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     /* gtk+ did a garbage job of "deprecating" GtkMisc, so keep using it for now */
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->name_label), 0, 0);
@@ -218,21 +263,22 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_label_set_ellipsize(GTK_LABEL(mountpoint->priv->name_label), PANGO_ELLIPSIZE_MIDDLE);
     gtk_label_set_max_width_chars(GTK_LABEL(mountpoint->priv->name_label), 25);
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->name_label), TRUE);
+    gtk_widget_set_name(mountpoint->priv->name_label, "anaconda-mountpoint-name-label");
 
     /* Create the size label. */
-    mountpoint->priv->size_label = gtk_label_new(NULL);
-    format_size_label(mountpoint, _(DEFAULT_SIZE));
+    mountpoint->priv->size_label = gtk_label_new(_(DEFAULT_SIZE));
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->size_label), 0, 0.5);
 G_GNUC_END_IGNORE_DEPRECATIONS
+    gtk_widget_set_name(mountpoint->priv->size_label, "anaconda-mountpoint-size-label");
 
     /* Create the mountpoint label. */
-    mountpoint->priv->mountpoint_label = gtk_label_new(NULL);
-    format_mountpoint_label(mountpoint, DEFAULT_MOUNTPOINT);
+    mountpoint->priv->mountpoint_label = gtk_label_new(DEFAULT_MOUNTPOINT);
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     gtk_misc_set_alignment(GTK_MISC(mountpoint->priv->mountpoint_label), 0, 0);
 G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_widget_set_hexpand(GTK_WIDGET(mountpoint->priv->mountpoint_label), TRUE);
+    gtk_widget_set_name(mountpoint->priv->mountpoint_label, "anaconda-mountpoint-label");
 
     /* Add everything to the grid, add the grid to the widget. */
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->mountpoint_label, 0, 0, 1, 1);
@@ -241,12 +287,26 @@ G_GNUC_END_IGNORE_DEPRECATIONS
     gtk_grid_attach(GTK_GRID(mountpoint->priv->grid), mountpoint->priv->name_label, 0, 1, 1, 2);
     gtk_widget_set_margin_end(GTK_WIDGET(mountpoint->priv->grid), 12);
 
+    /* Set the stylesheet data on child widgets that have it */
+    anaconda_widget_apply_stylesheet(mountpoint->priv->mountpoint_label, "MountpointSelector-mountpoint");
+    anaconda_widget_apply_stylesheet(mountpoint->priv->size_label, "MountpointSelector-size");
+    anaconda_widget_apply_stylesheet(mountpoint->priv->name_label, "MountpointSelector-name");
+
     gtk_container_add(GTK_CONTAINER(mountpoint), mountpoint->priv->grid);
+
+    /* Set NULL to parent_page while it's not set already */
+    mountpoint->priv->parent_page = NULL;
+
+    /* Apply the "fallback" style so that the widgets are colored correctly when
+     * selected, insensitive, etc. */
+    context = gtk_widget_get_style_context(GTK_WIDGET(mountpoint));
+    gtk_style_context_add_class(context, "gtkstyle-fallback");
 }
 
 static void anaconda_mountpoint_selector_finalize(GObject *object) {
     AnacondaMountpointSelector *widget = ANACONDA_MOUNTPOINT_SELECTOR(object);
     g_object_unref(widget->priv->cursor);
+    g_object_unref(widget->priv->parent_page);
 
     G_OBJECT_CLASS(anaconda_mountpoint_selector_parent_class)->finalize(object);
 }
@@ -261,48 +321,71 @@ static void anaconda_mountpoint_selector_get_property(GObject *object, guint pro
     AnacondaMountpointSelector *widget = ANACONDA_MOUNTPOINT_SELECTOR(object);
     AnacondaMountpointSelectorPrivate *priv = widget->priv;
 
-    switch(prop_id) {
+    switch (prop_id) {
         case PROP_NAME:
-           g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->name_label)));
-           break;
+            g_value_set_string(value, gtk_label_get_text(GTK_LABEL(priv->name_label)));
+            break;
 
         case PROP_SIZE:
-           g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->size_label)));
-           break;
+            g_value_set_string(value, gtk_label_get_text(GTK_LABEL(priv->size_label)));
+            break;
 
         case PROP_MOUNTPOINT:
-           g_value_set_string (value, gtk_label_get_text(GTK_LABEL(priv->mountpoint_label)));
-           break;
+            g_value_set_string(value, gtk_label_get_text(GTK_LABEL(priv->mountpoint_label)));
+            break;
+
+        case PROP_SHOW_ARROW:
+            g_value_set_boolean(value, priv->show_arrow);
+            break;
+
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
     }
 }
 
 static void anaconda_mountpoint_selector_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec) {
     AnacondaMountpointSelector *widget = ANACONDA_MOUNTPOINT_SELECTOR(object);
 
-    switch(prop_id) {
-        case PROP_NAME: {
-            format_name_label(widget, g_value_get_string(value));
+    switch (prop_id) {
+        case PROP_NAME:
+            gtk_label_set_text(GTK_LABEL(widget->priv->name_label), g_value_get_string(value));
             break;
-        }
 
-        case PROP_SIZE: {
-            format_size_label(widget, g_value_get_string(value));
+        case PROP_SIZE:
+            gtk_label_set_text(GTK_LABEL(widget->priv->size_label), g_value_get_string(value));
             break;
-        }
 
-        case PROP_MOUNTPOINT: {
-            format_mountpoint_label(widget, g_value_get_string(value));
+        case PROP_MOUNTPOINT:
+            gtk_label_set_text(GTK_LABEL(widget->priv->mountpoint_label), g_value_get_string(value));
             break;
-        }
+
+        case PROP_SHOW_ARROW:
+            widget->priv->show_arrow = g_value_get_boolean(value);
+            anaconda_mountpoint_selector_set_chosen(widget, widget->priv->chosen);
+            break;
+
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
     }
 }
 
 static void anaconda_mountpoint_selector_toggle_background(AnacondaMountpointSelector *widget) {
+    /* Copy state flag changes to the child labels so they can be used in CSS selectors */
     if (widget->priv->chosen) {
         gtk_widget_set_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED, FALSE);
+        gtk_widget_set_state_flags(widget->priv->arrow, GTK_STATE_FLAG_SELECTED, FALSE);
+        gtk_widget_set_state_flags(widget->priv->name_label, GTK_STATE_FLAG_SELECTED, FALSE);
+        gtk_widget_set_state_flags(widget->priv->size_label, GTK_STATE_FLAG_SELECTED, FALSE);
+        gtk_widget_set_state_flags(widget->priv->mountpoint_label, GTK_STATE_FLAG_SELECTED, FALSE);
     }
     else {
         gtk_widget_unset_state_flags(GTK_WIDGET(widget), GTK_STATE_FLAG_SELECTED);
+        gtk_widget_unset_state_flags(widget->priv->arrow, GTK_STATE_FLAG_SELECTED);
+        gtk_widget_unset_state_flags(widget->priv->name_label, GTK_STATE_FLAG_SELECTED);
+        gtk_widget_unset_state_flags(widget->priv->size_label, GTK_STATE_FLAG_SELECTED);
+        gtk_widget_unset_state_flags(widget->priv->mountpoint_label, GTK_STATE_FLAG_SELECTED);
     }
 }
 
@@ -335,10 +418,49 @@ void anaconda_mountpoint_selector_set_chosen(AnacondaMountpointSelector *widget,
     anaconda_mountpoint_selector_toggle_background(widget);
 
     if (is_chosen) {
-        gtk_widget_show(GTK_WIDGET(widget->priv->arrow));
+        if (widget->priv->show_arrow)
+            gtk_widget_show(GTK_WIDGET(widget->priv->arrow));
+        else
+            gtk_widget_hide(GTK_WIDGET(widget->priv->arrow));
+
         gtk_widget_grab_focus(GTK_WIDGET(widget));
     }
     else {
         gtk_widget_hide(GTK_WIDGET(widget->priv->arrow));
     }
+
+    g_signal_emit(widget, chosen_changed_signal, 0);
+}
+
+/**
+ * anaconda_mountpoint_selector_get_page:
+ * @widget: a #AnacondaMountpointSelector
+ *
+ * Return pointer to Page where this #AnacondaMountpointSelector is contained.
+ *
+ * Returns: (transfer none): Pointer to GtkWidget page or #NONE.
+ *
+ * Since: 3.4
+ */
+GtkWidget *anaconda_mountpoint_selector_get_page(AnacondaMountpointSelector *widget) {
+    return widget->priv->parent_page;
+}
+
+/**
+ * anaconda_mountpoint_selector_set_page:
+ * @widget: a #AnacondaMountpointSelector
+ * @parent_page: Page object which owns this #AnacondaMountpointSelector
+ *
+ * Set a pointer to Page where this #AnacondaMountpointSelector is contained.
+ *
+ * Since: 3.4
+ */
+void anaconda_mountpoint_selector_set_page(AnacondaMountpointSelector *widget, GtkWidget *parent_page) {
+    if (widget->priv->parent_page != NULL)
+        g_object_unref(widget->priv->parent_page);
+
+    widget->priv->parent_page = parent_page;
+
+    if (parent_page != NULL)
+        g_object_ref(widget->priv->parent_page);
 }

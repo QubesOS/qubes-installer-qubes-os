@@ -16,16 +16,16 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
-#
 
 import gi
 gi.require_version("BlockDev", "1.0")
 
 from gi.repository import BlockDev as blockdev
 
+from blivet import zfcp
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import gtk_action_nowait
+from pyanaconda.storage_utils import try_populate_devicetree
 
 __all__ = ["ZFCPDialog"]
 
@@ -43,7 +43,7 @@ class ZFCPDialog(GUIObject):
     def __init__(self, data, storage):
         GUIObject.__init__(self, data)
         self.storage = storage
-        self.zfcp = self.storage.zfcp()
+        self.zfcp = zfcp.zFCP()
 
         self._discoveryError = None
 
@@ -73,7 +73,7 @@ class ZFCPDialog(GUIObject):
         # We need to call this to get the device nodes to show up
         # in our devicetree.
         if self._update_devicetree:
-            self.storage.devicetree.populate()
+            try_populate_devicetree(self.storage.devicetree)
         return rc
 
     def _set_configure_sensitive(self, sensitivity):
@@ -143,10 +143,15 @@ class ZFCPDialog(GUIObject):
         """
         # attempt to add the device
         try:
-            self.zfcp.addFCP(args[0], args[1], args[2])
+            self.zfcp.add_fcp(args[0], args[1], args[2])
             self._update_devicetree = True
         except ValueError as e:
             self._discoveryError = str(e)
+            return
+        except TypeError as e:
+            # this happens when a user doesn't pass any input, so pass a more
+            # informative error str back
+            self._discoveryError = "You must enter values for the device."
             return
 
     def on_entry_activated(self, entry, user_data=None):

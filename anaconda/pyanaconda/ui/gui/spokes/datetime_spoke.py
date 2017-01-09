@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 import logging
 log = logging.getLogger("anaconda")
@@ -36,6 +34,7 @@ from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.categories.localization import LocalizationCategory
 from pyanaconda.ui.gui.utils import gtk_action_nowait, gtk_action_wait, gtk_call_once, override_cell_property
+from pyanaconda.ui.gui.utils import blockedHandler
 from pyanaconda.ui.gui.helpers import GUIDialogInputCheckHandler
 from pyanaconda.ui.helpers import InputCheck
 
@@ -57,10 +56,6 @@ import locale as locale_mod
 import functools
 
 __all__ = ["DatetimeSpoke"]
-
-SERVER_OK = 0
-SERVER_NOK = 1
-SERVER_QUERY = 2
 
 SERVER_HOSTNAME = 0
 SERVER_POOL = 1
@@ -336,7 +331,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
         if self._update_datetime_timer_id is not None:
             GLib.source_remove(self._update_datetime_timer_id)
         self._update_datetime_timer_id = None
-        self.data.timezone.setup(self.data)
 
     @property
     def ready(self):
@@ -757,6 +751,11 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
 
     def on_city_region_text_entry_activated(self, entry):
         combo = entry.get_parent()
+
+        # It's gotta be up there somewhere, right? right???
+        while not isinstance(combo, Gtk.ComboBox):
+            combo = combo.get_parent()
+
         model = combo.get_model()
         entry_text = entry.get_text().lower()
 
@@ -784,10 +783,16 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
             return
 
         timezone = location.get_property('zone')
-        if self._set_timezone(timezone):
-            # timezone successfully set
-            self._tz = get_timezone(timezone)
-            self._update_datetime()
+
+        # Updating the timezone will update the region/city combo boxes to match.
+        # The on_city_changed handler will attempt to convert the timezone back
+        # to a location and set it in the map, which we don't want, since we
+        # already have a location. That's why we're here.
+        with blockedHandler(self._cityCombo, self.on_city_changed):
+            if self._set_timezone(timezone):
+                # timezone successfully set
+                self._tz = get_timezone(timezone)
+                self._update_datetime()
 
     def on_timeformat_changed(self, button24h, *args):
         hours = int(self._hoursLabel.get_text())

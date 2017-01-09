@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    Martin Sivak <msivak@redhat.com>
-#
 
 import os
 import imp
@@ -30,6 +27,7 @@ from abc import ABCMeta, abstractproperty
 
 from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON
 from pyanaconda.errors import RemovedModuleError
+from pyanaconda import screen_access
 from pykickstart.constants import FIRSTBOOT_RECONFIG, DISPLAY_MODE_TEXT
 
 import logging
@@ -222,6 +220,10 @@ class Spoke(object, metaclass=ABCMeta):
 
         self.visitedSinceApplied = True
 
+        # lists of callbacks to be called when the spoke is entered/exited by the user
+        self._entry_callbacks = [self.entry_logger, self._mark_screen_visited]
+        self._exit_callbacks = [self.exit_logger]
+
     @abstractproperty
     def data(self):
         pass
@@ -332,21 +334,67 @@ class Spoke(object, metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def entry_logger(self):
+    def entry(self):
+        """Called once the spoke is about to be displayed.
+
+        Once called all the callbacks specified in the entry_callbacks list
+        property will be called in the list order.
+        """
+        for callback in self.entry_callbacks:
+            callback(self)
+
+    @property
+    def entry_callbacks(self):
+        """List of callback to be called once the spoke is entered by the user.
+
+        Each callback is called with a single argument, the spoke instance.
+        """
+        return self._entry_callbacks
+
+    def _mark_screen_visited(self, spoke_instance):
+        """Report the spoke screen as visited to the Spoke Access Manager."""
+        screen_access.sam.mark_screen_visited(spoke_instance.__class__.__name__)
+
+    def exit(self):
+        """Called once the spoke is exited by the used.
+
+        Once called all the callbacks specified in the exit_callbacks list
+        property will be called in the list order.
+        """
+        for callback in self.exit_callbacks:
+            callback(self)
+
+    @property
+    def exit_callbacks(self):
+        """List of callback to be called once the spoke is exited by the user.
+
+        Each callback is called with a single argument, the spoke instance.
+        """
+        return self._exit_callbacks
+
+    def entry_logger(self, spoke_instance):
         """Log immediately before this spoke is about to be displayed on the
            screen.  Subclasses may override this method if they want to log
            more specific information, but an overridden method should finish
            by calling this method so the entry will be logged.
         """
-        log.debug("Entered spoke: %s", self.__class__.__name__)
+        log.debug("Entered spoke: %s", spoke_instance.__class__.__name__)
 
-    def exit_logger(self):
+    def exit_logger(self, spoke_instance):
         """Log when a user leaves the spoke.  Subclasses may override this
            method if they want to log more specific information, but an
            overridden method should finish by calling this method so the
            exit will be logged.
         """
-        log.debug("Left spoke: %s", self.__class__.__name__)
+        log.debug("Left spoke: %s", spoke_instance.__class__.__name__)
+
+    def finished(self):
+        """Called when exiting the Summary Hub
+
+        This can be used to cleanup the spoke before continuing the
+        installation. This method is optional.
+        """
+        pass
 
 # Inherit abstract methods from Spoke
 # pylint: disable=abstract-method
@@ -491,8 +539,9 @@ class Hub(object, metaclass=ABCMeta):
         self.paths = {}
         self._spokes = {}
 
-        # spokes for which environments this hub should collect?
-        self._environs = [ANACONDA_ENVIRON]
+        # lists of callbacks to be called when thehub is entered/exited by the user
+        self._entry_callbacks = [self.entry_logger]
+        self._exit_callbacks = [self.exit_logger]
 
     @abstractproperty
     def data(self):
@@ -507,7 +556,41 @@ class Hub(object, metaclass=ABCMeta):
            name format string, directory name)"""
         self.paths[path_id] = paths
 
-    def entry_logger(self):
+    def entry(self):
+        """Called once the hub is about to be displayed.
+
+        Once called all the callbacks specified in the entry_callbacks list
+        property will be called in the list order.
+        """
+        for callback in self.entry_callbacks:
+            callback(self)
+
+    @property
+    def entry_callbacks(self):
+        """List of callback to be called once the hub is entered by the user.
+
+        Each callback is called with a single argument, the hub instance.
+        """
+        return self._entry_callbacks
+
+    def exit(self):
+        """Called once the hub is exited by the used.
+
+        Once called all the callbacks specified in the exit_callbacks list
+        property will be called in the list order.
+        """
+        for callback in self.exit_callbacks:
+            callback(self)
+
+    @property
+    def exit_callbacks(self):
+        """List of callback to be called once the hub is exited by the user.
+
+        Each callback is called with a single argument, the hub instance.
+        """
+        return self._exit_callbacks
+
+    def entry_logger(self, hub_instance):
         """Log immediately before this hub is about to be displayed on the
            screen.  Subclasses may override this method if they want to log
            more specific information, but an overridden method should finish
@@ -518,7 +601,7 @@ class Hub(object, metaclass=ABCMeta):
            and then coming back to the hub does not count as exiting and
            entering.
         """
-        log.debug("Entered hub: %s", self.__class__.__name__)
+        log.debug("Entered hub: %s", hub_instance.__class__.__name__)
 
     def _collectCategoriesAndSpokes(self):
         """This method is provided so that is can be overridden in a subclass
@@ -527,7 +610,7 @@ class Hub(object, metaclass=ABCMeta):
         """
         return collectCategoriesAndSpokes(self.paths, self.__class__, self.data.displaymode.displayMode)
 
-    def exit_logger(self):
+    def exit_logger(self, hub_instance):
         """Log when a user leaves the hub.  Subclasses may override this
            method if they want to log more specific information, but an
            overridden method should finish by calling this method so the
@@ -537,7 +620,7 @@ class Hub(object, metaclass=ABCMeta):
            user selects a spoke from the hub.  They are only exited when the
            continue or quit button is clicked on the hub.
         """
-        log.debug("Left hub: %s", self.__class__.__name__)
+        log.debug("Left hub: %s", hub_instance.__class__.__name__)
 
 def collect(module_pattern, path, pred):
     """Traverse the directory (given by path), import all files as a module
@@ -650,6 +733,7 @@ def collect(module_pattern, path, pred):
             continue
 
         except ImportError as imperr:
+            # pylint: disable=unsupported-membership-test
             if module_path and "pyanaconda" in module_path:
                 # failure when importing our own module:
                 raise
@@ -658,8 +742,8 @@ def collect(module_pattern, path, pred):
         finally:
             imp.release_lock()
 
-            if mod_info and mod_info[0]:
-                mod_info[0].close()
+            if mod_info and mod_info[0]: # pylint: disable=unsubscriptable-object
+                mod_info[0].close() # pylint: disable=unsubscriptable-object
 
         p = lambda obj: inspect.isclass(obj) and pred(obj)
 
@@ -689,8 +773,18 @@ def collect_spokes(mask_paths, category):
     """
     spokes = []
     for mask, path in mask_paths:
-        spokes.extend(collect(mask, path,
-                      lambda obj: hasattr(obj, "category") and obj.category is not None and obj.category.__name__ == category))
+        candidate_spokes = (collect(mask, path,
+                            lambda obj: hasattr(obj, "category") and obj.category is not None and obj.category.__name__ == category))
+        # filter out any spokes from the candidates that have already been visited by the user before
+        # (eq. before Anaconda or Initial Setup started) and should not be visible again
+        visible_spokes = []
+        for candidate in candidate_spokes:
+            if screen_access.sam.get_screen_visited(candidate.__name__):
+                log.info("Spoke %s will not be displayed because it has already been visited before.",
+                         candidate.__name__)
+            else:
+                visible_spokes.append(candidate)
+        spokes.extend(visible_spokes)
 
     return spokes
 

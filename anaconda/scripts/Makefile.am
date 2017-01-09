@@ -14,12 +14,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Cantrell <dcantrell@redhat.com>
 
 scriptsdir = $(libexecdir)/$(PACKAGE_NAME)
-dist_scripts_SCRIPTS = upd-updates run-anaconda zramswapon zramswapoff zram-stats
-dist_noinst_SCRIPTS  = upd-kernel makeupdates
+dist_scripts_SCRIPTS = upd-updates run-anaconda zramswapon zramswapoff zram-stats anaconda-pre-log-gen
+dist_noinst_SCRIPTS  = upd-kernel makeupdates makebumpver
 
 dist_bin_SCRIPTS = analog anaconda-cleanup instperf anaconda-disable-nm-ibft-plugin
 

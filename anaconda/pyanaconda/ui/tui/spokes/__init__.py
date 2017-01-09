@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Sivak <msivak@redhat.com>
-#
 from pyanaconda.ui.tui import simpleline as tui
 from pyanaconda.ui.tui.tuiobject import TUIObject, YesNoDialog
 from pyanaconda.ui.common import Spoke, StandaloneSpoke, NormalSpoke
@@ -113,7 +111,6 @@ class EditTUIDialog(NormalTUISpoke):
        To override the wrong input message set the wrong_input_message attribute
        to a translated string.
     """
-
     title = N_("New value")
     PASSWORD = re.compile(".*")
 
@@ -190,10 +187,18 @@ class EditTUIDialog(NormalTUISpoke):
             self.value = cryptPassword(pw)
             return None
         else:
-            return _("Enter new value for '%s' and press enter\n") % entry.title
+            return _("Enter a new value for '%s' and press [Enter]\n") % entry.title
 
     def input(self, entry, key):
-        if entry.aux.match(key):
+        if callable(entry.aux):
+            valid, err_msg = entry.aux(key)
+            if not valid:
+                if err_msg is not None:
+                    self.wrong_input_message = err_msg
+        else:
+            valid = entry.aux.match(key)
+
+        if valid:
             self.value = key
             self.close()
             return True
@@ -203,6 +208,7 @@ class EditTUIDialog(NormalTUISpoke):
             else:
                 print(_("You have provided an invalid value\n"))
             return NormalTUISpoke.input(self, entry, key)
+
 
 class OneShotEditTUIDialog(EditTUIDialog):
     """The same as EditTUIDialog, but closes automatically after
@@ -245,8 +251,10 @@ class EditTUISpoke(NormalTUISpoke):
     # EditTUISpokeEntry(title, attribute, aux, visible)
     # title     - Nontranslated title of the entry
     # attribute - The edited object's attribute name
-    # aux       - Compiled regular expression or one of the
-    #             two constants from above.
+    # aux       - Compiled regular expression or
+    #             a callable taking the value and
+    #             returning (valid:bool, err_msg:str) tuple,
+    #             or one of the two constants from above.
     #             It will be used to check the value typed
     #             by user and to show the proper entry
     #             for password, text or checkbox.

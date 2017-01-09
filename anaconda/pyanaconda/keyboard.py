@@ -15,9 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Gracik <mgracik@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """
 This module provides functions for dealing with keyboard layouts/keymaps in
@@ -29,12 +26,13 @@ mutually converting X layouts and VConsole keymaps.
 import os
 import re
 import shutil
+import langtable
 
 from pyanaconda import iutil
 from pyanaconda import safe_dbus
+from pyanaconda import localization
 from pyanaconda.constants import DEFAULT_VC_FONT, DEFAULT_KEYBOARD
 from pyanaconda.flags import can_touch_runtime_system
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import gi
 gi.require_version("GLib", "2.0")
@@ -140,7 +138,7 @@ def populate_missing_items(keyboard):
         keyboard.vc_keymap = keyboard._keyboard
 
     if keyboard.x_layouts and not keyboard.vc_keymap:
-        keyboard.vc_keymap = localed.convert_layout(keyboard.x_layouts[0])
+        keyboard.vc_keymap = localed.convert_layouts(keyboard.x_layouts)
 
     if not keyboard.vc_keymap:
         keyboard.vc_keymap = DEFAULT_KEYBOARD
@@ -317,13 +315,62 @@ def activate_keyboard(keyboard):
             keyboard.x_layouts.append(keyboard.vc_keymap)
 
     if keyboard.x_layouts:
-        c_keymap = localed.set_and_convert_layout(keyboard.x_layouts[0])
+        c_keymap = localed.set_and_convert_layouts(keyboard.x_layouts)
 
         if not keyboard.vc_keymap:
             keyboard.vc_keymap = c_keymap
 
         # write out keyboard configuration for the X session
         write_keyboard_config(keyboard, root="/", convert=False)
+
+def set_x_keyboard_defaults(ksdata, xkl_wrapper):
+    """
+    Set default keyboard settings (layouts, layout switching).
+
+    :param ksdata: kickstart instance
+    :type ksdata: object instance
+    :param xkl_wrapper: XklWrapper instance
+    :type xkl_wrapper: object instance
+    :raise InvalidLocaleSpec: if an invalid locale is given (see
+                              localization.LANGCODE_RE)
+    """
+    locale = ksdata.lang.lang
+
+    # remove all X layouts that are not valid X layouts (unsupported)
+    for layout in ksdata.keyboard.x_layouts:
+        if not xkl_wrapper.is_valid_layout(layout):
+            ksdata.keyboard.x_layouts.remove(layout)
+
+    if ksdata.keyboard.x_layouts:
+        # do not add layouts if there are any specified in the kickstart
+        # (the x_layouts list comes from kickstart)
+        return
+
+    layouts = localization.get_locale_keyboards(locale)
+    if layouts:
+        # take the first locale (with highest rank) from the list and
+        # store it normalized
+        new_layouts = [normalize_layout_variant(layouts[0])]
+        if not langtable.supports_ascii(layouts[0]):
+            # does not support typing ASCII chars, append the default layout
+            new_layouts.append(DEFAULT_KEYBOARD)
+    else:
+        log.error("Failed to get layout for chosen locale '%s'", locale)
+        new_layouts = [DEFAULT_KEYBOARD]
+
+    ksdata.keyboard.x_layouts = new_layouts
+    if can_touch_runtime_system("replace runtime X layouts", touch_live=True):
+        xkl_wrapper.replace_layouts(new_layouts)
+
+    if len(new_layouts) >= 2 and not ksdata.keyboard.switch_options:
+        # initialize layout switching if needed
+        ksdata.keyboard.switch_options = ["grp:alt_shift_toggle"]
+
+        if can_touch_runtime_system("init layout switching", touch_live=True):
+            xkl_wrapper.set_switching_options(["grp:alt_shift_toggle"])
+            # activate the language-default layout instead of the additional
+            # one
+            xkl_wrapper.activate_default_layout()
 
 class LocaledWrapperError(KeyboardConfigError):
     """Exception class for reporting Localed-related problems"""
@@ -522,7 +569,7 @@ class LocaledWrapper(object):
         except safe_dbus.DBusCallError as e:
             log.error("Failed to set layouts: %s", e)
 
-    def set_and_convert_layout(self, layout_variant):
+    def set_and_convert_layouts(self, layouts_variants):
         """
         Method that sets X11 layout and variant (for later X sessions)
         and returns VConsole keymap that (systemd-localed thinks) matches
@@ -533,11 +580,11 @@ class LocaledWrapper(object):
 
         """
 
-        self.set_layouts([layout_variant], convert=True)
+        self.set_layouts(layouts_variants, convert=True)
 
         return self.keymap
 
-    def convert_layout(self, layout_variant):
+    def convert_layouts(self, layouts_variants):
         """
         Method that returns VConsole keymap that (systemd-localed thinks)
         matches given layout and variant best.
@@ -552,7 +599,7 @@ class LocaledWrapper(object):
         # hack around systemd's lack of functionality -- no function to just
         # convert without changing keyboard configuration
         orig_layouts_variants = self.layouts_variants
-        ret = self.set_and_convert_layout(layout_variant)
+        ret = self.set_and_convert_layouts(layouts_variants)
         self.set_layouts(orig_layouts_variants)
 
         return ret

@@ -18,8 +18,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Sivak <msivak@redhat.com>
-#
 
 __all__ = ["TextWidget", "ColumnWidget", "CheckboxWidget", "CenterWidget"]
 
@@ -39,8 +37,7 @@ class TextWidget(base.Widget):
         self._text = text
 
     def render(self, width):
-        """Renders the text widget limited to width number of columns
-        (wraps to the next line when the text is longer).
+        """Renders the text widget limited to width number of columns (wraps to the next line when the text is longer).
 
         :param width: maximum width allocated to the string
         :type width: int
@@ -49,7 +46,7 @@ class TextWidget(base.Widget):
         """
 
         base.Widget.render(self, width)
-        self.write(self._text, width=width)
+        self.write(self._text, width=width, wordwrap=True)
 
 class CenterWidget(base.Widget):
     """Class to handle horizontal centering of content."""
@@ -63,8 +60,7 @@ class CenterWidget(base.Widget):
         self._w = w
 
     def render(self, width):
-        """
-        Render the centered widget to internal buffer.
+        """Render the centered widget to internal buffer.
 
         :param width: maximum width the widget should use
         :type width: int
@@ -79,12 +75,12 @@ class ColumnWidget(base.Widget):
     def __init__(self, columns, spacing=0):
         """Create text columns
 
-           :param columns: list containing (column width, [list of widgets to put into this column])
-           :type columns: [(int, [...]), ...]
+        :param columns: list containing (column width, [list of widgets to put into this column])
+        :type columns: [(int, [...]), ...]
 
-           :param spacing: number of spaces to use between columns
-           :type spacing: int
-           """
+        :param spacing: number of spaces to use between columns
+        :type spacing: int
+        """
 
         base.Widget.__init__(self)
         self._spacing = spacing
@@ -102,7 +98,7 @@ class ColumnWidget(base.Widget):
 
         base.Widget.render(self, width)
 
-        # the lefmost empty column
+        # the leftmost empty column
         x = 0
 
         # iterate over tuples (column width, column content)
@@ -152,8 +148,10 @@ class CheckboxWidget(base.Widget):
         self._completed = completed
 
     def render(self, width):
-        """Render the widget to internal buffer. It should be max width
-           characters wide."""
+        """Render the widget to internal buffer.
+
+        It should be max width characters wide.
+        """
         base.Widget.render(self, width)
 
         if self.completed:
@@ -213,3 +211,28 @@ if __name__ == "__main__":
     c = ColumnWidget([(20, [t1, t2, t3]), (25, [t4, t5]), (15, [t1, t2, t3])], spacing=3)
     c.render(80)
     print(u"\n".join(c.get_lines()))
+
+
+    t6 = TextWidget("The rescue environment will now attempt "
+                    "to find your Linux installation and mount it under "
+                    "the directory : bla.  You can then make any changes "
+                    "required to your system.  Choose '1' to proceed with "
+                    "this step.\nYou can choose to mount your file "
+                    "systems read-only instead of read-write by choosing "
+                    "'2'.\nIf for some reason this process does not work "
+                    "choose '3' to skip directly to a shell.\n\n")
+    print(80*"-")
+    t6.render(80)
+    print(u"\n".join(t6.get_lines()))
+
+    t7 = TextWidget("Wrapping toooooooooooooooooooooooooooooooooooooooooooo"
+                    "oooooooooooooooooooooooooooooooooooooooooooooooooooooo long word.")
+    print(80*"-")
+    t7.render(80)
+    print(u"\n".join(t7.get_lines()))
+
+    t8 = TextWidget("Text that would be wrapped exactly at the screen width should"
+                    " have special test. This one.")
+    print(80*"-")
+    t8.render(80)
+    print(u"\n".join(t8.get_lines()))

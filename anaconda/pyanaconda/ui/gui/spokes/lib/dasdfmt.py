@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
-#                    Chris Lumens <clumens@redhat.com>
-#
 
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.ui.gui import GUIObject
@@ -58,6 +55,7 @@ class DasdFormatDialog(GUIObject):
 
         if len(self.to_format) > 0:
             self._unformatted_label.set_text("\n".join("/dev/" + d.name for d in to_format))
+            self._unformatted_label.set_text("\n".join("/dev/" + d.name + " (" + d.busid + ")" for d in to_format))
         else:
             self._unformatted_label.set_text("")
 

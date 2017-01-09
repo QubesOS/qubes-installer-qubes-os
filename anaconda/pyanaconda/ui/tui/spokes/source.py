@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Samantha N. Bueno <sbueno@redhat.com>
-#
 
 from pyanaconda.flags import flags
 from pyanaconda.ui.categories.software import SoftwareCategory
@@ -26,7 +24,7 @@ from pyanaconda.ui.tui.spokes import EditTUISpokeEntry as Entry
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.packaging import PackagePayload, payloadMgr
-from pyanaconda.i18n import N_, _
+from pyanaconda.i18n import N_, _, C_
 from pyanaconda.image import opticalInstallMedia, potentialHdisoSources
 from pyanaconda.iutil import DataHolder
 
@@ -45,7 +43,7 @@ import os
 import fnmatch
 
 import logging
-LOG = logging.getLogger("anaconda")
+log = logging.getLogger("anaconda")
 
 
 __all__ = ["SourceSpoke"]
@@ -287,7 +285,7 @@ class SpecifyNFSRepoSpoke(EditTUISpoke, SourceSwitchHandler):
     category = SoftwareCategory
 
     edit_fields = [
-        Entry(N_("<server>:/<path>"), "server", re.compile(".*$"), True),
+        Entry(N_("SERVER:/PATH"), "server", re.compile(".*$"), True),
         Entry(N_("NFS mount options"), "opts", re.compile(".*$"), True)
     ]
 
@@ -321,7 +319,7 @@ class SpecifyNFSRepoSpoke(EditTUISpoke, SourceSwitchHandler):
         try:
             (self.data.method.server, self.data.method.dir) = self.args.server.split(":", 2)
         except ValueError as err:
-            LOG.error("ValueError: %s", err)
+            log.error("ValueError: %s", err)
             self._error = True
             return
 
@@ -452,7 +450,8 @@ class SelectISOSpoke(NormalTUISpoke, SourceSwitchHandler):
         return True
 
     def input(self, args, key):
-        if key == "c":
+        # TRANSLATORS: 'c' to continue
+        if key.lower() == C_('TUI|Spoke Navigation', 'c'):
             self.apply()
             self.close()
             return key
@@ -501,6 +500,13 @@ class SelectISOSpoke(NormalTUISpoke, SourceSwitchHandler):
         """ Apply all of our changes. """
 
         if self._current_iso_path:
+            # If a hdd iso source has already been selected previously we need
+            # to clear it now.
+            # Otherwise we would get a crash if the same iso was selected again
+            # as _unmount_device() would try to unmount a partition that is in use
+            # due to the payload still holding on to the ISO file.
+            if self.data.method.method == "harddrive":
+                self.unset_source()
             self.set_source_hdd_iso(self._device, self._current_iso_path)
         # unmount the device - the payload will remount it anyway
         # (if it uses it)

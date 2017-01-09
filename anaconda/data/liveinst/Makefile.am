@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Cantrell <dcantrell@redhat.com>
 
 SUBDIRS = console.apps gnome pam.d
 
@@ -23,28 +21,33 @@ if IS_LIVEINST_ARCH
 dist_sbin_SCRIPTS  = liveinst
 
 desktopdir         = $(datadir)/applications
-desktop_DATA       = liveinst.desktop
+dist_desktop_DATA  = liveinst.desktop
 
-xinitdir           = $(sysconfdir)/X11/xinit/xinitrc.d
-dist_xinit_SCRIPTS = zz-liveinst.sh
+dist_libexec_SCRIPTS = liveinst-setup.sh
+
+autostartdir       = $(sysconfdir)/xdg/autostart
+dist_autostart_DATA = liveinst-setup.desktop
 
 install-exec-local:
 	$(MKDIR_P) $(DESTDIR)$(bindir)
 	$(LN_S) consolehelper $(DESTDIR)$(bindir)/liveinst
 
+# Merge translations into the desktop file
+# Use the merged translations in $(builddir). If no merged translations exist,
+# just exit.
+install-data-hook:
+	for p in $(top_builddir)/po/*.mpo ; do \
+	    [ -e $$p ] || exit 0 ; \
+	    $(MSGFMT) --desktop --template=$(DESTDIR)$(desktopdir)/liveinst.desktop \
+	        --locale=$$(basename $$p .mpo) \
+		-o $(DESTDIR)$(desktopdir)/liveinst.desktop.new $$p || exit 1 ; \
+	    mv $(DESTDIR)$(desktopdir)/liveinst.desktop.new $(DESTDIR)$(desktopdir)/liveinst.desktop || exit 1 ; \
+	done
+
 uninstall-local:
 	rm -f $(DESTDIR)$(bindir)/liveinst
 endif
 
-EXTRA_DIST = README liveinst.desktop.in
-
-CLEANFILES = liveinst.desktop *.h
+EXTRA_DIST = README
 
 MAINTAINERCLEANFILES = Makefile.in
-
-@INTLTOOL_DESKTOP_RULE@
-
-# Files generated for gettext need to be included in the distribution
-EXTRA_DIST += $(srcdir)/liveinst.desktop.in.h
-$(srcdir)/liveinst.desktop.in.h: $(srcdir)/liveinst.desktop.in
-	@$(MAKE) -C $(top_builddir)/po $(abs_top_srcdir)/$(subdir)/$$(basename $@)

@@ -15,10 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s):
-#   Brian C. Lane <bcl@brianlane.com>
-#   Will Woods <wwoods@redhat.com>
-#
 """
 Driver Update Disk handler program.
 
@@ -30,7 +26,10 @@ Usage is one of:
     driver-updates --disk DISKSTR DEVNODE
 
         DISKSTR is the string passed by the user ('/dev/sda3', 'LABEL=DD', etc.)
-        DEVNODE is the actual device node (/dev/sda3, /dev/sr0, etc.)
+        DEVNODE is the actual device node or image (/dev/sda3, /dev/sr0, etc.)
+
+        DEVNODE must be mountable, but need not actually be a block device
+        (e.g. /dd.iso is valid if the user has inserted /dd.iso into initrd)
 
     driver-updates --net URL LOCALFILE
 
@@ -63,9 +62,6 @@ During system installation, anaconda will install the packages listed in
 /run/install/dd_packages to the target system.
 """
 
-# Ignore any interruptible calls
-# pylint: disable=interruptible-system-call
-
 import logging
 import sys
 import os
@@ -77,6 +73,7 @@ import fnmatch
 # because it breaks sometimes.
 if os.isatty(0):
     import readline # pylint:disable=unused-import
+import shutil
 
 from contextlib import contextmanager
 from logging.handlers import SysLogHandler
@@ -211,21 +208,41 @@ def ensure_dir(d):
     """make sure the given directory exists."""
     subprocess.check_call(["mkdir", "-p", d])
 
-def move_files(files, destdir):
+def move_files(files, destdir, basedir):
     """move files into destdir (iff they're not already under destdir)"""
-    ensure_dir(destdir)
     for f in files:
         if f.startswith(destdir):
             continue
-        subprocess.call(["mv", "-f", f, destdir])
+        dest = destdir+"/"+dest_strip(f, basedir)
+        ensure_dir(os.path.dirname(dest))
+        subprocess.call(["mv", "-f", f, dest])
 
-def copy_files(files, destdir):
+def dest_strip(dest, basedir):
+    """strip a base directory plus kernel version from a path"""
+    # Strip the basedir and any leftover leading /'s
+    dest = dest[len(basedir):]
+    while dest.startswith('/'):
+        dest = dest[1:]
+
+    # Look for a leading directory that is a version number
+    if "/" in dest and fnmatch.fnmatch(dest, "*.ko*") and dest[0].isdigit():
+        # Drop the leading directory
+        dest = "/".join(dest.split('/')[1:])
+
+        if dest.startswith("kernel/"):
+            dest = "/".join(dest.split('/')[1:])
+
+    return dest
+
+def copy_files(files, destdir, basedir):
     """copy files into destdir (iff they're not already under destdir)"""
-    ensure_dir(destdir)
     for f in files:
         if f.startswith(destdir):
             continue
-        subprocess.call(["cp", "-a", f, destdir])
+
+        dest = destdir+"/"+dest_strip(f, basedir)
+        ensure_dir(os.path.dirname(dest))
+        subprocess.call(["cp", "-a", f, dest])
 
 def append_line(filename, line):
     """simple helper to append a line to a file"""
@@ -247,7 +264,23 @@ def save_repo(repo, target="/run/install"):
     """copy a repo to the place where the installer will look for it later."""
     newdir = mkdir_seq(os.path.join(target, "DD-"))
     log.debug("save_repo: copying %s to %s", repo, newdir)
-    subprocess.call(["cp", "-arT", repo, newdir])
+    # repo can be two sorts of stuff:
+    # - a path to directory containing rpm files
+    # -> in this case copy it's contents to target
+    # - a path to an RPM file
+    # -> in this case copy the file to destination
+    if os.path.isfile(repo):
+        shutil.copy2(repo, newdir)
+    elif os.path.isdir(repo):
+        for item in os.listdir(repo):
+            item_path = os.path.join(repo, item)
+            if os.path.isfile(item_path):
+                log.debug("copying %s to %s", item_path, newdir)
+                shutil.copy2(item_path, newdir)
+            else:
+                log.warning("DD repo content not a file: %s", item_path)
+    else:
+        log.error("ERROR: DD repository needs to be a file file or a directory: %s", repo)
     return newdir
 
 def extract_drivers(drivers=None, repos=None, outdir="/updates",
@@ -292,32 +325,134 @@ def extract_drivers(drivers=None, repos=None, outdir="/updates",
 
     return new_drivers
 
+def list_aliases(module):
+    """
+    return a list of the aliases provided by a module file,
+    parsed from modinfo.
+    """
+    cmd = ["modinfo", "-F", "alias", module]
+    out = subprocess.check_output(cmd)
+
+    # Turn the output into a list, and add the module itself
+    out = out.strip()
+    if out:
+        alias_list = out.split("\n")
+    else:
+        alias_list = []
+
+    return alias_list + [module]
+
 def grab_driver_files(outdir="/updates"):
     """
     copy any modules/firmware we just extracted into the running system.
-    return a list of the names of any modules we just copied.
+    returns a dict: keys are module names, value are a list of aliases
+    provided by the module.
     """
     modules = list(iter_files(outdir+'/lib/modules',"*.ko*"))
     firmware = list(iter_files(outdir+'/lib/firmware'))
-    copy_files(modules, MODULE_UPDATES_DIR)
-    copy_files(firmware, FIRMWARE_UPDATES_DIR)
-    move_files(modules, outdir+MODULE_UPDATES_DIR)
-    move_files(firmware, outdir+FIRMWARE_UPDATES_DIR)
-    return [os.path.basename(m).split('.ko')[0] for m in modules]
 
-def load_drivers(modnames):
-    """run depmod and try to modprobe all the given module names."""
-    log.debug("load_drivers: %s", modnames)
+    module_dict = {os.path.basename(m).split('.ko')[0]: list_aliases(m) for m in modules}
+
+    copy_files(modules, MODULE_UPDATES_DIR, outdir+'/lib/modules')
+    copy_files(firmware, FIRMWARE_UPDATES_DIR, outdir+'/lib/firmware')
+    move_files(modules, outdir+MODULE_UPDATES_DIR, outdir+'/lib/modules')
+    move_files(firmware, outdir+FIRMWARE_UPDATES_DIR, outdir+'/lib/firmware')
+
+    return module_dict
+
+def net_intfs_by_modules(mods):
+    """get list of network interfaces which are depending on given kernel module"""
+    ret = set()
+    for mod in mods:
+        out = subprocess.check_output(["find-net-intfs-by-driver", mod])
+        ret.update([line.strip() for line in out.split('\n') if line])
+
+    log.debug("Found %s interfaces for %s mods", ret, mods)
+    return ret
+
+def list_net_intfs():
+    """return set of all network interfaces from system"""
+    return set(os.listdir("/sys/class/net"))
+
+def rm_net_intfs_for_unload(mods):
+    """clear dracut settings for interfaces which will be removed by
+       driver removal
+
+       return set of affected network interfaces
+    """
+    intfs_for_removal = net_intfs_by_modules(mods)
+    for intf in intfs_for_removal:
+        log.debug("Removing Dracut settings for interface %s before driver unload", intf)
+        subprocess.check_call(["anaconda-ifdown", intf])
+
+    return intfs_for_removal
+
+def get_all_loaded_modules():
+    """parse /proc/modules for all loaded kernel modules"""
+    all_modules = []
+    with open("/proc/modules", "r") as modules:
+        for line in modules:
+            module_name = line.split(" ")[0]
+            all_modules.append(module_name)
+    return all_modules
+
+def load_drivers(moddict):
+    """load all drivers based on given aliases. In case the drivers are
+    already present in the kernel, replace them with the new ones.
+    """
+    # Step 1: try to unload everything that's being replaced
+    # Using the current depmod data, resolve all the aliases to a module name,
+    # and pass those names to modprobe -r.
+    # modprobe can probably handle the aliases themselves, but this reduces this
+    # list so we don't have to worry as much about what the maximum command line
+    # length is.
+
+    # save snapshot of currently installed modules
+    all_modules_org = get_all_loaded_modules()
+    unload_modules = set()
+    for modname in moddict.keys():
+        cmd = ["modprobe", "-R", modname]
+        try:
+            out = subprocess.check_output(cmd, stderr=DEVNULL)
+            if out:
+                unload_modules.update(out.strip().split('\n'))
+        except subprocess.CalledProcessError:
+            pass
+
+    log.debug("unload drivers: %s", unload_modules)
+    if unload_modules:
+        net_intfs_unload = rm_net_intfs_for_unload(unload_modules)
+        pre_remove_intfs = list_net_intfs()
+        subprocess.call(["modprobe", "-r"] + list(unload_modules))
+        intfs_removed = pre_remove_intfs - list_net_intfs()
+        if intfs_removed != net_intfs_unload:
+            log.error("ERROR: removed %s interfaces are not expected interfaces for removal %s",
+                      intfs_removed, net_intfs_unload)
+
+    # Step 2: Update the depmod data and try to load the new module list
+    log.debug("load_drivers: %s", moddict.keys())
     subprocess.call(["depmod", "-a"])
-    subprocess.call(["modprobe", "-a"] + modnames)
+
+    if moddict:
+        subprocess.call(["modprobe", "-a"] + list(moddict.keys()))
+
+    # get new snapshot of currently installed modules
+    all_modules_new = get_all_loaded_modules()
+    # compare snapshots and get modules removed from system due to dependencies
+    modules_to_add = set(all_modules_org) - set(all_modules_new)
+
+    # load all modules removed due to dependencies again
+    if modules_to_add:
+        subprocess.call(["modprobe", "-a"] + list(modules_to_add))
 
 # We *could* pass in "outdir" if we wanted to extract things somewhere else,
 # but right now the only use case is running inside the initramfs, so..
 def process_driver_disk(dev, interactive=False):
     try:
-        _process_driver_disk(dev, interactive=interactive)
+        return _process_driver_disk(dev, interactive=interactive)
     except (subprocess.CalledProcessError, IOError) as e:
         log.error("ERROR: %s", e)
+        return {}
 
 def _process_driver_disk(dev, interactive=False):
     """
@@ -329,8 +464,13 @@ def _process_driver_disk(dev, interactive=False):
 
     If interactive, ask the user which driver(s) to install from the repos,
     or ask which iso file to process (if no repos).
+
+    The return value is a dictionary with the new module names as keys, and
+    the value for each is a list of aliases for the module (including the
+    module itself).
     """
     log.info("Examining %s", dev)
+    modules = {}
     with mounted(dev) as mnt:
         repos = find_repos(mnt)
         isos = find_isos(mnt)
@@ -342,14 +482,34 @@ def _process_driver_disk(dev, interactive=False):
                 new_modules = extract_drivers(repos=repos)
             if new_modules:
                 modules = grab_driver_files()
-                load_drivers(modules)
         elif isos:
             if interactive:
                 isos = iso_menu(isos)
             for iso in isos:
-                process_driver_disk(iso, interactive=interactive)
+                modules.update(process_driver_disk(iso, interactive=interactive))
         else:
             print("=== No driver disks found in %s! ===\n" % dev)
+
+    return modules
+
+def process_driver_rpm(rpm):
+    try:
+        return _process_driver_rpm(rpm)
+    except (subprocess.CalledProcessError, IOError) as e:
+        log.error("ERROR: %s", e)
+        return {}
+
+def _process_driver_rpm(rpm):
+    """
+    Process a single driver rpm. Extract it, install it, and copy the
+    rpm for Anaconda to install on the target system.
+    """
+    log.info("Examining %s", rpm)
+    new_modules = extract_drivers(repos=[rpm])
+    if new_modules:
+        return grab_driver_files()
+    else:
+        return {}
 
 def mark_finished(user_request, topdir="/tmp"):
     log.debug("marking %s complete in %s", user_request, topdir)
@@ -390,10 +550,13 @@ class DeviceInfo(object):
         return dev
 
 def blkid():
-    out = subprocess.check_output("blkid -o export -s UUID -s TYPE".split())
-    out = out.decode('ascii')
-    return [dict(kv.split('=',1) for kv in block.splitlines())
-                                 for block in out.split('\n\n')]
+    try:
+        out = subprocess.check_output("blkid -o export -s UUID -s TYPE".split())
+        out = out.decode('ascii')
+        return [dict(kv.split('=',1) for kv in block.splitlines())
+                                     for block in out.split('\n\n')]
+    except subprocess.CalledProcessError:
+        return []
 
 # We use this to get disk labels because blkid's encoding of non-printable and
 # non-ascii characters is weird and doesn't match what you'd expect to see.
@@ -588,9 +751,20 @@ def main(args):
 
     mode = args.pop(0)
 
+    update_drivers = {}
     if mode in ('--disk', '--net'):
         request, dev = args
-        process_driver_disk(dev)
+
+        # Guess whether this is an ISO or RPM based on the filename.
+        # If neither matches, assume it is a device node and processes as an ISO.
+        # This is relevant for both --disk and --net since --disk could be
+        # pointing to files within the initramfs.
+        if dev.endswith(".iso"):
+            update_drivers.update(process_driver_disk(dev))
+        elif dev.endswith(".rpm"):
+            update_drivers.update(process_driver_rpm(dev))
+        else:
+            update_drivers.update(process_driver_disk(dev))
 
     elif mode == '--interactive':
         log.info("starting interactive mode")
@@ -598,9 +772,18 @@ def main(args):
         while True:
             dev = device_menu()
             if not dev: break
-            process_driver_disk(dev.pop().device, interactive=True)
+            update_drivers.update(process_driver_disk(dev.pop().device, interactive=True))
+
+    load_drivers(update_drivers)
 
     finish(request)
+
+    # When using inst.dd and a cdrom stage2 it isn't mounted before running driver-updates
+    # In order to get the stage2 cdrom mounted it either needs to be swapped back in
+    # or we need to re-trigger the block rules.
+    if os.path.exists("/tmp/anaconda-dd-on-cdrom") and not os.path.exists("/dev/root"):
+        cmd = ["udevadm", "trigger", "--action=change", "--subsystem-match=block"]
+        subprocess.check_call(cmd)
 
 if __name__ == '__main__':
     setup_log()

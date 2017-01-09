@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): David Shea <dshea@redhat.com>
-#
 
 import re
 
@@ -44,7 +42,8 @@ GECOS_VALID = re.compile(r'^[^:]*$')
 # a base expression without anchors, helpful for building other expressions
 # If the string is the right length to match "root", use a lookback expression
 # to make sure it isn't.
-_USERNAME_BASE = r'[a-zA-Z0-9._](([a-zA-Z0-9._-]{0,2})|([a-zA-Z0-9._-]{3}(?<!root))|([a-zA-Z0-9._-]{4,31})|([a-zA-Z0-9._-]{,30}\$))'
+PORTABLE_FS_CHARS = r'a-zA-Z0-9._-'
+_USERNAME_BASE = r'[a-zA-Z0-9._](([' + PORTABLE_FS_CHARS + r']{0,2})|([' + PORTABLE_FS_CHARS + r']{3}(?<!root))|([' + PORTABLE_FS_CHARS + r']{4,31})|([' + PORTABLE_FS_CHARS + r']{,30}\$))'
 
 USERNAME_VALID = re.compile(r'^' + _USERNAME_BASE + '$')
 GROUPNAME_VALID = USERNAME_VALID
@@ -88,6 +87,9 @@ IPV6_PATTERN_WITHOUT_ANCHORS = r'(?:' + \
                                r'(?:(?:(?:[0-9a-fA-F]{1,4}:){,5}(?:[0-9a-fA-F]{1,4}))?::(?:[0-9a-fA-F]{1,4}))|' + \
                                r'(?:(?:(?:[0-9a-fA-F]{1,4}:){,6}(?:[0-9a-fA-F]{1,4}))?::)' + \
                                r')'
+
+# IPv4 dotted-quad netmask validation
+IPV4_NETMASK_WITHOUT_ANCHORS = r'((128|192|224|240|248|252|254)\.0\.0\.0)|(255\.(((0|128|192|224|240|248|252|254)\.0\.0)|(255\.(((0|128|192|224|240|248|252|254)\.0)|255\.(0|128|192|224|240|248|252|254)))))'
 
 # Hostname validation
 # A hostname consists of sections separated by periods. Each of these sections
@@ -138,7 +140,6 @@ REPO_NAME_VALID = re.compile(r'^[a-zA-Z0-9_.:-]+$')
 # Product Version string, just the starting numbers like 21 or 21.1
 VERSION_DIGITS = r'([\d.]+)'
 
-
 #Regexes to validate iSCSI Names according to RFC 3720 and RFC 3721
 #The conditions for iSCSI name used in the following regexes are
 #(https://tools.ietf.org/html/rfc3720#section-3.2.6.3.1 , https://tools.ietf.org/html/rfc3721#page-5 and http://standards.ieee.org/regauth/oui/tutorials/EUI64.html):
@@ -159,3 +160,6 @@ ISCSI_IQN_NAME_REGEX = re.compile(r'^iqn\.\d{4}-\d{2}((?<!-)\.(?!-)[a-zA-Z0-9\-]
 #2. For eui format:
 #    a. The format is "eui." followed by an EUI-64 identifier (16 ASCII-encoded hexadecimal digits).
 ISCSI_EUI_NAME_REGEX = re.compile(r'^eui\.[a-fA-F0-9]{16}$')
+
+# Device with this name was configured from ibft (and renamed) by dracut
+IBFT_CONFIGURED_DEVICE_NAME = re.compile(r'^ibft\d+$')

@@ -17,17 +17,11 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Author(s): Matt Wilson <msw@redhat.com>
-#            Jeremy Katz <katzj@redhat.com>
-#            Will Woods <wwoods@redhat.com>
-#            Brian C. Lane <bcl@redhat.com>
-#
 import os
 import shlex
 import string # pylint: disable=deprecated-module
 import tempfile
-from pyanaconda.iutil import upperASCII, eintr_retry_call
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
+from pyanaconda.iutil import upperASCII
 
 _SAFECHARS = frozenset(string.ascii_letters + string.digits + '@%_-+=:,./')
 
@@ -82,7 +76,7 @@ def write_tmpfile(filename, data):
         m = os.stat(filename).st_mode
     else:
         m = 0o0644
-    eintr_retry_call(os.chmod, filename, m)
+    os.chmod(tmpf.name, m)
 
     # Move the temporary file over the top of the original
     os.rename(tmpf.name, filename)

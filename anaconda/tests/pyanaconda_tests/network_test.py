@@ -15,9 +15,6 @@
 # source code or documentation are not subject to the GNU General Public
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
-#
-# Red Hat Author(s): Radek Vykydal <rvykydal@redhat.com>
-#                    Jiri Konecny <jkonecny@redhat.com>
 
 from pyanaconda import network
 import unittest
@@ -331,8 +328,8 @@ class NetworkKSDataTests(unittest.TestCase):
         network.update_hostname_data(ksdata, "newhostname")
         # network --bootproto dhcp --onboot no --device em1
         # network --hostname newhostname
-        self.assertEquals(ksdata.network.network[0].hostname, "")
-        self.assertEquals(ksdata.network.network[1].hostname, "newhostname")
+        self.assertEqual(ksdata.network.network[0].hostname, "")
+        self.assertEqual(ksdata.network.network[1].hostname, "newhostname")
 
 class NetworkIfcfgTests(unittest.TestCase):
     def ifcfg_mock(self, settings):
@@ -438,7 +435,7 @@ class NetworkIfcfgTests(unittest.TestCase):
                 network.dracutBootArguments("em1", ifcfg, "2001::1"),
                 set(["ip=[2001::4]::[2001::a]:::em1:none"]))
 
-    @patch("blivet.arch.isS390", lambda: True)
+    @patch("blivet.arch.is_s390", lambda: True)
     def dracutBootArguments_s390_test(self):
         ifcfg = self.ifcfg_mock({"NETTYPE": "qeth",
                                  "SUBCHANNELS": "0.0.f5f0,0.0.f5f1,0.0.f5f2",

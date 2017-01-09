@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 import gi
 gi.require_version("GLib", "2.0")
@@ -101,13 +99,17 @@ class Hub(GUIObject, common.Hub):
         self._warningMsg = None
 
         self._checker = None
+        # Flag to indicate the user can continue even if the checker indicates an error.
+        # The checker itself is left alone so the error message doesn't accidentally get
+        # cleaered.
+        self._checker_ignore = False
 
         self._spokesToStepIn = []
         self._spokeAutostepIndex = 0
 
     def _createBox(self):
         gi.require_version("Gtk", "3.0")
-        gi.require_version("AnacondaWidgets", "3.0")
+        gi.require_version("AnacondaWidgets", "3.3")
 
         from gi.repository import Gtk, AnacondaWidgets
 
@@ -125,7 +127,7 @@ class Hub(GUIObject, common.Hub):
             selectors = []
             for spokeClass in sorted(cats_and_spokes[c], key=lambda s: s.title):
                 # Check if this spoke is to be shown in the supported environments
-                if not any(spokeClass.should_run(environ, self.data) for environ in self._environs):
+                if not any(spokeClass.should_run(environ, self.data) for environ in flags.environs):
                     continue
 
                 # Create the new spoke and populate its UI with whatever data.
@@ -237,6 +239,13 @@ class Hub(GUIObject, common.Hub):
         if len(self._incompleteSpokes) == 0:
             if self._checker and not self._checker.check():
                 warning = self._checker.error_message
+                log.error(self._checker.error_message)
+
+                # If this is a kickstart, consider the user to be warned and
+                # let them continue anyway, manually
+                if flags.automatedInstall:
+                    self._autoContinue = False
+                    self._checker_ignore = True
         else:
             warning = _("Please complete items marked with this icon before continuing to the next step.")
 
@@ -253,7 +262,7 @@ class Hub(GUIObject, common.Hub):
 
     @property
     def continuePossible(self):
-        return len(self._incompleteSpokes) == 0 and len(self._notReadySpokes) == 0 and getattr(self._checker, "success", True)
+        return len(self._incompleteSpokes) == 0 and len(self._notReadySpokes) == 0 and (getattr(self._checker, "success", True) or self._checker_ignore)
 
     def _updateContinueButton(self):
         self.window.set_may_continue(self.continuePossible)
@@ -374,7 +383,7 @@ class Hub(GUIObject, common.Hub):
 
         # Enter the spoke
         self._inSpoke = True
-        spoke.entry_logger()
+        spoke.entry()
         spoke.refresh()
         self.main_window.enterSpoke(spoke)
 
@@ -397,7 +406,7 @@ class Hub(GUIObject, common.Hub):
             spoke.execute()
             spoke.visitedSinceApplied = False
 
-        spoke.exit_logger()
+        spoke.exit()
 
         self._inSpoke = False
 

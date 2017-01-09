@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Chris Lumens <clumens@redhat.com>
  */
 
 #include "config.h"
@@ -43,17 +41,16 @@
  *   different kinds of hubs.  It may have buttons, or it may have progress
  *   information.
  *
- * <refsect2 id="AnacondaHubWindow-BUILDER-UI"><title>AnacondaHubWindow as GtkBuildable</title>
- * <para>
+ * # AnacondaHubWindow as GtkBuildable
+ *
  * The AnacondaHubWindow implementation of the #GtkBuildable interface exposes
  * the @nav_area, @action_area and @scrolled_window as internal children with the names
  * "nav_area", "action_area" and "scrolled_window".  action_area, in this case,
  * is largely there to give a box to contain both the scrolled_window and a
  * #GtkButtonBox.
- * </para>
- * <example>
- * <title>A <structname>AnacondaHubWindow</structname> UI definition fragment.</title>
- * <programlisting><![CDATA[
+ *
+ * A AnacondaHubWindow UI definition fragment:
+ * |[
  * <object class="AnacondaHubWindow" id="hub1">
  *     <child internal-child="main_box">
  *         <object class="GtkBox" id="main_box1">
@@ -87,9 +84,7 @@
  *         </object>
  *     </child>
  * </object>
- * ]]></programlisting>
- * </example>
- * </refsect2>
+ * ]|
  */
 
 struct _AnacondaHubWindowPrivate {
@@ -103,8 +98,11 @@ G_DEFINE_TYPE_WITH_CODE(AnacondaHubWindow, anaconda_hub_window, ANACONDA_TYPE_BA
 
 static void anaconda_hub_window_class_init(AnacondaHubWindowClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS(klass);
 
     g_type_class_add_private(object_class, sizeof(AnacondaHubWindowPrivate));
+
+    gtk_widget_class_set_css_name(widget_class, "AnacondaHubWindow");
 }
 
 /**

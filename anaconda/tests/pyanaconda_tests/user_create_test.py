@@ -16,11 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Shea <dshea@redhat.com>
-#
-
-# Ignore any interruptible calls
-# pylint: disable=interruptible-system-call
 
 from pyanaconda import users
 import unittest
@@ -167,21 +162,31 @@ class UserCreateTest(unittest.TestCase):
 
     def create_user_groups_test(self):
         """Create a user with a list of groups."""
-        # First create some groups
-        self.users.createGroup("test1", root=self.tmpdir)
-        self.users.createGroup("test2", root=self.tmpdir)
+        # Create one of the groups
         self.users.createGroup("test3", root=self.tmpdir)
 
-        self.users.createUser("test_user", groups=["test1", "test2", "test3"], root=self.tmpdir)
+        # Create a user and add it three groups, two of which do not exist,
+        # and one which specifies a GID.
+        self.users.createUser("test_user", groups=["test1", "test2(5001)", "test3"], root=self.tmpdir)
 
         grp_fields1 = self._readFields("/etc/group", "test1")
         self.assertEqual(grp_fields1[3], "test_user")
 
         grp_fields2 = self._readFields("/etc/group", "test2")
         self.assertEqual(grp_fields2[3], "test_user")
+        self.assertEqual(grp_fields2[2], "5001")
 
         grp_fields3 = self._readFields("/etc/group", "test3")
         self.assertEqual(grp_fields3[3], "test_user")
+
+    def create_user_groups_gid_conflict_test(self):
+        """Create a user with a bad list of groups."""
+        # Create one of the groups
+        self.users.createGroup("test3", gid=5000, root=self.tmpdir)
+
+        # Add test3 to the group list with a different GID.
+        self.assertRaises(ValueError, self.users.createUser,
+                "test_user", groups=["test3(5002)"], root=self.tmpdir)
 
     def create_user_password_test(self):
         """Create a user with a password."""
@@ -269,6 +274,15 @@ class UserCreateTest(unittest.TestCase):
 
         self.assertRaises(ValueError, self.users.createUser, "test_user", uid=1000, root=self.tmpdir)
 
+    def create_user_gid_exists_test(self):
+        """Create a user with a GID of an existing group."""
+        self.users.createGroup("test_group", gid=5000, root=self.tmpdir)
+        self.users.createUser("test_user", gid=5000, root=self.tmpdir)
+
+        passwd_fields = self._readFields("/etc/passwd", "test_user")
+        self.assertIsNotNone(passwd_fields)
+        self.assertEqual(passwd_fields[3], "5000")
+
     def set_user_ssh_key_test(self):
         keydata = "THIS IS TOTALLY A SSH KEY"
 
@@ -281,6 +295,33 @@ class UserCreateTest(unittest.TestCase):
             output_keydata = f.read()
 
         self.assertEqual(keydata, output_keydata.strip())
+
+    def set_root_password_test(self):
+        password = "password1"
+
+        # Initialize a root user with an empty password, like the setup package would have
+        with open(self.tmpdir + "/etc/passwd", "w") as f:
+            f.write("root:x:0:0:root:/root:/bin/bash\n")
+
+        with open(self.tmpdir + "/etc/shadow", "w") as f:
+            f.write("root:*:16489:0:99999:7:::\n")
+
+        self.users.setRootPassword(password, root=self.tmpdir)
+        shadow_fields = self._readFields("/etc/shadow", "root")
+        self.assertEqual(crypt.crypt(password, shadow_fields[1]), shadow_fields[1])
+
+        # Try a different password with isLocked=True
+        password = "password2"
+        self.users.setRootPassword(password, isLocked=True, root=self.tmpdir)
+        shadow_fields = self._readFields("/etc/shadow", "root")
+        self.assertTrue(shadow_fields[1].startswith("!"))
+        self.assertEqual(crypt.crypt(password, shadow_fields[1][1:]), shadow_fields[1][1:])
+
+        # Try an encrypted password
+        password = "$1$asdf$password"
+        self.users.setRootPassword(password, isCrypted=True, root=self.tmpdir)
+        shadow_fields = self._readFields("/etc/shadow", "root")
+        self.assertEqual(password, shadow_fields[1])
 
     def create_user_reuse_home_test(self):
         # Create a user, reusing an old home directory
@@ -297,3 +338,18 @@ class UserCreateTest(unittest.TestCase):
         stat_fields = os.stat(self.tmpdir + "/home/test_user")
         self.assertEqual(stat_fields.st_uid, 1000)
         self.assertEqual(stat_fields.st_gid, 1000)
+
+    def create_user_gid_in_group_list_test(self):
+        """Create a user with a GID equal to that of one of the requested groups"""
+
+        self.users.createUser("test_user", gid=1047, groups=["test_group(1047)"], root=self.tmpdir)
+
+        # Ensure that the user's GID is equal to the GID requested
+        pwd_fields = self._readFields("/etc/passwd", "test_user")
+        self.assertIsNotNone(pwd_fields)
+        self.assertEqual(pwd_fields[3], "1047")
+
+        # and that the requested group has the right GID
+        grp_fields = self._readFields("/etc/group", "test_group")
+        self.assertIsNotNone(grp_fields)
+        self.assertEqual(grp_fields[2], "1047")

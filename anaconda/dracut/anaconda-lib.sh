@@ -1,6 +1,7 @@
 #!/bin/bash
 
 command -v unpack_img >/dev/null || . /lib/img-lib.sh
+command -v getarg >/dev/null || . /lib/dracut-lib.sh
 
 # config_get SECTION KEY < FILE
 # read an .ini-style config file, find the KEY in the given SECTION, and return
@@ -191,6 +192,13 @@ tell_user() {
     fi
 }
 
+# print something only in if debug/inst.debug/rd.debug
+debug_msg() {
+   if getargbool 0 rd.debug || getargbool 0 debug || getargbool 0 inst.debug; then
+     echo $* >&2
+  fi
+}
+
 dev_is_cdrom() {
     udevadm info --query=property --name=$1 | grep -q 'ID_CDROM=1'
 }
@@ -207,7 +215,7 @@ set_neednet() {
 }
 
 parse_kickstart() {
-    /sbin/parse-kickstart $1 > /etc/cmdline.d/80-kickstart.conf
+    PYTHONHASHSEED=42 /sbin/parse-kickstart $1 > /etc/cmdline.d/80-kickstart.conf
     unset CMDLINE  # re-read the commandline
     . /tmp/ks.info # save the parsed kickstart
     [ -e "$parsed_kickstart" ] && cp $parsed_kickstart /run/install/ks.cfg

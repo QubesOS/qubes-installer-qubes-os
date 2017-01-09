@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -596,7 +594,7 @@ class SoftwareSelectionSpoke(NormalSpoke):
 
         if rc == 0:
             # Quit.
-            iutil.ipmi_report(constants.IPMI_ABORTED)
+            iutil.ipmi_abort(scripts=self.data.scripts)
             sys.exit(0)
         elif rc == 1:
             # Send the user to the installation source spoke.

@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 from pyanaconda.ui.gui.hubs import Hub
 from pyanaconda.ui.lib.space import FileSystemSpaceChecker, DirInstallSpaceChecker
@@ -64,3 +62,11 @@ class SummaryHub(Hub):
         else:
             self._checker = DirInstallSpaceChecker(storage, payload)
 
+        # Add a continue-clicked handler
+        self.window.connect("continue-clicked", self._on_continue_clicked)
+
+    def _on_continue_clicked(self, win, user_data=None):
+        """Call finished method of spokes when leaving the hub.
+        """
+        for spoke in sorted(self._spokes.values(), key=lambda x: x.__class__.__name__):
+            spoke.finished()

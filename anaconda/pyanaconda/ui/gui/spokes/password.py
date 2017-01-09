@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Jesse Keating <jkeating@redhat.com>
-#                    Chris Lumens <clumens@redhat.com>
-#
 
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _, CN_
@@ -27,6 +24,7 @@ from pyanaconda.users import cryptPassword, validatePassword
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.categories.user_settings import UserSettingsCategory
 from pyanaconda.ui.gui.helpers import GUISpokeInputCheckHandler
+from pyanaconda.ui.gui.utils import set_password_visibility
 from pyanaconda.ui.common import FirstbootSpokeMixIn
 from pyanaconda.ui.helpers import InputCheck
 
@@ -108,11 +106,16 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         self.pw_bar.add_offset_value("low", 2)
         self.pw_bar.add_offset_value("medium", 3)
         self.pw_bar.add_offset_value("high", 4)
+        self.pw_bar.add_offset_value("full", 4)
 
         # Configure the password policy, if available. Otherwise use defaults.
         self.policy = self.data.anaconda.pwpolicy.get_policy("root")
         if not self.policy:
             self.policy = self.data.anaconda.PwPolicyData()
+
+        # set the visibility of the password entries
+        set_password_visibility(self.pw, False)
+        set_password_visibility(self.confirm, False)
 
     def refresh(self):
         # Enable the input checks in case they were disabled on the last exit
@@ -216,22 +219,12 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
 
         return result
 
-    def _updatePwQuality(self):
+    def _updatePwQuality(self, empty, strength):
         """Update the password quality information.
-
-           This function is called by the ::changed signal handler on the
-           password field.
         """
 
-        pwtext = self.pw.get_text()
-
-        # Reset the counters used for the "press Done twice" logic
-        self._waiveStrengthClicks = 0
-        self._waiveASCIIClicks = 0
-
-        self._pwq_valid, strength, self._pwq_error = validatePassword(pwtext, "root", minlen=self.policy.minlen)
-
-        if not pwtext:
+        # If the password is empty, clear the strength bar
+        if empty:
             val = 0
         elif strength < 50:
             val = 1
@@ -247,38 +240,52 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         self.pw_label.set_text(text)
 
     def on_password_changed(self, editable, data=None):
+        # Reset the counters used for the "press Done twice" logic
+        self._waiveStrengthClicks = 0
+        self._waiveASCIIClicks = 0
+
         # Update the password/confirm match check on changes to the main password field
         self._confirm_check.update_check_status()
 
-        self._updatePwQuality()
+    def on_password_icon_clicked(self, entry, icon_pos, event):
+        """Called by Gtk callback when the icon of a password entry is clicked."""
+        set_password_visibility(entry, not entry.get_visibility())
 
     def _checkPasswordStrength(self, inputcheck):
         """Update the error message based on password strength.
 
-           Convert the strength set by _updatePwQuality into an error message.
+           Update the password strength bar and set an error message.
         """
 
         pw = self.pw.get_text()
         confirm = self.confirm.get_text()
 
         # Skip the check if no password is required
-        if (not pw and not confirm) and self._kickstarted:
+        if self._kickstarted:
             return InputCheck.CHECK_OK
 
-        # Check for validity errors
-        if (not self._pwq_valid) and (self._pwq_error):
-            return self._pwq_error
+        # If the password is empty, clear the strength bar and skip this check
+        if not pw and not confirm:
+            self._updatePwQuality(True, 0)
+            return InputCheck.CHECK_OK
 
-        # use strength from policy, not bars
-        _valid, pwstrength, _error = validatePassword(pw, "root", minlen=self.policy.minlen)
+        # determine the password strength
+        valid, pwstrength, error = validatePassword(pw, "root", minlen=self.policy.minlen)
+
+        # set the strength bar
+        self._updatePwQuality(False, pwstrength)
+
+        # If the password failed the validity check, fail this check
+        if not valid and error:
+            return error
 
         if pwstrength < self.policy.minquality:
             # If Done has been clicked twice, waive the check
             if self._waiveStrengthClicks > 1:
                 return InputCheck.CHECK_OK
             elif self._waiveStrengthClicks == 1:
-                if self._pwq_error:
-                    return _(PASSWORD_WEAK_CONFIRM_WITH_ERROR) % self._pwq_error
+                if error:
+                    return _(PASSWORD_WEAK_CONFIRM_WITH_ERROR) % error
                 else:
                     return _(PASSWORD_WEAK_CONFIRM)
             else:
@@ -288,8 +295,8 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
                 else:
                     done_msg = _(PASSWORD_DONE_TWICE)
 
-                if self._pwq_error:
-                    return _(PASSWORD_WEAK_WITH_ERROR) % self._pwq_error + " " + done_msg
+                if error:
+                    return _(PASSWORD_WEAK_WITH_ERROR) % error + " " + done_msg
                 else:
                     return _(PASSWORD_WEAK) % done_msg
         else:

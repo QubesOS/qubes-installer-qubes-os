@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Lehman <dlehman@redhat.com>
-#
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -31,7 +29,7 @@ from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.helpers import GUIInputCheckHandler
 from pyanaconda.constants import PW_ASCII_CHARS
 from pyanaconda.i18n import _, N_
-from pyanaconda.ui.gui.utils import really_hide, really_show
+from pyanaconda.ui.gui.utils import really_hide, really_show, set_password_visibility
 
 __all__ = ["PassphraseDialog"]
 
@@ -62,6 +60,7 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         self._strength_bar.add_offset_value("low", 2)
         self._strength_bar.add_offset_value("medium", 3)
         self._strength_bar.add_offset_value("high", 4)
+        self._strength_bar.add_offset_value("full", 4)
 
         # Configure the password policy, if available. Otherwise use defaults.
         self.policy = self.data.anaconda.pwpolicy.get_policy("luks")
@@ -79,6 +78,10 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         self._passphrase_match_check = self.add_check(self._confirm_entry, self._checkMatch)
         self._strength_check = self.add_check(self._passphrase_entry, self._checkStrength)
         self._ascii_check = self.add_check(self._passphrase_entry, self._checkASCII)
+
+        # set the visibility of the password entries
+        set_password_visibility(self._passphrase_entry, False)
+        set_password_visibility(self._confirm_entry, False)
 
     def refresh(self):
         super(PassphraseDialog, self).refresh()
@@ -222,3 +225,7 @@ class PassphraseDialog(GUIObject, GUIInputCheckHandler):
         if self._save_button.get_sensitive() and \
            entry.get_text() == self._passphrase_entry.get_text():
             self._save_button.emit("clicked")
+
+    def on_password_icon_clicked(self, entry, icon_pos, event):
+        """Called by Gtk callback when the icon of a password entry is clicked."""
+        set_password_visibility(entry, not entry.get_visibility())

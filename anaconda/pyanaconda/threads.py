@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s):  Chris Lumens <clumens@redhat.com>
-#
 import logging
 log = logging.getLogger("anaconda")
 
@@ -253,9 +251,10 @@ class AnacondaThread(threading.Thread):
             threading.Thread.run(self, *args, **kwargs)
         # pylint: disable=bare-except
         except:
-            threadMgr.set_error(self.name, *sys.exc_info())
             if self._fatal:
                 sys.excepthook(*sys.exc_info())
+            else:
+                threadMgr.set_error(self.name, *sys.exc_info())
         finally:
             threadMgr.remove(self.name)
             log.info("Thread Done: %s (%s)", self.name, self.ident)

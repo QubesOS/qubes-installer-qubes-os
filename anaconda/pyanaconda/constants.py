@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Erik Troan <ewt@redhat.com>
-#
 
 # Used for digits, ascii_letters, punctuation constants
 import string # pylint: disable=deprecated-module
@@ -40,8 +38,8 @@ bugzillaUrl = product.bugUrl
 isFinal = product.isFinal
 
 # for use in device names, eg: "fedora", "rhel"
-shortProductName = productName.lower()
-if productName.count(" "):
+shortProductName = productName.lower()          # pylint: disable=no-member
+if productName.count(" "):                      # pylint: disable=no-member
     shortProductName = ''.join(s[0] for s in shortProductName.split())
 
 # DriverDisc Paths
@@ -74,7 +72,8 @@ USEVNC = N_("Start VNC")
 USETEXT = N_("Use text mode")
 
 # Runlevel files
-RUNLEVELS = {3: 'multi-user.target', 5: 'graphical.target'}
+TEXT_ONLY_TARGET = 'multi-user.target'
+GRAPHICAL_TARGET = 'graphical.target'
 
 # Network
 NETWORK_CONNECTION_TIMEOUT = 45  # in seconds
@@ -110,6 +109,7 @@ THREAD_TIME_INIT = "AnaTimeInitThread"
 THREAD_DASDFMT = "AnaDasdfmtThread"
 THREAD_KEYBOARD_INIT = "AnaKeyboardThread"
 THREAD_ADD_LAYOUTS_INIT = "AnaAddLayoutsInitThread"
+THREAD_NTP_SERVER_CHECK = "AnaNTPserver"
 
 # Geolocation constants
 
@@ -147,6 +147,12 @@ PASSWORD_DONE_TWICE = N_("You will have to press Done twice to confirm it.")
 
 PASSWORD_STRENGTH_DESC = [N_("Empty"), N_("Weak"), N_("Fair"), N_("Good"), N_("Strong")]
 
+PASSWORD_HIDE = N_("Hide password.")
+PASSWORD_SHOW = N_("Show password.")
+
+PASSWORD_HIDE_ICON = "anaconda-password-show-off"
+PASSWORD_SHOW_ICON = "anaconda-password-show-on"
+
 # the number of seconds we consider a noticeable freeze of the UI
 NOTICEABLE_FREEZE = 0.1
 
@@ -161,15 +167,12 @@ SCREENSHOTS_DIRECTORY = "/tmp/anaconda-screenshots"
 SCREENSHOTS_TARGET_DIRECTORY = "/root/anaconda-screenshots"
 
 # cmdline arguments that append instead of overwrite
-CMDLINE_APPEND = ["modprobe.blacklist"]
+CMDLINE_APPEND = ["modprobe.blacklist", "ifname"]
 
 DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM
 
 # Default to these units when reading user input when no units given
 SIZE_UNITS_DEFAULT = "MiB"
-
-import logging
-LOGLVL_LOCK = logging.DEBUG-1
 
 # Constants for reporting status to IPMI.  These are from the IPMI spec v2 rev1.1, page 512.
 IPMI_STARTED = 0x7          # installation started
@@ -189,3 +192,11 @@ X_DISPLAY_NUMBER = 1
 PAYLOAD_STATUS_PROBING_STORAGE = N_("Probing storage...")
 PAYLOAD_STATUS_PACKAGE_MD = N_("Downloading package metadata...")
 PAYLOAD_STATUS_GROUP_MD = N_("Downloading group metadata...")
+
+# Window title text
+WINDOW_TITLE_TEXT = N_("Anaconda Installer")
+
+# NTP server checking
+NTP_SERVER_OK = 0
+NTP_SERVER_NOK = 1
+NTP_SERVER_QUERY = 2

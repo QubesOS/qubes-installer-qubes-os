@@ -16,14 +16,14 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 import sys
 import re
-import langtable
 import os
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
 
 from pyanaconda.ui.gui.hubs.summary import SummaryHub
 from pyanaconda.ui.gui.spokes import StandaloneSpoke
@@ -33,12 +33,11 @@ from pyanaconda.ui.gui.spokes.lib.lang_locale_handler import LangLocaleHandler
 
 from pyanaconda import localization
 from pyanaconda.product import distributionText, isFinal, productName, productVersion
-from pyanaconda import keyboard
 from pyanaconda import flags
 from pyanaconda import geoloc
 from pyanaconda.i18n import _, C_
-from pyanaconda.iutil import is_unsupported_hw, ipmi_report
-from pyanaconda.constants import DEFAULT_LANG, DEFAULT_KEYBOARD, IPMI_ABORTED
+from pyanaconda.iutil import is_unsupported_hw, ipmi_abort
+from pyanaconda.constants import DEFAULT_LANG, WINDOW_TITLE_TEXT
 
 import logging
 log = logging.getLogger("anaconda")
@@ -70,8 +69,8 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
         (store, itr) = self._localeSelection.get_selected()
 
         locale = store[itr][1]
+        locale = localization.setup_locale(locale, self.data.lang, text_mode=False)
         self._set_lang(locale)
-        localization.setup_locale(locale, self.data.lang, text_mode=False)
 
         # Skip timezone and keyboard default setting for kickstart installs.
         # The user may have provided these values via kickstart and if not, we
@@ -90,61 +89,14 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
             # current language
             self.data.timezone.timezone = loc_timezones[0]
 
-        self._set_keyboard_defaults(self.data.lang.lang)
-
-    def _set_keyboard_defaults(self, locale):
-        """
-        Set default keyboard settings (layouts, layout switching).
-
-        :param locale: locale string (see localization.LANGCODE_RE)
-        :type locale: str
-        :return: list of preferred keyboard layouts
-        :rtype: list of strings
-        :raise InvalidLocaleSpec: if an invalid locale is given (see
-                                  localization.LANGCODE_RE)
-
-        """
-
-        #remove all X layouts that are not valid X layouts (unsupported)
-        #from the ksdata
-        #XXX: could go somewhere else, but we need X running and we have
-        #     XklWrapper instance here
-        for layout in self.data.keyboard.x_layouts:
-            if not self._xklwrapper.is_valid_layout(layout):
-                self.data.keyboard.x_layouts.remove(layout)
-
-        if self.data.keyboard.x_layouts:
-            #do not add layouts if there are any specified in the kickstart
-            return
-
-        layouts = localization.get_locale_keyboards(locale)
-        if layouts:
-            # take the first locale (with highest rank) from the list and
-            # store it normalized
-            new_layouts = [keyboard.normalize_layout_variant(layouts[0])]
-            if not langtable.supports_ascii(layouts[0]):
-                # does not support typing ASCII chars, append the default layout
-                new_layouts.append(DEFAULT_KEYBOARD)
-        else:
-            log.error("Failed to get layout for chosen locale '%s'", locale)
-            new_layouts = [DEFAULT_KEYBOARD]
-
-        self.data.keyboard.x_layouts = new_layouts
-        if flags.can_touch_runtime_system("replace runtime X layouts", touch_live=True):
-            self._xklwrapper.replace_layouts(new_layouts)
-
-        if len(new_layouts) >= 2 and not self.data.keyboard.switch_options:
-            #initialize layout switching if needed
-            self.data.keyboard.switch_options = ["grp:alt_shift_toggle"]
-
-            if flags.can_touch_runtime_system("init layout switching", touch_live=True):
-                self._xklwrapper.set_switching_options(["grp:alt_shift_toggle"])
-                # activate the language-default layout instead of the additional
-                # one
-                self._xklwrapper.activate_default_layout()
-
     @property
     def completed(self):
+        # Skip the welcome screen if we are in single language mode
+        # If language has not been set the default language (en_US)
+        # will be used for the installation and for the installed system.
+        if flags.flags.singlelang:
+            return True
+
         if flags.flags.automatedInstall and self.data.lang.seen:
             return self.data.lang.lang and self.data.lang.lang != ""
         else:
@@ -225,8 +177,8 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
         store.set(newItr, 0, "", 1, "", 2, "", 3, True)
 
         # setup the "best" locale
-        self._set_lang(locales[0])
-        localization.setup_locale(locales[0], self.data.lang)
+        locale = localization.setup_locale(locales[0], self.data.lang)
+        self._set_lang(locale)
         self._select_locale(self.data.lang.lang)
 
     def _retranslate_one(self, widgetName, context=None):
@@ -260,7 +212,7 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
         welcomeLabel = self.builder.get_object("welcomeLabel")
 
         welcomeLabel.set_text(_("WELCOME TO %(name)s %(version)s.") %
-                {"name" : productName.upper(), "version" : productVersion})
+                {"name" : productName.upper(), "version" : productVersion})         # pylint: disable=no-member
 
         # Retranslate the language (filtering) entry's placeholder text
         languageEntry = self.builder.get_object("languageEntry")
@@ -272,6 +224,19 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
         # And of course, don't forget the underlying window.
         self.window.set_property("distribution", distributionText().upper())
         self.window.retranslate()
+
+        # Retranslate the window title text
+        # - it looks like that the main window object is not yet
+        #   properly initialized during the first run of the
+        #   retranslate method (it is always triggered at startup)
+        #   so make sure the object is actually what we think it is
+        # - ignoring this run is OK as the initial title is
+        #   already translated to the initial language
+        if isinstance(self.main_window, Gtk.Window):
+            self.main_window.set_title(_(WINDOW_TITLE_TEXT))
+
+            # Correct the language attributes for labels
+            self.main_window.reapply_language()
 
     def refresh(self):
         self._select_locale(self.data.lang.lang)
@@ -305,8 +270,8 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
 
         if selected:
             lang = store[selected[0]][1]
+            lang = localization.setup_locale(lang)
             self._set_lang(lang)
-            localization.setup_locale(lang)
             self.retranslate()
 
             # Reset the text direction
@@ -326,9 +291,10 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
                 rc = dlg.run()
                 dlg.hide()
             if rc != 1:
-                ipmi_report(IPMI_ABORTED)
+                ipmi_abort(scripts=self.data.scripts)
                 sys.exit(0)
 
+        # pylint: disable=no-member
         if productName.startswith("Red Hat ") and \
           is_unsupported_hw() and not self.data.unsupportedhardware.unsupported_hardware:
             dlg = self.builder.get_object("unsupportedHardwareDialog")
@@ -336,7 +302,7 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
                 rc = dlg.run()
                 dlg.destroy()
             if rc != 1:
-                ipmi_report(IPMI_ABORTED)
+                ipmi_abort(scripts=self.data.scripts)
                 sys.exit(0)
 
         StandaloneSpoke._on_continue_clicked(self, window, user_data)

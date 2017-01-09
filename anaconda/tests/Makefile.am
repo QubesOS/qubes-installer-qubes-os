@@ -14,8 +14,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Shea <dshea@redhat.com>
 
 # This Makefile is non-recursive so that all tests can easily be run with the
 # same python environment. $top_srcdir and $top_builddir are added to the
@@ -33,46 +31,40 @@
 AM_TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)" top_builddir="$(top_builddir)" ; . $(srcdir)/testenv.sh ;
 TEST_EXTENSIONS = .sh
 
+# files necessary for running the tests (make ci) from a tarball
+EXTRA_DIST = README.rst usercustomize.py
+
+# Also add translation-canary for canary_tests.sh
+EXTRA_DIST += $(top_srcdir)/translation-canary/translation_canary/*.py \
+	      $(top_srcdir)/translation-canary/translation_canary/*/*.py
+
 # Test scripts need to be listed both here and in TESTS
 dist_check_SCRIPTS = $(srcdir)/glade/*.py \
-		     glade/run_glade_tests.sh \
 		     $(srcdir)/lib/*.py \
 		     $(srcdir)/lib/*.sh \
 		     nosetests.sh \
 		     nosetests_root.sh \
+		     run_gui_tests.sh \
 		     pylint/runpylint.py \
 		     cppcheck/runcppcheck.sh \
 		     testenv.sh \
-		     $(srcdir)/gettext/*.py \
-		     gettext/click.py \
-		     gettext/gettext_warnings.sh \
-		     gettext/gettext_potfiles.py \
-		     gettext/style_guide.py \
-		     gettext/contexts.py \
+		     $(srcdir)/gettext_tests/*.py \
+		     gettext_tests/canary_tests.sh \
 		     storage/run_storage_tests.py \
 		     install/run_install_test.sh \
-		     $(srcdir)/kickstart_tests/*.ks \
-		     $(srcdir)/kickstart_tests/*.sh \
-		     $(srcdir)/kickstart_tests/*.py \
-		     $(srcdir)/kickstart_tests/kstest-runner \
-		     $(srcdir)/gui/*.ks \
-		     $(srcdir)/gui/*.sh \
-		     $(srcdir)/gui/inside/*.py \
-		     $(srcdir)/gui/outside/*.py \
+		     $(srcdir)/gui/*.py \
 		     $(srcdir)/storage/cases/*.py \
 		     $(srcdir)/*_tests/*.py
 
 TESTS = nosetests.sh \
 	pylint/runpylint.py \
 	cppcheck/runcppcheck.sh \
-	gettext/click.py \
-	gettext/gettext_warnings.sh \
-	gettext/gettext_potfiles.py \
-	gettext/style_guide.py \
-	gettext/contexts.py \
+	gettext_tests/click.py \
+	gettext_tests/style_guide.py \
+	gettext_tests/contexts.py \
+	gettext_tests/canary_tests.sh \
 	storage/run_storage_tests.py \
-	glade/run_glade_tests.sh \
-	kickstart_tests/run_kickstart_tests.sh
+	glade/run_glade_tests.py
 
 clean-local:
 	-rm -rf pylint/.pylint.d
