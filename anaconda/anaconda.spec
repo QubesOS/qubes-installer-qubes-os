@@ -49,6 +49,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: audit-libs-devel
 BuildRequires: gettext >= %{gettextver}
+BuildRequires: gettext-devel
 BuildRequires: gtk3-devel
 BuildRequires: gtk-doc
 BuildRequires: gtk3-devel-docs
