@@ -1,8 +1,8 @@
-From 78f834f8d5b5f1ff56e04bb2b40cbb4fc4c21a12 Mon Sep 17 00:00:00 2001
+From 5a1ce004b60d449f82d5f4a950ef3255024e1c1c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
  <marmarek@invisiblethingslab.com>
 Date: Thu, 21 Apr 2016 13:46:33 +0200
-Subject: [PATCH] verify packages signature
+Subject: [PATCH 2/3] verify packages signature
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -15,10 +15,10 @@ Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
  1 file changed, 18 insertions(+)
 
 diff --git a/src/pylorax/ltmpl.py b/src/pylorax/ltmpl.py
-index 7fc4d54..661790d 100644
+index 429c1c1..28b7ff9 100644
 --- a/src/pylorax/ltmpl.py
 +++ b/src/pylorax/ltmpl.py
-@@ -578,6 +578,24 @@ class LoraxTemplateRunner(object):
+@@ -624,6 +624,24 @@ class LoraxTemplateRunner(object):
              logger.error("Failed to download the following packages: %s", e)
              raise
  
@@ -44,5 +44,5 @@ index 7fc4d54..661790d 100644
          try:
              display = LoraxRpmCallback()
 -- 
-2.1.0
+2.7.4
 

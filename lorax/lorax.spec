@@ -20,7 +20,6 @@ URL:            https://github.com/rhinstaller/lorax
 # git checkout -b archive-branch lorax-%%{version}-%%{release}
 # tito build --tgz
 Source0:        %{name}-%{version}.tar.gz
-Patch0:         Drop-multiprocessing-for-do_transaction-1208296.patch
 Patch1:         0001-Allow-specify-gpg-key-for-a-repository.patch
 Patch2:         0002-verify-packages-signature.patch
 Patch3:         0003-Update-package-verification-for-dnf-API.patch
@@ -127,7 +126,6 @@ Lorax templates for creating the boot.iso and live isos are placed in
 %prep
 %setup -q -n %{name}-%{version}
 
-%patch0 -p1
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
