@@ -26,6 +26,9 @@ BuildRequires:  yum => 3.4.3-28, createrepo >= 0.4.11
 #deps for doc building
 BuildRequires:  python-sphinx
 
+# for tests
+BuildRequires:  cvs
+
 Requires:       createrepo >= 0.4.11
 Requires:       yum => 3.4.3-28
 Requires:       lorax >= 22.1
