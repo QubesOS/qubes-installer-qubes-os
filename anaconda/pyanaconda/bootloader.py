@@ -1848,12 +1848,12 @@ class XenEFI(EFIGRUB):
     def add_efi_boot_target(self):
         if self.stage1_device.type == "partition":
             boot_disk = self.stage1_device.disk
-            boot_part_num = self.stage1_device.partedPartition.number
+            boot_part_num = self.stage1_device.parted_partition.number
         elif self.stage1_device.type == "mdarray":
             # FIXME: I'm just guessing here. This probably needs the full
             #        treatment, ie: multiple targets for each member.
             boot_disk = self.stage1_device.parents[0].disk
-            boot_part_num = self.stage1_device.parents[0].partedPartition.number
+            boot_part_num = self.stage1_device.parents[0].parted_partition.number
         boot_part_num = str(boot_part_num)
 
         if not os.path.exists(
@@ -1893,7 +1893,7 @@ class XenEFI(EFIGRUB):
             config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M\n")
             config.write("kernel={} root={} {}\n".format(
                 image.kernel,
-                image.device.fstabSpec,
+                image.device.fstab_spec,
                 self.boot_args))
             config.write("ramdisk={}\n".format(image.initrd))
 
