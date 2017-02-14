@@ -260,7 +260,6 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         self.username = self.builder.get_object("t_username")
         self.pw = self.builder.get_object("t_password")
         self.confirm = self.builder.get_object("t_verifypassword")
-        self.usepassword = self.builder.get_object("c_usepassword")
 
         # Counters for checks that ask the user to click Done to confirm
         self._waiveStrengthClicks = 0
@@ -311,16 +310,8 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         # This needs to happen after the input checks have been created, since
         # the Gtk signal handlers use the input check variables.
         if self._password_kickstarted:
-            self.usepassword.set_active(True)
             self.pw.set_placeholder_text(_("The password was set by kickstart."))
             self.confirm.set_placeholder_text(_("The password was set by kickstart."))
-        elif not self.policy.emptyok:
-            # Policy is that a non-empty password is required
-            self.usepassword.set_active(True)
-
-        if not self.policy.emptyok:
-            # User isn't allowed to change whether password is required or not
-            self.usepassword.set_sensitive(False)
 
         # set the visibility of the password entries
         set_password_visibility(self.pw, False)
@@ -352,21 +343,12 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
     def apply(self):
         # set the password only if the user enters anything to the text entry
         # this should preserve the kickstart based password
-        if self.usepassword.get_active():
-            if self.pw.get_text():
-                self._password_kickstarted = False
-                self._user.password = cryptPassword(self.pw.get_text())
-                self._user.isCrypted = True
-                self.pw.set_placeholder_text("")
-                self.confirm.set_placeholder_text("")
-
-        # reset the password when the user unselects it
-        else:
+        if self.pw.get_text():
+            self._password_kickstarted = False
+            self._user.password = cryptPassword(self.pw.get_text())
+            self._user.isCrypted = True
             self.pw.set_placeholder_text("")
             self.confirm.set_placeholder_text("")
-            self._user.password = ""
-            self._user.isCrypted = False
-            self._password_kickstarted = False
 
         self._user.name = self.username.get_text()
 
@@ -419,17 +401,6 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         self.pw_bar.set_value(val)
         self.pw_label.set_text(text)
 
-    def usepassword_toggled(self, togglebutton=None, data=None):
-        """Called by Gtk callback when the "Use password" check
-        button is toggled. It will make password entries in/sensitive."""
-
-        self.pw.set_sensitive(togglebutton.get_active())
-        self.confirm.set_sensitive(togglebutton.get_active())
-
-        # Re-check the password
-        self.pw.emit("changed")
-        self.confirm.emit("changed")
-
     def password_changed(self, editable=None, data=None):
         """Update the password strength level bar"""
         # Reset the counters used for the "press Done twice" logic
@@ -474,7 +445,7 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
             return InputCheck.CHECK_OK
 
         # Skip the check if no password is required
-        if (not self.usepassword.get_active()) or self._password_kickstarted:
+        if self._password_kickstarted:
             return InputCheck.CHECK_OK
         elif not self.get_input(inputcheck.input_obj):
             if inputcheck.input_obj == self.pw:
@@ -488,7 +459,7 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         """If the user has entered confirmation data, check whether it matches the password."""
 
         # Skip the check if no password is required
-        if (not self.usepassword.get_active()) or self._password_kickstarted:
+        if self._password_kickstarted:
             result = InputCheck.CHECK_OK
         elif self.confirm.get_text() and (self.pw.get_text() != self.confirm.get_text()):
             result = _(PASSWORD_CONFIRM_ERROR_GUI)
@@ -506,7 +477,7 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
          """
 
         # Skip the check if no password is required
-        if not self.usepassword.get_active or self._password_kickstarted:
+        if self._password_kickstarted:
             return InputCheck.CHECK_OK
 
         # If the password is empty, clear the strength bar and skip this check
