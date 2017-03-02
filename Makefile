@@ -81,8 +81,10 @@ clean-repos:
 clean:
 	sudo rm -fr build/*
 
+ifeq ($(ISO_LIVEUSB),1)
 get-sources:
 	$(MAKE) -C livecd-tools get-sources
 
 verify-sources:
 	$(MAKE) -C livecd-tools verify-sources
+endif
