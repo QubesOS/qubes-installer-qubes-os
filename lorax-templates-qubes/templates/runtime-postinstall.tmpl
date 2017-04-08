@@ -128,6 +128,11 @@ remove etc/lvm/cache
 remove etc/lvm/lvm.conf
 append etc/lvm/lvm.conf "global {\n\tuse_lvmetad = 1\n}\n"
 
+## have basic /dev files
+remove dev/null
+runcmd mknod ${root}/dev/null c 1 3
+runcmd mknod ${root}/dev/urandom c 1 9
+
 ## Record the package versions used to create the image
 runcmd chroot ${root} /bin/rpm -qa --pipe "tee /root/lorax-packages.log"
 
