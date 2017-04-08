@@ -39,7 +39,6 @@ install boot/memtest* ${BOOTDIR}/memtest
 mkdir ${KERNELDIR}
 <%
 sortedkernels = sorted(kernels, key=lambda k: LooseVersion(k['version']))
-sortedkernels = [ kernel for kernel in sortedkernels if 'qubes' in kernel.version ]
 %>
 
 %for kernel in sortedkernels:
