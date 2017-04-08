@@ -15,19 +15,20 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """UI-independent storage utility functions"""
 
 import re
 import locale
+import os
 
 from contextlib import contextmanager
 
 from blivet import arch
 from blivet import util
+from blivet import udev
 from blivet.size import Size
+from blivet.errors import StorageError
 from blivet.platform import platform as _platform
 from blivet.devicefactory import DEVICE_TYPE_LVM
 from blivet.devicefactory import DEVICE_TYPE_LVM_THINP
@@ -39,6 +40,7 @@ from blivet.devicefactory import DEVICE_TYPE_DISK
 from pyanaconda.i18n import _, N_
 from pyanaconda import isys
 from pyanaconda.constants import productName
+from pyanaconda.errors import errorHandler, ERROR_RAISE
 
 from pykickstart.constants import AUTOPART_TYPE_PLAIN, AUTOPART_TYPE_BTRFS
 from pykickstart.constants import AUTOPART_TYPE_LVM, AUTOPART_TYPE_LVM_THINP
@@ -89,6 +91,8 @@ AUTOPART_DEVICE_TYPES = {AUTOPART_TYPE_LVM: DEVICE_TYPE_LVM,
 
 NAMED_DEVICE_TYPES = (DEVICE_TYPE_BTRFS, DEVICE_TYPE_LVM, DEVICE_TYPE_MD, DEVICE_TYPE_LVM_THINP)
 CONTAINER_DEVICE_TYPES = (DEVICE_TYPE_LVM, DEVICE_TYPE_BTRFS, DEVICE_TYPE_LVM_THINP)
+
+udev_device_dict_cache = None
 
 def size_from_input(input_str, units=None):
     """ Get a Size object from an input string.
@@ -175,8 +179,8 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
     mustbeonroot = ['/bin', '/dev', '/sbin', '/etc', '/lib', '/root', '/mnt', 'lost+found', '/proc']
 
     filesystems = storage.mountpoints
-    root = storage.fsset.rootDevice
-    swaps = storage.fsset.swapDevices
+    root = storage.fsset.root_device
+    swaps = storage.fsset.swap_devices
 
     if root:
         if root.size < Size("250 MiB"):
@@ -197,8 +201,8 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
     # restricted to a single PV.  The backend support is there, but there are
     # no UI hook-ups to drive that functionality, but I do not personally
     # care.  --dcantrell
-    if arch.isS390() and '/boot' not in storage.mountpoints and root:
-        if root.type == 'lvmlv' and not root.singlePV:
+    if arch.is_s390() and '/boot' not in storage.mountpoints and root:
+        if root.type == 'lvmlv' and not root.single_pv:
             exns.append(
                SanityError(_("This platform requires /boot on a dedicated "
                             "partition or logical volume.  If you do not "
@@ -219,19 +223,19 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
     # storage.mountpoints is a property that returns a new dict each time, so
     # iterating over it is thread-safe.
     for (mount, device) in filesystems.items():
-        problem = filesystems[mount].checkSize()
+        problem = filesystems[mount].check_size()
         if problem < 0:
             exns.append(
                SanityError(_("Your %(mount)s partition is too small for %(format)s formatting "
                             "(allowable size is %(minSize)s to %(maxSize)s)")
                           % {"mount": mount, "format": device.format.name,
-                             "minSize": device.minSize, "maxSize": device.maxSize}))
+                             "minSize": device.min_size, "maxSize": device.max_size}))
         elif problem > 0:
             exns.append(
                SanityError(_("Your %(mount)s partition is too large for %(format)s formatting "
                             "(allowable size is %(minSize)s to %(maxSize)s)")
                           % {"mount":mount, "format": device.format.name,
-                             "minSize": device.minSize, "maxSize": device.maxSize}))
+                             "minSize": device.min_size, "maxSize": device.max_size}))
 
     if storage.bootloader and not storage.bootloader.skip_bootloader:
         stage1 = storage.bootloader.stage1_device
@@ -239,7 +243,7 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
             exns.append(
                SanityError(_("No valid boot loader target device found. "
                             "See below for details.")))
-            pe = _platform.stage1MissingError
+            pe = _platform.stage1_missing_error
             if pe:
                 exns.append(SanityError(_(pe)))
         else:
@@ -261,7 +265,7 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
         # check that GPT boot disk on BIOS system has a BIOS boot partition
         #
         if _platform.weight(fstype="biosboot") and \
-           stage1 and stage1.isDisk and \
+           stage1 and stage1.is_disk and \
            getattr(stage1.format, "labelType", None) == "gpt":
             missing = True
             for part in [p for p in storage.partitions if p.disk == stage1]:
@@ -310,16 +314,18 @@ def sanity_check(storage, min_ram=isys.MIN_RAM):
                SanityError(_("This mount point is invalid.  The %s directory must "
                             "be on the / file system.") % mountpoint))
 
-        if mountpoint in mustbeonlinuxfs and (not dev.format.mountable or not dev.format.linuxNative):
+        if mountpoint in mustbeonlinuxfs and (not dev.format.mountable or not dev.format.linux_native):
             exns.append(
                SanityError(_("The mount point %s must be on a linux file system.") % mountpoint))
 
-    if storage.rootDevice and storage.rootDevice.format.exists:
-        e = storage.mustFormat(storage.rootDevice)
+    if storage.root_device and storage.root_device.format.exists:
+        e = storage.must_format(storage.root_device)
         if e:
             exns.append(SanityError(e))
 
     exns += verify_LUKS_devices_have_key(storage)
+
+    exns += check_mounted_partitions(storage)
 
     return exns
 
@@ -339,8 +345,28 @@ def verify_LUKS_devices_have_key(storage):
     for dev in (d for d in storage.devices if \
        d.format.type == "luks" and \
        not d.format.exists and \
-       not d.format.hasKey):
+       not d.format.has_key):
         yield LUKSDeviceWithoutKeyError(_("Encryption requested for LUKS device %s but no encryption key specified for this device.") % (dev.name,))
+
+
+def check_mounted_partitions(storage):
+    """ Check the selected disks to make sure all their partitions are unmounted.
+
+        :rtype: generator of str
+        :returns: a generator of error messages, may yield no error messages
+    """
+    for disk in storage.disks:
+        if not disk.partitioned:
+            continue
+
+        for part in disk.format.partitions:
+            part_dev = storage.devicetree.get_device_by_path(part.path)
+            if part_dev and part_dev.protected:
+                log.debug("Not checking protected %s for being mounted, assuming live image mount", part.path)
+                continue
+            if part.busy:
+                yield SanityError(_("%s is currently mounted and cannot be used for the "
+                                    "installation. Please unmount it and retry.") % part.path)
 
 
 def bound_size(size, device, old_size):
@@ -360,8 +386,8 @@ def bound_size(size, device, old_size):
         If no maximum size is available, reset size to old_size, but
         log a warning.
     """
-    max_size = device.maxSize
-    min_size = device.minSize
+    max_size = device.max_size
+    min_size = device.min_size
     if not size:
         if max_size:
             log.info("No size specified, using maximum size for this device (%d).", max_size)
@@ -382,6 +408,30 @@ def bound_size(size, device, old_size):
             size = min_size
 
     return size
+
+def try_populate_devicetree(devicetree):
+    """
+    Try to populate the given devicetree while catching errors and dealing with
+    some special ones in a nice way (giving user chance to do something about
+    them).
+
+    :param devicetree: devicetree to try to populate
+    :type decicetree: :class:`blivet.devicetree.DeviceTree`
+
+    """
+
+    while True:
+        try:
+            devicetree.populate()
+        except StorageError as e:
+            if errorHandler.cb(e) == ERROR_RAISE:
+                raise
+            else:
+                continue
+        else:
+            break
+
+    return
 
 class StorageSnapshot(object):
     """R/W snapshot of storage (i.e. a :class:`blivet.Blivet` instance)"""
@@ -447,3 +497,119 @@ class StorageSnapshot(object):
 # a snapshot of early storage as we got it from scanning disks without doing any
 # changes
 on_disk_storage = StorageSnapshot()
+
+def filter_unsupported_disklabel_devices(devices):
+    """ Return input list minus any devices that exist on an unsupported disklabel. """
+    return [d for d in devices
+            if not any(not getattr(p, "disklabel_supported", True) for p in d.ancestors)]
+
+def device_name_is_disk(device_name, devicetree=None, refresh_udev_cache=False):
+    """Report if the given device name corresponds to a disk device.
+
+    Check if the device name is a disk device or not. This function uses
+    the provided Blivet devicetree for the checking and Blivet udev module
+    if no devicetree is provided.
+
+    Please note that the udev based check uses an internal cache that is generated
+    when this function is first called in the udev checking mode. This basically
+    means that udev devices added later will not be taken into account.
+    If this is a problem for your usecase then use the refresh_udev_cache option
+    to force a refresh of the udev cache.
+
+    :param str device_name: name of the device to check
+    :param devicetree: device tree to look up devices in (optional)
+    :type devicetree: :class:`blivet.DeviceTree`
+    :param bool refresh_udev_cache: governs if the udev device cache should be refreshed
+    :returns: True if the device name corresponds to a disk, False if not
+    :rtype: bool
+    """
+    if devicetree is None:
+        global udev_device_dict_cache
+        if device_name:
+            if udev_device_dict_cache is None or refresh_udev_cache:
+                # Lazy load the udev dick that contains the {device_name : udev_device,..,}
+                # mappings. The operation could be quite costly due to udev_settle() calls,
+                # so we cache it in this non-elegant way.
+                # An unfortunate side effect of this is that udev devices that show up after
+                # this function is called for the first time will not be taken into account.
+                udev_device_dict_cache = {udev.device_get_name(d): d for d in udev.get_devices()}
+            udev_device = udev_device_dict_cache.get(device_name)
+            return udev_device and udev.device_is_realdisk(udev_device)
+        else:
+            return False
+    else:
+        device = devicetree.get_device_by_name(device_name)
+        return device and device.is_disk
+
+def device_matches(spec, devicetree=None, disks_only=False):
+    """Return names of block devices matching the provided specification.
+
+    :param str spec: a device identifier (name, UUID=<uuid>, &c)
+    :keyword devicetree: device tree to look up devices in (optional)
+    :type devicetree: :class:`blivet.DeviceTree`
+    :param bool disks_only: if only disk devices matching the spec should be returned
+    :returns: names of matching devices
+    :rtype: list of str
+
+    The spec can contain multiple "sub specs" delimited by a |, for example:
+
+    "sd*|hd*|vd*"
+
+    In such case we resolve the specs from left to right and return all
+    unique matches, for example:
+
+    ["sda", "sda1", "sda2", "sdb", "sdb1", "vdb"]
+
+    If disks_only is specified we only return
+    disk devices matching the spec. For the example above
+    the output with disks_only=True would be:
+
+    ["sda", "sdb", "vdb"]
+
+    Also note that parse methods will not have access to a devicetree, while execute
+    methods will. The devicetree is superior in that it can resolve md
+    array names and in that it reflects scheduled device removals, but for
+    normal local disks udev.resolve_devspec should suffice.
+    """
+
+    matches = []
+    # the device specifications might contain multiple "sub specs" separated by a |
+    # - the specs are processed from left to right
+    for single_spec in spec.split("|"):
+        full_spec = single_spec
+        if not full_spec.startswith("/dev/"):
+            full_spec = os.path.normpath("/dev/" + full_spec)
+
+        # the regular case
+        single_spec_matches = udev.resolve_glob(full_spec)
+        for match in single_spec_matches:
+            if match not in matches:
+                # skip non-disk devices in disk-only mode
+                if disks_only and not device_name_is_disk(match):
+                    continue
+                matches.append(match)
+
+        dev_name = None
+        # Use spec here instead of full_spec to preserve the spec and let the
+        # called code decide whether to treat the spec as a path instead of a name.
+        if devicetree is None:
+            # we run the spec through resolve_devspec() here as unlike resolve_glob()
+            # it can also resolve labels and UUIDs
+            dev_name = udev.resolve_devspec(single_spec)
+            if disks_only and dev_name:
+                if not device_name_is_disk(dev_name):
+                    dev_name = None  # not a disk
+        else:
+            # devicetree can also handle labels and UUIDs
+            device = devicetree.resolve_device(single_spec)
+            if device:
+                dev_name = device.name
+                if disks_only and not device_name_is_disk(dev_name, devicetree=devicetree):
+                    dev_name = None  # not a disk
+
+        # The dev_name variable can be None if the spec is not not found or is not valid,
+        # but we don't want that ending up in the list.
+        if dev_name and dev_name not in matches:
+            matches.append(dev_name)
+
+    return matches

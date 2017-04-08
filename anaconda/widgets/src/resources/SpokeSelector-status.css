@@ -1,0 +1,16 @@
+#anaconda-spoke-selector-status {
+    font-size: large;
+    font-style: italic;
+}
+
+/* If the spoke is incomplete, display the text in red */
+#anaconda-spoke-selector-status:indeterminate {
+    color: #cc1a1a;
+}
+
+/* If the spoke is both incomplete and insensitive, let the insensitive
+ * color take precedence
+ */
+#anaconda-spoke-selector-status:disabled:indeterminate {
+    color: inherit;
+}

@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Gracik <mgracik@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 import gettext
 import os
@@ -32,7 +29,6 @@ import io
 
 from pyanaconda import constants
 from pyanaconda.iutil import upcase_first_letter, setenv, execWithRedirect
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import logging
 log = logging.getLogger("anaconda")
@@ -216,11 +212,15 @@ def setup_locale(locale, lang=None, text_mode=False):
     If the font for the locale can't be displayed in the Linux console,
     we fall back to the English locale.
 
+    This function returns the locale that was used in the setlocale call, which,
+    depending on what the environment and interface is able to support, may be
+    different from the locale requested.
+
     :param str locale: locale to setup
     :param lang: ksdata.lang object or None
     :param bool text_mode: if the locale is being setup for text mode
-    :return: None
-    :rtype: None
+    :return: the locale that was actually set
+    :rtype: str
 
     """
 
@@ -267,9 +267,18 @@ def setup_locale(locale, lang=None, text_mode=False):
             os.environ["LANG"] = locale  # pylint: disable=environment-modify
 
     # set the locale to the value we have selected
+    # Since glibc does not install all locales, an installable locale may not
+    # actually be available right now. Give it a shot and fallback.
     log.debug("setting locale to: %s", locale)
     setenv("LANG", locale)
-    locale_mod.setlocale(locale_mod.LC_ALL, locale)
+
+    try:
+        locale_mod.setlocale(locale_mod.LC_ALL, locale)
+    except locale_mod.Error as e:
+        log.debug("setlocale failed: %s", e)
+        locale = constants.DEFAULT_LANG
+        setenv("LANG", locale)
+        locale_mod.setlocale(locale_mod.LC_ALL, locale)
 
     # This part is pretty gross:
     # In python3, sys.stdout and friends are TextIOWrapper objects that translate
@@ -289,6 +298,8 @@ def setup_locale(locale, lang=None, text_mode=False):
         sys.stdin = io.TextIOWrapper(sys.stdin.detach())
         sys.stdout = io.TextIOWrapper(sys.stdout.detach())
         sys.stderr = io.TextIOWrapper(sys.stderr.detach())
+
+    return locale
 
 def get_english_name(locale):
     """

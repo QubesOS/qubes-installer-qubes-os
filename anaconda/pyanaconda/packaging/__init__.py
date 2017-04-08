@@ -17,9 +17,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Lehman <dlehman@redhat.com>
-#                    Chris Lumens <clumens@redhat.com>
-#
 
 """
     TODO
@@ -36,9 +33,10 @@ from fnmatch import fnmatch
 import threading
 import re
 import functools
+import time
 
+from blivet.size import Size
 from pyanaconda.iutil import requests_session
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 if __name__ == "__main__":
     from pyanaconda import anaconda_log
@@ -56,7 +54,7 @@ from pyanaconda import isys
 from pyanaconda.image import findFirstIsoImage
 from pyanaconda.image import mountImage
 from pyanaconda.image import opticalInstallMedia, verifyMedia
-from pyanaconda.iutil import ProxyString, ProxyStringError
+from pyanaconda.iutil import ProxyString, ProxyStringError, xprogressive_delay
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.regexes import VERSION_DIGITS
 
@@ -69,7 +67,7 @@ from blivet.errors import StorageError
 import blivet.util
 import blivet.arch
 from blivet.platform import platform
-from blivet import setSysroot
+from blivet import set_sysroot
 
 from pyanaconda.product import productName, productVersion
 USER_AGENT = "%s (anaconda)/%s" %(productName, productVersion)
@@ -77,6 +75,7 @@ USER_AGENT = "%s (anaconda)/%s" %(productName, productVersion)
 from distutils.version import LooseVersion
 
 REPO_NOT_SET = False
+MAX_TREEINFO_DOWNLOAD_RETRIES = 6
 
 def versionCmp(v1, v2):
     """ Compare two version number strings. """
@@ -179,6 +178,21 @@ class Payload(object):
         """
         pass
 
+    def requiredDeviceSize(self, format_class):
+        """ We need to provide information how big device is required to have successful
+            installation. ``format_class`` should be filesystem format
+            class for the **root** filesystem this class carry information about
+            metadata size.
+
+            :param format_class: Class of the filesystem format.
+            :type format_class: Class which inherits :class:`blivet.formats.fs.FS`
+            :returns: Size of the device with given filesystem format.
+            :rtype: :class:`blivet.size.Size`
+        """
+        device_size = format_class.get_required_size(self.spaceRequired)
+        return device_size.round_to_nearest(Size("1 MiB"))
+
+
     ###
     ### METHODS FOR WORKING WITH REPOSITORIES
     ###
@@ -224,16 +238,38 @@ class Payload(object):
         urls = [repo.baseurl]
         if repo.mirrorlist:
             urls.extend(repo.mirrorlist)
+        return self._sourceNeedsNetwork(urls)
+
+    def _sourceNeedsNetwork(self, sources):
+        """ Return True if the source requires network.
+
+            :param sources: Source paths for testing
+            :type sources: list
+            :returns: True if any source requires network
+        """
         network_protocols = ["http:", "ftp:", "nfs:", "nfsiso:"]
-        for url in urls:
-            if any(url.startswith(p) for p in network_protocols):
+        for s in sources:
+            if s and any(s.startswith(p) for p in network_protocols):
+                log.debug("Source %s needs network for installation", s)
                 return True
 
+        log.debug("Source doesn't require network for installation")
         return False
 
     @property
     def needsNetwork(self):
-        return any(self._repoNeedsNetwork(r) for r in self.data.repo.dataList())
+        url = ""
+        if self.data.method.method == "nfs":
+            # NFS is always on network
+            return True
+        elif self.data.method.method == "url":
+            if self.data.url.url:
+                url = self.data.url.url
+            else:
+                url = self.data.url.mirrorlist
+
+        return (self._sourceNeedsNetwork([url]) or
+                any(self._repoNeedsNetwork(repo) for repo in self.data.repo.dataList()))
 
     def updateBaseRepo(self, fallback=True, checkmount=True):
         """ Update the base repository from ksdata.method. """
@@ -359,18 +395,50 @@ class Payload(object):
                 log.info("Failed to parse proxy for _getTreeInfo %s: %s",
                          proxy_url, e)
 
+        # Retry treeinfo downloads with a progressively longer pause,
+        # so NetworkManager have a chance setup a network and we have
+        # full connectivity before trying to download things. (#1292613)
+        xdelay = xprogressive_delay()
         response = None
+        ret_code = [None, None]
         headers = {"user-agent": USER_AGENT}
-        try:
-            response = self._session.get("%s/.treeinfo" % url, headers=headers, proxies=proxies, verify=sslverify)
-        except requests.exceptions.RequestException as e:
-            try:
-                response = self._session.get("%s/treeinfo" % url, headers=headers, proxies=proxies, verify=sslverify)
-            except requests.exceptions.RequestException as e:
-                log.info("Error downloading treeinfo: %s", e)
-                self.verbose_errors.append(str(e))
-                response = None
 
+        for retry_count in range(0, MAX_TREEINFO_DOWNLOAD_RETRIES + 1):
+            if retry_count > 0:
+                time.sleep(next(xdelay))
+            # Downloading .treeinfo
+            log.info("Trying to download '.treeinfo'")
+            (response, ret_code[0]) = self._download_treeinfo_file(url, ".treeinfo",
+                                                                   headers, proxies, sslverify)
+            if response:
+                break
+            # Downloading treeinfo
+            log.info("Trying to download 'treeinfo'")
+            (response, ret_code[1]) = self._download_treeinfo_file(url, "treeinfo",
+                                                                   headers, proxies, sslverify)
+            if response:
+                break
+
+            # The [.]treeinfo wasn't downloaded. Try it again if [.]treeinfo
+            # is on the server.
+            #
+            # Server returned HTTP 404 code -> no need to try again
+            if (ret_code[0] is not None and ret_code[0] == 404 and
+                ret_code[1] is not None and ret_code[1] == 404):
+                response = None
+                log.error("Got HTTP 404 Error when downloading [.]treeinfo files")
+                break
+            if retry_count < MAX_TREEINFO_DOWNLOAD_RETRIES:
+                # retry
+                log.info("Retrying repo info download for %s, retrying (%d/%d)",
+                         url, retry_count + 1, MAX_TREEINFO_DOWNLOAD_RETRIES)
+            else:
+                # run out of retries
+                err_msg = ("Repo info download for %s failed after %d retries" %
+                           (url, retry_count))
+                log.error(err_msg)
+                self.verbose_errors.append(err_msg)
+                response = None
         if response:
             # write the local treeinfo file
             with open("/tmp/.treeinfo", "w") as f:
@@ -380,6 +448,20 @@ class Payload(object):
             return response.text
         else:
             return None
+
+    def _download_treeinfo_file(self, url, file_name, headers, proxies, verify):
+        try:
+            result = self._session.get("%s/%s" % (url, file_name), headers=headers,
+                                       proxies=proxies, verify=verify)
+            # Server returned HTTP 4XX or 5XX codes
+            if result.status_code >= 400 and result.status_code < 600:
+                log.info("Server returned %i code", result.status_code)
+                return (None, result.status_code)
+            log.debug("Retrieved '%s' from %s", file_name, url)
+        except requests.exceptions.RequestException as e:
+            log.info("Error downloading '%s': %s", file_name, e)
+            return (None, None)
+        return (result, result.status_code)
 
     def _getReleaseVersion(self, url):
         """ Return the release version of the tree at the specified URL. """
@@ -405,8 +487,10 @@ class Payload(object):
                 version = "rawhide"
             except configparser.Error:
                 pass
+            log.debug("using treeinfo release version of %s", version)
+        else:
+            log.debug("using default release version of %s", version)
 
-        log.debug("got a release version of %s", version)
         return version
 
     ##
@@ -614,28 +698,10 @@ class Payload(object):
            every payload except for dnf.  Payloads should only implement one of
            these methods by overriding the unneeded one with a pass.
         """
+        if iutil.getSysroot() != iutil.getTargetPhysicalRoot():
+            set_sysroot(iutil.getTargetPhysicalRoot(), iutil.getSysroot())
+            self.prepareMountTargets(self.storage)
         if not flags.dirInstall:
-            if iutil.getSysroot() != iutil.getTargetPhysicalRoot():
-                setSysroot(iutil.getTargetPhysicalRoot(), iutil.getSysroot())
-
-                # Now that we have the FS layout in the target, umount
-                # things that were in the legacy sysroot, and put them in
-                # the target root, except for the physical /.  First,
-                # unmount all target filesystems.
-                self.storage.umountFilesystems()
-
-                # Explicitly mount the root on the physical sysroot
-                rootmnt = self.storage.mountpoints.get('/')
-                rootmnt.setup()
-                rootmnt.format.setup(options=rootmnt.format.options, chroot=iutil.getTargetPhysicalRoot())
-
-                self.prepareMountTargets(self.storage)
-
-                # Everything else goes in the target root, including /boot
-                # since the bootloader code will expect to find /boot
-                # inside the chroot.
-                self.storage.mountFilesystems(skipRoot=True)
-
             self.storage.write()
 
 # Inherit abstract methods from Payload
@@ -663,7 +729,7 @@ class ArchivePayload(ImagePayload):
 class PackagePayload(Payload):
     """ A PackagePayload installs a set of packages onto the target system. """
 
-    DEFAULT_REPOS = [productName.split('-')[0].lower(), "rawhide"]
+    DEFAULT_REPOS = [productName.split('-')[0].lower(), "rawhide"]          # pylint: disable=no-member
 
     def __init__(self, data):
         if self.__class__ is PackagePayload:
@@ -729,13 +795,13 @@ class PackagePayload(Payload):
 
         kernels = ["kernel"]
 
-        if isys.isPaeAvailable():
+        if blivet.arch.is_x86(32) and isys.isPaeAvailable():
             kernels.insert(0, "kernel-PAE")
 
         # most ARM systems use platform-specific kernels
-        if blivet.arch.isARM():
-            if platform.armMachine is not None:
-                kernels = ["kernel-%s" % platform.armMachine]
+        if blivet.arch.is_arm():
+            if platform.arm_machine is not None:
+                kernels = ["kernel-%s" % platform.arm_machine]
 
             if isys.isLpaeAvailable():
                 kernels.insert(0, "kernel-lpae")
@@ -874,7 +940,7 @@ class PackagePayload(Payload):
                     # We don't setup an install_device here
                     # because we can't tear it down
 
-            isodevice = storage.devicetree.resolveDevice(devspec)
+            isodevice = storage.devicetree.resolve_device(devspec)
             if needmount:
                 if not isodevice:
                     raise PayloadSetupError("device for HDISO install %s does not exist" % devspec)
@@ -891,9 +957,9 @@ class PackagePayload(Payload):
             #    the NFS mount w/o mounting the iso.
             #    isodev will be None and device will be the nfs: path
             # 3. dracut did not mount the nfs (eg. stage2 came from elsewhere)
-            #    isodev and device are both None
+            #    isodev and/or device are None
             # 4. The repo may not contain an iso, in that case use it as is
-            if isodev:
+            if isodev and device:
                 path = iutil.parseNfsUrl('nfs:%s' % isodev)[2]
                 # See if the dir holding the iso is what we want
                 # and also if we have an iso mounted to /run/install/repo
@@ -909,6 +975,16 @@ class PackagePayload(Payload):
                        method.dir and method.dir == path:
                         needmount = False
                         path = DRACUT_REPODIR
+                elif isodev:
+                    # isodev with no device can happen when options on an existing
+                    # nfs mount have changed. It is already mounted, but on INSTALL_TREE
+                    # which is the same as DRACUT_ISODIR, making it hard for _setupNFS
+                    # to detect that it is already mounted.
+                    _options, host, path = iutil.parseNfsUrl('nfs:%s' % isodev)
+                    if path and path in isodev:
+                        needmount = False
+                        path = DRACUT_ISODIR
+
                 if needmount:
                     # Mount the NFS share on INSTALL_TREE. If it ends up
                     # being nfsiso we will move the mountpoint to ISO_DIR.
@@ -965,7 +1041,7 @@ class PackagePayload(Payload):
 
             # Only look at the dracut mount if we don't already have a cdrom
             if device and not self.install_device:
-                self.install_device = storage.devicetree.getDeviceByPath(device)
+                self.install_device = storage.devicetree.get_device_by_path(device)
                 url = "file://" + DRACUT_REPODIR
                 if not method.method:
                     # See if this is a nfs mount
@@ -1013,13 +1089,6 @@ class PackagePayload(Payload):
             if not os.path.isdir(repo):
                 break
 
-            # Drivers may be under /<arch>/ or /DD-net/, but they can also be
-            # in the top level of the DD repo.
-            if os.path.isdir(repo+"DD-net"):
-                repo += "DD-net"
-            elif os.path.isdir(repo+blivet.arch.getArch()):
-                repo += blivet.arch.getArch()
-
             # Run createrepo if there are rpms and no repodata
             if not os.path.isdir(repo+"/repodata"):
                 rpms = glob(repo+"/*rpm")
@@ -1028,10 +1097,12 @@ class PackagePayload(Payload):
                 log.info("Running createrepo on %s", repo)
                 iutil.execWithRedirect("createrepo_c", [repo])
 
-            ks_repo = self.data.RepoData(name="DD-%d" % dir_num,
-                                         baseurl="file://"+repo,
-                                         enabled=True)
-            self.addRepo(ks_repo)
+            repo_name = "DD-%d" % dir_num
+            if repo_name not in self.addOns:
+                ks_repo = self.data.RepoData(name=repo_name,
+                                             baseurl="file://"+repo,
+                                             enabled=True)
+                self.addRepo(ks_repo)
 
         # Add packages
         if not os.path.exists("/run/install/dd_packages"):
@@ -1040,6 +1111,7 @@ class PackagePayload(Payload):
             for line in f:
                 package = line.strip()
                 if package not in self.requiredPackages:
+                    log.info("DD: adding required package: %s", package)
                     self.requiredPackages.append(package)
         log.debug("required packages = %s", self.requiredPackages)
 

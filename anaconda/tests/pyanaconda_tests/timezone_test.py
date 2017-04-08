@@ -15,8 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 from pyanaconda import timezone
 import unittest
@@ -53,7 +51,7 @@ class TerritoryTimezones(unittest.TestCase):
 class s390HWclock(unittest.TestCase):
     def setUp(self):
         self.arch_mock = mock.Mock()
-        self.arch_mock.isS390.return_value = True
+        self.arch_mock.is_s390.return_value = True
         self.iutil_mock = mock.Mock()
 
         # pylint: disable=no-member

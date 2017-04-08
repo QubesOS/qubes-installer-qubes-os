@@ -16,13 +16,11 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 m4_define(python_required_version, 3.4)
 
 AC_PREREQ([2.63])
-AC_INIT([AnacondaWidgets], [3.2], [clumens@redhat.com])
+AC_INIT([AnacondaWidgets], [3.3], [clumens@redhat.com])
 
 # Disable building static libraries.
 # This needs to be set before initializing automake
@@ -43,7 +41,8 @@ AC_TYPE_SIZE_T
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
-AM_GNU_GETTEXT([external])
+# Define this so gettext.h works instead of using the whole gettext macro
+CFLAGS="${CFLAGS} -DENABLE_NLS"
 
 dnl Make sure that autoconf fails if the gobject-introspection macro
 dnl is not expanded.
@@ -51,7 +50,7 @@ m4_ifdef([GOBJECT_INTROSPECTION_CHECK],
 [GOBJECT_INTROSPECTION_CHECK([0.6.7])],
 [found_introspection=no
 AM_CONDITIONAL(HAVE_INTROSPECTION, false)])
- 
+
 # Complain if introspection was not enabled
 AS_IF([test "x$found_introspection" = xyes], [:],
       [ANACONDA_SOFT_FAILURE([GObject introspection must be enabled])])
@@ -68,6 +67,9 @@ ANACONDA_PKG_CHECK_MODULES([GTK], [gtk+-x11-3.0 >= 3.11.3])
 ANACONDA_PKG_CHECK_MODULES([LIBXKLAVIER], [libxklavier >= 5.2.1])
 ANACONDA_PKG_CHECK_EXISTS([gobject-introspection-1.0 >= 1.30])
 
+# Use AM_PATH_GLIB_2_0 to define some extra glib-related variables
+AM_PATH_GLIB_2_0
+
 AC_CHECK_HEADERS([libintl.h stdlib.h string.h unistd.h locale.h],
                  [],
                  [ANACONDA_SOFT_FAILURE([Header file $ac_header not found.])],
@@ -81,9 +83,7 @@ AC_CONFIG_FILES([Makefile
                  doc/Makefile
                  glade/Makefile
                  src/Makefile
-                 python/Makefile
-                 data/Makefile
-                 data/pixmaps/Makefile])
+                 python/Makefile])
 AC_OUTPUT
 
 # Gently advise the user about the build failures they are about to encounter

@@ -26,7 +26,7 @@ diff --git a/pungi/gather.py b/pungi/gather.py
 index 66212d2..6be45e6 100644
 --- a/pungi/gather.py
 +++ b/pungi/gather.py
-@@ -1413,13 +1413,14 @@ class Pungi(PungiBase):
+@@ -1413,15 +1413,16 @@ class Pungi(PungiBase):
              pass
  
          for repo in self.ksparser.handler.repo.repoList:
@@ -35,9 +35,11 @@ index 66212d2..6be45e6 100644
                  # The not bool() thing is because pykickstart is yes/no on
                  # whether to ignore groups, but yum is a yes/no on whether to
                  # include groups.  Awkward.
+                 repo.mirrorlist = yum.parser.varReplace(repo.mirrorlist, self.ayum.conf.yumvar)
 -                cmd.extend(["--mirrorlist", repo.mirrorlist])
 +                cmd.extend(["--mirrorlist", repo.mirrorlist + url_suffix])
              else:
+                 repo.baseurl = yum.parser.varReplace(repo.baseurl, self.ayum.conf.yumvar)
 -                cmd.extend(["--source", repo.baseurl])
 +                cmd.extend(["--source", repo.baseurl + url_suffix])
  

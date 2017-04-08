@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 from pyanaconda.i18n import C_
 from pyanaconda.ui.gui import GUIObject
@@ -65,7 +63,7 @@ class DetailedErrorDialog(GUIObject):
         widget.grab_default()
 
         if label:
-            self.builder.get_object("detailedLabel").set_markup(label)
+            self.builder.get_object("detailedLabel").set_text(label)
 
     # pylint: disable=arguments-differ
     def refresh(self, msg):

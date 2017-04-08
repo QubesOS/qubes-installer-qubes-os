@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 import gi
 gi.require_version("Gkbd", "3.0")
@@ -326,6 +323,16 @@ class KeyboardSpoke(NormalSpoke):
 
     def initialize(self):
         NormalSpoke.initialize(self)
+
+        # set X keyboard defaults
+        # - this needs to be done early in spoke initialization so that
+        #   the spoke status does not show outdated keyboard selection
+        keyboard.set_x_keyboard_defaults(self.data, self._xkl_wrapper)
+
+        # make sure the x_layouts list has at least one keyboard layout
+        if not self.data.keyboard.x_layouts:
+            self.data.keyboard.x_layouts.append(DEFAULT_KEYBOARD)
+
         self._add_dialog = AddLayoutDialog(self.data)
         self._add_dialog.initialize()
 
@@ -417,7 +424,12 @@ class KeyboardSpoke(NormalSpoke):
         store.remove(itr)
 
     def _refresh_switching_info(self):
-        if self.data.keyboard.switch_options:
+        if flags.flags.usevnc:
+            self._layoutSwitchLabel.set_text(_("Keyboard layouts are not "
+                                               "supported when using VNC.\n"
+                                               "However the settings will be used "
+                                               "after the installation."))
+        elif self.data.keyboard.switch_options:
             first_option = self.data.keyboard.switch_options[0]
             desc = self._xkl_wrapper.get_switch_opt_description(first_option)
 

@@ -16,10 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    Martin Sivak <msivak@redhat.com>
-#                    Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 import gi
 gi.require_version("Gdk", "3.0")
@@ -32,7 +28,9 @@ from contextlib import contextmanager
 
 from pyanaconda.threads import threadMgr, AnacondaThread
 
-from pyanaconda.constants import NOTICEABLE_FREEZE
+from pyanaconda.constants import NOTICEABLE_FREEZE, PASSWORD_HIDE,\
+    PASSWORD_SHOW, PASSWORD_HIDE_ICON, PASSWORD_SHOW_ICON
+
 import queue
 import time
 import threading
@@ -372,7 +370,7 @@ def setViewportBackground(vp, color="@theme_bg_color"):
     """
 
     provider = Gtk.CssProvider()
-    provider.load_from_data(bytes("GtkViewport { background-color: %s }" % color, "utf-8"))
+    provider.load_from_data(bytes("viewport { background: %s }" % color, "utf-8"))
     context = vp.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
@@ -495,3 +493,110 @@ def override_cell_property(tree_column, cell_renderer, propname, property_func, 
         tree_column.set_cell_data_func(cell_renderer, _cell_data_func)
 
     _override_cell_property_map[(tree_column, cell_renderer)][propname] = (property_func, data)
+
+def find_first_child(parent, match_func):
+    """
+    Find the first child widget of a container matching the given function.
+
+    This method performs a breadth-first search for the widget. match_func
+    takes the widget as a paramter, and the return value will be evaulated as
+    a bool.
+
+    :param GtkContainer parent: the container to search
+    :param function match_func: The function defining the condition to match
+    :return: The first matching widget
+    :rtype: GtkWidget or None
+    """
+    search_list = parent.get_children()
+
+    while search_list:
+        # Pop off the first widget, test it, and add its children to the end
+        widget = search_list.pop()
+        if match_func(widget):
+            return widget
+        if isinstance(widget, Gtk.Container):
+            search_list.extend(widget.get_children())
+
+    return None
+
+
+_widget_watch_list = {}
+def watch_children(widget, callback, user_data=None):
+    """
+    Call callback on widget and all children of widget as they are added.
+
+    Callback is a function that takes widget and user_data as arguments. No
+    return value is expected.
+
+    Callback will be called immediately for widget, and, if widget is a
+    GtkContainer, for all children of widget. If widget is a container it will
+    be then be watched for new widgets added to the container, and callback
+    will be called on the new children as they are added.
+
+    :param GtkWidget widget: the widget to watch
+    :param function callback: the callback function
+    :param user_data: optional user_data to pass to callback
+    """
+
+    # Watch new children as they are added, and unwatch them as they are removed
+    def _add_signal(container, widget, user_data):
+        callback, user_data = user_data
+
+        watch_children(widget, callback, user_data)
+
+    def _remove_signal(container, widget, user_data):
+        callback, user_data = user_data
+
+        unwatch_children(widget, callback, user_data)
+
+    callback(widget, user_data)
+    if isinstance(widget, Gtk.Container):
+        for child in widget.get_children():
+            watch_children(child, callback, user_data)
+
+        # Watch for changes to the container
+        # Only register new signals if there are not already signals for this
+        # widget, function, data combo.
+        signal_key = (widget, callback, user_data)
+
+        if signal_key not in _widget_watch_list:
+            add_signal = widget.connect("add", _add_signal, (callback, user_data))
+            remove_signal = widget.connect("remove", _remove_signal, (callback, user_data))
+
+            _widget_watch_list[signal_key] = (add_signal, remove_signal)
+
+def unwatch_children(widget, callback, user_data=None):
+    """
+    Unregister a callback previously added with watch_children.
+
+    :param GtkWidget widget: the widget to unwatch
+    :param function callback: the callback that was previously added to the widget
+    :param user_data: the user_data that was previously added to the widget
+    """
+
+    signal_key = (widget, callback, user_data)
+
+    if signal_key in _widget_watch_list:
+        add_signal, remove_signal = _widget_watch_list[signal_key]
+        widget.disconnect(add_signal)
+        widget.disconnect(remove_signal)
+        del _widget_watch_list[signal_key]
+
+    if isinstance(widget, Gtk.Container):
+        for child in widget.get_children():
+            unwatch_children(child, callback, user_data)
+
+def set_password_visibility(entry, visible):
+    """Make the password in/visible."""
+    position = Gtk.EntryIconPosition.SECONDARY
+
+    if visible:
+        icon = PASSWORD_HIDE_ICON
+        text = PASSWORD_HIDE
+    else:
+        icon = PASSWORD_SHOW_ICON
+        text = PASSWORD_SHOW
+
+    entry.set_visibility(visible)
+    entry.set_icon_from_icon_name(position, icon)
+    entry.set_icon_tooltip_text(position, text)

@@ -15,8 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author(s): Chris Lumens <clumens@redhat.com>
 
 from pyanaconda.i18n import _, C_
 
@@ -24,26 +22,6 @@ __all__ = ["ERROR_RAISE", "ERROR_CONTINUE", "ERROR_RETRY",
            "InvalidImageSizeError", "MissingImageError", "MediaUnmountError",
            "MediaMountError", "ScriptError", "CmdlineError",
            "errorHandler"]
-
-# Only run the pango markup escape if the GUI is available
-try:
-    import gi
-    gi.require_version("Gtk", "3.0")
-
-    from gi.repository import Gtk
-
-    # XXX: Gtk stopped raising RuntimeError if it fails to
-    # initialize. Horay! But will it stay like this? Let's be
-    # cautious and raise the exception on our own to work in both
-    # cases
-    initialized = Gtk.init_check(None)[0]
-    if not initialized:
-        raise RuntimeError()
-
-    # If we don't do the check above this import will fail within _isys
-    from pyanaconda.ui.gui.utils import escape_markup
-except (RuntimeError, ImportError, ValueError):
-    escape_markup = lambda x: x
 
 class InvalidImageSizeError(Exception):
     def __init__(self, message, filename):
@@ -142,13 +120,13 @@ class ErrorHandler(object):
 
     def _storageResetHandler(self, exn):
         message = (_("There is a problem with your existing storage "
-                     "configuration: <b>%(errortxt)s</b>\n\n"
+                     "configuration: %(errortxt)s\n\n"
                      "You must resolve this matter before the installation can "
                      "proceed. There is a shell available for use which you "
                      "can access by pressing ctrl-alt-f1 and then ctrl-b 2."
                      "\n\nOnce you have resolved the issue you can retry the "
                      "storage scan. If you do not fix it you will have to exit "
-                     "the installer.") % {"errortxt": escape_markup(exn)})
+                     "the installer.") % {"errortxt": exn})
         details = _(exn.suggestion)
         buttons = (C_("GUI|Storage Detailed Error Dialog", "_Exit Installer"),
                    C_("GUI|Storage Detailed Error Dialog", "_Retry"))
@@ -295,8 +273,8 @@ class ErrorHandler(object):
         self.ui.showError(message)
         return ERROR_RAISE
 
-    def _ziplErrorHandler(self, *args, **kwargs):
-        details = kwargs["exception"]
+    def _ziplErrorHandler(self, exn):
+        details = str(exn)
         message = _("Installation was stopped due to an error installing the "
                     "boot loader. The exact error message is:\n\n%s\n\n"
                     "The installer will now terminate.") % details
@@ -317,7 +295,7 @@ class ErrorHandler(object):
         rc = ERROR_RAISE
 
         if not self.ui:
-            raise
+            raise exn
 
         _map = {"PartitioningError": self._partitionErrorHandler,
                 "FSResizeError": self._fsResizeHandler,

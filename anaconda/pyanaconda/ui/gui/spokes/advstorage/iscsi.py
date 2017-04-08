@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 from collections import namedtuple
 
@@ -30,10 +28,14 @@ from pyanaconda import constants
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.utils import escape_markup
+from pyanaconda.storage_utils import try_populate_devicetree
 from pyanaconda.i18n import _
 from pyanaconda import nm
 from pyanaconda.regexes import ISCSI_IQN_NAME_REGEX, ISCSI_EUI_NAME_REGEX
 from pyanaconda.network import check_ip_address
+
+from blivet.iscsi import iscsi
+from blivet.safe_dbus import SafeDBusError
 
 __all__ = ["ISCSIDialog"]
 
@@ -122,7 +124,7 @@ class ISCSIDialog(GUIObject):
     def __init__(self, data, storage):
         GUIObject.__init__(self, data)
         self.storage = storage
-        self.iscsi = self.storage.iscsi()
+        self.iscsi = iscsi
 
         self._discoveryError = None
         self._loginError = False
@@ -168,7 +170,7 @@ class ISCSIDialog(GUIObject):
         self._storeFilter.set_visible_column(1)
 
         self._initiatorEntry.set_text(self.iscsi.initiator)
-        self._initiatorEntry.set_sensitive(not self.iscsi.initiatorSet)
+        self._initiatorEntry.set_sensitive(not self.iscsi.initiator_set)
 
     @property
     def selectedNames(self):
@@ -180,7 +182,7 @@ class ISCSIDialog(GUIObject):
         # We need to call this to get the device nodes to show up
         # in our devicetree.
         if self._update_devicetree:
-            self.storage.devicetree.populate()
+            try_populate_devicetree(self.storage.devicetree)
         return rc
 
     ##
@@ -198,7 +200,7 @@ class ISCSIDialog(GUIObject):
         # This needs to be in its own thread, not marked with gtk_action_* because it's
         # called from on_start_clicked, which is in the GTK main loop.  Those decorators
         # won't do anything special in that case.
-        if not self.iscsi.initiatorSet:
+        if not self.iscsi.initiator_set:
             self.iscsi.initiator = credentials.initiator
 
         # interfaces created here affect nodes that iscsi.discover would return
@@ -218,8 +220,8 @@ class ISCSIDialog(GUIObject):
                                                         password=credentials.password,
                                                         r_username=credentials.rUsername,
                                                         r_password=credentials.rPassword)
-        except IOError as e:
-            self._discoveryError = str(e)
+        except SafeDBusError as e:
+            self._discoveryError = str(e).split(':')[-1]
             return
 
         if len(self._discoveredNodes) == 0:
@@ -260,7 +262,7 @@ class ISCSIDialog(GUIObject):
     def _set_configure_sensitive(self, sensitivity):
         for child in self._configureGrid.get_children():
             if child == self._initiatorEntry:
-                self._initiatorEntry.set_sensitive(not self.iscsi.initiatorSet)
+                self._initiatorEntry.set_sensitive(not self.iscsi.initiator_set)
             elif child == self._bindCheckbox:
                 self._bindCheckbox.set_sensitive(sensitivity and self.iscsi.mode == "none")
             elif child != self._conditionNotebook:

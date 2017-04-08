@@ -17,8 +17,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 from blivet.devicefactory import is_supported_device_type
 
@@ -29,21 +27,24 @@ from pyanaconda.constants import DEFAULT_AUTOPART_TYPE
 from pyanaconda.storage_utils import AUTOPART_CHOICES, AUTOPART_DEVICE_TYPES
 
 import gi
-gi.require_version("AnacondaWidgets", "3.0")
+gi.require_version("AnacondaWidgets", "3.3")
 gi.require_version("Gtk", "3.0")
 
 from gi.repository.AnacondaWidgets import MountpointSelector
 from gi.repository import Gtk
 
+import logging
+log = logging.getLogger("anaconda")
+
 __all__ = ["DATA_DEVICE", "SYSTEM_DEVICE",
-           "newSelectorFromDevice", "updateSelectorFromDevice",
+           "new_selector_from_device", "update_selector_from_device",
            "Accordion",
            "Page", "UnknownPage", "CreateNewPage"]
 
 DATA_DEVICE = 0
 SYSTEM_DEVICE = 1
 
-def updateSelectorFromDevice(selector, device, mountpoint=""):
+def update_selector_from_device(selector, device, mountpoint=""):
     """Create a MountpointSelector from a Device object template.  This
        method should be used whenever constructing a new selector, or when
        setting a bunch of attributes on an existing selector.  For just
@@ -70,23 +71,44 @@ def updateSelectorFromDevice(selector, device, mountpoint=""):
     selector.props.mountpoint = mp
     selector.device = device
 
-def newSelectorFromDevice(device, mountpoint=""):
+def new_selector_from_device(device, mountpoint=""):
     selector = MountpointSelector(device.name, str(device.size))
     selector._root = None
-    updateSelectorFromDevice(selector, device, mountpoint)
+    update_selector_from_device(selector, device, mountpoint)
 
     return selector
 
-# An Accordion is a box that goes on the left side of the custom partitioning spoke.  It
-# stores multiple expanders which are here called Pages.  These Pages correspond to
-# individual installed OSes on the system plus some special ones.  When one Page is
-# expanded, all others are collapsed.
+
 class Accordion(Gtk.Box):
+    """ An Accordion is a box that goes on the left side of the custom partitioning spoke.
+        It stores multiple expanders which are here called Pages.  These Pages correspond to
+        individual installed OSes on the system plus some special ones.  When one Page is
+        expanded, all others are collapsed.
+    """
     def __init__(self):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._expanders = []
+        self._active_selectors = []
+        self._current_selector = None
+        self._last_selected = None
 
-    def addPage(self, contents, cb):
+    def find_page_by_title(self, title):
+        for e in self._expanders:
+            if e.get_child().pageTitle == title:
+                return e.get_child()
+
+        return None
+
+    def _on_expanded(self, obj, cb=None):
+        if cb:
+            cb(obj.get_child())
+
+    def _activate_selector(self, selector, activate, show_arrow):
+        selector.set_chosen(activate)
+        selector.props.show_arrow = show_arrow
+        selector.get_page().mark_selection(selector)
+
+    def add_page(self, contents, cb):
         label = Gtk.Label(label="""<span size='large' weight='bold' fgcolor='black'>%s</span>""" %
                           escape_markup(contents.pageTitle), use_markup=True,
                           xalign=0, yalign=0.5, wrap=True)
@@ -97,86 +119,269 @@ class Accordion(Gtk.Box):
 
         self.add(expander)
         self._expanders.append(expander)
-        expander.connect("activate", self._onExpanded, cb)
+        expander.connect("activate", self._on_expanded, cb)
         expander.show_all()
 
-    def _find_by_title(self, title):
-        for e in self._expanders:
-            if e.get_child().pageTitle == title:
-                return e
+    def unselect(self):
+        """ Unselect all items and clear current_selector.
+        """
+        for s in self._active_selectors:
+            self._activate_selector(s, False, False)
+        self._active_selectors.clear()
+        self._current_selector = None
+        log.debug("Accordion: unselecting all items")
+
+    def select(self, selector):
+        """ Select one item. Remove selection from all other items
+            and clear ``current_selector`` if set. Add new selector and
+            append it to selected items. Also select the new item.
+
+            :param selector: Selector which we want to select.
+        """
+        self.unselect()
+        self._active_selectors.append(selector)
+        self._current_selector = selector
+        self._last_selected = selector
+        self._activate_selector(selector, activate=True, show_arrow=True)
+        log.debug("Accordion: select %s device", selector.device)
+
+    def _select_with_shift(self, clicked_selector):
+        # No items selected, only select this one
+        if not self._last_selected or self._last_selected is clicked_selector:
+            self.select(clicked_selector)
+            return
+
+        select_items = []
+        start_selection = False
+        for s in self.all_selectors:
+            if s is clicked_selector or s is self._last_selected:
+                if start_selection:
+                    select_items.append(s) # append last item too
+                    break
+                else:
+                    start_selection = True
+            if start_selection:
+                select_items.append(s)
+
+        self.unselect()
+        self.append_selection(select_items)
+
+    def append_selection(self, selectors):
+        """ Append new selectors to the actual selection. This takes
+            list of selectors.
+            If more than 1 item is selected remove the ``current_selector``.
+            No current selection is allowed in multiselection.
+
+            :param list selectors: List of selectors which will be
+            appended to current selection.
+        """
+        if not selectors:
+            return
+
+        # If multiselection is already active it will be active even after the new selection.
+        multiselection = ((self.is_multiselection or len(selectors) > 1) or
+                          # Multiselection will be active also when there is one item already
+                          # selected and it's not the same which is in selectors array
+                          (self._current_selector and self._current_selector not in selectors))
+
+        # Hide arrow from current selected item if there will be multiselection.
+        if not self.is_multiselection and multiselection and self._current_selector:
+            self._current_selector.props.show_arrow = False
+
+        for s in selectors:
+            self._active_selectors.append(s)
+            if multiselection:
+                self._activate_selector(s, activate=True, show_arrow=False)
+            else:
+                self._activate_selector(s, activate=True, show_arrow=True)
+            log.debug("Device %s appended to selection", s.device)
+
+        if len(selectors) == 1:
+            self._last_selected = selectors[-1]
+
+        if multiselection:
+            self._current_selector = None
+        else:
+            self._current_selector = self._active_selectors[0]
+        log.debug("Accordion: selected items %s; added items %s",
+                  len(self._active_selectors), len(selectors))
+
+    def remove_selection(self, selectors):
+        """ Remove :param:`selectors` from current selection. If only
+            one item is selected after this operation it's set as
+            ``current_selector``.
+            Items which are not selected are ignored.
+
+            :param list selectors: List of selectors which will be
+            removed from current selection.
+        """
+        for s in selectors:
+            if s in self._active_selectors:
+                self._activate_selector(s, activate=False, show_arrow=False)
+                self._active_selectors.remove(s)
+                log.debug("Device %s removed from selection", s)
+
+        if len(self._active_selectors) == 1:
+            self._current_selector = self._active_selectors[0]
+            self._current_selector.props.show_arrow = True
+        else:
+            self._current_selector = None
+        log.debug("Accordion: selected items %s; removed items %s",
+                  len(self._active_selectors), len(selectors))
+
+    @property
+    def current_page(self):
+        """ The current page is really a function of the current selector.
+            Whatever selector on the LHS is selected, the current page is the
+            page containing that selector.
+        """
+        if not self.current_selector:
+            return None
+
+        for page in self.all_pages:
+            if self.current_selector in page.members:
+                return page
 
         return None
 
     @property
-    def allPages(self):
+    def current_selector(self):
+        return self._current_selector
+
+    @property
+    def all_pages(self):
         return [e.get_child() for e in self._expanders]
 
     @property
-    def allSelectors(self):
-        return [s for p in self.allPages for s in p.members]
+    def all_selectors(self):
+        return [s for p in self.all_pages for s in p.members]
 
     @property
-    def allMembers(self):
-        for page in self.allPages:
+    def all_members(self):
+        for page in self.all_pages:
             for member in page.members:
                 yield (page, member)
 
-    def expandPage(self, pageTitle):
-        page = self._find_by_title(pageTitle)
-        if not page:
+    @property
+    def is_multiselection(self):
+        return len(self._active_selectors) > 1
+
+    @property
+    def is_current_selected(self):
+        if self.current_selector:
+            return True
+        return False
+
+    @property
+    def selected_items(self):
+        return self._active_selectors
+
+    def page_for_selector(self, selector):
+        """ Return page for given selector. """
+        for page in self.all_pages:
+            for s in page.members:
+                if s is selector:
+                    return page
+
+    def expand_page(self, pageTitle):
+        page = self.find_page_by_title(pageTitle)
+        expander = page.get_parent()
+        if not expander:
             raise LookupError()
 
-        if not page.get_expanded():
-            page.emit("activate")
+        if not expander.get_expanded():
+            expander.emit("activate")
 
-    def removePage(self, pageTitle):
+    def remove_page(self, pageTitle):
         # First, remove the expander from the list of expanders we maintain.
-        target = self._find_by_title(pageTitle)
+        target = self.find_page_by_title(pageTitle)
         if not target:
             return
 
-        self._expanders.remove(target)
+        self._expanders.remove(target.get_parent())
+        for s in target.members:
+            if s in self._active_selectors:
+                self._active_selectors.remove(s)
 
         # Then, remove it from the box.
-        self.remove(target)
+        self.remove(target.get_parent())
 
-    def removeAllPages(self):
+    def remove_all_pages(self):
         for e in self._expanders:
             self.remove(e)
 
         self._expanders = []
+        self._active_selectors = []
+        self._current_selector = None
 
-    def _onExpanded(self, obj, cb=None):
-        if cb:
-            cb(obj.get_child())
+    def clear_current_selector(self):
+        """ If current selector is selected, deselect it
+        """
+        if self._current_selector:
+            if self._current_selector in self._active_selectors:
+                self._active_selectors.remove(self._current_selector)
+            self._activate_selector(self._current_selector, activate=False, show_arrow=False)
+            self._current_selector = None
 
-# A Page is a box that is stored in an Accordion.  It breaks down all the filesystems that
-# comprise a single installed OS into two categories - Data filesystems and System filesystems.
-# Each filesystem is described by a single MountpointSelector.
-class Page(Gtk.Box):
+    def process_event(self, selector, event, cb):
+        """ Process events from selectors and select items as result.
+            Call cb after selection is done with old selector and new selector
+            as arguments.
+
+            :param selector: Clicked selector
+            :param event: Gtk event object
+            :param cb: Callback which will be called after selection is done.
+            This callback is setup in :meth:`Page.add_selector` method.
+        """
+        gi.require_version("Gdk", "3.0")
+        from gi.repository import Gdk
+
+        if event:
+            if not event.type in [Gdk.EventType.BUTTON_PRESS, Gdk.EventType.KEY_RELEASE, Gdk.EventType.FOCUS_CHANGE]:
+                return
+
+            if event.type == Gdk.EventType.KEY_RELEASE and \
+               event.keyval not in [Gdk.KEY_space, Gdk.KEY_Return, Gdk.KEY_ISO_Enter, Gdk.KEY_KP_Enter, Gdk.KEY_KP_Space]:
+                return
+
+            old_selector = self.current_selector
+            # deal with multiselection
+            state = event.get_state()
+            if state & Gdk.ModifierType.CONTROL_MASK: # holding CTRL
+                if selector in self._active_selectors:
+                    self.remove_selection([selector])
+                else:
+                    self.append_selection([selector])
+            elif state & Gdk.ModifierType.SHIFT_MASK: # holding SHIFT
+                self._select_with_shift(selector)
+            else:
+                self.select(selector)
+
+        # Then, this callback will set up the right hand side of the screen to
+        # show the details for the newly selected object.
+        cb(old_selector, selector)
+
+
+class BasePage(Gtk.Box):
+    """ Base class for all Pages. It implements most methods which is used
+        all kind of Page classes.
+
+        .. NOTE::
+
+            You should not instantiate this class. Please create a subclass
+            and use the subclass instead.
+    """
     def __init__(self, title):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
-
-        # Create the Data label and a box to store all its members in.
-        self._dataBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._dataLabel = self._make_category_label(_("DATA"))
-        really_hide(self._dataLabel)
-        self._dataBox.add(self._dataLabel)
-        self._dataBox.connect("add", self._onSelectorAdded, self._dataLabel)
-        self._dataBox.connect("remove", self._onSelectorRemoved, self._dataLabel)
-        self.add(self._dataBox)
-
-        # Create the System label and a box to store all its members in.
-        self._systemBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self._systemLabel = self._make_category_label(_("SYSTEM"))
-        really_hide(self._systemLabel)
-        self._systemBox.add(self._systemLabel)
-        self._systemBox.connect("add", self._onSelectorAdded, self._systemLabel)
-        self._systemBox.connect("remove", self._onSelectorRemoved, self._systemLabel)
-        self.add(self._systemBox)
-
         self.members = []
         self.pageTitle = title
+        self._selected_members = set()
+        self._dataBox = None
+        self._systemBox = None
+
+    @property
+    def selected_members(self):
+        return self._selected_members
 
     def _make_category_label(self, name):
         label = Gtk.Label()
@@ -186,98 +391,119 @@ class Page(Gtk.Box):
         label.set_margin_left(24)
         return label
 
-    def addSelector(self, device, cb, mountpoint=""):
-        selector = newSelectorFromDevice(device, mountpoint=mountpoint)
-        selector.connect("button-press-event", self._onSelectorClicked, cb)
-        selector.connect("key-release-event", self._onSelectorClicked, cb)
-        selector.connect("focus-in-event", self._onSelectorFocusIn, cb)
+    def mark_selection(self, selector):
+        if selector.get_chosen():
+            self._selected_members.add(selector)
+        else:
+            self._selected_members.discard(selector)
+
+    def add_selector(self, device, cb, mountpoint=""):
+        accordion = self.get_ancestor(Accordion)
+        selector = new_selector_from_device(device, mountpoint=mountpoint)
+        selector.set_page(self)
+        selector.connect("button-press-event", accordion.process_event, cb)
+        selector.connect("key-release-event", accordion.process_event, cb)
+        selector.connect("focus-in-event", self._on_selector_focus_in, cb)
         selector.set_margin_bottom(6)
         self.members.append(selector)
 
         # pylint: disable=no-member
-        if self._mountpointType(selector.props.mountpoint) == DATA_DEVICE:
+        if self._mountpoint_type(selector.props.mountpoint) == DATA_DEVICE:
             self._dataBox.add(selector)
         else:
             self._systemBox.add(selector)
 
         return selector
 
-    def removeSelector(self, selector):
-        if self._mountpointType(selector.props.mountpoint) == DATA_DEVICE:
+    def remove_selector(self, selector):
+        if self._mountpoint_type(selector.props.mountpoint) == DATA_DEVICE:
             self._dataBox.remove(selector)
         else:
             self._systemBox.remove(selector)
 
+        accordion = self.get_ancestor(Accordion)
+        accordion.remove_selection([selector])
         self.members.remove(selector)
 
-    def _mountpointType(self, mountpoint):
+    def _mountpoint_type(self, mountpoint):
         if not mountpoint or mountpoint in ["/", "/boot", "/boot/efi", "/tmp", "/usr", "/var",
                                             "swap", "PPC PReP Boot", "BIOS Boot"]:
             return SYSTEM_DEVICE
         else:
             return DATA_DEVICE
 
-    def _onSelectorClicked(self, selector, event, cb):
-        gi.require_version("Gdk", "3.0")
-        from gi.repository import Gdk
+    def _on_selector_focus_in(self, selector, event, cb):
+        accordion = self.get_ancestor(Accordion)
+        cb(accordion.current_selector, selector)
 
-        if event and not event.type in [Gdk.EventType.BUTTON_PRESS, Gdk.EventType.KEY_RELEASE, Gdk.EventType.FOCUS_CHANGE]:
-            return
-
-        if event and event.type == Gdk.EventType.KEY_RELEASE and \
-           event.keyval not in [Gdk.KEY_space, Gdk.KEY_Return, Gdk.KEY_ISO_Enter, Gdk.KEY_KP_Enter, Gdk.KEY_KP_Space]:
-            return
-
-        # Then, this callback will set up the right hand side of the screen to
-        # show the details for the newly selected object.
-        cb(selector)
-
-    def _onSelectorFocusIn(self, selector, event, cb):
-        # could be simple lambda, but this way it looks more similar to the
-        # _onSelectorClicked
-        cb(selector)
-
-    def _onSelectorAdded(self, container, widget, label):
+    def _on_selector_added(self, container, widget, label):
         really_show(label)
 
-    def _onSelectorRemoved(self, container, widget, label):
+    def _on_selector_removed(self, container, widget, label):
         # This runs before widget is removed from container, so if it's the last
         # item then the container will still not be empty.
         if len(container.get_children()) == 1:
             really_hide(label)
 
-class UnknownPage(Page):
+
+class Page(BasePage):
+    """ A Page is a box that is stored in an Accordion.  It breaks down all the filesystems that
+        comprise a single installed OS into two categories - Data filesystems and System filesystems.
+        Each filesystem is described by a single MountpointSelector.
+    """
+    def __init__(self, title):
+        super().__init__(title)
+
+        # Create the Data label and a box to store all its members in.
+        self._dataBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._dataLabel = self._make_category_label(_("DATA"))
+        really_hide(self._dataLabel)
+        self._dataBox.add(self._dataLabel)
+        self._dataBox.connect("add", self._on_selector_added, self._dataLabel)
+        self._dataBox.connect("remove", self._on_selector_removed, self._dataLabel)
+        self.add(self._dataBox)
+
+        # Create the System label and a box to store all its members in.
+        self._systemBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self._systemLabel = self._make_category_label(_("SYSTEM"))
+        really_hide(self._systemLabel)
+        self._systemBox.add(self._systemLabel)
+        self._systemBox.connect("add", self._on_selector_added, self._systemLabel)
+        self._systemBox.connect("remove", self._on_selector_removed, self._systemLabel)
+        self.add(self._systemBox)
+
+
+class UnknownPage(BasePage):
     def __init__(self, title):
         # For this type of page, there's only one place to store members.
-        # pylint: disable=super-init-not-called,non-parent-init-called
-        Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        self.members = []
-        self.pageTitle = title
+        super().__init__(title)
 
-    def addSelector(self, device, cb, mountpoint=""):
-        selector = newSelectorFromDevice(device, mountpoint=mountpoint)
-        selector.connect("button-press-event", self._onSelectorClicked, cb)
-        selector.connect("key-release-event", self._onSelectorClicked, cb)
+    def add_selector(self, device, cb, mountpoint=""):
+        accordion = self.get_ancestor(Accordion)
+        selector = new_selector_from_device(device, mountpoint=mountpoint)
+        selector.set_page(self)
+        selector.connect("button-press-event", accordion.process_event, cb)
+        selector.connect("key-release-event", accordion.process_event, cb)
 
         self.members.append(selector)
         self.add(selector)
 
         return selector
 
-    def removeSelector(self, selector):
+    def remove_selector(self, selector):
         self.remove(selector)
         self.members.remove(selector)
 
-# This is a special Page that is displayed when no new installation has been automatically
-# created, and shows the user how to go about doing that.  The intention is that an instance
-# of this class will be packed into the Accordion first and then when the new installation
-# is created, it will be removed and replaced with a Page for it.
-class CreateNewPage(Page):
+
+class CreateNewPage(BasePage):
+    """ This is a special Page that is displayed when no new installation
+        has been automatically created, and shows the user how to go about
+        doing that.  The intention is that an instance of this class will be
+        packed into the Accordion first and then when the new installation
+        is created, it will be removed and replaced with a Page for it.
+    """
     def __init__(self, title, createClickedCB, autopartTypeChangedCB, partitionsToReuse=True):
-        # pylint: disable=super-init-not-called,non-parent-init-called
-        Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        self.members = []
-        self.pageTitle = title
+        super().__init__(title)
 
         # Create a box where we store the "Here's how you create a new blah" info.
         self._createBox = Gtk.Grid()

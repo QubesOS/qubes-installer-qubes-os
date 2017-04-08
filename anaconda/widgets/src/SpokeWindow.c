@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Chris Lumens <clumens@redhat.com>
  */
 
 #include "config.h"
@@ -22,7 +20,6 @@
 #include "BaseWindow.h"
 #include "SpokeWindow.h"
 #include "intl.h"
-#include "widgets-common.h"
 
 #include <atk/atk.h>
 #include <gdk/gdkkeysyms.h>
@@ -43,6 +40,16 @@
  *
  * - An action area in the rest of the screen, taking up a majority of the
  *   space.  This is where widgets will be added and the user will do things.
+ *
+ * # CSS nodes
+ *
+ * |[<!-- language="plain" -->
+ * AnacondaSpokeWindow
+ * ╰── #anaconda-spoke-window-button
+ * ]|
+ *
+ * The button in the upper left is accessible as the name
+ * "anaconda-spoke-window-button" for the purposes of CSS selectors.
  */
 
 #define DEFAULT_BUTTON_LABEL C_("GUI|Spoke Navigation", "_Done")
@@ -65,6 +72,7 @@ static void anaconda_spoke_window_button_clicked(GtkButton *button,
 
 static void anaconda_spoke_window_class_init(AnacondaSpokeWindowClass *klass) {
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS(klass);
 
     klass->button_clicked = NULL;
 
@@ -90,6 +98,8 @@ static void anaconda_spoke_window_class_init(AnacondaSpokeWindowClass *klass) {
                                                          G_TYPE_NONE, 0);
 
     g_type_class_add_private(object_class, sizeof(AnacondaSpokeWindowPrivate));
+
+    gtk_widget_class_set_css_name(widget_class, "AnacondaSpokeWindow");
 }
 
 /**
@@ -120,6 +130,7 @@ static void anaconda_spoke_window_init(AnacondaSpokeWindow *win) {
     gtk_widget_set_vexpand(win->priv->button, FALSE);
     gtk_widget_set_valign(win->priv->button, GTK_ALIGN_END);
     gtk_widget_set_margin_bottom(win->priv->button, 6);
+    gtk_widget_set_name(win->priv->button, "anaconda-spoke-window-done");
 
     atk = gtk_widget_get_accessible(win->priv->button);
     atk_object_set_name(atk, DEFAULT_BUTTON_LABEL);

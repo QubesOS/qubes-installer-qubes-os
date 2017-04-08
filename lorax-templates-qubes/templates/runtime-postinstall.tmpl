@@ -29,6 +29,10 @@ symlink /lib/systemd/system/anaconda.target etc/systemd/system/default.target
 mkdir etc/systemd/system/local-fs.target.wants/
 symlink /lib/systemd/system/tmp.mount etc/systemd/system/local-fs.target.wants/tmp.mount
 
+## Start rngd
+mkdir etc/systemd/system/basic.target.wants/
+symlink /lib/systemd/system/rngd.service etc/systemd/system/basic.target.wants/rngd.service
+
 ## Disable unwanted systemd services
 systemctl disable systemd-readahead-collect.service \
                   systemd-readahead-replay.service \
@@ -45,9 +49,11 @@ systemctl mask fedora-configure.service fedora-loadmodules.service \
                systemd-tmpfiles-clean.service systemd-tmpfiles-clean.timer \
                ldconfig.service
 
-## Make logind activate anaconda-shell@.service on switch to empty VT
-symlink anaconda-shell@.service lib/systemd/system/autovt@.service
-replace "#ReserveVT=6" "ReserveVT=2" etc/systemd/logind.conf
+## Remove the more terrible parts of systemd-tmpfiles.
+## etc.conf is written with the assumption that /etc/ is empty, which is
+## ridiculous, and it also creates a broken /etc/resolv.conf, which breaks
+## networking.
+remove usr/lib/tmpfiles.d/etc.conf
 
 ## Make logind activate anaconda-shell@.service on switch to empty VT
 symlink anaconda-shell@.service lib/systemd/system/autovt@.service
@@ -69,6 +75,7 @@ install ${configdir}/spice-vdagentd etc/sysconfig
 mkdir etc/NetworkManager/conf.d
 install ${configdir}/91-anaconda-autoconnect-slaves.conf etc/NetworkManager/conf.d
 install ${configdir}/vconsole.conf etc
+install ${configdir}/92-anaconda-loglevel-debug.conf etc/NetworkManager/conf.d
 
 ## disable NetworkManager
 install ${configdir}/NetworkManager.state var/lib/NetworkManager/NetworkManager.state
@@ -85,18 +92,12 @@ append etc/shadow "install::14438:0:99999:7:::"
 ## remove root password
 replace "root:\*:" "root::" etc/shadow
 
-## s390-specific setup
-%if basearch in ("s390", "s390x"):
-    ## generate ssh keys
-    runcmd ssh-keygen -q -C "" -N "" -t rsa1 -f ${root}/etc/ssh/ssh_host_key
-    runcmd ssh-keygen -q -C "" -N "" -t rsa  -f ${root}/etc/ssh/ssh_host_rsa_key
-    runcmd ssh-keygen -q -C "" -N "" -t dsa  -f ${root}/etc/ssh/ssh_host_dsa_key
-    chmod etc/ssh/ssh_host*_key 600
-    chmod etc/ssh/ssh_host*_key.pub 644
-%endif
-
 ## gconf settings
 gconfset /desktop/gnome/interface/accessibility bool true
+
+## gsettings settings
+install ${configdir}/org.gtk.Settings.Debug.gschema.override usr/share/glib-2.0/schemas
+runcmd chroot ${root} glib-compile-schemas /usr/share/glib-2.0/schemas
 
 move usr/libexec/anaconda/auditd sbin
 
@@ -107,6 +108,9 @@ symlink ../run/install mnt/install
 
 ## create_depmod_conf()
 append etc/depmod.d/dd.conf "search updates built-in"
+
+## create multipath.conf so multipath gets auto-started
+append etc/multipath.conf "defaults {\n\tfind_multipaths yes\n\tuser_friendly_names yes\n}\n"
 
 ## include additional modules in initramfs
 append etc/dracut.conf.d/extra-install-modules.conf "add_drivers+=' ehci-pci xhci-hcd xhci-pci '"

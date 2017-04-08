@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Jesse Keating <jkeating@redhat.com>
-#
 
 import sys
 
@@ -140,7 +138,7 @@ class ProgressSpoke(StandaloneTUISpoke):
         return True
 
     def prompt(self, args=None):
-        return(_("\tInstallation complete.  Press return to quit"))
+        return(_("\tInstallation complete.  Press Enter to quit"))
 
     def input(self, args, key):
         # There is nothing to do here, just raise to exit the spoke

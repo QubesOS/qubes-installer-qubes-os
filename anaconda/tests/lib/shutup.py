@@ -15,8 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Shea <dshea@redhat.com>
 
 import os
 from contextlib import contextmanager
@@ -28,9 +26,6 @@ def shutup():
        The redirections will be process-wide, so this is not recommended
        for multithreaded applications.
     """
-
-    # Ignore all the warnings about interruptible calls
-    # pylint: disable=ignorable-system-call, interruptible-system-call
 
     # Wrap the whole thing a try-finally to ensure errors don't leak file descriptor
     old_stdout = None

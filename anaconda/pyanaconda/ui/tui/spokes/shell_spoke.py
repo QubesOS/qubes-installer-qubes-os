@@ -15,8 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """Text mode shell spoke"""
 
@@ -40,7 +38,7 @@ class ShellSpoke(NormalTUISpoke):
     @classmethod
     def should_run(cls, environment, data):
         # run only in the installer on s390(x) machines
-        return flags.debug or (environment == ANACONDA_ENVIRON and arch.isS390())
+        return flags.debug or (environment == ANACONDA_ENVIRON and arch.is_s390())
 
     @property
     def completed(self):

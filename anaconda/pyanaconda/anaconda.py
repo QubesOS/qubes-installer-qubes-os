@@ -16,15 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Brent Fox <bfox@redhat.com>
-#            Mike Fulbright <msf@redhat.com>
-#            Jakub Jelinek <jakub@redhat.com>
-#            Jeremy Katz <katzj@redhat.com>
-#            Chris Lumens <clumens@redhat.com>
-#            Paul Nasrat <pnasrat@redhat.com>
-#            Erik Troan <ewt@rpath.com>
-#            Matt Wilson <msw@rpath.com>
-#
 
 import os
 import sys
@@ -36,7 +27,6 @@ import threading
 from pyanaconda.bootloader import get_bootloader
 from pyanaconda import constants
 from pyanaconda import iutil
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda import addons
 
 import logging
@@ -147,6 +137,8 @@ class Anaconda(object):
            stat.S_ISBLK(os.stat("/run/initramfs/livedev")[stat.ST_MODE]):
             specs.append(os.readlink("/run/initramfs/livedev"))
 
+        # methodstr and stage2 become strings in ways that pylint can't figure out
+        # pylint: disable=unsubscriptable-object
         if self.methodstr and self.methodstr.startswith("hd:"):
             specs.append(self.methodstr[3:].split(":", 3)[0])
 
@@ -172,9 +164,9 @@ class Anaconda(object):
             self._storage = blivet.Blivet(ksdata=self.ksdata)
 
             if self.instClass.defaultFS:
-                self._storage.setDefaultFSType(self.instClass.defaultFS)
+                self._storage.set_default_fstype(self.instClass.defaultFS)
 
-            if blivet.arch.isS390():
+            if blivet.arch.is_s390():
                 # want to make sure s390 plugin is loaded
                 if "s390" not in blockdev.get_available_plugin_names():
                     plugin = blockdev.PluginSpec()
@@ -211,8 +203,8 @@ class Anaconda(object):
         dump_text = exn.traceback_and_object_dump(self)
         dump_text += threads
         dump_text_bytes = dump_text.encode("utf-8")
-        iutil.eintr_retry_call(os.write, fd, dump_text_bytes)
-        iutil.eintr_ignore(os.close, fd)
+        os.write(fd, dump_text_bytes)
+        os.close(fd)
 
         # append to a given file
         with open("/tmp/anaconda-tb-all.log", "a+") as f:

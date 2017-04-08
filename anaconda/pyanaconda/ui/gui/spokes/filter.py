@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -32,6 +30,7 @@ from blivet.fcoe import has_fcoe
 
 from pyanaconda.flags import flags
 from pyanaconda.i18n import CN_, CP_
+from pyanaconda.storage_utils import try_populate_devicetree, on_disk_storage
 
 from pyanaconda.ui.lib.disks import getDisks
 from pyanaconda.ui.gui.utils import timed_action
@@ -147,7 +146,7 @@ class FilterPage(object):
         # identifier, but blivet doesn't expose that in any useful way and I don't
         # want to go asking udev.  Instead, we dig around in the deviceLinks and
         # default to the name if we can't figure anything else out.
-        for link in disk.deviceLinks:
+        for link in disk.device_links:
             if "by-path" in link:
                 lastSlash = link.rindex("/")+1
                 return link[lastSlash:]
@@ -178,7 +177,7 @@ class SearchPage(FilterPage):
 
         ports = []
         for disk in disks:
-            if hasattr(disk, "node"):
+            if hasattr(disk, "node") and disk.node is not None:
                 ports.append(str(disk.node.port))
 
         self.setupCombo(self._portCombo, ports)
@@ -234,7 +233,7 @@ class SearchPage(FilterPage):
 
     def visible_func(self, model, itr, *args):
         obj = DiskStoreRow(*model[itr])
-        device = self.storage.devicetree.getDeviceByName(obj.name, hidden=True)
+        device = self.storage.devicetree.get_device_by_name(obj.name, hidden=True)
         return self._filter_func(device)
 
 class MultipathPage(FilterPage):
@@ -307,7 +306,7 @@ class MultipathPage(FilterPage):
             return False
 
         obj = DiskStoreRow(*model[itr])
-        device = self.storage.devicetree.getDeviceByName(obj.name, hidden=True)
+        device = self.storage.devicetree.get_device_by_name(obj.name, hidden=True)
         return self.ismember(device) and self._filter_func(device)
 
 class OtherPage(FilterPage):
@@ -338,7 +337,7 @@ class OtherPage(FilterPage):
             paths = [d.name for d in disk.parents]
             selected = disk.name in selectedNames
 
-            if hasattr(disk, "node"):
+            if hasattr(disk, "node") and disk.node is not None:
                 port = str(disk.node.port)
                 lun = str(disk.node.tpgt)
             else:
@@ -381,7 +380,7 @@ class OtherPage(FilterPage):
         elif filterBy == self.SEARCH_TYPE_INTERCONNECT:
             return device.bus == self._icCombo.get_active_text()
         elif filterBy == self.SEARCH_TYPE_ID:
-            for link in device.deviceLinks:
+            for link in device.device_links:
                 if "by-path" in link:
                     return self._idEntry.get_text().strip() in link
 
@@ -389,7 +388,7 @@ class OtherPage(FilterPage):
 
     def visible_func(self, model, itr, *args):
         obj = DiskStoreRow(*model[itr])
-        device = self.storage.devicetree.getDeviceByName(obj.name, hidden=True)
+        device = self.storage.devicetree.get_device_by_name(obj.name, hidden=True)
         return self.ismember(device) and self._filter_func(device)
 
 class ZPage(FilterPage):
@@ -409,7 +408,7 @@ class ZPage(FilterPage):
         self._lunEntry = self.builder.get_object("zLUNEntry")
         self._combo = self.builder.get_object("zTypeCombo")
 
-        self._isS390 = arch.isS390()
+        self._isS390 = arch.is_s390()
 
     def clear(self):
         self._lunEntry.set_text("")
@@ -470,7 +469,7 @@ class ZPage(FilterPage):
 
     def visible_func(self, model, itr, *args):
         obj = DiskStoreRow(*model[itr])
-        device = self.storage.devicetree.getDeviceByName(obj.name, hidden=True)
+        device = self.storage.devicetree.get_device_by_name(obj.name, hidden=True)
         return self.ismember(device) and self._filter_func(device)
 
 class FilterSpoke(NormalSpoke):
@@ -514,6 +513,12 @@ class FilterSpoke(NormalSpoke):
         self.data.ignoredisk.onlyuse = onlyuse
         self.data.clearpart.drives = self.selected_disks[:]
 
+        # some disks may have been added in this spoke, we need to recreate the
+        # snapshot of on-disk storage
+        if on_disk_storage.created:
+            on_disk_storage.dispose_snapshot()
+        on_disk_storage.create_snapshot(self.storage)
+
     def initialize(self):
         NormalSpoke.initialize(self)
 
@@ -524,7 +529,7 @@ class FilterSpoke(NormalSpoke):
 
         self._notebook = self.builder.get_object("advancedNotebook")
 
-        if not arch.isS390():
+        if not arch.is_s390():
             self._notebook.remove_page(-1)
             self.builder.get_object("addZFCPButton").destroy()
             self.builder.get_object("addDASDButton").destroy()
@@ -607,7 +612,7 @@ class FilterSpoke(NormalSpoke):
         # Include any disks selected in the initial storage spoke, plus any
         # selected in this filter UI.
         disks = [disk for disk in self.disks if disk.name in self.selected_disks]
-        free_space = self.storage.getFreeSpace(disks=disks)
+        free_space = self.storage.get_free_space(disks=disks)
 
         with self.main_window.enlightbox(dialog.window):
             dialog.refresh(disks, free_space, showRemove=False, setBoot=False)
@@ -646,7 +651,7 @@ class FilterSpoke(NormalSpoke):
 
     @timed_action(delay=50, threshold=100)
     def on_refresh_clicked(self, widget, *args):
-        self.storage.devicetree.populate()
+        try_populate_devicetree(self.storage.devicetree)
         self.refresh()
 
     def on_add_iscsi_clicked(self, widget, *args):
@@ -676,7 +681,11 @@ class FilterSpoke(NormalSpoke):
 
         with self.main_window.enlightbox(dialog.window):
             dialog.refresh()
-            dialog.run()
+            rc = dialog.run()
+
+        if rc == 1:
+            self.skipTo = "StorageSpoke"
+            self.on_back_clicked(rc)
 
         # We now need to refresh so any new disks picked up by adding advanced
         # storage are displayed in the UI.

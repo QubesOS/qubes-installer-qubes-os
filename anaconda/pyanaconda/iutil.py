@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Erik Troan <ewt@redhat.com>
-#
 
 import glob
 import os
@@ -46,7 +44,7 @@ gi.require_version("GLib", "2.0")
 from gi.repository import GLib
 
 from pyanaconda.flags import flags
-from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW
+from pyanaconda.constants import DRACUT_SHUTDOWN_EJECT, TRANSLATIONS_UPDATE_DIR, UNSUPPORTED_HW, IPMI_ABORTED
 from pyanaconda.constants import SCREENSHOTS_DIRECTORY, SCREENSHOTS_TARGET_DIRECTORY
 from pyanaconda.regexes import URL_PARSE
 
@@ -57,6 +55,8 @@ log = logging.getLogger("anaconda")
 program_log = logging.getLogger("program")
 
 from pyanaconda.anaconda_log import program_log_lock
+
+from pykickstart.constants import KS_SCRIPT_ONERROR
 
 _child_env = {}
 
@@ -279,30 +279,26 @@ def _run_program(argv, root='/', stdin=None, stdout=None, env_prune=None, log_ou
                 env_prune=env_prune)
 
         (output_string, err_string) = proc.communicate()
-        if output_string:
-            if binary_output:
-                output_lines = [output_string]
-            else:
-                output_string = output_string.decode("utf-8")
-                if output_string[-1] != "\n":
-                    output_string = output_string + "\n"
-                output_lines = output_string.splitlines(True)
+        if not binary_output:
+            output_string = output_string.decode("utf-8")
+            if output_string and output_string[-1] != "\n":
+                output_string = output_string + "\n"
 
-            if log_output:
-                with program_log_lock:
-                    if binary_output:
-                        # try to decode as utf-8 and replace all undecodable data by
-                        # "safe" printable representations when logging binary output
-                        decoded_output_lines = output_lines.decode("utf-8", "replace")
-                    else:
-                        # output_lines should already be a Unicode string
-                        decoded_output_lines = output_lines
+        if log_output:
+            with program_log_lock:
+                if binary_output:
+                    # try to decode as utf-8 and replace all undecodable data by
+                    # "safe" printable representations when logging binary output
+                    decoded_output_lines = output_string.decode("utf-8", "replace")
+                else:
+                    # output_string should already be a Unicode string
+                    decoded_output_lines = output_string.splitlines(True)
 
-                    for line in decoded_output_lines:
-                        program_log.info(line.strip())
+                for line in decoded_output_lines:
+                    program_log.info(line.strip())
 
-            if stdout:
-                stdout.write(output_string)
+        if stdout:
+            stdout.write(output_string)
 
         # If stderr was filtered, log it separately
         if filter_stderr and err_string and log_output:
@@ -338,6 +334,7 @@ def execInSysroot(command, argv, stdin=None):
 def execWithRedirect(command, argv, stdin=None, stdout=None,
                      root='/', env_prune=None, log_output=True, binary_output=False):
     """ Run an external program and redirect the output to a file.
+
         :param command: The command to run
         :param argv: The argument list
         :param stdin: The file object to read stdin from.
@@ -359,6 +356,7 @@ def execWithRedirect(command, argv, stdin=None, stdout=None,
 
 def execWithCapture(command, argv, stdin=None, root='/', log_output=True, filter_stderr=False):
     """ Run an external program and capture standard out and err.
+
         :param command: The command to run
         :param argv: The argument list
         :param stdin: The file object to read stdin from.
@@ -379,6 +377,7 @@ def execWithCapture(command, argv, stdin=None, root='/', log_output=True, filter
 def execWithCaptureBinary(command, argv, stdin=None, root='/', log_output=False, filter_stderr=False):
     """ Run an external program and capture standard out and err as binary data.
         The binary data output is not logged by default but logging can be enabled.
+
         :param command: The command to run
         :param argv: The argument list
         :param stdin: The file object to read stdin from.
@@ -517,7 +516,7 @@ def _sigchld_handler(num=None, frame=None):
 
     for child_pid in _forever_pids:
         try:
-            pid_result, status = eintr_retry_call(os.waitpid, child_pid, os.WNOHANG)
+            pid_result, status = os.waitpid(child_pid, os.WNOHANG)
         except ChildProcessError:
             continue
 
@@ -626,6 +625,7 @@ def unwatchAllProcesses():
 
 def getDirSize(directory):
     """ Get the size of a directory and all its subdirectories.
+
     :param dir: The name of the directory to find the size of.
     :return: The size of the directory in kilobytes.
     """
@@ -665,9 +665,10 @@ def getDirSize(directory):
 
 ## Create a directory path.  Don't fail if the directory already exists.
 def mkdirChain(directory):
-    """
-    :param dir: The directory path to create
+    """ Make a directory and all of its parents. Don't fail if part or
+        of it already exists.
 
+        :param str directory: The directory path to create
     """
 
     os.makedirs(directory, 0o755, exist_ok=True)
@@ -748,7 +749,7 @@ def setup_translations():
         add_po_path(TRANSLATIONS_UPDATE_DIR)
     gettext.textdomain("anaconda")
 
-def _run_systemctl(command, service):
+def _run_systemctl(command, service, root="/"):
     """
     Runs 'systemctl command service.service'
 
@@ -756,8 +757,11 @@ def _run_systemctl(command, service):
 
     """
 
-    service_name = service + ".service"
-    ret = execWithRedirect("systemctl", [command, service_name])
+    args = [command, service]
+    if root != "/":
+        args += ["--root", root]
+
+    ret = execWithRedirect("systemctl", args)
 
     return ret
 
@@ -774,6 +778,22 @@ def service_running(service):
     ret = _run_systemctl("status", service)
 
     return ret == 0
+
+def enable_service(service):
+    """ Enable a systemd service in the sysroot """
+    ret = _run_systemctl("enable", service, root=getSysroot())
+
+    if ret != 0:
+        raise ValueError("Error enabling service %s: %s" % (service, ret))
+
+def disable_service(service):
+    """ Disable a systemd service in the sysroot """
+    # we ignore the error so we can disable services even if they don't
+    # exist, because that's effectively disabled
+    ret = _run_systemctl("disable", service, root=getSysroot())
+
+    if ret != 0:
+        log.warning("Disabling %s failed. It probably doesn't exist", service)
 
 def dracut_eject(device):
     """
@@ -1055,11 +1075,11 @@ def chown_dir_tree(root, uid, gid, from_uid_only=None, from_gid_only=None):
             return
 
         # UID and GID matching or not required
-        eintr_retry_call(os.chown, path, uid, gid)
+        os.chown(path, uid, gid)
 
     if not from_uid_only and not from_gid_only:
         # the easy way
-        dir_tree_map(root, lambda path: eintr_retry_call(os.chown, path, uid, gid))
+        dir_tree_map(root, lambda path: os.chown(path, uid, gid))
     else:
         # conditional chown
         dir_tree_map(root, lambda path: conditional_chown(path, uid, gid,
@@ -1220,6 +1240,20 @@ class DataHolder(dict):
     def copy(self):
         return DataHolder(**dict.copy(self))
 
+def xprogressive_delay():
+    """ A delay generator, the delay starts short and gets longer
+        as the internal counter increases.
+        For example for 10 retries, the delay will increases from
+        0.5 to 256 seconds.
+
+        :param int retry_number: retry counter
+        :returns float: time to wait in seconds
+    """
+    counter = 1
+    while True:
+        yield 0.25*(2**counter)
+        counter += 1
+
 def get_platform_groupid():
     """ Return a platform group id string
 
@@ -1271,33 +1305,25 @@ def ipmi_report(event):
     # Event data 1 - the event code passed in
     # Event data 2 & 3 - always 0x0 for us
     event_string = "0x4 0x1F 0x0 0x6f %#x 0x0 0x0\n" % event
-    eintr_retry_call(os.write, fd, event_string.encode("utf-8"))
-    eintr_ignore(os.close, fd)
+    os.write(fd, event_string.encode("utf-8"))
+    os.close(fd)
 
-    execWithCapture("ipmitool", ["sel", "add", path])
+    execWithCapture("ipmitool", ["event", "file", path])
 
     os.remove(path)
 
-# Copied from python's subprocess.py
-def eintr_retry_call(func, *args, **kwargs):
-    """Retry an interruptible system call if interrupted."""
-    while True:
-        try:
-            return func(*args, **kwargs)
-        except InterruptedError:
-            continue
+def ipmi_abort(scripts=None):
+    ipmi_report(IPMI_ABORTED)
+    runOnErrorScripts(scripts)
 
-def eintr_ignore(func, *args, **kwargs):
-    """Call a function and ignore EINTR.
+def runOnErrorScripts(scripts):
+    if not scripts:
+        return
 
-       This is useful for calls to close() and dup2(), which can return EINTR
-       but which should *not* be retried, since by the time they return the
-       file descriptor is already closed.
-    """
-    try:
-        return func(*args, **kwargs)
-    except InterruptedError:
-        pass
+    log.info("Running kickstart %%onerror script(s)")
+    for script in filter(lambda s: s.type == KS_SCRIPT_ONERROR, scripts):
+        script.run("/")
+    log.info("All kickstart %%onerror script(s) have been run")
 
 def parent_dir(directory):
     """Return the parent's path"""
@@ -1309,17 +1335,6 @@ def requests_session():
     session.mount("file://", FileAdapter())
     session.mount("ftp://", FTPAdapter())
     return session
-
-_open = open
-def open(*args, **kwargs):  # pylint: disable=redefined-builtin
-    """Open a file, and retry on EINTR.
-
-       The arguments are the same as those to python's builtin open.
-
-       This is equivalent to eintr_retry_call(open, ...).  Some other
-       high-level languages handle this for you, like C's fopen.
-    """
-    return eintr_retry_call(_open, *args, **kwargs)
 
 def open_with_perm(path, mode='r', perm=0o777, **kwargs):
     """Open a file with the given permission bits.
@@ -1333,7 +1348,7 @@ def open_with_perm(path, mode='r', perm=0o777, **kwargs):
        :param int perm: What permission bits to use if creating a new file
     """
     def _opener(path, open_flags):
-        return eintr_retry_call(os.open, path, open_flags, perm)
+        return os.open(path, open_flags, perm)
 
     return open(path, mode, opener=_opener, **kwargs)
 
@@ -1372,3 +1387,11 @@ def save_screenshots():
 
     except OSError:
         log.exception("saving screenshots to installed system failed")
+
+def touch(file_path):
+    """Create an empty file."""
+    # this misrrors how touch works - it does not
+    # throw an error if the given path exists,
+    # even when the path points to dirrectory
+    if not os.path.exists(file_path):
+        os.mknod(file_path)

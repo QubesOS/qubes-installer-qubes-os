@@ -15,8 +15,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Vratislav Podzimek <vpodzime@redhat.com>
-#
 
 """
 Module facilitating the work with NTP servers and NTP daemon's configuration
@@ -31,7 +29,6 @@ import ntplib
 import socket
 
 from pyanaconda import isys
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.constants import THREAD_SYNC_TIME_BASENAME
 

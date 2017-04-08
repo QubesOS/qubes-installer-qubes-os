@@ -15,8 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author(s): Chris Lumens <clumens@redhat.com>
+
+from pyanaconda.i18n import _
 
 import logging
 log = logging.getLogger("anaconda")
@@ -47,10 +47,10 @@ progressQ.addMessage("quit", 1)             # exit_code
 def progress_report(message):
     progress_message(message)
     yield
-    progress_step(message)
+    progress_step("%s -- DONE" % message)
 
 def progress_message(message):
-    progressQ.send_message(message)
+    progressQ.send_message(_(message))
     log.info(message)
 
 def progress_step(message):

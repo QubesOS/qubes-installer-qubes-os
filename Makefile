@@ -58,10 +58,10 @@ iso-installer: iso-prepare
 	mkdir -p work
 	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(INSTALLER_KICKSTART) && popd
 	# Move result files to known-named directories
-	mkdir -p build/ISO/qubes-x86_64/iso build/work
+	mkdir -p build/ISO/qubes-x86_64/iso
 	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD*.iso build/ISO/qubes-x86_64/iso/
-	rm -rf build/work/$(ISO_VERSION)
-	mv work/$(ISO_VERSION)/x86_64/os build/work/$(ISO_VERSION)
+	rm -rf build/work
+	mv work build/work
 	chown --reference=Makefile -R build yum
 	rm -rf work
 

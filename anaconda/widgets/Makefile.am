@@ -16,12 +16,10 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src python glade doc data
+SUBDIRS = src python glade doc
 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 config.guess config.h.in config.sub \
 	configure depcomp install-sh ltmain.sh missing py-compile \

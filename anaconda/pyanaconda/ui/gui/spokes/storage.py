@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): David Lehman <dlehman@redhat.com>
-#                    Chris Lumens <clumens@redhat.com>
-#
 
 """
     TODO:
@@ -42,7 +39,7 @@
 import gi
 gi.require_version("Gdk", "3.0")
 gi.require_version("GLib", "2.0")
-gi.require_version("AnacondaWidgets", "3.0")
+gi.require_version("AnacondaWidgets", "3.3")
 gi.require_version("BlockDev", "1.0")
 
 from gi.repository import Gdk, GLib, AnacondaWidgets
@@ -57,6 +54,7 @@ from pyanaconda.ui.gui.spokes.lib.passphrase import PassphraseDialog
 from pyanaconda.ui.gui.spokes.lib.detailederror import DetailedErrorDialog
 from pyanaconda.ui.gui.spokes.lib.resize import ResizeDialog
 from pyanaconda.ui.gui.spokes.lib.dasdfmt import DasdFormatDialog
+from pyanaconda.ui.gui.spokes.lib.refresh import RefreshDialog
 from pyanaconda.ui.categories.system import SystemCategory
 from pyanaconda.ui.gui.utils import escape_markup, gtk_action_nowait, ignoreEscape
 from pyanaconda.ui.helpers import StorageChecker
@@ -65,9 +63,10 @@ from pyanaconda.kickstart import doKickstartStorage, refreshAutoSwapSize, resetC
 from blivet import arch
 from blivet import autopart
 from blivet.size import Size
-from blivet.devices import MultipathDevice, ZFCPDiskDevice
+from blivet.devices import MultipathDevice, ZFCPDiskDevice, iScsiDiskDevice
 from blivet.errors import StorageError
 from blivet.platform import platform
+from blivet.iscsi import iscsi
 from pyanaconda.threads import threadMgr, AnacondaThread
 from pyanaconda.product import productName
 from pyanaconda.flags import flags
@@ -77,7 +76,7 @@ from pyanaconda.bootloader import BootLoaderError
 from pyanaconda.storage_utils import on_disk_storage
 
 from pykickstart.constants import CLEARPART_TYPE_NONE, AUTOPART_TYPE_LVM
-from pykickstart.errors import KickstartValueError
+from pykickstart.errors import KickstartParseError
 
 import sys
 
@@ -265,7 +264,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.encrypted = False
         self.passphrase = ""
         self.selected_disks = self.data.ignoredisk.onlyuse[:]
-        self._last_selected_disks = None
+        self._last_selected_disks = []
         self._back_clicked = False
         self.autopart_missing_passphrase = False
         self.disks_errors = []
@@ -283,7 +282,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         self.autoPartType = None
         self.clearPartType = CLEARPART_TYPE_NONE
 
-        if self.data.zerombr.zerombr and arch.isS390():
+        if self.data.zerombr.zerombr and arch.is_s390():
             # run dasdfmt on any unformatted DASDs automatically
             threadMgr.add(AnacondaThread(name=constants.THREAD_DASDFMT,
                             target=self.run_dasdfmt))
@@ -319,15 +318,15 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             self.data.clearpart.type = self.clearPartType
 
         self.storage.config.update(self.data)
-        self.storage.autoPartType = self.data.autopart.type
-        self.storage.encryptedAutoPart = self.data.autopart.encrypted
-        self.storage.encryptionPassphrase = self.data.autopart.passphrase
+        self.storage.autopart_type = self.data.autopart.type
+        self.storage.encrypted_autopart = self.data.autopart.encrypted
+        self.storage.encryption_passphrase = self.data.autopart.passphrase
 
         # If autopart is selected we want to remove whatever has been
         # created/scheduled to make room for autopart.
         # If custom is selected, we want to leave alone any storage layout the
         # user may have set up before now.
-        self.storage.config.clearNonExistent = self.data.autopart.autopart
+        self.storage.config.clear_non_existent = self.data.autopart.autopart
 
     @gtk_action_nowait
     def execute(self):
@@ -336,6 +335,36 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # Yes, this means there's a thread spawning another thread.  Sorry.
         threadMgr.add(AnacondaThread(name=constants.THREAD_EXECUTE_STORAGE,
                                      target=self._doExecute))
+
+        # Register iSCSI to kickstart data
+        iscsi_devices = []
+        # Find all selected disks and add all iscsi disks to iscsi_devices list
+        for d in [d for d in getDisks(self.storage.devicetree) if d.name in self.selected_disks]:
+            # Get parents of a multipath devices
+            if isinstance(d, MultipathDevice):
+                for parent_dev in d.parents:
+                    if (isinstance(parent_dev, iScsiDiskDevice)
+                        and not parent_dev.ibft
+                        and not parent_dev.offload):
+                        iscsi_devices.append(parent_dev)
+            # Add no-ibft iScsiDiskDevice. IBFT disks are added automatically so there is
+            # no need to have them in KS.
+            elif isinstance(d, iScsiDiskDevice) and not d.ibft and not d.offload:
+                iscsi_devices.append(d)
+
+        if iscsi_devices:
+            self.data.iscsiname.iscsiname = iscsi.initiator
+            # Remove the old iscsi data information and generate new one
+            self.data.iscsi.iscsi = []
+            for device in iscsi_devices:
+                iscsi_data = self._create_iscsi_data(device)
+                for saved_iscsi in self.data.iscsi.iscsi:
+                    if (iscsi_data.ipaddr == saved_iscsi.ipaddr and
+                        iscsi_data.target == saved_iscsi.target and
+                        iscsi_data.port == saved_iscsi.port):
+                        break
+                else:
+                    self.data.iscsi.iscsi.append(iscsi_data)
 
     def _doExecute(self):
         self._ready = False
@@ -351,7 +380,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             return
         try:
             doKickstartStorage(self.storage, self.data, self.instclass)
-        except (StorageError, KickstartValueError) as e:
+        except (StorageError, KickstartParseError) as e:
             log.error("storage configuration failed: %s", e)
             StorageChecker.errors = str(e).split("\n")
             hubQ.send_message(self.__class__.__name__, _("Failed to save storage configuration..."))
@@ -377,11 +406,32 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             self._ready = True
             hubQ.send_ready(self.__class__.__name__, True)
 
+    def _create_iscsi_data(self, device):
+        from pyanaconda.kickstart import AnacondaKSHandler
+        handler = AnacondaKSHandler()
+        # pylint: disable=E1101
+        iscsi_data = handler.IscsiData()
+        dev_node = device.node
+        iscsi_data.ipaddr = dev_node.address
+        iscsi_data.target = dev_node.name
+        iscsi_data.port = dev_node.port
+        # Bind interface to target
+        if iscsi.ifaces:
+            iscsi_data.iface = iscsi.ifaces[dev_node.iface]
+
+        if dev_node.username and dev_node.password:
+            iscsi_data.user = dev_node.username
+            iscsi_data.password = dev_node.password
+        if dev_node.r_username and dev_node.r_password:
+            iscsi_data.user_in = dev_node.r_username
+            iscsi_data.password_in = dev_node.r_password
+        return iscsi_data
+
     @property
     def completed(self):
         retval = (threadMgr.get(constants.THREAD_EXECUTE_STORAGE) is None and
                   threadMgr.get(constants.THREAD_CHECK_STORAGE) is None and
-                  self.storage.rootDevice is not None and
+                  self.storage.root_device is not None and
                   not self.errors)
         return retval
 
@@ -400,7 +450,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         """ A short string describing the current status of storage setup. """
         msg = _("No disks selected")
 
-        if flags.automatedInstall and not self.storage.rootDevice:
+        if flags.automatedInstall and not self.storage.root_device:
             msg = _("Kickstart insufficient")
         elif threadMgr.get(constants.THREAD_DASDFMT):
             msg = _("Formatting DASDs")
@@ -529,7 +579,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         for name in self.data.ignoredisk.onlyuse:
             if name not in disk_names:
                 continue
-            obj = self.storage.devicetree.getDeviceByName(name, hidden=True)
+            obj = self.storage.devicetree.get_device_by_name(name, hidden=True)
             # since zfcp devices may be detected as local disks when added
             # manually, specifically check the disk type here to make sure
             # we won't accidentally bypass adding zfcp devices to the disk
@@ -552,10 +602,16 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
         self._update_summary()
 
+        self._check_problems()
+
+    def _check_problems(self):
         if self.errors:
             self.set_warning(_("Error checking storage configuration.  <a href=\"\">Click for details.</a>"))
+            return True
         elif self.warnings:
             self.set_warning(_("Warning checking storage configuration.  <a href=\"\">Click for details.</a>"))
+            return True
+        return False
 
     def initialize(self):
         NormalSpoke.initialize(self)
@@ -601,7 +657,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         else:
             description = disk.description
 
-        free = self.storage.getFreeSpace(disks=[disk])[disk.name][0]
+        free = self.storage.get_free_space(disks=[disk])[disk.name][0]
 
         overview = AnacondaWidgets.DiskOverview(description,
                                                 kind,
@@ -643,7 +699,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         free = Size(0)
 
         # pass in our disk list so hidden disks' free space is available
-        free_space = self.storage.getFreeSpace(disks=self.disks)
+        free_space = self.storage.get_free_space(disks=self.disks)
         selected = [d for d in self.disks if d.name in self.selected_disks]
 
         for disk in selected:
@@ -673,7 +729,9 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         if len(self.disks) == 0:
             self.set_warning(_("No disks detected.  Please shut down the computer, connect at least one disk, and restart to complete installation."))
         elif not anySelected:
-            self.set_warning(_("No disks selected; please select at least one disk to install to."))
+            # There may be an underlying reason that no disks were selected, give them priority.
+            if not self._check_problems():
+                self.set_warning(_("No disks selected; please select at least one disk to install to."))
         else:
             self.clear_info()
 
@@ -699,7 +757,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # actions on storage devices
         threadMgr.wait(constants.THREAD_STORAGE)
 
-        to_format = self.storage.devicetree.make_unformatted_dasd_list(d for d in getDisks(self.storage.devicetree))
+        to_format = (d for d in getDisks(self.storage.devicetree)
+                     if d.type == "dasd" and blockdev.s390.dasd_needs_format(d.busid))
         if not to_format:
             # nothing to do here; bail
             return
@@ -717,7 +776,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
     def on_summary_clicked(self, button):
         # show the selected disks dialog
         # pass in our disk list so hidden disks' free space is available
-        free_space = self.storage.getFreeSpace(disks=self.disks)
+        free_space = self.storage.get_free_space(disks=self.disks)
         dialog = SelectedDisksDialog(self.data,)
         dialog.refresh([d for d in self.disks if d.name in self.selected_disks],
                        free_space)
@@ -757,7 +816,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
         for device in self.storage.devices:
             if device.format.type == "luks" and not device.format.exists:
-                if not device.format.hasKey:
+                if not device.format.has_key:
                     device.format.passphrase = self.passphrase
 
         return True
@@ -767,7 +826,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             # check if it's been removed in a previous iteration
             if not partition.exists and \
                partition in self.storage.partitions:
-                self.storage.recursiveRemove(partition)
+                self.storage.recursive_remove(partition)
 
     def _hide_disks(self):
         for disk in self.disks:
@@ -776,15 +835,15 @@ class StorageSpoke(NormalSpoke, StorageChecker):
                 self.storage.devicetree.hide(disk)
 
     def _unhide_disks(self):
-        if self._last_selected_disks:
-            for disk in self.disks:
-                if disk.name not in self.selected_disks and \
-                   disk.name not in self._last_selected_disks:
-                    self.storage.devicetree.unhide(disk)
+        for disk in self.disks:
+            if disk.name not in self.selected_disks and \
+               disk.name not in self._last_selected_disks:
+                self.storage.devicetree.unhide(disk)
 
     def _check_dasd_formats(self):
         rc = DASD_FORMAT_NO_CHANGE
-        dasds = self.storage.devicetree.make_unformatted_dasd_list(self.storage.devicetree.dasd)
+        dasds = [d for d in self.storage.devicetree.devices
+                 if d.type == "dasd" and blockdev.s390.dasd_needs_format(d.busid)]
         if len(dasds) > 0:
             # We want to apply current selection before running dasdfmt to
             # prevent this information from being lost afterward
@@ -799,28 +858,28 @@ class StorageSpoke(NormalSpoke, StorageChecker):
         # Figure out if the existing disk labels will work on this platform
         # you need to have at least one of the platform's labels in order for
         # any of the free space to be useful.
-        disk_labels = set(disk.format.labelType for disk in disks
-                              if hasattr(disk.format, "labelType"))
-        platform_labels = set(platform.diskLabelTypes)
+        disk_labels = set(disk.format.label_type for disk in disks
+                              if hasattr(disk.format, "label_type"))
+        platform_labels = set(platform.disklabel_types)
         if disk_labels and platform_labels.isdisjoint(disk_labels):
             disk_free = 0
             fs_free = 0
             log.debug("Need disklabel: %s have: %s", ", ".join(platform_labels),
                                                      ", ".join(disk_labels))
         else:
-            free_space = self.storage.getFreeSpace(disks=disks,
-                                                   clearPartType=CLEARPART_TYPE_NONE)
+            free_space = self.storage.get_free_space(disks=disks,
+                                                     clear_part_type=CLEARPART_TYPE_NONE)
             disk_free = sum(f[0] for f in free_space.values())
             fs_free = sum(f[1] for f in free_space.values())
 
         disks_size = sum((d.size for d in disks), Size(0))
         required_space = self.payload.spaceRequired
-        auto_swap = sum((r.size for r in self.storage.autoPartitionRequests
+        auto_swap = sum((r.size for r in self.storage.autopart_requests
                                 if r.fstype == "swap"), Size(0))
         if self.autopart and auto_swap == Size(0):
             # autopartitioning requested, but not applied yet (=> no auto swap
             # requests), ask user for enough space to fit in the suggested swap
-            auto_swap = autopart.swapSuggestion()
+            auto_swap = autopart.swap_suggestion()
 
         log.debug("disk free: %s  fs free: %s  sw needs: %s  auto swap: %s",
                   disk_free, fs_free, required_space, auto_swap)
@@ -912,10 +971,11 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             # The disk selection has to make sense before we can proceed.
             self.set_error(_("There was a problem with your disk selection. "
                              "Click here for details."))
+            self._unhide_disks()
             self._back_clicked = False
             return
 
-        if arch.isS390():
+        if arch.is_s390():
             # check for unformatted DASDs and launch dasdfmt if any discovered
             rc = self._check_dasd_formats()
             if rc == DASD_FORMAT_NO_CHANGE:
@@ -1006,6 +1066,10 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             self._reclaim.set_tooltip_text(_("You'll be able to make space available during custom partitioning."))
 
     def on_specialized_clicked(self, button):
+        # there will be changes in disk selection, revert storage to an early snapshot (if it exists)
+        if on_disk_storage.created:
+            on_disk_storage.reset_to_snapshot(self.storage)
+
         # Don't want to run apply or execute in this case, since we have to
         # collect some more disks first.  The user will be back to this spoke.
         self.applyOnSkip = False
@@ -1036,7 +1100,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
             if rc == 0:
                 # Quit.
-                iutil.ipmi_report(constants.IPMI_ABORTED)
+                iutil.ipmi_abort(scripts=self.data.scripts)
                 sys.exit(0)
 
         elif self.errors:
@@ -1057,7 +1121,7 @@ class StorageSpoke(NormalSpoke, StorageChecker):
 
             if rc == 0:
                 # Quit.
-                iutil.ipmi_report(constants.IPMI_ABORTED)
+                iutil.ipmi_abort(scripts=self.data.scripts)
                 sys.exit(0)
         elif self.warnings:
             label = _("The following warnings were encountered when checking your storage "
@@ -1092,3 +1156,34 @@ class StorageSpoke(NormalSpoke, StorageChecker):
             overview.set_chosen(True)
 
         self._update_disk_list()
+        self._update_summary()
+
+    # This callback is for the button that has anaconda go back and rescan the
+    # disks to pick up whatever changes the user made outside our control.
+    def on_refresh_clicked(self, *args):
+        dialog = RefreshDialog(self.data, self.storage)
+        ignoreEscape(dialog.window)
+        with self.main_window.enlightbox(dialog.window):
+            rc = dialog.run()
+            dialog.window.destroy()
+
+        if rc == 1:
+            # User hit OK on the dialog, indicating they stayed on the dialog
+            # until rescanning completed.
+            on_disk_storage.dispose_snapshot()
+            self.refresh()
+            return
+        elif rc != 2:
+            # User either hit cancel on the dialog or closed it via escape, so
+            # there was no rescanning done.
+            # NOTE: rc == 2 means the user clicked on the link that takes them
+            # back to the hub.
+            return
+
+        on_disk_storage.dispose_snapshot()
+
+        # Can't use this spoke's on_back_clicked method as that will try to
+        # save the right hand side, which is no longer valid.  The user must
+        # go back and select their disks all over again since whatever they
+        # did on the shell could have changed what disks are available.
+        NormalSpoke.on_back_clicked(self, None)

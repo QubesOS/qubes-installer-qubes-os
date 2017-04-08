@@ -16,11 +16,9 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#                    Martin Sivak <msivak@redhat.com>
-#
 
 import time
+import threading
 
 import logging
 log = logging.getLogger("anaconda")
@@ -44,7 +42,7 @@ from pyanaconda.ui.gui import GUIObject
 from pyanaconda.ui.gui.helpers import GUIDialogInputCheckHandler, GUISpokeInputCheckHandler
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.categories.software import SoftwareCategory
-from pyanaconda.ui.gui.utils import blockedHandler, fire_gtk_action
+from pyanaconda.ui.gui.utils import blockedHandler, fire_gtk_action, find_first_child
 from pyanaconda.iutil import ProxyString, ProxyStringError, cmp_obj_attrs
 from pyanaconda.ui.gui.utils import gtk_call_once, really_hide, really_show, fancy_set_sensitive
 from pyanaconda.threads import threadMgr, AnacondaThread
@@ -153,24 +151,6 @@ class ProxyDialog(GUIObject, GUIDialogInputCheckHandler):
 
     def on_proxyPasswordEntry_changed(self, entry, user_data=None):
         self._proxyValidate.update_check_status()
-
-    def on_proxy_ok_clicked(self, *args):
-        if self._proxyCheck.get_active():
-            url = self._proxyURLEntry.get_text()
-
-            if self._authCheck.get_active():
-                username = self._proxyUsernameEntry.get_text()
-                password = self._proxyPasswordEntry.get_text()
-            else:
-                username = None
-                password = None
-
-            proxy = ProxyString(url=url, username=username, password=password)
-            self.proxyUrl = proxy.url
-        else:
-            self.proxyUrl = ""
-
-        self.window.destroy()
 
     def on_proxy_enable_toggled(self, button, *args):
         self._proxyInfoBox.set_sensitive(button.get_active())
@@ -329,6 +309,13 @@ class IsoChooser(GUIObject):
         GUIObject.__init__(self, data)
         self._chooser = self.builder.get_object("isoChooserDialog")
 
+        # Hide the places sidebar, since it makes no sense in this context
+        # This is discouraged, but the alternative suggested is to reinvent the
+        # wheel. See also https://bugzilla.gnome.org/show_bug.cgi?id=751730
+        places_sidebar = find_first_child(self._chooser, lambda x: isinstance(x, Gtk.PlacesSidebar))
+        if places_sidebar:
+            really_hide(places_sidebar)
+
     # pylint: disable=arguments-differ
     def refresh(self, currentFile=""):
         GUIObject.refresh(self)
@@ -351,7 +338,7 @@ class IsoChooser(GUIObject):
 
         # If any directory was chosen, return that.  Otherwise, return None.
         rc = self.window.run()
-        if rc == 1:
+        if rc == Gtk.ResponseType.OK:
             f = self._chooser.get_filename()
             if f:
                 retval = f.replace(constants.ISO_DIR, "")
@@ -398,10 +385,12 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         self._error_msg = ""
         self._proxyUrl = ""
         self._proxyChange = False
+        self._updatesChange = False
         self._cdrom = None
         self._repo_counter = id_generator()
 
         self._repoChecks = {}
+        self._repoStore_lock = threading.Lock()
 
     def apply(self):
         # If askmethod was provided on the command line, entering the source
@@ -446,19 +435,19 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
             # The / gets stripped off by payload.ISOImage
             self.data.method.dir = "/" + self._currentIsoFile
             if (old_source.method == "harddrive" and
-                self.storage.devicetree.resolveDevice(old_source.partition) == part and
+                self.storage.devicetree.resolve_device(old_source.partition) == part and
                 old_source.dir in [self._currentIsoFile, "/" + self._currentIsoFile]):
                 return False
 
             # Make sure anaconda doesn't touch this device.
             part.protected = True
-            self.storage.config.protectedDevSpecs.append(part.name)
+            self.storage.config.protected_dev_specs.append(part.name)
         elif self._mirror_active():
             # this preserves the url for later editing
             self.data.method.method = None
             self.data.method.proxy = self._proxyUrl
             if not old_source.method and self.payload.baseRepo and \
-               not self._proxyChange:
+               not self._proxyChange and not self._updatesChange:
                 return False
         elif self._http_active() or self._ftp_active():
             url = self._urlEntry.get_text().strip()
@@ -521,18 +510,21 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         # If the user moved from an HDISO method to some other, we need to
         # clear the protected bit on that device.
         if old_source.method == "harddrive" and old_source.partition:
-            self._currentIsoFile = None
-            self._isoChooserButton.set_label(self._origIsoChooserButton)
-            self._isoChooserButton.set_use_underline(True)
+            if not self._isoButton.get_active():
+                # Only clear this if iso isn't selected
+                self._currentIsoFile = None
+                self._isoChooserButton.set_label(self._origIsoChooserButton)
+                self._isoChooserButton.set_use_underline(True)
 
-            if old_source.partition in self.storage.config.protectedDevSpecs:
-                self.storage.config.protectedDevSpecs.remove(old_source.partition)
+            if old_source.partition in self.storage.config.protected_dev_specs:
+                self.storage.config.protected_dev_specs.remove(old_source.partition)
 
-            dev = self.storage.devicetree.getDeviceByName(old_source.partition)
+            dev = self.storage.devicetree.get_device_by_name(old_source.partition)
             if dev:
                 dev.protected = False
 
         self._proxyChange = False
+        self._updatesChange = False
 
         return True
 
@@ -790,7 +782,7 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         idx = 0
 
         if self.data.method.method == "harddrive":
-            methodDev = self.storage.devicetree.resolveDevice(self.data.method.partition)
+            methodDev = self.storage.devicetree.resolve_device(self.data.method.partition)
 
         for dev in potentialHdisoSources(self.storage.devicetree):
             # path model size format type uuid of format
@@ -825,12 +817,6 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         # We default to the mirror list, and then if the method tells us
         # something different later, we can change it.
         self._protocolComboBox.set_active_id(PROTOCOL_MIRROR)
-        self._urlEntry.set_sensitive(False)
-        self._updateURLEntryCheck()
-
-        # Set up the default state of UI elements.
-        self._networkButton.set_sensitive(True)
-        self._networkBox.set_sensitive(True)
 
         if self.data.method.method == "url":
             self._networkButton.set_active(True)
@@ -849,7 +835,6 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
                 self._protocolComboBox.set_active_id(PROTOCOL_HTTP)
                 l = 0
 
-            self._urlEntry.set_sensitive(True)
             self._urlEntry.set_text(proto[l:])
             self._updateURLEntryCheck()
             self._mirrorlistCheckbox.set_active(bool(self.data.method.mirrorlist))
@@ -859,12 +844,10 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
             self._protocolComboBox.set_active_id(PROTOCOL_NFS)
 
             self._urlEntry.set_text("%s:%s" % (self.data.method.server, self.data.method.dir))
-            self._urlEntry.set_sensitive(True)
             self._updateURLEntryCheck()
             self.builder.get_object("nfsOptsEntry").set_text(self.data.method.opts or "")
         elif self.data.method.method == "harddrive":
             self._isoButton.set_active(True)
-            self._isoBox.set_sensitive(True)
             self._verifyIsoButton.set_sensitive(True)
 
             if self._currentIsoFile:
@@ -889,20 +872,34 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         # Setup the addon repos
         self._reset_repoStore()
 
+        # Some widgets get enabled/disabled/greyed out depending on
+        # how others are set up.  We can use the signal handlers to handle
+        # that condition here too. Start at the innermost pieces and work
+        # outwards
+
+        # First check the protocol combo in the network box
+        self.on_protocol_changed(self._protocolComboBox)
+
+        # Then simulate changes for the radio buttons, which may override the
+        # sensitivities set for the network box.
+        #
+        # Whichever radio button is selected should have gotten a signal
+        # already, but the ones that are not selected need a signal in order
+        # to disable the related box.
+        self.on_source_toggled(self._autodetectButton, self._autodetectBox)
+        self.on_source_toggled(self._isoButton, self._isoBox)
+        self.on_source_toggled(self._networkButton, self._networkBox)
+
+        # Lastly, if the stage2 image is mounted from an HDISO source, there's
+        # really no way we can tear down that source to allow the user to
+        # change it.  Thus, this entire portion of the spoke should be
+        # insensitive.
         if self.data.method.method == "harddrive" and \
            get_mount_device(constants.DRACUT_ISODIR) == get_mount_device(constants.DRACUT_REPODIR):
-            # If the stage2 image is mounted from an HDISO source, there's really
-            # no way we can tear down that source to allow the user to change it.
-            # Thus, this portion of the spoke should be insensitive.
             for widget in [self._autodetectButton, self._autodetectBox, self._isoButton,
                            self._isoBox, self._networkButton, self._networkBox]:
                 widget.set_sensitive(False)
                 widget.set_tooltip_text(_("The installation source is in use by the installer and cannot be changed."))
-        else:
-            # Then, some widgets get enabled/disabled/greyed out depending on
-            # how others are set up.  We can use the signal handlers to handle
-            # that condition here too.
-            self.on_protocol_changed(self._protocolComboBox)
 
         if not nm.nm_is_connected():
             self._networkButton.set_sensitive(False)
@@ -910,9 +907,16 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
 
             self.clear_info()
             self.set_warning(_("You need to configure the network to use a network installation source."))
-        elif self._error:
-            self.clear_info()
-            self.set_error(self._error_msg)
+        else:
+            if self._error:
+                self.clear_info()
+                self.set_error(self._error_msg)
+
+            # network button could be deativated from last visit
+            self._networkButton.set_sensitive(True)
+
+        # Update the URL entry validation now that we're done messing with sensitivites
+        self._updateURLEntryCheck()
 
     def _setup_no_updates(self):
         """ Setup the state of the No Updates checkbox.
@@ -1230,26 +1234,27 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
         REPO_ATTRS = ("name", "baseurl", "mirrorlist", "proxy", "enabled")
         changed = False
 
-        ui_orig_names = [r[REPO_OBJ].orig_name for r in self._repoStore]
+        with self._repoStore_lock:
+            ui_orig_names = [r[REPO_OBJ].orig_name for r in self._repoStore]
 
-        # Remove repos from payload that were removed in the UI
-        for repo_name in [r for r in self.payload.addOns if r not in ui_orig_names]:
-            repo = self.payload.getAddOnRepo(repo_name)
-            # TODO: Need an API to do this w/o touching dnf (not addRepo)
-            # FIXME: Is this still needed for dnf?
-            self.payload.data.repo.dataList().remove(repo)
-            changed = True
-
-        for repo, orig_repo in [(r[REPO_OBJ], self.payload.getAddOnRepo(r[REPO_OBJ].orig_name)) for r in self._repoStore]:
-            if not orig_repo:
+            # Remove repos from payload that were removed in the UI
+            for repo_name in [r for r in self.payload.addOns if r not in ui_orig_names]:
+                repo = self.payload.getAddOnRepo(repo_name)
                 # TODO: Need an API to do this w/o touching dnf (not addRepo)
                 # FIXME: Is this still needed for dnf?
-                self.payload.data.repo.dataList().append(repo)
+                self.payload.data.repo.dataList().remove(repo)
                 changed = True
-            elif not cmp_obj_attrs(orig_repo, repo, REPO_ATTRS):
-                for attr in REPO_ATTRS:
-                    setattr(orig_repo, attr, getattr(repo, attr))
-                changed = True
+
+            for repo, orig_repo in [(r[REPO_OBJ], self.payload.getAddOnRepo(r[REPO_OBJ].orig_name)) for r in self._repoStore]:
+                if not orig_repo:
+                    # TODO: Need an API to do this w/o touching dnf (not addRepo)
+                    # FIXME: Is this still needed for dnf?
+                    self.payload.data.repo.dataList().append(repo)
+                    changed = True
+                elif not cmp_obj_attrs(orig_repo, repo, REPO_ATTRS):
+                    for attr in REPO_ATTRS:
+                        setattr(orig_repo, attr, getattr(repo, attr))
+                    changed = True
 
         return changed
 
@@ -1270,23 +1275,24 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
             self.remove_check(checks.proxy_check)
         self._repoChecks = {}
 
-        self._repoStore.clear()
-        repos = self.payload.addOns
-        log.debug("Setting up repos: %s", repos)
-        for name in repos:
-            repo = self.payload.getAddOnRepo(name)
-            ks_repo = self.data.RepoData(name=repo.name,
-                                         baseurl=repo.baseurl,
-                                         mirrorlist=repo.mirrorlist,
-                                         proxy=repo.proxy,
-                                         enabled=repo.enabled)
-            # Track the original name, user may change .name
-            ks_repo.orig_name = name
-            # Add addon repository id for identification
-            ks_repo.repo_id = next(self._repo_counter)
-            self._repoStore.append([self.payload.isRepoEnabled(name),
-                                    ks_repo.name,
-                                    ks_repo])
+        with self._repoStore_lock:
+            self._repoStore.clear()
+            repos = self.payload.addOns
+            log.debug("Setting up repos: %s", repos)
+            for name in repos:
+                repo = self.payload.getAddOnRepo(name)
+                ks_repo = self.data.RepoData(name=repo.name,
+                                             baseurl=repo.baseurl,
+                                             mirrorlist=repo.mirrorlist,
+                                             proxy=repo.proxy,
+                                             enabled=repo.enabled)
+                # Track the original name, user may change .name
+                ks_repo.orig_name = name
+                # Add addon repository id for identification
+                ks_repo.repo_id = next(self._repo_counter)
+                self._repoStore.append([self.payload.isRepoEnabled(name),
+                                        ks_repo.name,
+                                        ks_repo])
 
         if len(self._repoStore) > 0:
             self._repoSelection.select_path(0)
@@ -1436,13 +1442,12 @@ class SourceSpoke(NormalSpoke, GUISpokeInputCheckHandler):
             Before final release this will also toggle the updates-testing repo
         """
         if self._noUpdatesCheckbox.get_active():
-            self.payload.disableRepo("updates")
-            if not constants.isFinal:
-                self.payload.disableRepo("updates-testing")
+            self.payload.setUpdatesEnabled(False)
         else:
-            self.payload.enableRepo("updates")
-            if not constants.isFinal:
-                self.payload.enableRepo("updates-testing")
+            self.payload.setUpdatesEnabled(True)
+
+        # Refresh the metadata using the new set of repos
+        self._updatesChange = True
 
     def on_addRepo_clicked(self, button):
         """ Add a new repository

@@ -16,13 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 # Used for ascii_letters and digits constants
-import string # pylint: disable=deprecated-module
-import crypt
-import random
 import os
 import os.path
 import subprocess
@@ -30,9 +25,12 @@ from contextlib import contextmanager
 from pyanaconda import iutil
 import pwquality
 from pyanaconda.iutil import strip_accents
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 from pyanaconda.constants import PASSWORD_MIN_LEN
 from pyanaconda.errors import errorHandler, PasswordCryptError, ERROR_RAISE
+from pyanaconda.regexes import GROUPLIST_FANCY_PARSE, USERNAME_VALID, PORTABLE_FS_CHARS
+import crypt
+from pyanaconda.i18n import _
+import re
 
 import logging
 log = logging.getLogger("anaconda")
@@ -50,28 +48,15 @@ def getPassAlgo(authconfigStr):
     else:
         return None
 
-# These are explained in crypt/crypt-entry.c in glibc's code.  The prefixes
-# we use for the different crypt salts:
-#     $1$    MD5
-#     $5$    SHA256
-#     $6$    SHA512
 def cryptPassword(password, algo=None):
-    salts = {'md5': '$1$', 'sha256': '$5$', 'sha512': '$6$'}
-    saltlen = 2
+    salts = {'md5': crypt.METHOD_MD5,
+             'sha256': crypt.METHOD_SHA256,
+             'sha512': crypt.METHOD_SHA512}
 
-    if algo is None:
+    if algo not in salts:
         algo = 'sha512'
 
-    if algo == 'md5' or algo == 'sha256' or algo == 'sha512':
-        saltlen = 16
-
-    saltstr = salts[algo]
-
-    for _i in range(saltlen):
-        saltstr = saltstr + random.choice(string.ascii_letters +
-                                          string.digits + './')
-
-    cryptpw = crypt.crypt(password, saltstr)
+    cryptpw = crypt.crypt(password, salts[algo])
     if cryptpw is None:
         exn = PasswordCryptError(algo=algo)
         if errorHandler.cb(exn) == ERROR_RAISE:
@@ -137,6 +122,31 @@ def validatePassword(pw, user="root", settings=None, minlen=None):
 
     return (valid, strength, message)
 
+def check_username(name):
+    if name in os.listdir("/") + ["root", "home", "daemon", "system"]:
+        return (False, _("User name is reserved for system: %s") % name)
+
+    if name.startswith("-"):
+        return (False, _("User name cannot start with '-' character"))
+
+    # Final '$' allowed for Samba
+    if name.endswith("$"):
+        sname = name[:-1]
+    else:
+        sname = name
+    match = re.search(r'[^' + PORTABLE_FS_CHARS + r']', sname)
+    if match:
+        return (False, _("User name cannot contain character: '%s'") % match.group())
+
+    if len(name) > 32:
+        return (False, _("User name must be shorter than 33 characters"))
+
+    # Check also with THE regexp to be sure
+    if not USERNAME_VALID.match(name):
+        return (False, None)
+
+    return (True, None)
+
 def guess_username(fullname):
     fullname = fullname.split()
 
@@ -167,14 +177,34 @@ class Users(object):
 
         return None
 
-    def _groupExists(self, group_name, root):
-        """Returns whether a group with the given name already exists."""
+    def _getgrnam(self, group_name, root):
+        """Like grp.getgrnam, but able to use a different root.
+
+            Just returns the grp structure as a list, same reason as above.
+        """
         with open(root + "/etc/group", "r") as f:
             for line in f:
-                if line.split(":")[0] == group_name:
-                    return True
+                fields = line.split(":")
+                if fields[0] == group_name:
+                    return fields
 
-        return False
+        return None
+
+    def _getgrgid(self, gid, root):
+        """Like grp.getgrgid, but able to use a different root.
+
+           Just returns the fields as a list of strings.
+        """
+        # Conver the probably-int GID to a string
+        gid = str(gid)
+
+        with open(root + "/etc/group", "r") as f:
+            for line in f:
+                fields = line.split(":")
+                if fields[2] == gid:
+                    return fields
+
+        return None
 
     @contextmanager
     def _ensureLoginDefs(self, root):
@@ -207,9 +237,8 @@ class Users(object):
         """
         root = kwargs.get("root", iutil.getSysroot())
 
-        if self._groupExists(group_name, root):
-            # If the group already exists, skip it
-            return
+        if self._getgrnam(group_name, root):
+            raise ValueError("Group %s already exists" % group_name)
 
         args = ["-R", root]
         if kwargs.get("gid") is not None:
@@ -233,8 +262,9 @@ class Users(object):
                               If none is given, the cryptPassword default is used.
            :keyword str gecos: The GECOS information (full name, office, phone, etc.).
                                Defaults to "".
-           :keyword groups: A list of existing group names the user should be
-                            added to.  Defaults to [].
+           :keyword groups: A list of group names the user should be added to.
+                            Each group name can contain an optional GID in parenthesis,
+                            such as "groupName(5000)". Defaults to [].
            :type groups: list of str
            :keyword str homedir: The home directory for the new user.  Defaults to
                                  /home/<name>.
@@ -264,16 +294,45 @@ class Users(object):
 
         args = ["-R", root]
 
-        # If a specific gid is requested, create the user group with that GID.
-        # Otherwise let useradd do it automatically.
+        # Split the groups argument into a list of (username, gid or None) tuples
+        # the gid, if any, is a string since that makes things simpler
+        group_gids = [GROUPLIST_FANCY_PARSE.match(group).groups()
+                      for group in kwargs.get("groups", [])]
+
+        # If a specific gid is requested:
+        #   - check if a group already exists with that GID. i.e., the user's
+        #     GID should refer to a system group, such as users. If so, just set
+        #     the GID.
+        #   - check if a new group is requested with that GID. If so, set the GID
+        #     and let the block below create the actual group.
+        #   - if neither of those are true, create a new user group with the requested
+        #     GID
+        # otherwise use -U to create a new user group with the next available GID.
         if kwargs.get("gid", None):
-            self.createGroup(user_name, gid=kwargs['gid'], root=root)
+            if not self._getgrgid(kwargs['gid'], root) and \
+                    not any(gid[1] == str(kwargs['gid']) for gid in group_gids):
+                self.createGroup(user_name, gid=kwargs['gid'], root=root)
+
             args.extend(['-g', str(kwargs['gid'])])
         else:
             args.append('-U')
 
-        if kwargs.get("groups"):
-            args.extend(['-G', ",".join(kwargs["groups"])])
+        # If any requested groups do not exist, create them.
+        group_list = []
+        for group_name, gid in group_gids:
+            existing_group = self._getgrnam(group_name, root)
+
+            # Check for a bad GID request
+            if gid and existing_group and gid != existing_group[2]:
+                raise ValueError("Group %s already exists with GID %s" % (group_name, gid))
+
+            # Otherwise, create the group if it does not already exist
+            if not existing_group:
+                self.createGroup(group_name, gid=gid, root=root)
+            group_list.append(group_name)
+
+        if group_list:
+            args.extend(['-G', ",".join(group_list)])
 
         if kwargs.get("homedir"):
             homedir = kwargs["homedir"]
@@ -396,7 +455,7 @@ class Users(object):
         sshdir = os.path.join(homedir, ".ssh")
         if not os.path.isdir(sshdir):
             os.mkdir(sshdir, 0o700)
-            iutil.eintr_retry_call(os.chown, sshdir, int(uid), int(gid))
+            os.chown(sshdir, int(uid), int(gid))
 
         authfile = os.path.join(sshdir, "authorized_keys")
         authfile_existed = os.path.exists(authfile)
@@ -405,5 +464,5 @@ class Users(object):
 
         # Only change ownership if we created it
         if not authfile_existed:
-            iutil.eintr_retry_call(os.chown, authfile, int(uid), int(gid))
+            os.chown(authfile, int(uid), int(gid))
             iutil.execWithRedirect("restorecon", ["-r", sshdir])

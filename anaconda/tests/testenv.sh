@@ -22,7 +22,9 @@ fi
 
 ANACONDA_INSTALL_CLASSES="${top_srcdir}/pyanaconda/installclasses"
 GI_TYPELIB_PATH="${top_builddir}/widgets/src"
+ANACONDA_DATADIR="${top_srcdir}/data"
 
+export ANACONDA_DATADIR
 export ANACONDA_INSTALL_CLASSES
 export GI_TYPELIB_PATH
 export LD_LIBRARY_PATH
@@ -33,3 +35,7 @@ export top_builddir
 # This must be added to gi.overrides.__path__ by any test requiring the
 # AnacondaWidgets gi-overrides
 export ANACONDA_WIDGETS_OVERRIDES="${top_srcdir}/widgets/python"
+export UIPATH="${top_srcdir}/pyanaconda/ui/gui/"
+export GLADE_CATALOG_SEARCH_PATH="${top_srcdir}/widgets/glade"
+export GLADE_MODULE_SEARCH_PATH="${top_builddir}/widgets/src/.libs"
+export ANACONDA_DATA="${top_srcdir}/data"

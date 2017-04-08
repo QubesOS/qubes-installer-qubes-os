@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Author: Chris Lumens <clumens@redhat.com>
  */
 
 #ifndef _MOUNTPOINT_SELECTOR_H
@@ -64,6 +62,9 @@ GtkWidget  *anaconda_mountpoint_selector_new      ();
 
 gboolean    anaconda_mountpoint_selector_get_chosen (AnacondaMountpointSelector *widget);
 void        anaconda_mountpoint_selector_set_chosen (AnacondaMountpointSelector *widget, gboolean is_chosen);
+
+GtkWidget  *anaconda_mountpoint_selector_get_page (AnacondaMountpointSelector *widget);
+void        anaconda_mountpoint_selector_set_page (AnacondaMountpointSelector *widget, GtkWidget *parent_page);
 
 G_END_DECLS
 

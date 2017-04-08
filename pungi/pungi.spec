@@ -3,7 +3,7 @@
 %endif
 
 Name:           pungi
-Version:        4.0.15
+Version:        4.1.10
 Release:        1%{?dist}
 Epoch:          1000
 Summary:        Distribution compose tool
@@ -11,19 +11,21 @@ Summary:        Distribution compose tool
 Group:          Development/Tools
 License:        GPLv2
 URL:            https://pagure.io/pungi
-Source0:        https://fedorahosted.org/pungi/attachment/wiki/%{version}/%{name}-%{version}.tar.bz2
+Source0:        https://pagure.io/releases/%{name}/%{name}-%{version}.tar.bz2
 Patch1:         0001-Set-repository-gpgkey-option.patch
 Patch2:         0002-Verify-downloaded-packages.patch
 Patch3:         disable-efi.patch
 Patch4:         Hacky-way-to-pass-gpgkey-to-lorax.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 #Patch6:         disable-upgrade.patch
-BuildRequires:  python-nose, python-nose-cov, python2-mock
+BuildRequires:  python-nose, python-nose-cov, python-mock
 BuildRequires:  python-devel, python-setuptools, python2-productmd
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
 BuildRequires:  python-lxml, libselinux-python, yum-utils, lorax
 BuildRequires:  yum => 3.4.3-28, createrepo >= 0.4.11
-BuildRequires:  cvs
+BuildRequires:  gettext, git-core, cvs
+BuildRequires:  python-jsonschema
+
 #deps for doc building
 BuildRequires:  python-sphinx
 
@@ -39,13 +41,18 @@ Requires:       python-kickstart
 Requires:       libselinux-python
 Requires:       createrepo_c
 Requires:       python-lxml
-Requires:       koji
+Requires:       koji >= 1.10.1-13
+# This is optional do not Require it
+#eRquires:       jigdo
 Requires:       cvs
 Requires:       yum-utils
 Requires:       isomd5sum
 Requires:       genisoimage
 Requires:       gettext
+# this is x86 only 
+#Requires:       syslinux
 Requires:       git
+Requires:       python-jsonschema
 
 BuildArch:      noarch
 
@@ -72,8 +79,7 @@ gzip _build/man/pungi.1
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 %{__install} -d %{buildroot}/var/cache/pungi
 %{__install} -d %{buildroot}%{_mandir}/man1
-%{__install} doc/_build/man/pungi.1.gz %{buildroot}%{_mandir}/man1
-sed -i 's|/usr/bin/python$|/usr/bin/python3|' %{buildroot}/%{_bindir}/pungi-pylorax-find-templates
+%{__install} -m 0644 doc/_build/man/pungi.1.gz %{buildroot}%{_mandir}/man1
 
 %check
 ./tests/data/specs/build.sh
@@ -92,41 +98,219 @@ cd tests && ./test_compose.sh
 /var/cache/pungi
 
 %changelog
-* Fri Apr 29 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.15-1
+* Sat Oct 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.10-1
+- pungi: Replace kickstart repo url (mark)
+- ostree-installer: Reduce duplication in tests (lsedlar)
+- ostree-installer: Generate correct volume ID (lsedlar)
+- ostree-installer: Use ostree as type in filename (lsedlar)
+- ostree: Use $basearch in repo file (lsedlar)
+- config: Accept empty branch in SCM dict (lsedlar)
+- Remove duplicated version from pungi script (lsedlar)
+- use --new-chroot when making ostree's (dennis)
+- Create git tags without release (lsedlar)
+- Translate paths without double slash (lsedlar)
+- Remove shebangs from non-executable files (lsedlar)
+- Remove FSF address from comments (lsedlar)
+- Update contributing guide (lsedlar)
+- init: Remove keep_original_comps option (lsedlar)
+- tests: Use unittest2 consistently (lsedlar)
+
+* Thu Sep 29 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.9-2
+- add patch to enable use of --new-chroot for ostree tasks
+
+* Wed Sep 21 2016 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.9-1
+- ostree_installer: Add --isfinal lorax argument (lsedlar)
+- Recreate JSON dump of configuration (lsedlar)
+- Merge #385 `Test and clean up pungi.linker` (dennis)
+- Merge #390 `checksums: Never skip checksumming phase` (dennis)
+- variants: Allow multiple explicit optional variants (lsedlar)
+- checksums: Never skip checksumming phase (lsedlar)
+- [linker] Remove dead code (lsedlar)
+- [linker] Add tests (lsedlar)
+- Dump original pungi conf (cqi)
+- ostree: Add tests for sending ostree messages (lsedlar)
+- Send fedmsg message on ostree compose finishg (puiterwijk)
+- createrepo: Add option to use xz compression (lsedlar)
+- Allow user to set a ~/.pungirc for some defaults (riehecky)
+- metadata: Improve error reporting on failed checksum (lsedlar)
+- extra-files: Write a metadata file enumerating extra files (jeremy)
+- Merge #381 `Automatically generate missing image version` (dennis)
+- Automatically generate missing image version (lsedlar)
+- Add JSON Schema for configuration (lsedlar)
+- Allow arbitrary arguments in make test (lsedlar)
+- createiso: Report nice error when tag does not exist (lsedlar)
+- Fix test data build script (lsedlar)
+- [osbs] Add NVRA of created image into main log (lsedlar)
+- [createiso] Remove unused script (lsedlar)
+- Update doc about generating release value (lsedlar)
+- Use label to populate image release (lsedlar)
+- doc: Fix example for image_build (lsedlar)
+- Ignore module imports not at top of file (lsedlar)
+- Merge #367 `Remove unused imports` (dennis)
+- [buildinstall] Fix cleaning output dir (lsedlar)
+- Remove unused imports (lsedlar)
+- Merge #360 `[osbs] Convert build_id to int` (dennis)
+- Merge #361 `Fix config validation script` (dennis)
+- Merge #365 `Make image test at end of compose less strict` (dennis)
+- [test] Make image test at end of compose less strict (lsedlar)
+- [iso] Fix check on failable ISO (lsedlar)
+- Add full Pungi version to log output (lsedlar)
+- Fix config validation script (lsedlar)
+- [osbs] Convert build_id to int (lsedlar)
+- [image-build] Get failable config from correct place (lsedlar)
+
+* Wed Aug 10 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.8-1
+- [createiso] Use shell script for runroot (lsedlar)
+- Merge #357 `Improve error messages for gathering packages` (dennis)
+- [test] Only check bootability for images on x86_64 and i386 (lsedlar)
+- Improve error messages for gathering packages (lsedlar)
+- Merge #339 `Refactor failables, step 1` (dennis)
+- Refactor failables (lsedlar)
+- Stop setting release in OSBS phase (lsedlar)
+- Merge #351 `Remove ambiguous imports` (dennis)
+- [test] Correctly check bootable ISOs (lsedlar)
+- Remove ambiguous imports (lsedlar)
+- Merge #347 `Remove duplicate definition of find_old_composes.`
+  (lubomir.sedlar)
+- Merge #342 `Simplify naming format placeholders` (dennis)
+- Merge #345 `createrepo: use separate logs for different pkg_type` (dennis)
+- Remove duplicate definition of find_old_composes... (rbean)
+- [createrepo] fix 'createrepo_deltas' option (qwan)
+- createrepo: use separate logs for different pkg_type (lsedlar)
+- Simplify naming format placeholders (lsedlar)
+- Treat variants without comps groups as having all of them (lsedlar)
+- Always generate rpms.json file (lsedlar)
+
+* Tue Jul 19 2016 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 4.1.7-2
+- https://fedoraproject.org/wiki/Changes/Automatic_Provides_for_Python_RPM_Packages
+
+* Thu Jun 23 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.7-1
+- [scm] Add logging for exporting local files (lsedlar)
+- [extra-files] Only copy files when there is a config (lsedlar)
+- [extra-files] Refactoring (lsedlar)
+- [extra-files] Skip whole phase if not configured (lsedlar)
+- [extra-files] Copy files using existing function (lsedlar)
+- [extra-files] Add tests (lsedlar)
+- [osbs] Add a phase to build images in OSBS (lsedlar)
+- Setup global log file before logging anything (lsedlar)
+- [metadata] Correctly save final flag (lsedlar)
+- Merge #326 `add missing dependencies` (dennis)
+- [createiso] Add test for adding source iso to metadata (lsedlar)
+- Merge #325 `Fix checking optional ISO images in test phase` (dennis)
+- Merge #321 `Add support for top-level variant IDs with dashes.` (dennis)
+- Merge #320 `images.json: Move src images under binary arches.` (dennis)
+- add missing dependencies (nils)
+- Fix checking optional ISO images in test phase (lsedlar)
+- add lxml dependency (nils)
+- images.json: Move src images under binary arches. (dmach)
+- Add support for top-level variant IDs with dashes. (dmach)
+- Fix PYTHONPATH usage in test_compose.sh. (dmach)
+- [createiso] Enable customizing media reserve (lsedlar)
+- [createiso] Add test for splitting media (lsedlar)
+- [media-split] Remove commented-out code (lsedlar)
+- [media-split] Simplify code (lsedlar)
+- [media-split] Add code documentation (lsedlar)
+- [media-split] Add unit tests (lsedlar)
+- Add missing documentation (lsedlar)
+- [buildinstall] Fix bad error message (lsedlar)
+- Merge #309 `Add compatibility for Python 2.6` (dennis)
+- Merge #293 `Add tests for generating discinfo and media.repo files` (dennis)
+- Merge #287 `Use koji profiles to list RPMs in buildroot` (dennis)
+- [ostree-installer] Put images to os/ directory (lsedlar)
+- [ostree] Rename duplicated test (lsedlar)
+- [util] Use koji profile for getting RPMs from buildroot (lsedlar)
+- [util] Add test for getting list of buildroot RPMs (lsedlar)
+- pungi-koji: fix up latest symlink creation (dennis)
+- Use unittest2 if available (lsedlar)
+- Stop using str.format (lsedlar)
+- Stop using functools.total_ordering (lsedlar)
+- The message attribute on exception is deprecated (lsedlar)
+- [ostree] Rename duplicated test (lsedlar)
+- [metadata] Simplify writing media.repo (lsedlar)
+- [metadata] Add test for writing media.repo (lsedlar)
+- [discinfo] Use context manager for file access (lsedlar)
+- [metadata] Add tests for discinfo files (lsedlar)
+
+* Tue May 24 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.6-1
+- [ostree-installer] Allow using external repos as source (lsedlar)
+- [image-build] Allow using external install trees (lsedlar)
+- Add type to base product for layered releases (lsedlar)
+- Merge #303 `[ostree] Use unique work and log paths` (dennis)
+- [ostree] Use unique work and log paths (lsedlar)
+- [arch] Add mock rpmUtils module (lsedlar)
+
+* Mon May 16 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.5-1
+- [ostree] Put variant name in ostree log dir (lsedlar)
+- Merge #294 `[ostree] Initialize empty repo` (dennis)
+- [util] Resolve git+https URLs (lsedlar)
+- [ostree] Initialize empty repo (lsedlar)
+- [test] Add checks for created images (lsedlar)
+- Fix caching global ksurl (lsedlar)
+- include tests/fixtures in manifest (dennis)
+
+* Fri May 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.4-2
+- add patch to fix caching global ksurl
+
+* Fri Apr 29 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.4-1
+- Merge #273 `Deduplicate configuration a bit` (dennis)
+- Merge #280 `[createrepo] Use more verbose output` (dennis)
+- Merge #283 `Pungi should log when it tries to publish notifications.`
+  (dennis)
 - [createiso] Add back running isohybrid on x86 disk images (dennis)
 - [createiso] Remove chdir() (lsedlar)
-- Pungi should log when it tries to publish notifications. (rbean)
+- [pkgset] Fix caching RPMs (lsedlar)
 - [createrepo] Use more verbose output (lsedlar)
-- [ostree-installer] Drop filename setting (lsedlar)
+- Pungi should log when it tries to publish notifications. (rbean)
+- [pkgset] Use context manager for opening file list (lsedlar)
+- [pkgset] Add tests for writing filelists (lsedlar)
+- [pkgset] Simplify finding RPM in koji buildroot (lsedlar)
+- [pkgset] Clean up koji package set (lsedlar)
+- [pkgset] Add test for pkgset merging (lsedlar)
+- [pkgset] Add tests for KojiPackageSet (lsedlar)
+- [pkgset] Clean up Koji source (lsedlar)
+- [pkgset] Add tests for Koji source (lsedlar)
+- Add common global settings for images (lsedlar)
+- Remove duplicated and dead code (lsedlar)
+- [live-media] Add check for live_media_version option (lsedlar)
+- [scm-wrapper] Remove unused method (lsedlar)
+- [scm-wrapper] Report when file wrapper did not match anything (lsedlar)
+- [scm-wrapper] Use context manager for managing temp dir (lsedlar)
+- [scm-wrapper] Reduce code duplication in RPM wrapper (lsedlar)
+- [scm-wrapper] Copy files directly (lsedlar)
+- [scm-wrapper] Reduce code duplication (lsedlar)
+- [scm-wrapper] Add tests for SCM wrappers (lsedlar)
 - [ostree] Set each repo to point to current compose (lsedlar)
+- [ostree-installer] Drop filename setting (lsedlar)
+- Merge #269 `Improve logging of failable deliverables` (ausil)
+- [ostree-installer] Fix example documentation (lsedlar)
+- Improve logging of failable deliverables (lsedlar)
 - [ostree-installer] Install ostree in runroot (lsedlar)
 - [pkgset] Print more detailed logs when rpm is not found (lsedlar)
 - [ostree-installer] Clone repo with templates (lsedlar)
 
-* Mon Apr 18 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-4
-- add patch for ostree installer filename
-- add patch to make sure the repo urls are set for ostree
+* Tue Apr 12 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.3-3
+- add patch to install ostree in the ostree_installer runroot
 
-* Tue Apr 12 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-3
-- add patch to make sure that ostree is in the ostree_installer runroot
-
-* Mon Apr 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-2
-- add patch to print more infor for missing rpms
+* Mon Apr 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.3-2
+- add patch to print more info for missing rpms
 - add patch to clone repo with extra lorax templates for ostree_installer
 
-* Fri Apr 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.14-1
+* Fri Apr 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.3-1
+- enable the compose test (dennis)
 - [ostree-installer] Copy all lorax outputs (lsedlar)
 - [ostree] Log to stdout as well (lsedlar)
 - [ostree-installer] Use separate directory for logs (lsedlar)
+- Merge #260 `Maybe fix ostree?` (ausil)
 - [ostree-installer] Put lorax output into work dir (lsedlar)
 - [ostree] Add test check for modified repo baseurl (lsedlar)
 - [ostree] Move cloning repo back to compose box (lsedlar)
 - [ostree] Mount ostree directory in koji (lsedlar)
 
-* Thu Apr 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.13-2
+* Thu Apr 07 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.2-2
 - make sure that the shebang of pungi-pylorax-find-templates is python3
 
-* Wed Apr 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.13-1
+* Wed Apr 06 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.2-1
+- Merge #257 `[ostree] Enable marking ostree phase as failable` (ausil)
 - [ostree] Enable marking ostree phase as failable (lsedlar)
 - [koji-wrapper] Initialize wrappers sequentially (lsedlar)
 - [createiso] Simplify code, test phase (lsedlar)
@@ -137,32 +321,32 @@ cd tests && ./test_compose.sh
 - [ostree] Fix call to kobo.shortcuts.run (lsedlar)
 - [atomic] Stop creating the os directory (lsedlar)
 - [checksum] Add arch to file name (lsedlar)
-- install scripts (dennis)
 
-* Tue Apr 05 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-3
+* Tue Apr 05 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.1-3
 - add some more ostree fixes
 - add a bandaid for ppc until we get a proper fix
 
-* Mon Apr 04 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-2
-- add upstream patches with fixes for ostree and checksum
+* Mon Apr 04 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.1-2
+- add upstream patches for bugfixes in ostree and checksums
 
-* Fri Apr 01 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.12-1
+* Fri Apr 01 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.1-1
+- install scripts (dennis)
+- Merge #242 `Fix wrong file permissions` (ausil)
 - Add a utility to validate config (lsedlar)
 - [variants] Stop printing stuff to stderr unconditionally (lsedlar)
 - Fix atomic/ostree config validations (lsedlar)
 - [pungi-wrapper] Remove duplicated code (lsedlar)
 - [checks] Add a check for too restrictive umask (lsedlar)
 - [util] Remove umask manipulation from makedirs (lsedlar)
+- Merge #240 `Filter variants and architectures` (ausil)
 - Filter variants and architectures (lsedlar)
 - Refactor checking for failable deliverables (lsedlar)
 - [buildinstall] Do not crash on failure (lsedlar)
-
-* Mon Mar 28 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.11-1
-- make and install docs and manpage
 - Reuse helper in all tests (lsedlar)
 - [atomic] Add atomic_installer phase (lsedlar)
 - [ostree] Add ostree phase (lsedlar)
 - [atomic] Add a script to create ostree repo (lsedlar)
+- Merge #232 `Improve logging by adding subvariants` (ausil)
 - Add compose type to release for images (lsedlar)
 - [image-build] Add traceback on failure (lsedlar)
 - [image-build] Use subvariants in logging output (lsedlar)
@@ -172,20 +356,11 @@ cd tests && ./test_compose.sh
 - [buildinstall] Add more debugging output (lsedlar)
 - [metadata] Stop crashing on empty path from .treeinfo (lsedlar)
 - [checksums] Add label to file name (lsedlar)
+- [buildinstall] Use customized dvd disc type (lsedlar)
 - image_build: fix subvariant handling (awilliam)
 
-* Wed Mar 16 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-3
-- add patch to enable use of label in checksums
-
-* Sun Mar 13 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-2
-- add patch for bug in subvariant handling
-
-* Fri Mar 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.10-1
-- Remove check for disc type (lsedlar)
-- Update tests to match the subvariant (lsedlar)
-- add 'subvariant' image property, create live/appliance names (awilliam)
-- Simplify koji pkgset (lsedlar)
-- enable the compose tests
+* Fri Mar 11 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.0-1
+- upstream 4.1.0 release
 
 * Thu Mar 10 2016 Dennis Gilmore <dennis@ausil.us> - 4.0.9-2
 - new tarball with upstream commits for test suite and pkgset
@@ -388,7 +563,7 @@ cd tests && ./test_compose.sh
 - Load multilib configuration from local dir in development (lsedlar)
 - Allow running scripts with any python in PATH (lsedlar)
 
-* Tue Aug 08 2015 Dennis Gilmore <dennis@ausil.us> 4.0.3-1
+* Tue Sep 08 2015 Dennis Gilmore <dennis@ausil.us> 4.0.3-1
 - Merge #54 `fix log_info for image_build (fails if image_build is skipped)`
   (lkocman)
 - image_build: self.log_info -> self.compose.log_info (lkocman)

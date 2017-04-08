@@ -16,8 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Brian C. Lane <bcl@redhat.com>
-#
 
 from pyanaconda.ui.tui.spokes import StandaloneTUISpoke
 from pyanaconda.ui.tui.simpleline import TextWidget
@@ -50,6 +48,7 @@ class WarningsSpoke(StandaloneTUISpoke):
                           "supported hardware, please refer to "
                           "http://www.redhat.com/hardware.")
         # Does anything need to be displayed?
+        # pylint: disable=no-member
         self._unsupported = productName.startswith("Red Hat ") and \
                             is_unsupported_hw() and \
                             not self.data.unsupportedhardware.unsupported_hardware

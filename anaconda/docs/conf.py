@@ -11,15 +11,19 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-# Ignore any interruptible calls
-# pylint: disable=interruptible-system-call
-
 import sys, os
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
+
+# configuration required to import test modules
+for path in ["../pyanaconda/isys/.libs", "../pyanaconda", "../tests", "../tests/lib", "../dracut", "../widgets"]:
+    sys.path.append(os.path.abspath(path))
+if not 'ANACONDA_INSTALL_CLASSES' in os.environ:
+    # pylint: disable=environment-modify
+    os.environ['ANACONDA_INSTALL_CLASSES'] = os.path.abspath('../pyanaconda/installclasses')
 
 # -- General configuration -----------------------------------------------------
 

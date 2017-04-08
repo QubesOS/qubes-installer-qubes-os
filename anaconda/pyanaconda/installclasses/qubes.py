@@ -24,7 +24,10 @@ from pyanaconda.product import *
 from pyanaconda import network
 from pyanaconda.i18n import N_
 import os, types
+import blivet.platform
 
+from blivet.size import Size
+from blivet.platform import platform
 from decimal import Decimal
 
 class InstallClass(BaseInstallClass):
@@ -56,16 +59,23 @@ class InstallClass(BaseInstallClass):
 
     def configure(self, anaconda):
         BaseInstallClass.configure(self, anaconda)
+        self.setDefaultPartitioning(anaconda.storage)
 
     def setDefaultPartitioning(self, storage):
         BaseInstallClass.setDefaultPartitioning(self,
                                                 storage)
-        for autoreq in storage.autoPartitionRequests:
+        for autoreq in storage.autopart_requests:
             if autoreq.mountpoint == "/":
-                autoreq.maxSize=None
-                autoreq.requiredSpace=10*1024
+                autoreq.max_size=None
+                autoreq.required_space=Size("10GiB")
             if autoreq.mountpoint == "/home":
-                storage.autoPartitionRequests.remove(autoreq)
+                storage.autopart_requests.remove(autoreq)
+            if autoreq.mountpoint == "/boot/efi":
+                autoreq.max_size=Size("500MiB")
+            if autoreq.mountpoint == "/boot" and \
+                    isinstance(platform, blivet.platform.EFI):
+                # xen.efi don't need /boot
+                storage.autopart_requests.remove(autoreq)
 
     def productMatches(self, oldprod):
         if oldprod is None:

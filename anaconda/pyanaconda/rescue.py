@@ -16,25 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Samantha N. Bueno <sbueno@redhat.com>
-#
 from blivet.errors import StorageError
 from blivet.devices import LUKSDevice
-from blivet.osinstall import mountExistingSystem, findExistingInstallations
+from blivet.osinstall import mount_existing_system, find_existing_installations
 
 from pyanaconda import iutil
 from pyanaconda.constants import ANACONDA_CLEANUP
 from pyanaconda.constants_text import INPUT_PROCESSED
 from pyanaconda.flags import flags
-from pyanaconda.i18n import _, N_
+from pyanaconda.i18n import _, N_, C_
 from pyanaconda.kickstart import runPostScripts
 from pyanaconda.ui.tui.simpleline import TextWidget, ColumnWidget, CheckboxWidget
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
 from pyanaconda.ui.tui.tuiobject import YesNoDialog, PasswordDialog
+from pyanaconda.storage_utils import try_populate_devicetree
 
 from pykickstart.constants import KS_REBOOT, KS_SHUTDOWN
-
-from pyanaconda.iutil import open   # pylint: disable=redefined-builtin
 
 import os
 import shutil
@@ -191,7 +188,7 @@ class RescueMode(NormalTUISpoke):
             # installations are discovered. IOW, this is a hack.
             time.sleep(2)
             # attempt to find previous installations
-            roots = findExistingInstallations(self.storage.devicetree)
+            roots = find_existing_installations(self.storage.devicetree)
             if len(roots) == 1:
                 self._root = roots[0]
             elif len(roots) > 1:
@@ -247,11 +244,11 @@ class RescueMode(NormalTUISpoke):
                     try:
                         device.setup()
                         device.format.setup()
-                        luks_dev = LUKSDevice(device.format.mapName,
+                        luks_dev = LUKSDevice(device.format.map_name,
                                               parents=[device],
                                               exists=True)
-                        self.storage.devicetree._addDevice(luks_dev)
-                        self.storage.devicetree.populate()
+                        self.storage.devicetree._add_device(luks_dev)
+                        try_populate_devicetree(self.storage.devicetree)
                         unlocked = True
                         # try to use the same passhprase for other devices
                         try_passphrase = passphrase
@@ -292,15 +289,19 @@ class RootSpoke(NormalTUISpoke):
 
     def prompt(self, args=None):
         """ Override the default TUI prompt."""
-        return _("Please make your selection from the above list.\nPress 'c' "
-                 "to continue after you have made your selection.  ")
+        return _("Please make your selection from the above list.\nPress '%(continue)s' "
+                 "to continue after you have made your selection.  ") % {
+                     # TRANSLATORS:'c' to continue
+                     'continue': C_('TUI|Root Selection', 'c'),
+                 }
 
     def input(self, args, key):
         """Move along home."""
         try:
             keyid = int(key) - 1
         except ValueError:
-            if key.lower() == "c":
+            # TRANSLATORS: 'c' to continue
+            if key.lower() == C_('TUI|Spoke Navigation', 'c'):
                 self.apply()
                 self.close()
                 return INPUT_PROCESSED
@@ -336,8 +337,8 @@ class RescueMountSpoke(NormalTUISpoke):
 
         if self._root:
             try:
-                mountExistingSystem(self.storage.fsset, self._root.device,
-                                    readOnly=self.readOnly)
+                mount_existing_system(self.storage.fsset, self._root.device,
+                                      read_only=self.readOnly)
                 if flags.automatedInstall:
                     log.info("System has been mounted under: %s", iutil.getSysroot())
                 else:
@@ -351,7 +352,7 @@ class RescueMountSpoke(NormalTUISpoke):
                 # now turn on swap
                 if not flags.imageInstall or not self.readOnly:
                     try:
-                        self.storage.turnOnSwap()
+                        self.storage.turn_on_swap()
                     except StorageError:
                         log.error("Error enabling swap.")
 
@@ -378,7 +379,7 @@ class RescueMountSpoke(NormalTUISpoke):
                     pass
             except (ValueError, LookupError, SyntaxError, NameError):
                 pass
-            except Exception as e: # pylint: disable=broad-except
+            except (OSError, StorageError) as e:
                 if flags.automatedInstall:
                     msg = _("Run %s to unmount the system when you are finished.\n") % ANACONDA_CLEANUP
 
@@ -405,7 +406,7 @@ class RescueMountSpoke(NormalTUISpoke):
             return True
 
         if rootmounted and not self.readOnly:
-            self.storage.makeMtab()
+            self.storage.make_mtab()
             try:
                 makeResolvConf(iutil.getSysroot())
             except(OSError, IOError) as e:
@@ -431,7 +432,7 @@ class RescueMountSpoke(NormalTUISpoke):
 
     def prompt(self, args=None):
         """ Override the default TUI prompt."""
-        return _("Please press <return> to get a shell. ")
+        return _("Please press [Enter] to get a shell. ")
 
     def input(self, args, key):
         """Move along home."""

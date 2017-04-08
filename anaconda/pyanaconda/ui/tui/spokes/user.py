@@ -16,19 +16,16 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Sivak <msivak@redhat.com>
-#                    Chris Lumens <clumens@redhat.com>
-#
 
 from pyanaconda.ui.categories.user_settings import UserSettingsCategory
 from pyanaconda.ui.tui.spokes import EditTUISpoke
 from pyanaconda.ui.tui.spokes import EditTUISpokeEntry as Entry
-from pyanaconda.users import guess_username
+from pyanaconda.users import guess_username, check_username
 from pyanaconda.flags import flags
 from pyanaconda.i18n import N_, _
 from pykickstart.constants import FIRSTBOOT_RECONFIG
 from pyanaconda.constants import ANACONDA_ENVIRON, FIRSTBOOT_ENVIRON
-from pyanaconda.regexes import GECOS_VALID, USERNAME_VALID, GROUPLIST_SIMPLE_VALID
+from pyanaconda.regexes import GECOS_VALID, GROUPLIST_SIMPLE_VALID
 
 __all__ = ["UserSpoke"]
 
@@ -42,7 +39,7 @@ class UserSpoke(EditTUISpoke):
 
     edit_fields = [
         Entry("Create user", "_create", EditTUISpoke.CHECK, True),
-        Entry("Username", "name", USERNAME_VALID, lambda self, args: args._create),
+        Entry("Username", "name", check_username, lambda self, args: args._create),
         Entry("Use password", "_use_password", EditTUISpoke.CHECK, lambda self, args: args._create),
         Entry("Password", "_password", EditTUISpoke.PASSWORD, lambda self, args: args._use_password and args._create),
         Entry("Groups", "_groups", GROUPLIST_SIMPLE_VALID, lambda self, args: args._create)
@@ -67,9 +64,6 @@ class UserSpoke(EditTUISpoke):
 
     def __init__(self, app, data, storage, payload, instclass):
         EditTUISpoke.__init__(self, app, data, storage, payload, instclass, "user")
-        self.dialog.wrong_input_message = _("You have provided an invalid user name.\n"
-                                            "Tip: Keep your user name shorter than 32 "
-                                            "characters and do not use spaces.\n")
 
         if self.data.user.userList:
             self.args = self.data.user.userList[0]
@@ -125,6 +119,24 @@ class UserSpoke(EditTUISpoke):
             return _("Administrator %s will be created") % self.data.user.userList[0].name
         else:
             return _("User %s will be created") % self.data.user.userList[0].name
+
+    def input(self, args, key):
+        self.dialog.wrong_input_message = None
+        try:
+            field = self.visible_fields[int(key)-1]
+        except (ValueError, IndexError):
+            pass
+        else:
+            if field.attribute == "gecos":
+                self.dialog.wrong_input_message = _("Full name can't contain the ':' character")
+            elif field.attribute == "name":
+                # more granular message is returned by check_username
+                pass
+            elif field.attribute == "_groups":
+                self.dialog.wrong_input_message = _("Either a group name in the group list is invalid or groups are not separated by a comma")
+
+
+        return EditTUISpoke.input(self, args, key)
 
     def apply(self):
         self.args.groups = [g.strip() for g in self.args._groups.split(",") if g]

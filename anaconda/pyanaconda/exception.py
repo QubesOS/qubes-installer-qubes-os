@@ -17,10 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Author(s): Chris Lumens <clumens@redhat.com>
-#            David Cantrell <dcantrell@redhat.com>
-#            Vratislav Podzimek <vpodzime@redhat.com>
-#
 from meh import Config
 from meh.handler import ExceptionHandler
 from meh.dump import ReverseExceptionDump
@@ -49,6 +45,30 @@ from gi.repository import GLib
 
 import logging
 log = logging.getLogger("anaconda")
+
+class AnacondaReverseExceptionDump(ReverseExceptionDump):
+
+    @property
+    def desc(self):
+        """
+        When traceback will be part of the exception message split the
+        description from traceback. Description is used in name of the
+        bug in Bugzilla.
+        This is useful when saving exception in exception handler and
+        raising this exception elsewhere (subprocess exception).
+
+        :return: Exception description (bug name)
+        :rtype: str
+        """
+        if self.type and self.value:
+            parsed_exc = traceback.format_exception_only(self.type, self.value)[0].split("\nTraceback")
+            description = parsed_exc[0]
+            # TODO: remove when fixed (#1277422)
+            # Use only first line of description (because of libreport bug - reported)
+            description = description.split("\n")[0]
+            return description.strip()
+        else:
+            return ""
 
 class AnacondaExceptionHandler(ExceptionHandler):
 
@@ -83,7 +103,7 @@ class AnacondaExceptionHandler(ExceptionHandler):
                              "seems to be a problem with your hardware. "
                              "The exact error message is:\n\n%s.\n\n "
                              "The installer will now terminate.") % str(value)
-            self.intf.messageWindow(_("Hardware error occured"), hw_error_msg)
+            self.intf.messageWindow(_("Hardware error occurred"), hw_error_msg)
             sys.exit(0)
         elif isinstance(value, blivet.errors.UnusableConfigurationError):
             sys.exit(0)
@@ -188,6 +208,7 @@ class AnacondaExceptionHandler(ExceptionHandler):
 
         # run kickstart traceback scripts (if necessary)
         try:
+            iutil.runOnErrorScripts(anaconda.ksdata.scripts)
             kickstart.runTracebackScripts(anaconda.ksdata.scripts)
         # pylint: disable=bare-except
         except:
@@ -200,12 +221,12 @@ class AnacondaExceptionHandler(ExceptionHandler):
                 and self._intf_tty_num != 1:
             iutil.vtActivate(1)
 
-        iutil.eintr_retry_call(os.open, "/dev/console", os.O_RDWR)   # reclaim stdin
-        iutil.eintr_ignore(os.dup2, 0, 1)                        # reclaim stdout
-        iutil.eintr_ignore(os.dup2, 0, 2)                        # reclaim stderr
-        #                      ^
-        #                      |
-        #                      +------ dup2 is magic, I tells ya!
+        os.open("/dev/console", os.O_RDWR)   # reclaim stdin
+        os.dup2(0, 1)                        # reclaim stdout
+        os.dup2(0, 2)                        # reclaim stderr
+        #   ^
+        #   |
+        #   +------ dup2 is magic, I tells ya!
 
         # bring back the echo
         import termios
@@ -227,8 +248,8 @@ class AnacondaExceptionHandler(ExceptionHandler):
 def initExceptionHandling(anaconda):
     fileList = ["/tmp/anaconda.log", "/tmp/packaging.log",
                 "/tmp/program.log", "/tmp/storage.log", "/tmp/ifcfg.log",
-                "/tmp/dnf.log", "/tmp/dnf.rpm.log",
-                "/tmp/yum.log", iutil.getSysroot() + "/root/install.log",
+                "/tmp/dnf.librepo.log", "/tmp/hawkey.log",
+                "/tmp/lvm.log", iutil.getSysroot() + "/root/install.log",
                 "/proc/cmdline"]
 
     if os.path.exists("/tmp/syslog"):
@@ -253,7 +274,7 @@ def initExceptionHandling(anaconda):
                                 "_intf._currentAction._spokes[\"UserSpoke\"]._oldweak",
                                 "_intf.storage.bootloader.password",
                                 "_intf.storage.data",
-                                "_intf.storage.encryptionPassphrase",
+                                "_intf.storage.encryption_passphrase",
                                 "_bootloader.encrypted_password",
                                 "_bootloader.password",
                                 "payload._groups"],
@@ -273,7 +294,7 @@ def initExceptionHandling(anaconda):
 
     interactive = not anaconda.displayMode == 'c'
     handler = AnacondaExceptionHandler(conf, anaconda.intf.meh_interface,
-                                       ReverseExceptionDump, anaconda.intf.tty_num,
+                                       AnacondaReverseExceptionDump, anaconda.intf.tty_num,
                                        anaconda.gui_initialized, interactive)
     handler.install(anaconda)
 

@@ -15,16 +15,13 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: David Shea <dshea@redhat.com>
 
 import os
 
-ICON_PATH = "/usr/share/icons/gnome"
+ICON_PATH = "/usr/share/icons/Adwaita"
 ICON_EXTS = ("png", "jpg", "svg")
 
-# This method depends on gnome-icon-theme being installed. gnome-icon-theme-legacy
-# may be installed, but the icons in it will not be considered.
+# This method depends on adwaita-icon-theme being installed.
 def icon_exists(icon_name):
     for dirpath, _dirs, files in os.walk(ICON_PATH):
         for icon in (icon_name + "." + ext for ext in ICON_EXTS):

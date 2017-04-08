@@ -14,24 +14,26 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: Kalev Lember <kalevlember@gmail.com>
 
 welcomedir              = $(datadir)/$(PACKAGE_NAME)/gnome
-dist_welcome_DATA       = install-button.png
-dist_welcome_SCRIPTS    = fedora-welcome
-welcome_DATA            = fedora-welcome.desktop
-
-EXTRA_DIST = fedora-welcome.desktop.in
-
-CLEANFILES = fedora-welcome.desktop
+dist_welcome_DATA       = install-button.png fedora-welcome.desktop
+dist_welcome_SCRIPTS    = fedora-welcome.js
 
 MAINTAINERCLEANFILES = Makefile.in
 
-@INTLTOOL_DESKTOP_RULE@
+# Merge the translations into the desktop file
+# Use the merged translations in $(builddir). If no merged translations exist,
+# just exit.
+# Rename fedora-welcome.js to just fedora-welcome
+install-data-hook:
+	for p in $(top_builddir)/po/*.mpo ; do \
+	    [ -e $$p ] || exit 0 ; \
+	    $(MSGFMT) --desktop --template=$(DESTDIR)$(welcomedir)/fedora-welcome.desktop \
+	        --locale=$$(basename $$p .mpo) \
+		-o $(DESTDIR)$(welcomedir)/fedora-welcome.desktop.new $$p || exit 1 ; \
+	    mv $(DESTDIR)$(welcomedir)/fedora-welcome.desktop.new $(DESTDIR)$(welcomedir)/fedora-welcome.desktop || exit 1 ; \
+	done
+	cd $(DESTDIR)$(welcomedir) && mv fedora-welcome.js fedora-welcome
 
-# Files generated for gettext need to be included in the distribution
-EXTRA_DIST += $(srcdir)/fedora-welcome.po $(srcdir)/fedora-welcome.desktop.in.h
-$(srcdir)/fedora-welcome.po $(srcdir)/fedora-welcome.desktop.in.h: \
-	$(srcdir)/fedora-welcome $(srcdir)/fedora-welcome.desktop.in
-	@$(MAKE) -C $(top_builddir)/po $(abs_top_srcdir)/$(subdir)/$$(basename $@)
+uninstall-hook:
+	-cd $(DESTDIR)$(welcomedir) && rm -f fedora-welcome

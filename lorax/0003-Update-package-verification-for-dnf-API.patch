@@ -1,8 +1,8 @@
-From 93d1aceb41bc2f57cbf3269d165c29438ced0fe7 Mon Sep 17 00:00:00 2001
+From 74415994cef3c5ea0331ac2bd3355c2c2dc62664 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
  <marmarek@invisiblethingslab.com>
 Date: Wed, 25 May 2016 11:24:14 +0200
-Subject: [PATCH] Update package verification for dnf API
+Subject: [PATCH 3/3] Update package verification for dnf API
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -15,10 +15,10 @@ Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/pylorax/ltmpl.py b/src/pylorax/ltmpl.py
-index 661790d..8454566 100644
+index 28b7ff9..eed01ae 100644
 --- a/src/pylorax/ltmpl.py
 +++ b/src/pylorax/ltmpl.py
-@@ -581,14 +581,14 @@ class LoraxTemplateRunner(object):
+@@ -627,14 +627,14 @@ class LoraxTemplateRunner(object):
          try:
              for po in pkgs_to_download:
                  # before doing anything with the package, verify its signature
@@ -36,5 +36,5 @@ index 661790d..8454566 100644
                      # Fatal error
                      raise dnf.exceptions.Error(errmsg)
 -- 
-2.5.5
+2.7.4
 

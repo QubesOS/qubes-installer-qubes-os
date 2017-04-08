@@ -16,9 +16,6 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Martin Sivak <msivak@redhat.com>
-#                    Jesse Keating <jkeating@redhat.com>
-#
 
 from pyanaconda.ui.lib.space import FileSystemSpaceChecker, DirInstallSpaceChecker
 from pyanaconda.ui.tui.hubs import TUIHub
@@ -56,6 +53,8 @@ class SummaryHub(TUIHub):
             sys.stdout.flush()
             spokes = self._keys.values()
             while not all(spoke.ready for spoke in spokes):
+                # Catch any asyncronous events (like storage crashing)
+                self._app.process_events()
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 time.sleep(1)
@@ -73,19 +72,36 @@ class SummaryHub(TUIHub):
         incompleteSpokes = [spoke for spoke in self._keys.values()
                                       if spoke.mandatory and not spoke.completed]
 
-        # do a bit of final sanity checking, make sure pkg selection
-        # size < available fs space
-        if flags.automatedInstall:
-            if self._checker and not self._checker.check():
-                print(self._checker.error_message)
-            if not incompleteSpokes:
-                self.close()
-                return None
+        # Kickstart space check failure either stops the automated install or
+        # raises an error when using cmdline mode.
+        #
+        # For non-cmdline, prompt for input but continue to treat it as an
+        # automated install. The spokes (in particular software selection,
+        # which expects an environment for interactive install) will continue
+        # to behave the same, so the user can hit 'b' at the prompt and ignore
+        # the warning.
+        if flags.automatedInstall and self._checker and not self._checker.check():
+            print(self._checker.error_message)
+            log.error(self._checker.error_message)
 
-        if flags.ksprompt:
-            for spoke in incompleteSpokes:
-                log.info("kickstart installation stopped for info: %s", spoke.title)
-        else:
+            # Unset the checker so everything passes next time
+            self._checker = None
+
+            if not flags.ksprompt:
+                return None
+            else:
+                # TRANSLATORS: 'b' to begin installation
+                print(_("Enter '%s' to ignore the warning and attempt to install anyway.") %
+                        # TRANSLATORS: 'b' to begin installation
+                        C_("TUI|Spoke Navigation", "b")
+                        )
+        elif flags.automatedInstall and not incompleteSpokes:
+            # Space is ok and spokes are complete, continue
+            self.close()
+            return None
+
+        # cmdline mode and incomplete spokes raises and error
+        if not flags.ksprompt and incompleteSpokes:
             errtxt = _("The following mandatory spokes are not completed:") + \
                      "\n" + "\n".join(spoke.title for spoke in incompleteSpokes)
             log.error("CmdlineError: %s", errtxt)
@@ -95,7 +111,8 @@ class SummaryHub(TUIHub):
         # input, flip off the automatedInstall flag -- this way installation
         # does not automatically proceed once all spokes are complete, and a
         # user must confirm they want to begin installation
-        flags.automatedInstall = False
+        if incompleteSpokes:
+            flags.automatedInstall = False
 
         # override the default prompt since we want to offer the 'b' to begin
         # installation option here

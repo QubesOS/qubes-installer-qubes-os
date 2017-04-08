@@ -17,11 +17,9 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Chris Lumens <clumens@redhat.com>
-#
 
 from blivet import callbacks
-from blivet.osinstall import turnOnFilesystems
+from blivet.osinstall import turn_on_filesystems
 from blivet.devices import BTRFSDevice
 from pyanaconda.bootloader import writeBootLoader
 from pyanaconda.progress import progress_report, progress_message, progress_step, progress_complete, progress_init
@@ -30,7 +28,8 @@ from pyanaconda import flags
 from pyanaconda import iutil
 from pyanaconda import timezone
 from pyanaconda import network
-from pyanaconda.i18n import _
+from pyanaconda import screen_access
+from pyanaconda.i18n import N_
 from pyanaconda.threads import threadMgr
 from pyanaconda.ui.lib.entropy import wait_for_entropy
 from pyanaconda.kickstart import runPostScripts, runPreInstallScripts
@@ -72,7 +71,7 @@ def doConfiguration(storage, payload, ksdata, instClass):
 
     # Now run the execute methods of ksdata that require an installed system
     # to be present first.
-    with progress_report(_("Configuring installed system")):
+    with progress_report(N_("Configuring installed system")):
         ksdata.authconfig.execute(storage, ksdata, instClass)
         ksdata.selinux.execute(storage, ksdata, instClass)
         ksdata.firstboot.execute(storage, ksdata, instClass)
@@ -85,35 +84,36 @@ def doConfiguration(storage, payload, ksdata, instClass):
         ksdata.skipx.execute(storage, ksdata, instClass)
 
     if willWriteNetwork:
-        with progress_report(_("Writing network configuration")):
+        with progress_report(N_("Writing network configuration")):
             ksdata.network.execute(storage, ksdata, instClass)
 
     # Creating users and groups requires some pre-configuration.
-    with progress_report(_("Creating users")):
+    with progress_report(N_("Creating users")):
         u = Users()
         ksdata.rootpw.execute(storage, ksdata, instClass, u)
         ksdata.group.execute(storage, ksdata, instClass, u)
         ksdata.user.execute(storage, ksdata, instClass, u)
         ksdata.sshkey.execute(storage, ksdata, instClass, u)
 
-    with progress_report(_("Configuring addons")):
-        ksdata.addons.execute(storage, ksdata, instClass, u)
+    with progress_report(N_("Configuring addons")):
+        ksdata.addons.execute(storage, ksdata, instClass, u, payload)
 
-    with progress_report(_("Generating initramfs")):
+    with progress_report(N_("Generating initramfs")):
         payload.recreateInitrds()
 
-    # Work around rhbz#1200539, grubby doesn't handle grub2 missing initrd with /boot on btrfs
-    # So rerun writing the bootloader if this is live and /boot is on btrfs
-    boot_on_btrfs = isinstance(storage.mountpoints.get("/boot", storage.mountpoints.get("/")), BTRFSDevice)
+    # This works around 2 problems, /boot on BTRFS and BTRFS installations where the initrd is
+    # recreated after the first writeBootLoader call. This reruns it after the new initrd has
+    # been created, fixing the kernel root and subvol args and adding the missing initrd entry.
+    boot_on_btrfs = isinstance(storage.mountpoints.get("/"), BTRFSDevice)
     if flags.flags.livecdInstall and boot_on_btrfs \
                                  and (not ksdata.bootloader.disabled and ksdata.bootloader != "none"):
         writeBootLoader(storage, payload, instClass, ksdata)
 
     if willRunRealmd:
-        with progress_report(_("Joining realm: %s") % ksdata.realm.discovered):
+        with progress_report(N_("Joining realm: %s") % ksdata.realm.discovered):
             ksdata.realm.execute(storage, ksdata, instClass)
 
-    with progress_report(_("Running post-installation scripts")):
+    with progress_report(N_("Running post-installation scripts")):
         runPostScripts(ksdata.scripts)
 
     # setup kexec reboot if requested
@@ -122,7 +122,25 @@ def doConfiguration(storage, payload, ksdata, instClass):
 
     # Write the kickstart file to the installed system (or, copy the input
     # kickstart file over if one exists).
-    _writeKS(ksdata)
+    if flags.flags.nosave_output_ks:
+        # don't write the kickstart file to the installed system if this has
+        # been disabled by the nosave option
+        log.warning("Writing of the output kickstart to installed system has been disabled"
+                    " by the nosave option.")
+    else:
+        _writeKS(ksdata)
+
+    # Write out the user interaction config file.
+    #
+    # But make sure it's not written out in the image and directory installation mode,
+    # as that might result in spokes being inadvertedly hidden when the actual installation
+    # startes from the generate image or directory contents.
+    if flags.flags.imageInstall:
+        log.info("Not writing out user interaction config file due to image install mode.")
+    elif flags.flags.dirInstall:
+        log.info("Not writing out user interaction config file due to directory install mode.")
+    else:
+        screen_access.sam.write_out_config_file()
 
     progress_complete()
 
@@ -142,8 +160,8 @@ def doInstall(storage, payload, ksdata, instClass):
 
     # We really only care about actions that affect filesystems, since
     # those are the ones that take the most time.
-    steps = len(storage.devicetree.findActions(action_type="create", object_type="format")) + \
-            len(storage.devicetree.findActions(action_type="resize", object_type="format"))
+    steps = len(storage.devicetree.actions.find(action_type="create", object_type="format")) + \
+            len(storage.devicetree.actions.find(action_type="resize", object_type="format"))
 
     # Update every 10% of packages installed.  We don't know how many packages
     # we are installing until it's too late (see realmd later on) so this is
@@ -165,18 +183,18 @@ def doInstall(storage, payload, ksdata, instClass):
     if threadMgr.running > 1:
         progress_init(steps+1)
 
-        with progress_report(_("Waiting for %s threads to finish") % (threadMgr.running-1)):
+        with progress_report(N_("Waiting for %s threads to finish") % (threadMgr.running-1)):
             for message in ("Thread %s is running" % n for n in threadMgr.names):
                 log.debug(message)
             threadMgr.wait_all()
     else:
         progress_init(steps)
 
-    with progress_report(_("Setting up the installation environment")):
+    with progress_report(N_("Setting up the installation environment")):
         ksdata.firstboot.setup(storage, ksdata, instClass)
-        ksdata.addons.setup(storage, ksdata, instClass)
+        ksdata.addons.setup(storage, ksdata, instClass, payload)
 
-    storage.updateKSData()  # this puts custom storage info into ksdata
+    storage.update_ksdata()  # this puts custom storage info into ksdata
 
     # Do partitioning.
     payload.preStorage()
@@ -192,11 +210,11 @@ def doInstall(storage, payload, ksdata, instClass):
                                                             resize_format_post=step_clbk,
                                                             wait_for_entropy=entropy_wait_clbk)
 
-    turnOnFilesystems(storage, mountOnly=flags.flags.dirInstall, callbacks=callbacks_reg)
+    turn_on_filesystems(storage, mount_only=flags.flags.dirInstall, callbacks=callbacks_reg)
     payload.writeStorageEarly()
 
     # Run %pre-install scripts with the filesystem mounted and no packages
-    with progress_report(_("Running pre-installation scripts")):
+    with progress_report(N_("Running pre-installation scripts")):
         runPreInstallScripts(ksdata.scripts)
 
     # Do packaging.
@@ -204,13 +222,16 @@ def doInstall(storage, payload, ksdata, instClass):
     # Discover information about realms to join,
     # to determine additional packages
     if willRunRealmd:
-        with progress_report(_("Discovering realm to join")):
+        with progress_report(N_("Discovering realm to join")):
             ksdata.realm.setup()
 
     # Check for additional packages
     ksdata.authconfig.setup()
     ksdata.firewall.setup()
     ksdata.network.setup()
+    # Setup timezone and add chrony as package if timezone was set in KS
+    # and "-chrony" wasn't in packages section and/or --nontp wasn't set.
+    ksdata.timezone.setup(ksdata)
 
     # make name resolution work for rpm scripts in chroot
     if flags.can_touch_runtime_system("copy /etc/resolv.conf to sysroot"):
@@ -236,10 +257,10 @@ def doInstall(storage, payload, ksdata, instClass):
 
     # Do bootloader.
     if willInstallBootloader:
-        with progress_report(_("Installing boot loader")):
+        with progress_report(N_("Installing boot loader")):
             writeBootLoader(storage, payload, instClass, ksdata)
 
-    with progress_report(_("Performing post-installation setup tasks")):
+    with progress_report(N_("Performing post-installation setup tasks")):
         payload.postInstall()
 
     progress_complete()

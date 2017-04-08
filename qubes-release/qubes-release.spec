@@ -97,7 +97,7 @@ cat >> $RPM_BUILD_ROOT/etc/rpm/macros.dist << EOF
 %%fc%{fedora_base_version}		1
 EOF
 
-%post
+%posttrans
 # Import all keys b/c rpm won't do it automatically (as opposite to yum)
 rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-* || true
 

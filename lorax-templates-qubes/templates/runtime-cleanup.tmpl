@@ -11,11 +11,7 @@ remove usr/share/i18n
     removepkg perl*
 %endif
 ## no sound support, thanks
-## ...except alsa-libs, which are needed by spice-vdagent
-removepkg alsa-*firmware* flac gstreamer-tools libsndfile pulseaudio* sound-theme-freedesktop
-removepkg midisport-firmware
-## no fancy video, either
-removepkg libcrystalhd crystalhd-firmware ivtv-firmware cx18-firmware
+removepkg flac gstreamer-tools libsndfile pulseaudio* sound-theme-freedesktop
 ## we don't create new initramfs/bootloader conf inside anaconda
 ## (that happens inside the target system after we install dracut/grubby)
 removepkg dracut-network grubby anaconda-dracut
@@ -69,7 +65,7 @@ removepkg avahi-autoipd coreutils-libs dash db4-utils diffutils file
 removepkg genisoimage info iptables
 removepkg jasper-libs libXxf86misc
 removepkg libasyncns libhbaapi libhbalinux
-removepkg libmcpp libpcap libtiff libutempter linux-atm-libs
+removepkg libmcpp libpcap libtiff linux-atm-libs
 removepkg lvm2-libs m4 mailx makebootfat mcpp
 removepkg mingetty mobile-broadband-provider-info pkgconfig ppp pth
 removepkg rmt rpcbind squashfs-tools system-config-firewall-base
@@ -86,7 +82,9 @@ remove /usr/share/mime/multipart /usr/share/mime/packages /usr/share/mime/text
 remove /usr/share/mime/video /usr/share/mime/x-content /usr/share/mime/x-epoc
 remove /var/db /var/games /var/tmp /var/yp /var/nis /var/opt /var/local
 remove /var/mail /var/spool /var/preserve /var/report
-remove /var/lib/rpm/* /var/lib/yum
+remove /var/lib/rpm/* /var/lib/yum /var/lib/dnf
+## clean up the files created by various '> /dev/null's
+remove /dev/*
 
 ## icons cache
 remove /usr/share/icons/*/icon-theme.cache
@@ -95,7 +93,7 @@ remove /usr/share/icons/*/icon-theme.cache
 removekmod sound drivers/media drivers/hwmon \
            net/atm net/bluetooth net/sched net/sctp \
            net/rds net/l2tp net/decnet net/netfilter net/ipv4 net/ipv6 \
-           drivers/watchdog drivers/target drivers/rtc drivers/input/joystick \
+           drivers/watchdog drivers/rtc drivers/input/joystick \
            drivers/bluetooth drivers/edac drivers/staging \
            drivers/usb/serial drivers/usb/host drivers/usb/misc \
            fs/ocfs2 fs/ceph fs/nfsd fs/ubifs fs/nilfs2 \
@@ -106,24 +104,8 @@ removekmod sound drivers/media drivers/hwmon \
 removekmod drivers/char --allbut virtio_console hw_random \
                                   virtio-rng ipmi
 removekmod drivers/hid --allbut hid-logitech-dj hid-logitech-hidpp
-removekmod drivers/video --allbut hyperv_fb
+removekmod drivers/video --allbut hyperv_fb syscopyarea sysfillrect sysimgblt fb_sys_fops
 remove lib/modules/*/{build,source,*.map}
-## Need to keep virtio_console.ko and ipmi stuff in drivers/char
-## Also keep virtio-rng so that the installer can get sufficient randomness for
-## LUKS setup.
-runcmd chroot ${root} find /lib/modules \
-                        -regex ".*/kernel/drivers/char/.*" \
-                        \! -name virtio_console.ko\* \
-                        \! -name hw_random \
-                        \! -name virtio-rng.ko\* \
-                        \! -name ipmi\* \
-                        -delete
-# Remove all of drivers/hid except for logitech modules.
-runcmd chroot ${root} find /lib/modules \
-                        -regex ".*/kernel/drivers/hid/.*" \
-                        \! -name hid-logitech-hidpp.ko\* \
-                        \! -name hid-logitech-dj.ko\* \
-                        -delete
 ## NOTE: depmod gets re-run after cleanup finishes
 
 ## remove unused themes, theme engines, icons, etc.
@@ -171,7 +153,7 @@ removefrom coreutils /usr/bin/expand /usr/bin/factor
 removefrom coreutils /usr/bin/fold /usr/bin/groups /usr/bin/hostid
 removefrom coreutils /usr/bin/install /usr/bin/join /usr/bin/logname
 removefrom coreutils /usr/bin/mkfifo /usr/bin/nl /usr/bin/nohup /usr/bin/nproc
-removefrom coreutils /usr/bin/paste /usr/bin/pathchk
+removefrom coreutils /usr/bin/pathchk
 removefrom coreutils /usr/bin/pinky /usr/bin/pr /usr/bin/printenv
 removefrom coreutils /usr/bin/printf /usr/bin/ptx /usr/bin/runcon
 removefrom coreutils /usr/bin/sha224sum /usr/bin/sha384sum
@@ -213,7 +195,7 @@ removefrom glibc /${libdir}/libSegFault* /${libdir}/libanl*
 removefrom glibc /${libdir}/libcidn* /${libdir}/libnss_compat*
 removefrom glibc /${libdir}/libnss_hesiod* /${libdir}/libnss_nis*
 # python-pyudev uses ctypes.util.find_library, which uses /sbin/ldconfig
-removefrom glibc /${libdir}/libthread* /${libdir}/rtkaio* /sbin/sln
+removefrom glibc /${libdir}/rtkaio* /sbin/sln
 removefrom glibc /usr/libexec/* /usr/sbin/*
 removefrom glibc-common /etc/* /usr/bin/catchsegv /usr/bin/gencat
 removefrom glibc-common /usr/bin/getent
@@ -263,7 +245,7 @@ removefrom libvorbis /usr/${libdir}/libvorbisenc.*
 removefrom libxml2 /usr/bin/*
 removefrom libxml2-python /usr/${libdir}/python?.?/site-packages/libxml2mod.a
 removefrom libxml2-python /usr/${libdir}/python?.?/site-packages/libxml2mod.la
-removefrom lldpad /etc/* /usr/sbin/lldptool
+removefrom lldpad /etc/*
 removefrom lua /usr/bin/*
 removefrom madan-fonts /usr/share/fonts/madan/*
 removefrom mdadm /etc/*
@@ -294,13 +276,12 @@ removefrom nfs-utils /var/lib/nfs/rmtab /var/lib/nfs/state /var/lib/nfs/xtab
 removefrom nhn-nanum-gothic-fonts /usr/share/fonts/nhn-nanum/NanumGothic*Bold.ttf
 removefrom nss-softokn /usr/${libdir}/nss/*
 removefrom openldap /etc/openldap/* /usr/${libdir}/libldap_r-*
-removefrom openssh /etc/ssh/* /usr/libexec/*
-removefrom openssh-clients /etc/ssh/* /usr/bin/slogin /usr/bin/ssh-*
+removefrom openssh /usr/libexec/*
+removefrom openssh-clients /etc/ssh/* /usr/bin/ssh-*
 removefrom openssh-clients /usr/libexec/*
-removefrom openssh-server /etc/ssh/* /usr/libexec/*
+removefrom openssh-server /etc/ssh/* /usr/libexec/openssh/sftp-server
 removefrom openssl /etc/pki/* /usr/bin/* /usr/${libdir}/openssl/*
 removefrom pam /usr/sbin/* /usr/share/locale/*
-removefrom pciutils /usr/sbin/*
 removefrom policycoreutils /etc/* /usr/bin/* /usr/share/locale/*
 removefrom polkit /usr/bin/*
 removefrom polkit-desktop-policy /var/lib/*
@@ -327,11 +308,11 @@ removefrom sysvinit-tools /usr/bin/*
 removefrom tar /usr/share/locale/*
 removefrom usbutils /usr/bin/*
 removefrom util-linux --allbut \
-    /usr/bin/{dmesg,getopt,kill,login,lsblk,more,mount,umount,mountpoint} \
+    /usr/bin/{dmesg,getopt,kill,login,lsblk,more,mount,umount,mountpoint,findmnt} \
     /etc/mtab /etc/pam.d/login /etc/pam.d/remote \
     /usr/sbin/{agetty,blkid,blockdev,clock,fdisk,fsck,fstrim,hwclock,losetup} \
-    /usr/sbin/{mkswap,nologin,sfdisk,swapoff,swapon,wipefs,partx} \
-    /usr/bin/{logger,hexdump}
+    /usr/sbin/{mkswap,nologin,sfdisk,swapoff,swapon,wipefs,partx,fsfreeze} \
+    /usr/bin/{logger,hexdump,flock}
 removefrom volume_key-libs /usr/share/locale/*
 removefrom wget /etc/* /usr/share/locale/*
 removefrom xorg-x11-drv-intel /usr/${libdir}/libI*
@@ -339,11 +320,11 @@ removefrom xorg-x11-drv-openchrome /usr/${libdir}/libchrome*
 removefrom xorg-x11-drv-synaptics /usr/bin/*
 removefrom xorg-x11-drv-wacom /usr/bin/*
 removefrom xorg-x11-fonts-misc --allbut /usr/share/X11/fonts/misc/{6x13,encodings,fonts,*cursor}*
-removefrom xorg-x11-server-utils --allbut /usr/bin/xrandr /usr/share/X11/rgb.txt
+removefrom xorg-x11-server-utils --allbut /usr/bin/xrandr /usr/share/X11/rgb.txt /usr/bin/xrdb
 removefrom yum /etc/* /usr/share/locale/* /usr/share/yum-cli/*
 removefrom ${product.name}-logos /etc/*
 removefrom ${product.name}-logos /usr/share/icons/{Bluecurve,oxygen}/*
-removefrom ${product.name}-logos /usr/share/{gnome-screensaver,kde4,pixmaps}/*
+removefrom ${product.name}-logos /usr/share/{firstboot,gnome-screensaver,kde4,pixmaps}/*
 
 ## cleanup_python_files()
 runcmd find ${root} -name "*.pyo" -type f -delete
@@ -355,3 +336,21 @@ runcmd find ${root} -name "*.pyc" -type f -exec ln -sf /dev/null {} \;
 ## NOTE: Excluding /etc/mtab which links to /proc/self/mounts for systemd
 runcmd chroot ${root} find -L /etc /usr -xdev -type l -and \! -name "mtab" \
                 -printf "removing broken symbolic link %p -> %l\n" -delete
+
+## Clean up some of the mess pulled in by webkitgtk via yelp
+## libwebkit2gtk links to a handful of libraries in gstreamer and
+## gstreamer-plugins-base. Remove the rest of them.
+removefrom gstreamer1 --allbut /usr/${libdir}/libgstbase-1.0.* \
+                               /usr/${libdir}/libgstreamer-1.0.*
+removefrom gstreamer1-plugins-base --allbut \
+        /usr/${libdir}/libgst{app,audio,fft,pbutils,tag,video}-1.0.*
+
+## We have enough geoip libraries, thanks
+removepkg geoclue2
+
+## And remove the packages that those extra libraries pulled in
+removepkg cdparanoia-libs opus libtheora libvisual flac-libs gsm avahi-glib avahi-libs \
+          ModemManager-glib
+
+## metacity requires libvorbis and libvorbisfile, but enc/dec are no longer needed
+removefrom libvorbis --allbut /usr/${libdir}/libvorbisfile.* /usr/${libdir}/libvorbis.*

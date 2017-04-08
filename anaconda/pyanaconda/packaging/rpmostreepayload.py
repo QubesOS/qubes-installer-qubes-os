@@ -17,13 +17,11 @@
 # License and may only be used or replicated with the express permission of
 # Red Hat, Inc.
 #
-# Red Hat Author(s): Colin Walters <walters@redhat.com>
-#
 
 import os
 import sys
+from subprocess import CalledProcessError
 
-from pyanaconda import constants
 from pyanaconda import iutil
 from pyanaconda.flags import flags
 from pyanaconda.i18n import _
@@ -37,6 +35,7 @@ from gi.repository import GLib
 from gi.repository import Gio
 
 from blivet.size import Size
+from blivet.util import umount
 
 import logging
 log = logging.getLogger("anaconda")
@@ -49,7 +48,7 @@ class RPMOSTreePayload(ArchivePayload):
     def __init__(self, data):
         super(RPMOSTreePayload, self).__init__(data)
         self._remoteOptions = None
-        self._sysroot_path = None
+        self._internal_mounts = []
 
     @property
     def handlesBootloaderConfiguration(self):
@@ -143,9 +142,10 @@ class RPMOSTreePayload(ArchivePayload):
             ["admin", "--sysroot=" + iutil.getTargetPhysicalRoot(),
              "init-fs", iutil.getTargetPhysicalRoot()])
 
-        self._sysroot_path = Gio.File.new_for_path(iutil.getTargetPhysicalRoot())
-
-        sysroot = OSTree.Sysroot.new(self._sysroot_path)
+        # Here, we use the physical root as sysroot, because we haven't
+        # yet made a deployment.
+        sysroot_file = Gio.File.new_for_path(iutil.getTargetPhysicalRoot())
+        sysroot = OSTree.Sysroot.new(sysroot_file)
         sysroot.load(cancellable)
         repo = sysroot.get_repo(None)[1]
         # We don't support resuming from interrupted installs
@@ -177,7 +177,7 @@ class RPMOSTreePayload(ArchivePayload):
             log.error(str(exn))
             if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
                 progressQ.send_quit(1)
-                iutil.ipmi_report(constants.IPMI_ABORTED)
+                iutil.ipmi_abort(scripts=self.data.scripts)
                 sys.exit(1)
 
         progressQ.send_message(_("Preparing deployment of %s") % (ostreesetup.ref, ))
@@ -220,30 +220,43 @@ class RPMOSTreePayload(ArchivePayload):
             log.error(str(exn))
             if errors.errorHandler.cb(exn) == errors.ERROR_RAISE:
                 progressQ.send_quit(1)
-                iutil.ipmi_report(constants.IPMI_ABORTED)
+                iutil.ipmi_abort(scripts=self.data.scripts)
                 sys.exit(1)
 
         mainctx.pop_thread_default()
 
     def prepareMountTargets(self, storage):
+        """ Prepare the ostree root """
         ostreesetup = self.data.ostreesetup
 
         varroot = iutil.getTargetPhysicalRoot() + '/ostree/deploy/' + ostreesetup.osname + '/var'
 
         # Set up bind mounts as if we've booted the target system, so
         # that %post script work inside the target.
-        binds = [(iutil.getTargetPhysicalRoot(),
-                  iutil.getSysroot() + '/sysroot'),
-                 (varroot,
-                  iutil.getSysroot() + '/var'),
-                 (iutil.getSysroot() + '/usr', None)]
+        binds = [(varroot, iutil.getSysroot() + '/var'),
+                 (iutil.getSysroot() + '/usr', None),
+                 (iutil.getTargetPhysicalRoot(), iutil.getSysroot() + "/sysroot"),
+                 (iutil.getTargetPhysicalRoot() + "/boot", iutil.getSysroot() + "/boot")]
+
+        # Bind mount filesystems from /mnt/sysimage to the ostree root; perhaps
+        # in the future consider `mount --move` to make the output of `findmnt`
+        # not induce blindness.
+        for path in ["/dev", "/proc", "/run", "/sys"]:
+            binds += [(iutil.getTargetPhysicalRoot()+path, iutil.getSysroot()+path)]
 
         for (src, dest) in binds:
-            self._safeExecWithRedirect("mount",
-                                       ["--bind", src, dest if dest else src])
-            if dest is None:
+            is_ro_bind = dest is None
+            if is_ro_bind:
                 self._safeExecWithRedirect("mount",
-                                           ["--bind", "-o", "ro", src, src])
+                                           ["--bind", src, src])
+                self._safeExecWithRedirect("mount",
+                                           ["--bind", "-o", "remount,ro", src, src])
+            else:
+                # Recurse for non-ro binds so we pick up sub-mounts
+                # like /sys/firmware/efi/efivars.
+                self._safeExecWithRedirect("mount",
+                                           ["--rbind", src, dest])
+            self._internal_mounts.append(src if is_ro_bind else dest)
 
         # Now, ensure that all other potential mount point directories such as
         # (/home) are created.  We run through the full tmpfiles here in order
@@ -257,6 +270,15 @@ class RPMOSTreePayload(ArchivePayload):
             self._safeExecWithRedirect("systemd-tmpfiles",
                                        ["--create", "--boot", "--root=" + iutil.getSysroot(),
                                         "--prefix=/var/" + varsubdir])
+
+    def unsetup(self):
+        super(RPMOSTreePayload, self).unsetup()
+
+        for mount in reversed(self._internal_mounts):
+            try:
+                umount(mount)
+            except CalledProcessError as e:
+                log.debug("unmounting %s failed: %s", mount, str(e))
 
     def recreateInitrds(self):
         # For rpmostree payloads, we're replicating an initramfs from
@@ -278,10 +300,14 @@ class RPMOSTreePayload(ArchivePayload):
         # However, we ignore the case where the remote already exists,
         # which occurs when the content itself provides the remote
         # config file.
-        sysroot = OSTree.Sysroot.new(self._sysroot_path)
+
+        # Note here we use the deployment as sysroot, because it's
+        # that version of /etc that we want.
+        sysroot_file = Gio.File.new_for_path(iutil.getSysroot())
+        sysroot = OSTree.Sysroot.new(sysroot_file)
         sysroot.load(cancellable)
         repo = sysroot.get_repo(None)[1]
-        repo.remote_change(Gio.File.new_for_path(iutil.getSysroot()),
+        repo.remote_change(sysroot_file,
                            OSTree.RepoRemoteChange.ADD_IF_NOT_EXISTS,
                            self.data.ostreesetup.remote, self.data.ostreesetup.url,
                            GLib.Variant('a{sv}', self._remoteOptions),
@@ -299,13 +325,15 @@ class RPMOSTreePayload(ArchivePayload):
             os.rename(boot_grub2_cfg, target_grub_cfg)
             os.symlink('../loader/grub.cfg', boot_grub2_cfg)
 
-        # OSTree owns the bootloader configuration, so here we give it
-        # the argument list we computed from storage, architecture and
-        # such.
-        set_kargs_args = ["admin", "instutil", "set-kargs"]
-        set_kargs_args.extend(self.storage.bootloader.boot_args)
-        set_kargs_args.append("root=" + self.storage.rootDevice.fstabSpec)
-        self._safeExecWithRedirect("ostree", set_kargs_args, root=iutil.getSysroot())
+        # Skip kernel args setup for dirinstall, there is no bootloader or rootDevice setup.
+        if not flags.dirInstall:
+            # OSTree owns the bootloader configuration, so here we give it
+            # the argument list we computed from storage, architecture and
+            # such.
+            set_kargs_args = ["admin", "instutil", "set-kargs"]
+            set_kargs_args.extend(self.storage.bootloader.boot_args)
+            set_kargs_args.append("root=" + self.storage.root_device.fstab_spec)
+            self._safeExecWithRedirect("ostree", set_kargs_args, root=iutil.getSysroot())
 
     def writeStorageEarly(self):
         pass
