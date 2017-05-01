@@ -1419,13 +1419,9 @@ class GRUB2(GRUB):
     def __init__(self):
         super(GRUB2, self).__init__()
 
-        if subprocess.check_output(
-                ['dmidecode', '-s', 'bios-vendor'],
-                universal_newlines=True) == "coreboot\n":
-            log.info("dmidecode -s bios-vendor returns coreboot")
-            self.encryption_support = True
-            self.skip_bootloader = True
-            self.stage2_format_types += ["lvmlv"]
+        self.encryption_support = True
+        self.stage2_format_types += ["lvmlv"]
+        self.skip_bootloader = flags.cmdline.getbool("skip_grub", False)
 
     # XXX we probably need special handling for raid stage1 w/ gpt disklabel
     #     since it's unlikely there'll be a bios boot partition on each disk
