@@ -3,7 +3,7 @@
 %endif
 
 Name:           pungi
-Version:        4.1.10
+Version:        4.1.14
 Release:        1%{?dist}
 Epoch:          1000
 Summary:        Distribution compose tool
@@ -18,16 +18,25 @@ Patch3:         disable-efi.patch
 Patch4:         Hacky-way-to-pass-gpgkey-to-lorax.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 #Patch6:         disable-upgrade.patch
-BuildRequires:  python-nose, python-nose-cov, python-mock
-BuildRequires:  python-devel, python-setuptools, python2-productmd
+BuildRequires:  python-nose, python-mock
+BuildRequires:  python-devel, python-setuptools, python2-productmd >= 1.3
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
-BuildRequires:  python-lxml, libselinux-python, yum-utils, lorax
+BuildRequires:  python-lxml, libselinux-python, yum-utils, lorax, python-rpm
 BuildRequires:  yum => 3.4.3-28, createrepo >= 0.4.11
 BuildRequires:  gettext, git-core, cvs
 BuildRequires:  python-jsonschema
+BuildRequires:  python-enum34
+BuildRequires:  python2-dnf
+BuildRequires:  python2-multilib
 
 #deps for doc building
-BuildRequires:  python-sphinx
+BuildRequires:  python-sphinx, texlive-latex-bin-bin, texlive-collection-fontsrecommended
+BuildRequires:  texlive-times, texlive-cmap, texlive-babel-english, texlive-fancyhdr
+BuildRequires:  texlive-fancybox, texlive-titlesec, texlive-framed, texlive-threeparttable
+BuildRequires:  texlive-mdwtools, texlive-wrapfig, texlive-parskip, texlive-upquote
+BuildRequires:  texlive-multirow, texlive-capt-of, texlive-eqparbox, tex(color.cfg)
+BuildRequires:  tex(fncychap.sty)
+BuildRequires:  tex(tabulary.sty)
 
 Requires:       createrepo >= 0.4.11
 Requires:       yum => 3.4.3-28
@@ -36,7 +45,7 @@ Requires:       repoview
 Requires:       python-lockfile
 Requires:       kobo
 Requires:       kobo-rpmlib
-Requires:       python-productmd
+Requires:       python-productmd >= 1.3
 Requires:       python-kickstart
 Requires:       libselinux-python
 Requires:       createrepo_c
@@ -53,11 +62,25 @@ Requires:       gettext
 #Requires:       syslinux
 Requires:       git
 Requires:       python-jsonschema
+Requires:       libguestfs-tools-c
+Requires:       python-enum34
+Requires:       python2-dnf
+Requires:       python2-multilib
 
 BuildArch:      noarch
 
 %description
 A tool to create anaconda based installation trees/isos of a set of rpms.
+
+%package utils
+Summary:    Utilities for working with finished composes
+Requires:   pungi = %{version}-%{release}
+
+%description utils
+These utilities work with finished composes produced by Pungi. They can be used
+for creating unified ISO images, validating config file or sending progress
+notification to Fedora Message Bus.
+
 
 %prep
 %setup -q
@@ -72,6 +95,9 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 %build
 %{__python} setup.py build
 cd doc
+make latexpdf
+make epub
+make text
 make man
 gzip _build/man/pungi.1
 
@@ -82,22 +108,211 @@ gzip _build/man/pungi.1
 %{__install} -m 0644 doc/_build/man/pungi.1.gz %{buildroot}%{_mandir}/man1
 
 %check
+nosetests --exe
 ./tests/data/specs/build.sh
-%{__python} setup.py test
-nosetests --exe --with-cov --cov-report html --cov-config tox.ini
 cd tests && ./test_compose.sh
 
 %files
 %license COPYING GPL
-%doc AUTHORS doc/*
+%doc AUTHORS doc/_build/latex/Pungi.pdf doc/_build/epub/Pungi.epub doc/_build/text/*
 %{python_sitelib}/%{name}
 %{python_sitelib}/%{name}-%{version}-py?.?.egg-info
-%{_bindir}/*
+%{_bindir}/%{name}
+%{_bindir}/%{name}-koji
+%{_bindir}/%{name}-gather
+%{_bindir}/comps_filter
+%{_bindir}/%{name}-make-ostree
 %{_mandir}/man1/pungi.1.gz
 %{_datadir}/pungi
 /var/cache/pungi
 
+%files utils
+%{python_sitelib}/%{name}_utils
+%{_bindir}/%{name}-create-unified-isos
+%{_bindir}/%{name}-config-validate
+%{_bindir}/%{name}-fedmsg-notification
+%{_bindir}/%{name}-patch-iso
+%{_bindir}/%{name}-compare-depsolving
+
 %changelog
+* Tue Mar 28 2017 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.14-1
+- Not create empty skeleton dirs for empty variants (qwan)
+- Query only active modules in PDC. (jkaluza)
+- Save modules metadata as full yaml object (jkaluza)
+- Implement DNF based depsolving (dmach, mmraka, lsedlar)
+- Add support for modular composes (jkaluza)
+- Add a script for modifying ISO images (lsedlar)
+- iso-wrapper: Add utility for mounting images (lsedlar)
+- buildinstall: Move tweaking configs into a function (lsedlar)
+- image-build: Correctly write can_fail option (lsedlar)
+- pungi-koji: new cmd option '--latest-link-status' (qwan)
+- Print task ID for successful tasks (lsedlar)
+- ostree-installer: Fix logging directory (lsedlar)
+- buildinstall: Print debug info if unmount fails (lsedlar)
+- pkgset: report all unsigned packages (qwan)
+- default createrepo_checksum to sha256 (qwan)
+- unified-iso: Log better error when linking fails (lsedlar)
+- unified-iso: Blacklist extra files metadata (lsedlar)
+- buildinstall: Retry unmounting image (lsedlar)
+- Remove indices from documentation (lsedlar)
+- iso-wrapper: Handle wrong implant md5 (lsedlar)
+- image-build: Remove check for number of images (lsedlar)
+- Extract only first version from specfile (lsedlar)
+- consolidate repo option names (qwan)
+- checks: extend validator with 'alias' (qwan)
+- osbs: write manifest for scratch osbs (qwan)
+
+* Mon Mar 06 2017 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.13-2
+- Remove check for number of images
+
+* Mon Mar 06 2017 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.13-1
+- Make MANIFEST.in stricter (qwan)
+- Remove one line of log print (qwan)
+- gather: Filter comps group on depsolving input of optional (lsedlar)
+- Enable customizing runroot task weight (lsedlar)
+- comps: Filter comps groups for optional variants (lsedlar)
+- Rename main logger (lsedlar)
+- ostree: Silence logger in tests (lsedlar)
+- ostree: Fix crash when extra repos are missing (lsedlar)
+- util: Add a utility for managing temporary files (lsedlar)
+- Add --quiet option to pungi-koji (qwan)
+- handle opening empty images.json while re-running pungi-koji in debug mode
+  (qwan)
+- minor change: remove an always true condition (qwan)
+- Refactor depsolving tests (lsedlar)
+- multilib: Remove FileMultilibMethod class (lsedlar)
+- pkgset: Use additional packages for initial pull (lsedlar)
+- metadata: Fix .treeinfo paths for addons (lsedlar)
+- koji_wrapper: Always use --profile option with koji (lsedlar)
+- add missing koji_profile from test compose setting (dennis)
+- use koji --profile when calling koji for livemedia (dennis)
+- repoclosure: Don't run build deps check (lsedlar)
+- repoclosure: add option to use dnf backend (lsedlar)
+- repoclosure: Add test for repoclosure in test phase (lsedlar)
+- repoclosure: Remove duplicated code (lsedlar)
+- repoclosure: Remove useless wrapper class (lsedlar)
+- repoclosure: Remove unused code (lsedlar)
+- repoclosure: Add a test for the wrapper (lsedlar)
+- image-build: Pass arches around as a list (lsedlar)
+- image-build: Expand arches for can_fail (lsedlar)
+- image_checksum: add file sizes to checksum files (qwan)
+- Add documentation and example for greedy_method (lsedlar)
+- replace ${basearch} when updating the ref (dennis)
+- Add some debugging about ref updating (puiterwijk)
+
+* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 4.1.12-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Tue Jan 24 2017 Dennis Gilmore <dennis@ausil.us> - 4.1.12-4
+- add patches for pagure pr#517
+
+* Tue Jan 17 2017 Dennis Gilmore <dennis@ausil.us> - 4.1.12-3
+- add patch to replace ${basearch} in the ostree ref
+
+* Tue Jan 17 2017 Dennis Gilmore <dennis@ausil.us> - 4.1.12-2
+- add patch from Patrick to give us some ostree debuging
+
+* Tue Jan 17 2017 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.12-1
+- unified-iso: Fall back to default config (lsedlar)
+- osbs: optionally check GPG signatures (qwan)
+- ostree-installer:  Allow multiple repos in ostree installer (qwan)
+- Update tox.ini (lsedlar)
+- unified-iso: Create isos with debuginfo packages (lsedlar)
+- Create temporary dirs under compose's workdir (qwan)
+- spec: Update upstream and source URL (lsedlar)
+- unified-iso: Create work/ dir if missing (lsedlar)
+- spec: Copy %%check section from Fedora (lsedlar)
+- Update MANIFEST.in to include test data (lsedlar)
+- osbs: Add better example to documentation (lsedlar)
+- metadata: Correctly parse lorax .treeinfo (lsedlar)
+- spec: Add a separate subpackage for extra utils (lsedlar)
+- Add script to generate unified ISOs (lsedlar)
+- osbs: Validate config in tests (lsedlar)
+- osbs: Verify the .repo files contain correct URL (lsedlar)
+- osbs: Enable specifying extra repos (lsedlar)
+- pungi-make-ostree: change 'tree' command '--log-dir' arg to be required
+  (qwan)
+- Add test for krb_login with principal and keytab (puiterwijk)
+- Make sure that the profile name is parsed correctly (puiterwijk)
+- Make KojiWrapper support krb_login with keytab (puiterwijk)
+- Make KojiWrapper parse krb_rdns (puiterwijk)
+- Update documentation (lsedlar)
+- image-build: Allow failure only on some arches (lsedlar)
+- live-media: Allow some arches to fail (lsedlar)
+- image-build: Use install_tree from parent for nested variants (lsedlar)
+- config: Report unknown options as warnings (lsedlar)
+- pungi: Fix --nosource option (lsedlar)
+- pungi: Handle missing SRPM (lsedlar)
+- ostree-installer: Add 'installer' sub-command to pungi-make-ostree (qwan)
+- ostree: Add 'tree' sub-command to pungi-make-ostree script (qwan)
+- metadata: Allow creating internal releases (lsedlar)
+- Add CLI option to create ci compose (lsedlar)
+- Fix PhaseLoggerMixin in case of compose has _logger = None (qwan)
+- ostree-installer: Use dvd-ostree as type in metadata (lsedlar)
+- image-build: Reduce duplication (lsedlar)
+- createrepo: Add tests for adding product certificates (lsedlar)
+- createrepo: Add tests for retrieving product certificates (lsedlar)
+- Include phase name in log for some phases (qwan)
+- Expose lorax's --rootfs-size argument (walters)
+- pungi: Include noarch debuginfo (lsedlar)
+- media-split: Print sensible message for unlimited size (lsedlar)
+
+* Wed Dec 14 2016 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.11-4
+- Add patches for koji kerberos auth
+
+* Thu Dec 08 2016 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.11-3
+- Backport patches for ostree installer
+
+* Mon Nov 21 2016 Lubomír Sedlář <lsedlar@redhat.com> - 4.1.11-2
+- Add missing dependency on libguestfs-tools-c
+
+* Tue Nov 15 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.11-1
+- [ostree] Allow extra repos to get packages for composing OSTree repository
+  (qwan)
+- pungi: Run in-process for testing (lsedlar)
+- pungi: Only add logger once (lsedlar)
+- pungi: Connect yum callback to logger (lsedlar)
+- extra-files: Nice error message on missing RPM (lsedlar)
+- compose: Drop unused argument (lsedlar)
+- compose: Search all nested variants (lsedlar)
+- ostree-installer: Capture all lorax logs (lsedlar)
+- lorax-wrapper: Put all log files into compose logs (lsedlar)
+- pungi: Fix reading multilib config files (lsedlar)
+- pungi: Fulltree should not apply for input multilib package (lsedlar)
+- pungi: Add tests for depsolving (lsedlar)
+- Update ostree phase documentation (lsedlar)
+- [ostree] Allow adding versioning metadata (qwan)
+  (lubomir.sedlar)
+- [ostree] New option to enable generating ostree summary file (qwan)
+- pungi: Avoid removing from list (lsedlar)
+- pungi: Allow globs in %%multilib-whitelist (dmach)
+- pungi: Exclude RPMs that are in lookaside (dmach)
+- pungi: Fix excluding SRPMs (dmach)
+- pungi: Speed up blacklist processing (dmach)
+- Update tests to use ostree write-commit-id (puiterwijk)
+- ostree: Use the write-commitid-to feature rather than parsing ostree logs
+  (puiterwijk)
+- checks: Check for createrepo_c (lsedlar)
+- checks: Update tests to not require python modules (lsedlar)
+- Remove executable permissions on test scripts (puiterwijk)
+- Add more require checks (puiterwijk)
+- Fix package name for createrepo and mergerepo (puiterwijk)
+- not using 'git -C path' which is not supported by git 1.x (qwan)
+- pungi-koji: add option for not creating latest symbol link (qwan)
+- Replace mount/umount with guestfsmount and 'fusermount -u' (qwan)
+- config: Don't abort on deprecated options (lsedlar)
+- metadata: Treeinfo should point to packages and repo (lsedlar)
+- Send notification when compose fails to start (lsedlar)
+- metadata: Stop crashing for non-bootable products (lsedlar)
+- createiso: Do not split bootable media (lsedlar)
+- doc: Fix a typo in progress notification example (lsedlar)
+- Dump images.json after checksumming (lsedlar)
+- metadata: Correctly clone buildinstall .treeinfo (lsedlar)
+- createiso: Include layered product name in iso name (lsedlar)
+- buildinstall: Only transform arch for lorax (lsedlar)
+- iso-wrapper: Remove the class (lsedlar)
+- config: Validate variant regular expressions (lsedlar)
+
 * Sat Oct 08 2016 Dennis Gilmore <dennis@ausil.us> - 4.1.10-1
 - pungi: Replace kickstart repo url (mark)
 - ostree-installer: Reduce duplication in tests (lsedlar)
@@ -610,7 +825,7 @@ cd tests && ./test_compose.sh
 - Add dependency of 'runroot' config option on 'koji_profile'. (dmach)
 - Rename product_* to release_*. (dmach)
 - Implement koji profiles. (dmach)
-- Drop repoclosure-%arch tests. (dmach)
+- Drop repoclosure-%%arch tests. (dmach)
 - Config option create_optional_isos now defaults to False. (dmach)
 - Change createrepo config options defaults. (dmach)
 - Rewrite documentation to Sphinx. (dmach)
@@ -701,3 +916,23 @@ cd tests && ./test_compose.sh
 
 * Thu Mar 12 2015 Dennis Gilmore <dennis@ausil.us> - 4.0-0.1.git64b6c80
 - update to the pungi 4.0 dev branch
+
+* Mon Dec 15 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-3
+- add patch to make the dvd bootable on aarch64
+
+* Tue Sep 30 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-2
+- add patch to fix whitespace errors
+
+* Thu Sep 11 2014 Dennis Gilmore <dennis@ausil.us> - 3.12-1
+- Remove magic parameter to mkisofs (hamzy)
+- Added option for setting release note files (riehecky)
+
+* Thu Jul 31 2014 Dennis Gilmore <dennis@ausil.us> - 3.11-1
+- make sure that the dvd/cd is using the shortened volumeid (dennis)
+
+* Thu Jul 31 2014 Dennis Gilmore <dennis@ausil.us> - 3.10-1
+- fix up volume shortening substituions to actually work (dennis)
+
+* Wed Jul 30 2014 Dennis Gilmore <dennis@ausil.us> - 3.09-1
+- implement nameing scheme from
+  https://fedoraproject.org/wiki/User:Adamwill/Draft_fedora_image_naming_policy
