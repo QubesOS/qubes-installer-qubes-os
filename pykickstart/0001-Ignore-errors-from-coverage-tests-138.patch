@@ -1,0 +1,35 @@
+From 4e2d6dcc63dca82fc720849011b72218bdf8d340 Mon Sep 17 00:00:00 2001
+From: Jiri Konecny <jkonecny@redhat.com>
+Date: Mon, 30 Jan 2017 20:18:55 +0100
+Subject: [PATCH] Ignore errors from coverage tests (#138)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Now builds are failing because coverage combine doesn't work on
+Rawhide. It would be nice to find why this is happening but this is not
+a reason for build to fail.
+
+Backported-to-2.23-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 385eb1c..d470f22 100644
+--- a/Makefile
++++ b/Makefile
+@@ -56,8 +56,8 @@ endif
+ 	@which $(COVERAGE) || (echo "*** Please install coverage (python3-coverage) ***"; exit 2)
+ 	@echo "*** Running unittests with coverage ***"
+ 	PYTHONPATH=. $(PYTHON) -m nose --with-coverage --cover-erase --cover-branches --cover-package=pykickstart --cover-package=tools $(NOSEARGS)
+-	$(COVERAGE) combine
+-	$(COVERAGE) report -m | tee coverage-report.log
++	-$(COVERAGE) combine
++	-$(COVERAGE) report -m | tee coverage-report.log
+ 	@which mypy || (echo "*** Please install mypy (python3-mypy) ***"; exit 2)
+ 	@echo "*** Running type checks ***"
+ 	PYTHONPATH=. mypy pykickstart
+-- 
+2.7.4
+
