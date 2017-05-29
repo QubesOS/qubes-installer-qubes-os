@@ -62,7 +62,6 @@ Requires:       gettext
 #Requires:       syslinux
 Requires:       git
 Requires:       python-jsonschema
-Requires:       libguestfs-tools-c
 Requires:       python-enum34
 Requires:       python2-dnf
 Requires:       python2-multilib
