@@ -42,7 +42,7 @@ from pyanaconda.constants_text import INPUT_PROCESSED
 from pyanaconda.i18n import _, P_, N_, C_
 from pyanaconda.bootloader import BootLoaderError
 
-from pykickstart.constants import CLEARPART_TYPE_ALL, CLEARPART_TYPE_LINUX, CLEARPART_TYPE_NONE, AUTOPART_TYPE_LVM
+from pykickstart.constants import CLEARPART_TYPE_ALL, CLEARPART_TYPE_LINUX, CLEARPART_TYPE_NONE, AUTOPART_TYPE_LVM, AUTOPART_TYPE_LVM_THINP
 from pykickstart.errors import KickstartParseError
 
 from collections import OrderedDict
@@ -351,7 +351,7 @@ class StorageSpoke(NormalTUISpoke):
         self.data.clearpart.drives = self.selected_disks[:]
 
         if self.data.autopart.type is None:
-            self.data.autopart.type = AUTOPART_TYPE_LVM
+            self.data.autopart.type = AUTOPART_TYPE_LVM_THINP
 
         if self.autopart:
             self.clearPartType = CLEARPART_TYPE_ALL
