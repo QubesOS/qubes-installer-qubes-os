@@ -49,7 +49,9 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
     %if include_kernel:
         copy ${KERNELDIR}/vmlinuz ${EFIBOOTDIR}
         runcmd chroot ${inroot} mkdir -p /boot/efi/EFI/qubes
-        runcmd chroot ${inroot} dracut --nomdadmconf --nolvmconf --nofscks --no-early-microcode --no-hostonly --xz --install '/.buildstamp' \
+        runcmd chroot ${inroot} dracut --conf /dev/null --confdir /var/empty \
+          --nomdadmconf --nolvmconf --nofscks --no-early-microcode \
+          --no-hostonly --xz --install '/.buildstamp' \
           --add 'anaconda pollcdrom dmsquash-live' \
           --omit="${extra_dracut_modules}" --omit-drivers="${scsi_modules}" --omit-drivers="${extra_modules}" \
           /boot/efi/EFI/qubes/initrd-small.img ${kver}
