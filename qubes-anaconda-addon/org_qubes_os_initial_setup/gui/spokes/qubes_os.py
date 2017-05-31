@@ -419,7 +419,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             # This is specific to firstboot, not general configuration.
             for template in os.listdir('/var/lib/qubes/vm-templates'):
                 try:
-                    self.configure_template(template)
+                    self.configure_template(template,
+                        '/var/lib/qubes/vm-templates/' + template)
                 except Exception as e:
                     errors.append((self.stage, str(e)))
 
@@ -549,11 +550,9 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.run_command(['/usr/bin/qubes-prefs', '--force-root', 'clockvm', 'sys-net'])
         self.run_command(['/usr/sbin/service', 'qubes-netvm', 'start'])
 
-    def configure_template(self, template):
+    def configure_template(self, template, path):
         self.set_stage("Configuring TemplateVM {}".format(template))
-        self.run_command(['qvm-start', '--no-guid', template])
-        self.run_command(['su', '-c', 'qvm-sync-appmenus {}'.format(template), '-', self.qubes_user])
-        self.run_command(['qvm-shutdown', '--wait', template])
+        self.run_command(['qvm-template-postprocess', '--really', 'post-install', template, path])
 
     def showErrorMessage(self, text):
         self.thread_dialog.run_in_ui_thread(self.showErrorMessageHelper, text)
