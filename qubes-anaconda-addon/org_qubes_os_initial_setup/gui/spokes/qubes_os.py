@@ -414,6 +414,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             os.setgid(self.qubes_gid)
             os.umask(0o0007)
 
+            self.configure_default_kernel()
+
             # Finish template(s) installation, because it wasn't fully possible
             # from anaconda (it isn't possible to start a VM there).
             # This is specific to firstboot, not general configuration.
@@ -482,6 +484,11 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             raise Exception(process_error)
 
         return (stdout, stderr)
+
+    def configure_default_kernel(self):
+        self.set_stage("Setting up default kernel")
+        default_kernel = sorted(os.listdir('/var/lib/qubes/vm-kernels'))[-1]
+        self.run_command(['/usr/bin/qubes-prefs', 'default-kernel', default_kernel])
 
     def configure_dom0(self):
         self.set_stage("Setting up administration VM (dom0)")
