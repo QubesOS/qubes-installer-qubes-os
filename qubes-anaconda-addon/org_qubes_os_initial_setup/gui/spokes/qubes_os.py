@@ -536,13 +536,10 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
     def configure_default_dvm(self):
         self.set_stage("Creating default DisposableVM")
 
-        try:
-            self.run_command(['su', '-c', '/usr/bin/qvm-create-default-dvm --default-template --default-script', self.qubes_user])
-        except Exception:
-            # Kill DispVM template if still running
-            # Do not use self.run_command to not clobber process output
-            subprocess.call(['qvm-kill', '{}-dvm'.format(self.default_template)])
-            raise
+        dispvm_name = self.default_template + '-dvm'
+        self.run_command(['/usr/bin/qvm-create', '--label', 'red', dispvm_name])
+        self.run_command(['/usr/bin/qvm-prefs', dispvm_name, 'dispvm_allowed', 'True'])
+        self.run_command(['/usr/bin/qubes-prefs', 'default-dispvm', default_dispvm])
 
     def configure_network(self):
         self.set_stage('Setting up networking')
