@@ -38,6 +38,9 @@ BuildRequires:  texlive-multirow, texlive-capt-of, texlive-eqparbox, tex(color.c
 BuildRequires:  tex(fncychap.sty)
 BuildRequires:  tex(tabulary.sty)
 
+# for tests
+BuildRequires:  cvs
+
 Requires:       createrepo >= 0.4.11
 Requires:       yum => 3.4.3-28
 Requires:       lorax >= 22.1
