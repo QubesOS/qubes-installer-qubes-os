@@ -1504,7 +1504,7 @@ class GRUB2(GRUB):
         # boot arguments
         log.info("bootloader.py: used boot args: %s ", self.boot_args)
         defaults.write("GRUB_CMDLINE_LINUX=\"%s\"\n" % self.boot_args)
-        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M dom0_mem=max:4096M\"\n")
+        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx\"\n")
         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
         defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
         defaults.write("GRUB_DISABLE_OS_PROBER=\"true\"\n")
@@ -1886,7 +1886,7 @@ class XenEFI(EFIGRUB):
         for image in self.images:
             config.write("\n")
             config.write("[{}]\n".format(image.version))
-            config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M\n")
+            config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx\n")
             config.write("kernel={} root={} {}\n".format(
                 image.kernel,
                 image.device.fstab_spec,
