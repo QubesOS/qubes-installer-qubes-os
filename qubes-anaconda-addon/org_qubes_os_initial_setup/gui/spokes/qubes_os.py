@@ -264,8 +264,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         if not usb_keyboard_present() and not started_from_usb():
             self.choice_usb = QubesChoice(
-                _('Create USB qube holding all USB controllers (sys-usb) '
-                    '[experimental]'),
+                _('Create USB qube holding all USB controllers (sys-usb)'),
                 ('qvm.sys-usb',))
         else:
             self.choice_usb = DisabledChoice(
@@ -294,6 +293,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.choice_default.widget.set_active(True)
         if self.choice_whonix.widget.get_sensitive():
             self.choice_whonix.widget.set_active(True)
+        if self.choice_usb.widget.get_sensitive():
+            self.choice_usb.widget.set_active(True)
 
     def initialize(self):
         """
