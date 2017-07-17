@@ -540,7 +540,9 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         dispvm_name = self.default_template + '-dvm'
         self.run_command(['/usr/bin/qvm-create', '--label', 'red', dispvm_name])
         self.run_command(['/usr/bin/qvm-prefs', dispvm_name, 'dispvm_allowed', 'True'])
-        self.run_command(['/usr/bin/qubes-prefs', 'default-dispvm', default_dispvm])
+        self.run_command(['/usr/bin/qvm-features', dispvm_name, 'internal', 'True'])
+        self.run_command(['/usr/bin/qubes-prefs', 'default-dispvm',
+            dispvm_name])
 
     def configure_network(self):
         self.set_stage('Setting up networking')
