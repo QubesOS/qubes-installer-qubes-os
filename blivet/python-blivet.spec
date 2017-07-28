@@ -23,6 +23,8 @@ Patch2: 0003-iSCSI-turn-iscsi.initiator_set-into-a-property.patch
 Patch3: 0004-Add-device-symlinks-to-the-PVs-dictionary-for-MD-RAI.patch
 Patch4: 0001-Fix-detection-of-macefi-partitions-1393846.patch
 Patch5: 0001-Fix-unknown-SAS-device-sysfs-parsing.patch
+Patch6: 0001-Change-how-we-run-e2fsck-to-check-ext-filesystems.patch
+Patch7: 0002-Do-not-run-FS-check-as-part-of-updating-re-size-info.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
@@ -78,6 +80,8 @@ configuration.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}
