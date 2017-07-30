@@ -1411,7 +1411,7 @@
   <group>
     <id>debian-8</id>
     <name>Debian 8 (jessie) template</name>
-    <description>Debian 8 (jessie) template</name>
+    <description>Debian 8 (jessie) template</description>
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
