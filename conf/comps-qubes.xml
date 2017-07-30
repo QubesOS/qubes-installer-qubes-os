@@ -1411,6 +1411,7 @@
   <group>
     <id>debian-8</id>
     <name>Debian 8 (jessie) template</name>
+    <description>Debian 8 (jessie) template</name>
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
@@ -1422,6 +1423,7 @@
     <id>whonix</id>
     <name>Whonix</name>
     <default>true</default>
+    <description>Whonix templates (gateway and workstation)</description>
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq>qubes-template-whonix-gw</packagereq>
