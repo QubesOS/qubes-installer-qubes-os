@@ -236,8 +236,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
     def __init_qubes_choices(self):
         self.choice_network = QubesChoice(
-            _('Create default system qubes (sys-net, sys-firewall)'),
-            ('qvm.sys-net', 'qvm.sys-firewall'))
+            _('Create default system qubes (sys-net, sys-firewall, default DispVM)'),
+            ('qvm.sys-net', 'qvm.sys-firewall', 'qvm.default-dispvm'))
 
         self.choice_default = QubesChoice(
             _('Create default application qubes '
@@ -538,9 +538,6 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.set_stage("Creating default DisposableVM")
 
         dispvm_name = self.default_template + '-dvm'
-        self.run_command(['/usr/bin/qvm-create', '--label', 'red', dispvm_name])
-        self.run_command(['/usr/bin/qvm-prefs', dispvm_name, 'dispvm_allowed', 'True'])
-        self.run_command(['/usr/bin/qvm-features', dispvm_name, 'internal', 'True'])
         self.run_command(['/usr/bin/qubes-prefs', 'default-dispvm',
             dispvm_name])
 
