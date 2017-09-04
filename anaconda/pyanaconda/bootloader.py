@@ -2352,6 +2352,8 @@ class EXTLINUX(BootLoader):
 
     def write_config_images(self, config):
         self.write_config_console(config)
+        xen_gz = [x for x in os.listdir(iutil.getSysroot() + self.config_dir) if
+                   x.startswith('xen-') and x.endswith('.gz')][0]
         for image in self.images:
             args = Arguments()
             args.update(["root=%s" % image.device.fstab_spec, "ro"])
@@ -2364,10 +2366,12 @@ class EXTLINUX(BootLoader):
             label = "%s(%s)" % (self.image_label(image), image.version)
             label = label.replace(" ", "")
             stanza = ("label %(label)s\n"
-                      "\tkernel %(boot_prefix)s/%(kernel)s\n"
-                      "\tinitrd %(boot_prefix)s/%(initrd)s\n"
-                      "\tappend %(args)s\n\n"
+                      "\tkernel mboot.c32\n"
+                      "\tappend %(boot_prefix)s/%(xen)s --- "
+                      "%(boot_prefix)s/%(kernel)s %(args)s --- "
+                      "%(boot_prefix)s/%(initrd)s\n"
                       % {"label": label,
+                         "xen": xen_gz,
                          "kernel": image.kernel,
                          "initrd": image.initrd,
                          "args": args,
