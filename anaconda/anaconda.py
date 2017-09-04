@@ -543,10 +543,13 @@ def setupDisplay(anaconda, options, addons=None):
             doStartupX11Actions()
         except (OSError, RuntimeError) as e:
             log.warning("X startup failed: %s", e)
-            stdoutLog.warning("X startup failed, falling back to text mode")
-            anaconda.displayMode = 't'
-            graphical_failed = 1
-            time.sleep(2)
+            stdoutLog.warning("X startup failed, aborting installation")
+            stdoutLog.error("X startup failed, aborting installation")
+            print(_("The installation cannot continue and the system will be rebooted"))
+            print(_("Press ENTER to continue"))
+            input()
+            iutil.ipmi_report(constants.IPMI_ABORTED)
+            sys.exit(1)
 
         if not graphical_failed:
             doExtraX11Actions(options.runres)
