@@ -150,6 +150,9 @@ Requires: anaconda-tui = %{epoch}:%{version}-%{release}
 # Make sure we get the en locale one way or another
 Requires: glibc-langpack-en
 
+# check for supported hardware on Qubes OS require xl binary
+Requires: xen-runtime
+
 Obsoletes: anaconda-images <= 10
 Provides: anaconda-images = %{version}-%{release}
 Obsoletes: anaconda-runtime < %{version}-%{release}

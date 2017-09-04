@@ -1098,6 +1098,23 @@ def is_unsupported_hw():
         tainted = 0
 
     status = bool(tainted & UNSUPPORTED_HW)
+    try:
+        xl_info = subprocess.check_output(['xl', 'info'])
+        xl_dmesg = subprocess.check_output(['xl', 'dmesg'])
+    except subprocess.CalledProcessError:
+        status = 'xl call failed'
+    else:
+        missing_features = []
+        for line in xl_info.splitlines():
+            if line.startswith(b'virt_caps'):
+                if b'hvm' not in line:
+                    missing_features.append('HVM/VT-x/AMD-V')
+                if b'hvm_directio' not in line:
+                    missing_features.append('IOMMU/VT-d/AMD-Vi')
+        if b'HVM: Hardware Assisted Paging (HAP) detected' not in xl_dmesg:
+            missing_features.append('HAP/SLAT/EPT/RVI')
+        status = ', '.join(missing_features)
+
     if status:
         log.debug("Installing on Unsupported Hardware")
     return status

@@ -295,9 +295,13 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
                 sys.exit(0)
 
         # pylint: disable=no-member
-        if productName.startswith("Red Hat ") and \
-          is_unsupported_hw() and not self.data.unsupportedhardware.unsupported_hardware:
+        unsupported_status = is_unsupported_hw()
+        if unsupported_status:
+            # Fedora kickstart do not have unsupported_hardware option:
+            #   and not self.data.unsupportedhardware.unsupported_hardware:
             dlg = self.builder.get_object("unsupportedHardwareDialog")
+            msg = self.builder.get_object("unsupportedHardwareDesc")
+            msg.set_text(_(msg.get_text()) % {'features': unsupported_status})
             with self.main_window.enlightbox(dlg):
                 rc = dlg.run()
                 dlg.destroy()
