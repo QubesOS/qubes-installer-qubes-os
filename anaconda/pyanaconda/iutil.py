@@ -1113,6 +1113,8 @@ def is_unsupported_hw():
                     missing_features.append('IOMMU/VT-d/AMD-Vi')
         if b'HVM: Hardware Assisted Paging (HAP) detected' not in xl_dmesg:
             missing_features.append('HAP/SLAT/EPT/RVI')
+        if b'Intel VT-d Interrupt Remapping enabled' not in xl_dmesg:
+            missing_features.append('Interrupt Remapping')
         status = ', '.join(missing_features)
 
     if status:
