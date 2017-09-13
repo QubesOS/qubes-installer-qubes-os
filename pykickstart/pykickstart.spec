@@ -24,6 +24,7 @@ Url:       http://fedoraproject.org/wiki/pykickstart
 # The tarball will be in the current directory.
 Source0:   %{name}-%{version}.tar.gz
 Patch0: 0001-Ignore-errors-from-coverage-tests-138.patch
+Patch1: 0001-Fix-error-message-in-autopart-command.patch
 Patch2: repo-gpgkey-option.patch
 Patch3: standard-xgettext.patch
 BuildArch: noarch
@@ -79,7 +80,7 @@ the pykickstart package.
 %setup -q
 
 %patch0 -p1
-#patch1 -p1
+%patch1 -p1
 %patch2 -p1
 %patch3 -p1
 
