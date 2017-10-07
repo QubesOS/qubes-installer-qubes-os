@@ -255,10 +255,10 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         else:
             self.choice_whonix = DisabledChoice(_("Whonix not installed"))
 
-        self.choice_whonix_default = QubesChoice(
-            _('Route applications traffic and updates through Tor anonymity '
-              'network [experimental]'),
-            (),
+        self.choice_whonix_updates = QubesChoice(
+            _('Enable system and template updates over the Tor anonymity '
+              'network using Whonix'),
+            ('qvm.updates-via-whonix',),
             depend=self.choice_whonix,
             indent=True)
 
@@ -545,12 +545,13 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.set_stage('Setting up networking')
 
         default_netvm = 'sys-firewall'
-        if self.choice_whonix_default.get_selected():
-            default_netvm = 'sys-whonix'
+        updatevm = default_netvm
+        if self.choice_whonix_updates.get_selected():
+            updatevm = 'sys-whonix'
 
         self.run_command(['/usr/bin/qvm-prefs', 'sys-firewall', 'netvm', 'sys-net'])
         self.run_command(['/usr/bin/qubes-prefs', 'default-netvm', default_netvm])
-        self.run_command(['/usr/bin/qubes-prefs', 'updatevm', default_netvm])
+        self.run_command(['/usr/bin/qubes-prefs', 'updatevm', updatevm])
         self.run_command(['/usr/bin/qubes-prefs', 'clockvm', 'sys-net'])
         self.run_command(['/usr/bin/qvm-start', default_netvm])
 
