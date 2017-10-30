@@ -1404,6 +1404,7 @@
       <packagereq type="default">qubes-input-proxy</packagereq>
       <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
       <packagereq type="default">qubes-usb-proxy-dom0</packagereq>
+      <packagereq type="default">libvirt-client</packagereq>
     </packagelist>
   </group>
 
