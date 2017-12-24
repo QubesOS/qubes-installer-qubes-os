@@ -1161,7 +1161,7 @@
       <packagereq type="mandatory">qubes-artwork</packagereq>
       <packagereq type="mandatory">qubes-manager</packagereq>
       <packagereq type="mandatory">qubes-mgmt-salt-dom0</packagereq>
-      <packagereq type="mandatory">qubes-template-fedora-23</packagereq>
+      <packagereq type="mandatory">qubes-template-fedora-26</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
       <packagereq type="default">qubes-img-converter-dom0</packagereq>
       <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
@@ -1171,12 +1171,12 @@
   </group>
 
   <group>
-    <id>debian-8</id>
-    <name>Debian 8 (jessie) template</name>
+    <id>debian</id>
+    <name>Debian 9 (stretch) template</name>
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
-      <packagereq>qubes-template-debian-8</packagereq>
+      <packagereq>qubes-template-debian-9</packagereq>
     </packagelist>
   </group>
 
@@ -1208,7 +1208,7 @@
      <groupid>xfce-media</groupid>
     </grouplist>
     <optionlist>
-     <groupid default='true'>debian-8</groupid>
+     <groupid default='true'>debian</groupid>
      <groupid default='true'>whonix</groupid>
     </optionlist>
   </environment>
