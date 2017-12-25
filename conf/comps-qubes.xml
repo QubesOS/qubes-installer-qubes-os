@@ -1176,7 +1176,7 @@
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
-      <packagereq>qubes-template-debian-9</packagereq>
+      <packagereq>qubes-template-stretch</packagereq>
     </packagelist>
   </group>
 
