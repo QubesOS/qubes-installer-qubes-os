@@ -27,7 +27,7 @@ SELINUX_DEFAULT = -1
 # where to look for 3rd party addons
 ADDON_PATHS = ["/usr/share/anaconda/addons"]
 
-from pykickstart.constants import AUTOPART_TYPE_LVM
+from pykickstart.constants import AUTOPART_TYPE_LVM_THINP
 
 # common string needs to be easy to change
 from pyanaconda import product
@@ -169,7 +169,7 @@ SCREENSHOTS_TARGET_DIRECTORY = "/root/anaconda-screenshots"
 # cmdline arguments that append instead of overwrite
 CMDLINE_APPEND = ["modprobe.blacklist", "ifname"]
 
-DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM
+DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM_THINP
 
 # Default to these units when reading user input when no units given
 SIZE_UNITS_DEFAULT = "MiB"
