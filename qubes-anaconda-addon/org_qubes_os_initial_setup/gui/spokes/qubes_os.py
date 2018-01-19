@@ -551,7 +551,6 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         self.run_command(['/usr/bin/qvm-prefs', 'sys-firewall', 'netvm', 'sys-net'])
         self.run_command(['/usr/bin/qubes-prefs', 'default-netvm', default_netvm])
-        self.run_command(['/usr/bin/qubes-prefs', 'default-fw-netvm', 'sys-net'])
         self.run_command(['/usr/bin/qubes-prefs', 'updatevm', updatevm])
         self.run_command(['/usr/bin/qubes-prefs', 'clockvm', 'sys-net'])
         self.run_command(['/usr/bin/qvm-start', default_netvm])
