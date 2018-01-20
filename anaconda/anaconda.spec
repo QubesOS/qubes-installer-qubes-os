@@ -3,7 +3,7 @@
 Summary: Graphical system installer
 Name:    anaconda
 Version: 25.20.9
-Release: 8%{?dist}
+Release: 9%{?dist}
 License: GPLv2+ and MIT
 Epoch:   1000
 Group:   Applications/System
