@@ -8,17 +8,8 @@ APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
 
 mkdir ${EFIBOOTDIR}
 mkdir ${EFIBOOTDIR}/fonts/
-install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
-## keep also under original name to make mkefiboot --apple happy
-##install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/grub${EFIARCH_LOWER}.efi
-install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/xen.efi
-
-# For Secure Boot restore those files (keep in mind 32MB limit on efiboot.img
-# imposed by ISO9660, details in #794):
-#install boot/efi/EFI/*/shim.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
-#install boot/efi/EFI/*/gcd${EFIARCH_LOWER}.efi ${EFIBOOTDIR}/grub${EFIARCH_LOWER}.efi
-#install boot/efi/EFI/*/MokManager.efi ${EFIBOOTDIR}/
-
+## Install xen.efi directly as BOOTX64.efi, reconsider grub when xen get multiboot2 support
+install boot/efi/EFI/*/xen*.efi ${EFIBOOTDIR}/BOOT${efiarch}.efi
 
 ## actually make the EFI images
 ${make_efiboot("images/efiboot.img", include_kernel=True)}
@@ -30,8 +21,7 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
 <%def name="make_efiboot(img, include_kernel=False, disk=False, imgtype='default')">
     <%
     kdir = EFIBOOTDIR if include_kernel else KERNELDIR
-    eficonf = "%s/grub.cfg" % (EFIBOOTDIR, )
-    xenconf = "%s/xen.cfg" % (EFIBOOTDIR, )
+    xenconf = "%s/BOOT%s.cfg" % (EFIBOOTDIR, efiarch)
     args = "--label=ANACONDA --debug"
     scsi_modules   = " 3w-9xxx 3w-sas 3w-xxxx BusLogic a100u2w aacraid advansys aic79xx aic7xxx am53c974 arcmsr atp870u bfa bnx2fc csiostor dc395x dmx3191d esas2r esp_scsi fcoe fnic gdth hpsa hptiop hv_storvsc initio ipr ips isci iscsi_boot_sysfs libfc libfcoe libiscsi libosd libsas lpfc megaraid megaraid_mbox megaraid_mm megaraid_sas mpt2sas mpt3sas mvsas mvumi osd pm80xx pmcraid qla1280 qla2xxx qla4xxx raid_class scsi_debug scsi_dh_emc scsi_dh_rdac scsi_transport_fc scsi_transport_iscsi scsi_transport_sas scsi_transport_spi scsi_transport_srp stex sym53c8xx ufshcd virtio_scsi vmw_pvscsi wd719x"
     extra_modules  = " affs befs coda cuse dlm gfs2 mptfc ncpfs nilfs2 ocfs2 ocfs2_dlm ocfs2_dlmfs ocfs2_nodemanager ocfs2_stack_o2cb ocfs2_stack_user ocfs2_stackglue sctp sysv ubifs ufs"
@@ -59,25 +49,12 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
         runcmd chroot ${inroot} rm -f /proc/modules
         install boot/efi/EFI/qubes/initrd-small.img ${EFIBOOTDIR}/initrd.img
     %endif
-    install ${configdir}/grub2-efi.cfg ${eficonf}
     install ${configdir}/xen-efi.cfg ${xenconf}
-    replace @PRODUCT@ '${product.name}' ${eficonf}
-    replace @VERSION@ ${product.version} ${eficonf}
-    replace @KERNELNAME@ vmlinuz ${eficonf}
-    replace @KERNELPATH@ /${kdir}/vmlinuz ${eficonf}
     replace @KERNELPATH@ /${kdir}/vmlinuz ${xenconf}
-    replace @INITRDPATH@ /${kdir}/initrd.img ${eficonf}
-    replace @EFIDIR@ /${EFIBOOTDIR} ${eficonf}
-    replace @ISOLABEL@ '${isolabel}' ${eficonf}
     %if disk:
-        replace @ROOT@ inst.stage2=hd:LABEL=ANACONDA ${eficonf}
         replace @ROOT@ inst.stage2=hd:LABEL=ANACONDA ${xenconf}
     %else:
-        replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${eficonf}
         replace @ROOT@ 'inst.stage2=hd:LABEL=${isolabel|udev}' ${xenconf}
-    %endif
-    %if efiarch == 'IA32':
-        copy ${eficonf} ${EFIBOOTDIR}/BOOT.conf
     %endif
     runcmd mkefiboot ${args} ${outroot}/${EFIBOOTDIR} ${outroot}/${img}
     # place those files to prevent Windows recreating them while writing ISO image
