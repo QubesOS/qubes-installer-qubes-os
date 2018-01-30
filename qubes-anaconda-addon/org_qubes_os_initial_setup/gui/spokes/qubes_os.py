@@ -29,6 +29,7 @@
 _ = lambda x: x
 N_ = lambda x: x
 
+import distutils.version
 import functools
 import grp
 import logging
@@ -488,7 +489,9 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
     def configure_default_kernel(self):
         self.set_stage("Setting up default kernel")
-        default_kernel = sorted(os.listdir('/var/lib/qubes/vm-kernels'))[-1]
+        installed_kernels = os.listdir('/var/lib/qubes/vm-kernels')
+        installed_kernels = [distutils.version.LooseVersion(x) for x in installed_kernels]
+        default_kernel = str(sorted(installed_kernels)[-1])
         self.run_command(['/usr/bin/qubes-prefs', 'default-kernel', default_kernel])
 
     def configure_dom0(self):
