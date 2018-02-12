@@ -1908,16 +1908,208 @@ class XenEFI(EFIGRUB):
 
     write_config = BootLoader.write_config
 
-class MacEFIGRUB(EFIGRUB):
-    def mactel_config(self):
-        if os.path.exists(iutil.getSysroot() + "/usr/libexec/mactel-boot-setup"):
-            rc = iutil.execInSysroot("/usr/libexec/mactel-boot-setup", [])
-            if rc:
-                log.error("failed to configure Mac boot loader")
+class MacEFIGRUB(XenEFI):
+    """Special EFI handling for macOS HFS+ ESP partition.
 
+    Typical GRUB2 installations would execute the script
+    located at /usr/libexec/mactel-boot-setup which would
+    modify the HFS+ ESP files and bless the specified efi.
+
+    However, we are not using GRUB at this time which would
+    cause that script to exit earlier.
+
+    In this class, we will execute the relevant commands
+    to symlink the efi file in the /System directory as well
+    the cfg file.  Lastly, macOS requires the bootable efi
+    file to be blessed.
+    """
+
+    def __init__(self):
+        super(MacEFIGRUB, self).__init__()
+        self._mountpoint = "/boot/efi" # fixme: extract from writeBootLoader()
+        self._system_label = "Qubes OS"
+        self._mactel_sys_dir = "{}/{}".format(self._mountpoint, "/System/Library/Coreservices")
+        self._mactel_artwork_dir = "{}/{}".format("/usr/share/pixmaps/bootloader/apple", self.efi_dir)
+
+    def mactel_config(self):
+        """Modifies the HFS+ ESP partition to be bootable.
+
+        Based on the /usr/libexec/mactel-boot-setup script,
+        we will create two symlinks pointing to the Qubes
+        Xen version that is installed and configured for
+        the system.  We also need to run hfs-bless on
+        the specific EFI file we allow to be bootable.
+        """
+
+        log.info("mactel configure MacEFI boot partition")
+
+        not_ready = False
+        xen_efi_file = "{}/{}".format(iutil.getSysroot() + self.config_dir, "xen.efi")
+        if not os.path.exists(xen_efi_file):
+            log.waring("mactel efi file not found: %s", xen_efi_file)
+            not_ready = True
+        xen_cfg_file = "{}/{}".format(iutil.getSysroot() + self.config_dir, "xen.cfg")
+        if not os.path.exists(xen_cfg_file):
+            log.warning("mactel efi cfg not found: %s", xen_cfg_file)
+            not_ready = True
+        if not_ready:
+            log.error("mactel cannot continue with mactel_config. see log for details.")
+            return
+
+        sys_dir = iutil.getSysroot() + self._mactel_sys_dir
+        if not os.path.exists(sys_dir):
+            try:
+                os.makedirs(sys_dir)
+            except Exception as error:
+                log.warning("mactel tried to create sys_dir %s but received error: %s", sys_dir, error)
+
+        src_efi = "{}/{}".format("../../../EFI/" + self.efi_dir, "xen.efi")
+        sys_efi = "{}/{}".format(sys_dir, "boot.efi")
+        self._symlink(src_efi, sys_efi)
+
+        src_cfg = "{}/{}".format("../../../EFI/" + self.efi_dir, "xen.cfg")
+        sys_cfg = "{}/{}".format(sys_dir, "xen.cfg")  # convention for Xen's cfg lookup
+        self._symlink(src_cfg, sys_cfg)
+
+        result_code = iutil.execInSysroot("touch", ["{}/{}".format(self._mountpoint, "mach_kernel")])
+        if result_code:
+            log.error("mactel failed to touch: %s", "{}/{}".format(self._mountpoint, "mach_kernel"))
+
+        text = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>ProductBuildVersion</key>
+    <string></string>
+    <key>ProductName</key>
+    <string>Linux</string>
+    <key>ProductVersion</key>
+    <string>{}</string>
+</dict>
+</plist>""".format(self._system_label)
+        sys_ver_file_name = "{}/{}".format(sys_dir, "SystemVersion.plist")
+        try:
+            with open(sys_ver_file_name, "w") as sys_version_file:
+                sys_version_file.write(text)
+        except IOError as error:
+            log.error("mactel failed to open %s for write: %s", sys_ver_file_name, error)
+        cfg_ver_file_name = "{}/{}".format(iutil.getSysroot() + self.config_dir, "SystemVersion.plist")
+        self._copy_file(sys_ver_file_name, cfg_ver_file_name)
+
+        bless_file = "{}/{}".format(self.config_dir, "xen.efi")
+        result_code = iutil.execInSysroot("hfs-bless", [bless_file])
+        if result_code:
+            log.error("mactel failed to run 'hfs-bless %s'", bless_file)
+
+        # make the partition macOS friendly (e.g. to set rescue mode from macOS)
+        fseventsd = "{}/{}".format(iutil.getSysroot() + self._mountpoint, ".fseventsd")
+        try:
+            os.makedirs(fseventsd)
+        except Exception as error:
+            log.error("mactel could not make directory %s: %s", fseventsd, error)
+        touch_files = [
+            "{}/{}/{}".format(self._mountpoint, ".fseventsd", "no_log"),
+            "{}/{}".format(self._mountpoint, ".metadata_never_index"),
+            "{}/{}".format(self._mountpoint, ".Trashes")]
+        result_code = iutil.execInSysroot("touch", touch_files)
+        if result_code:
+            log.error("mactel failed to touch: %s", touch_files)
+
+        text = """Qubes OS
+
+CAUTION
+--
+This partition is used to boot Qubes OS on a macOS machine.  
+Modifying the contents could render your installation unbootable.
+
+RESCUE / RECOVERY MODE
+--
+In the event that you need to boot into Rescue mode, you will need
+to change the default Xen configuration.
+
+0. Backup your xen.cfg.
+
+    cp /EFI/qubes/xen.cfg /EFI/qubes/xen.cfg~
+
+1. Open /EFI/qubes/xen.cfg
+
+2. Look at the sections with the named headers.  One may already be
+   named "qubes-rescue", which we will use in Step 4 below.
+
+   If not, we will need to make one.  Copy your current configuration
+   to another entry.  But change the kernel line to only have "rescue" 
+   at the end.  As an example only:
+
+    [qubes-rescue]
+    options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx
+    kernel=vmlinuz-4.14.13-2.pvops.qubes.x86_64 rescue
+    ramdisk=initramfs-4.14.13-2.pvops.qubes.x86_64.img
+
+   Do not simply copy this section above.  You will need to make sure
+   all of your existing parameters, vmlinuz and initramfs versions match
+   your current kernel(s) you are booting. 
+
+3. At the top of the file, edit the default link to use your new entry.
+
+    [global]
+    default=qubes-rescue
+
+Now when you reboot using Boot Camp and select "Qubes OS", it will boot
+into Rescue mode.
+
+To revert, change the default entry back to the original first entry name."""
+        readme = "{}/{}".format(iutil.getSysroot() + self._mountpoint, "00-README.txt")
+        try:
+            with open(readme, "w") as readme_file:
+                readme_file.write(text)
+        except IOError as error:
+            log.error("mactel failed to open %s for write: %s", readme, error)        
+
+    def mactel_install_qubes_artwork(self):
+        """Configures the Qubes logo and label for macOS boot selector.
+
+        Shows during boot selection options.
+
+        .disk_label is defined as a text representation of the volume
+        label converted to a special image.  See this link for
+        more details: http://refit.sourceforge.net/info/vollabel.html
+
+        .VolumeIcon.icns is defined as an ICNS image format of 512x512.
+        """
+
+        log.info("mactel creating Qubes Artwork")
+
+        artwork_dir = self._mactel_artwork_dir
+        if not os.path.exists(artwork_dir):
+            log.debug("mactel using sysroot for artwork prefix")
+            artwork_dir = iutil.getSysroot() + artwork_dir
+            if not os.path.exists(artwork_dir):
+                log.warning("mactel artwork missing from: %s", artwork_dir)
+                return
+
+        icon_src = artwork_dir + ".icns"
+        if os.path.exists(icon_src):
+            icon_dst_fil = "{}/{}".format(iutil.getSysroot() + self._mountpoint, ".VolumeIcon.icns")
+            self._copy_file(icon_src, icon_dst_fil)
+        else:
+            log.warning("mactel volume icon not found: %s", icon_src)
+
+        src_files = os.listdir(artwork_dir)
+        for file_name in src_files:
+            full_file_name = "{}/{}".format(artwork_dir, file_name)
+            if os.path.isfile(full_file_name):
+                sys_dir_file_name = "{}/{}".format(iutil.getSysroot() + self._mactel_sys_dir, "." + file_name)
+                self._copy_file(full_file_name, sys_dir_file_name)
+                config_dir = iutil.getSysroot() + self.config_dir
+                if os.path.exists(config_dir):
+                    dest = "{}/{}".format(config_dir, "." + file_name)
+                    self._copy_file(full_file_name, dest)
+            
     def install(self, args=None):
         super(MacEFIGRUB, self).install()
+        log.info("Installing mactel MacEFI")
         self.mactel_config()
+        self.mactel_install_qubes_artwork()
 
     def is_valid_stage1_device(self, device, early=False):
         valid = super(MacEFIGRUB, self).is_valid_stage1_device(device, early)
@@ -1932,6 +2124,24 @@ class MacEFIGRUB(EFIGRUB):
         log.debug("MacEFIGRUB.is_valid_stage1_device(%s) returning %s", device.name, valid)
         return valid
 
+    @staticmethod
+    def _symlink(source="", target=""):
+        """Creates a symlink between source and target."""
+        try:
+            os.symlink(source, target)
+        except OSError as error:
+            log.error("mactel failed to symlink %s -> %s : %s", source, target, error)
+
+    @staticmethod
+    def _copy_file(source="", target=""):
+        """Copies source to target using shutil.
+
+        Also chmod to 0644."""
+        try:
+            shutil.copy(source, target)
+            os.chmod(target, 0o644)
+        except OSError as error:
+            log.error("mactel failed to copy %s to %s: %s", source, target, error)
 
 # Inherit abstract methods from BootLoader
 # pylint: disable=abstract-method
