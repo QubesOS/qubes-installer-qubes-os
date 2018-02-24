@@ -4,11 +4,11 @@ language: generic
 install: git clone https://github.com/QubesOS/qubes-builder ~/qubes-builder
 script: 
  - ~/qubes-builder/scripts/travis-build
- - travis_wait 30 $EXPECT_FAILURE make -C ~/qubes-builder iso BUILDERCONF=scripts/travis-builder.conf VERBOSE=0 COMPONENTS=installer-qubes-os
+ - travis_wait 35 $EXPECT_FAILURE make -C ~/qubes-builder iso BUILDERCONF=scripts/travis-builder.conf VERBOSE=0 COMPONENTS=installer-qubes-os
 after_script:
  - tail -n 100 ~/qubes-builder/build-logs/installer-qubes-os-iso-*.log
  - ls -l ~/qubes-builder/iso
 env:
-  - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-full.ks USE_QUBES_REPO_VERSION=4.0
+  - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-full.ks USE_QUBES_REPO_VERSION=4.0 RPM_BUILD_DEFINES=--nocheck
   - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-unsigned.ks USE_QUBES_REPO_VERSION=4.0 EXPECT_FAILURE=./expected-failure
   - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-unknown-key.ks USE_QUBES_REPO_VERSION=4.0 EXPECT_FAILURE=./expected-failure
