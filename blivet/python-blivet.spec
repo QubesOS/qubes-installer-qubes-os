@@ -25,6 +25,7 @@ Patch4: 0001-Fix-detection-of-macefi-partitions-1393846.patch
 Patch5: 0001-Fix-unknown-SAS-device-sysfs-parsing.patch
 Patch6: 0001-Change-how-we-run-e2fsck-to-check-ext-filesystems.patch
 Patch7: 0002-Do-not-run-FS-check-as-part-of-updating-re-size-info.patch
+Patch8: 0001-Fix-AttributeError-in-fsminsize-1502587.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
@@ -82,6 +83,7 @@ configuration.
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
+%patch8 -p1
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}

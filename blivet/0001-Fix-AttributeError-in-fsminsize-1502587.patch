@@ -1,0 +1,34 @@
+From b4407b21415f6ede2542ef044fdc5d45b5dd5c48 Mon Sep 17 00:00:00 2001
+From: Vojtech Trefny <vtrefny@redhat.com>
+Date: Mon, 16 Oct 2017 12:57:44 +0200
+Subject: [PATCH] Fix AttributeError in fsminsize (#1502587)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ blivet/tasks/fsminsize.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/blivet/tasks/fsminsize.py b/blivet/tasks/fsminsize.py
+index ab6c647b..620b7dca 100644
+--- a/blivet/tasks/fsminsize.py
++++ b/blivet/tasks/fsminsize.py
+@@ -128,12 +128,12 @@ class Ext2FSMinSize(FSMinSize):
+ 
+         block_size = self._extract_block_size()
+         if block_size is None:
+-            raise FSError("failed to get block size for %s filesystem on %s" % (self.fs.mount_type, self.fs.device.name))
++            raise FSError("failed to get block size for %s filesystem on %s" % (self.fs.mount_type, self.fs.device))
+ 
+         resize_info = self._get_resize_info()
+         num_blocks = self._extract_num_blocks(resize_info)
+         if num_blocks is None:
+-            raise FSError("failed to get minimum block number for %s filesystem on %s" % (self.fs.mount_type, self.fs.device.name))
++            raise FSError("failed to get minimum block number for %s filesystem on %s" % (self.fs.mount_type, self.fs.device))
+ 
+         return block_size * num_blocks
+ 
+-- 
+2.13.6
+
