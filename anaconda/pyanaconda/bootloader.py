@@ -1854,12 +1854,15 @@ class XenEFI(EFIGRUB):
 
     def write_config_images(self, config):
         for image in self.images:
+            root_args = 'root=' + image.device.fstab_spec
+            if image.device.type == "btrfs subvolume":
+                root_args += " rootflags=subvol=%s" % image.device.name
             config.write("\n")
             config.write("[{}]\n".format(image.version))
             config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M\n")
-            config.write("kernel={} root={} {}\n".format(
+            config.write("kernel={} {} {}\n".format(
                 image.kernel,
-                image.device.fstabSpec,
+                root_args,
                 self.boot_args))
             config.write("ramdisk={}\n".format(image.initrd))
 
