@@ -274,9 +274,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         self.choice_usb_with_net = QubesChoice(
             _("Use sys-net qube for both networking and USB devices"),
-            ('qvm.sys-net-with-usb',),
+            ('pillar.qvm.sys-net-as-usbvm',),
             depend=self.choice_usb,
-            replace=('qvm.sys-usb',),
             indent=True
         )
 
@@ -516,7 +515,11 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         for state in QubesChoice.get_states():
             print("Setting up state: {}".format(state))
-            self.run_command(['qubesctl', 'top.enable', state])
+            if state.startswith('pillar.'):
+                self.run_command(['qubesctl', 'top.enable',
+                    state[len('pillar.'):], 'pillar=True'])
+            else:
+                self.run_command(['qubesctl', 'top.enable', state])
 
         try:
             self.run_command(['qubesctl', 'state.highstate'])
@@ -524,7 +527,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             # enabled, to not interfere with later user changes (like assigning
             # additional PCI devices)
             for state in QubesChoice.get_states():
-                self.run_command(['qubesctl', 'top.disable', state])
+                if not state.startswith('pillar.'):
+                    self.run_command(['qubesctl', 'top.disable', state])
         except Exception:
             raise Exception(
                     ("Qubes initial configuration failed. Login to the system and " +
