@@ -12,6 +12,7 @@ License:        GPLv2+
 BuildArch:      noarch
 BuildRequires:  python3
 Requires:       python3
+Requires:       qubes-mgmt-salt-dom0-virtual-machines >= 4.0.11
 #Requires:       anaconda >= 19
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
