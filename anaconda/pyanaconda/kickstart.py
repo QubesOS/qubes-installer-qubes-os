@@ -885,6 +885,10 @@ class LogVolData(commands.logvol.F23_LogVolData):
             self.mountpoint = ""
             ty = None
 
+        if self.mountpoint.startswith('/') and not self.fsopts:
+            # enable discard for normal filesystems in dom0
+            self.fsopts = "defaults,discard"
+
         # Sanity check mountpoint
         if self.mountpoint != "" and self.mountpoint[0] != '/':
             raise KickstartParseError(formatErrorMsg(self.lineno,
@@ -1245,6 +1249,10 @@ class PartitionData(commands.partition.F23_PartData):
             else:
                 ty = storage.default_fstype
 
+        if self.mountpoint.startswith('/') and not self.fsopts:
+            # enable discard for normal filesystems in dom0
+            self.fsopts = "defaults,discard"
+
         if not size and self.size:
             try:
                 size = Size("%d MiB" % self.size)
@@ -1489,6 +1497,10 @@ class RaidData(commands.raid.F25_RaidData):
                 ty = storage.default_boot_fstype
             else:
                 ty = storage.default_fstype
+
+        if self.mountpoint.startswith('/') and not self.fsopts:
+            # enable discard for normal filesystems in dom0
+            self.fsopts = "defaults,discard"
 
         # Sanity check mountpoint
         if self.mountpoint != "" and self.mountpoint[0] != '/':

@@ -211,6 +211,17 @@ def doInstall(storage, payload, ksdata, instClass):
                                                             wait_for_entropy=entropy_wait_clbk)
 
     turn_on_filesystems(storage, mount_only=flags.flags.dirInstall, callbacks=callbacks_reg)
+
+    # For autopart, actual partition related objects (especially
+    # blivet.format.FS objects) are created by the above call. And autopart
+    # does not provide any way to specify default mount options (unlike manual
+    # partitioning). Because of this, patch it now to add 'discard' option.
+    if storage.root_device.format.options and \
+            'discard' not in storage.root_device.format.options:
+        storage.root_device.format.options += ',discard'
+    else:
+        storage.root_device.format.options = 'defaults,discard'
+
     payload.writeStorageEarly()
 
     # Run %pre-install scripts with the filesystem mounted and no packages
