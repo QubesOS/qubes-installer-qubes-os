@@ -56,6 +56,7 @@ class InstallClass(BaseInstallClass):
 
     def configure(self, anaconda):
         BaseInstallClass.configure(self, anaconda)
+        self.setDefaultPartitioning(anaconda.storage)
 
     def setDefaultPartitioning(self, storage):
         BaseInstallClass.setDefaultPartitioning(self,
