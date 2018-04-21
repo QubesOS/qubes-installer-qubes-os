@@ -1,6 +1,6 @@
 [qubes-dom0-current]
 name = Qubes Dom0 Repository (updates)
-baseurl = http://yum.qubes-os.org/r$releasever/current/dom0/%DIST%
+baseurl = https://yum.qubes-os.org/r$releasever/current/dom0/%DIST%
 enabled = 1
 metadata_expire = 7d
 gpgcheck = 1
@@ -8,7 +8,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
 
 [qubes-dom0-current-testing]
 name = Qubes Dom0 Repository (updates-testing)
-baseurl = http://yum.qubes-os.org/r$releasever/current-testing/dom0/%DIST%
+baseurl = https://yum.qubes-os.org/r$releasever/current-testing/dom0/%DIST%
 enabled = 0
 metadata_expire = 7d
 gpgcheck = 1
@@ -16,7 +16,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
 
 [qubes-dom0-security-testing]
 name = Qubes Dom0 Repository (security-testing)
-baseurl = http://yum.qubes-os.org/r$releasever/security-testing/dom0/%DIST%
+baseurl = https://yum.qubes-os.org/r$releasever/security-testing/dom0/%DIST%
 enabled = 0
 metadata_expire = 7d
 gpgcheck = 1
@@ -24,7 +24,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
 
 [qubes-dom0-unstable]
 name = Qubes Dom0 Repository (unstable)
-baseurl = http://yum.qubes-os.org/r$releasever/unstable/dom0/%DIST%
+baseurl = https://yum.qubes-os.org/r$releasever/unstable/dom0/%DIST%
 enabled = 0
 metadata_expire = 7d
 gpgcheck = 1
