@@ -9,7 +9,7 @@
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
-Release:	1
+Release:	2
 License:	GPLv2
 Group:		System Environment/Base
 Source:		%{name}-%{version}.tar.bz2
