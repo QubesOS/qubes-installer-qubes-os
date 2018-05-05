@@ -1426,6 +1426,7 @@
     <description>Whonix templates (gateway and workstation)</description>
     <uservisible>true</uservisible>
     <packagelist>
+      <packagereq>qubes-core-admin-addon-whonix</packagereq>
       <packagereq>qubes-template-whonix-gw</packagereq>
       <packagereq>qubes-template-whonix-ws</packagereq>
     </packagelist>
