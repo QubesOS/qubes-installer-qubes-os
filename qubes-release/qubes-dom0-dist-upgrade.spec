@@ -1,16 +1,12 @@
 %define fedora_base_version %{fedora}
 
-%if 0%{?qubes_builder}
-%define _builddir %(pwd)/qubes-release
-%endif
-
 Summary:	Qubes dom0 dist upgrade
 Name:		qubes-dom0-dist-upgrade
 Version:	2.0
 Release:	2
 License:	GPLv2
 Group:		System Environment/Base
-Source:		%{name}-%{version}.tar.bz2
+Source0:	%{name}-%{version}.tar.bz2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
@@ -18,11 +14,7 @@ BuildArch:	noarch
 Qubes dom0 upgrade transitional package.
 
 %prep
-%if ! 0%{?qubes_builder}
 %setup -q
-%endif
-
-%build
 
 %install
 rm -rf $RPM_BUILD_ROOT

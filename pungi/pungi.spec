@@ -1,7 +1,3 @@
-%if 0%{?qubes_builder}
-%define _sourcedir %(pwd)/pungi
-%endif
-
 Name:           pungi
 Version:        4.1.14
 Release:        2%{?dist}

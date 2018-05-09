@@ -2,10 +2,6 @@
 # NOTE: Please submit changes as a pull request
 %define debug_package %{nil}
 
-%if 0%{?qubes_builder}
-%define _sourcedir %(pwd)/lorax
-%endif
-
 Name:           lorax
 Version:        25.19
 Release:        1%{?dist}

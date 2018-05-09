@@ -1,9 +1,5 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
-%if 0%{?qubes_builder}
-%define _sourcedir %(pwd)/pykickstart
-%endif
-
 Name:      pykickstart
 Version:   2.32
 Release:   4%{?dist}
@@ -22,7 +18,7 @@ Url:       http://fedoraproject.org/wiki/pykickstart
 # sudo dnf install zanata-python-client
 # make po-pull && make archive
 # The tarball will be in the current directory.
-Source0:   %{name}-%{version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 Patch0: 0001-Ignore-errors-from-coverage-tests-138.patch
 Patch1: 0001-Fix-error-message-in-autopart-command.patch
 Patch2: repo-gpgkey-option.patch

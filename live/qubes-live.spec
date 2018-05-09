@@ -6,7 +6,7 @@ Name:       qubes-live
 Version:    1.0
 Release:    1%{?dist}
 Summary:    Various fixes for Qubes Live edition
-
+Source0:    %{name}-%{version}.tar.gz
 Group:      System
 License:    GPL
 URL:        https://qubes-os.org

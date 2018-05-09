@@ -2,10 +2,6 @@
 %define release_name R%{dist_version}
 %define fedora_base_version %{fedora}
 
-%if 0%{?qubes_builder}
-%define _builddir %(pwd)/qubes-release
-%endif
-
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
@@ -39,11 +35,7 @@ Qubes release notes package.
 
 
 %prep
-%if ! 0%{?qubes_builder}
 %setup -q
-%endif
-
-%build
 
 %install
 rm -rf $RPM_BUILD_ROOT
