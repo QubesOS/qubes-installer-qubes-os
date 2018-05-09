@@ -1,0 +1,1458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE comps PUBLIC "-//Red Hat, Inc.//DTD Comps info//EN" "comps.dtd">
+<comps>
+  <group>
+    <id>anaconda-tools</id>
+    <name>Anaconda tools</name>
+    <name xml:lang="bg">Инструменти на Anaconda</name>
+    <name xml:lang="ca">Eines d'Anaconda</name>
+    <name xml:lang="cs">Nástroje Anaconda</name>
+    <name xml:lang="de">Anaconda-Werkzeuge</name>
+    <name xml:lang="en_GB">Anaconda tools</name>
+    <name xml:lang="es">Herramientas Anaconda</name>
+    <name xml:lang="fi">Anaconda-työkalut</name>
+    <name xml:lang="fr">Outils Anaconda</name>
+    <name xml:lang="he">כלי Anaconda</name>
+    <name xml:lang="hu">Anaconda eszközök</name>
+    <name xml:lang="ia">Instrumentos de Anaconda</name>
+    <name xml:lang="id">Peralatan Anaconda</name>
+    <name xml:lang="it">Strumenti di Anaconda</name>
+    <name xml:lang="ja">Anaconda ツール</name>
+    <name xml:lang="kk">Anaconda tools</name>
+    <name xml:lang="nb">Anaconda-verktøy</name>
+    <name xml:lang="nl">Anaconda-gereedschappen</name>
+    <name xml:lang="pa">ਐਨਾਕੌਂਡਾ ਟੂਲ</name>
+    <name xml:lang="pl">Narzędzia dla instalatora Anaconda</name>
+    <name xml:lang="pt">Ferramentas Anaconda</name>
+    <name xml:lang="pt_BR">Ferramentas do Anaconda</name>
+    <name xml:lang="ru">Средства anaconda</name>
+    <name xml:lang="sk">Nástroje Anaconda</name>
+    <name xml:lang="sq">Mjetet Anaconda</name>
+    <name xml:lang="sr">Anaconda алати</name>
+    <name xml:lang="sv">Anacondaverktyg</name>
+    <name xml:lang="te">అనకొండా టూల్స్</name>
+    <name xml:lang="uk">Засоби Anaconda</name>
+    <name xml:lang="zh_CN">Anaconda 工具</name>
+    <name xml:lang="zh_TW">Anaconda 工具</name>
+    <description/>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>authconfig</packagereq>
+      <packagereq>btrfs-progs</packagereq>
+      <packagereq>cryptsetup</packagereq>
+      <packagereq>dmraid</packagereq>
+      <packagereq>dosfstools</packagereq>
+      <packagereq>dracut-network</packagereq>
+      <packagereq>e2fsprogs</packagereq>
+      <packagereq>efibootmgr</packagereq>
+      <packagereq>fcoe-utils</packagereq>
+      <packagereq>firewalld</packagereq>
+      <packagereq>gfs2-utils</packagereq>
+      <packagereq>glibc-all-langpacks</packagereq>
+      <packagereq>grub2</packagereq>
+      <packagereq>grub2-efi</packagereq>
+      <packagereq>hfsplus-tools</packagereq>
+      <packagereq>iscsi-initiator-utils</packagereq>
+      <packagereq>lvm2</packagereq>
+      <packagereq>mactel-boot</packagereq>
+      <packagereq>mdadm</packagereq>
+      <packagereq>ntfsprogs</packagereq>
+      <packagereq>reiserfs-utils</packagereq>
+      <packagereq>shim</packagereq>
+      <packagereq>syslinux-extlinux</packagereq>
+      <packagereq>xfsprogs</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>base</id>
+    <name>Base</name>
+    <default>true</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">at</packagereq>
+      <packagereq type="mandatory">authconfig</packagereq>
+      <packagereq type="mandatory">bzip2</packagereq>
+      <packagereq type="mandatory">cronie</packagereq>
+      <packagereq type="mandatory">dbus</packagereq>
+      <packagereq type="mandatory">diffutils</packagereq>
+      <packagereq type="mandatory">dmraid</packagereq>
+      <packagereq type="mandatory">dump</packagereq>
+      <packagereq type="mandatory">ed</packagereq>
+      <packagereq type="mandatory">gnupg2</packagereq>
+      <packagereq type="mandatory">grub2-starfield-theme</packagereq>
+      <packagereq type="mandatory">irqbalance</packagereq>
+      <packagereq type="mandatory">linux-firmware</packagereq>
+      <packagereq type="mandatory">logrotate</packagereq>
+      <packagereq type="mandatory">lsof</packagereq>
+      <packagereq type="mandatory">man-db</packagereq>
+      <packagereq type="mandatory">man-pages</packagereq>
+      <packagereq type="mandatory">mcelog</packagereq>
+      <packagereq type="mandatory">mdadm</packagereq>
+      <packagereq type="mandatory">microcode_ctl</packagereq>
+      <packagereq type="mandatory">mlocate</packagereq>
+      <packagereq type="mandatory">nano</packagereq>
+      <packagereq type="mandatory">ntsysv</packagereq>
+      <packagereq type="mandatory">numactl</packagereq>
+      <packagereq type="mandatory">parted</packagereq>
+      <packagereq type="mandatory">pciutils</packagereq>
+      <packagereq type="mandatory">pcmciautils</packagereq>
+      <packagereq type="mandatory">perf</packagereq>
+      <packagereq type="mandatory">pinfo</packagereq>
+      <packagereq type="mandatory">qubes-anaconda-addon</packagereq>
+      <packagereq type="mandatory">qubes-release-notes</packagereq>
+      <packagereq type="mandatory">qubes-release</packagereq>
+      <packagereq type="mandatory">quota</packagereq>
+      <packagereq type="mandatory">rsyslog</packagereq>
+      <packagereq type="mandatory">smartmontools</packagereq>
+      <packagereq type="mandatory">sudo</packagereq>
+      <packagereq type="mandatory">symlinks</packagereq>
+      <packagereq type="mandatory">systemd</packagereq>
+      <packagereq type="mandatory">tar</packagereq>
+      <packagereq type="mandatory">time</packagereq>
+      <packagereq type="mandatory">tmpwatch</packagereq>
+      <packagereq type="mandatory">tree</packagereq>
+      <packagereq type="mandatory">unzip</packagereq>
+      <packagereq type="mandatory">usbutils</packagereq>
+      <packagereq type="mandatory">util-linux</packagereq>
+      <packagereq type="mandatory">vim-enhanced</packagereq>
+      <packagereq type="mandatory">which</packagereq>
+      <packagereq type="mandatory">yum-utils</packagereq>
+      <packagereq type="mandatory">zip</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>base-x</id>
+    <name>X Window System</name>
+    <default>true</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">desktop-backgrounds-basic</packagereq>
+      <packagereq type="mandatory">glx-utils</packagereq>
+      <packagereq type="mandatory">gnome-packagekit</packagereq>
+      <packagereq type="mandatory">initial-setup-gui</packagereq>
+      <packagereq type="mandatory">initial-setup</packagereq>
+      <packagereq type="mandatory">mesa-dri-drivers</packagereq>
+      <packagereq type="mandatory">xorg-x11-drivers</packagereq>
+      <packagereq type="mandatory">xorg-x11-drv-libinput</packagereq>
+      <packagereq type="mandatory">xorg-x11-server-Xorg</packagereq>
+      <packagereq type="mandatory">xorg-x11-utils</packagereq>
+      <packagereq type="mandatory">xorg-x11-xauth</packagereq>
+      <packagereq type="mandatory">xorg-x11-xinit</packagereq>
+      <packagereq type="mandatory">xterm</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>core</id>
+    <name>Core</name>
+    <name xml:lang="af">Kern</name>
+    <name xml:lang="am">ማዕከላዊ ቦታ</name>
+    <name xml:lang="ar">اللبّ</name>
+    <name xml:lang="as">মূল</name>
+    <name xml:lang="ast">Nucleu</name>
+    <name xml:lang="bal">هستگ</name>
+    <name xml:lang="be">Падмурак</name>
+    <name xml:lang="bg">Основа</name>
+    <name xml:lang="bn">কোর</name>
+    <name xml:lang="bn_IN">কোর</name>
+    <name xml:lang="bs">Jezgra</name>
+    <name xml:lang="ca">Nucli</name>
+    <name xml:lang="cs">Úplný základ</name>
+    <name xml:lang="cy">Craidd</name>
+    <name xml:lang="da">Kerne</name>
+    <name xml:lang="de">Kern</name>
+    <name xml:lang="el">Πυρήνας</name>
+    <name xml:lang="en_GB">Core</name>
+    <name xml:lang="es">Núcleo</name>
+    <name xml:lang="et">Tuum</name>
+    <name xml:lang="fa">هسته</name>
+    <name xml:lang="fi">Keskeiset</name>
+    <name xml:lang="fr">Core</name>
+    <name xml:lang="gl">Núcleo</name>
+    <name xml:lang="gu">મૂળ</name>
+    <name xml:lang="he">ליבה</name>
+    <name xml:lang="hi">क्रोड़</name>
+    <name xml:lang="hr">Jezgra</name>
+    <name xml:lang="hu">Mag</name>
+    <name xml:lang="hy">Հիմք</name>
+    <name xml:lang="ia">Nucleo</name>
+    <name xml:lang="id">Inti</name>
+    <name xml:lang="ilo">Bugas</name>
+    <name xml:lang="is">Lágmarkskerfi</name>
+    <name xml:lang="it">Core</name>
+    <name xml:lang="ja">コア</name>
+    <name xml:lang="ka">ბირთვი</name>
+    <name xml:lang="kn">ಅಂತಸ್ಸಾರ</name>
+    <name xml:lang="ko">핵심</name>
+    <name xml:lang="lv">Pamatsistēma</name>
+    <name xml:lang="mai">कोर</name>
+    <name xml:lang="mk">Основни</name>
+    <name xml:lang="ml">കോര്‍</name>
+    <name xml:lang="mr">कोर</name>
+    <name xml:lang="ms">Teras</name>
+    <name xml:lang="nb">Kjerne</name>
+    <name xml:lang="nds">Kern</name>
+    <name xml:lang="ne">कोर</name>
+    <name xml:lang="nl">Kern</name>
+    <name xml:lang="no">Kjerne</name>
+    <name xml:lang="nso">Bogare</name>
+    <name xml:lang="or">ପ୍ରମୂଖ</name>
+    <name xml:lang="pa">ਕੋਰ</name>
+    <name xml:lang="pl">Rdzeń</name>
+    <name xml:lang="pt">Núcleo</name>
+    <name xml:lang="pt_BR">Núcleo</name>
+    <name xml:lang="ro">Nucleu</name>
+    <name xml:lang="ru">Основные</name>
+    <name xml:lang="si">න්‍යෂ්ඨිය</name>
+    <name xml:lang="sk">Úplný základ</name>
+    <name xml:lang="sl">Jedro</name>
+    <name xml:lang="sq">Bërthama</name>
+    <name xml:lang="sr">Срж</name>
+    <name xml:lang="sr@Latn">Srž</name>
+    <name xml:lang="sr@latin">Srž</name>
+    <name xml:lang="sv">Grund</name>
+    <name xml:lang="ta">கோர்</name>
+    <name xml:lang="te">అంతర్భాగం</name>
+    <name xml:lang="tg">Система</name>
+    <name xml:lang="th">แกนหลัก</name>
+    <name xml:lang="tr">Çekirdek</name>
+    <name xml:lang="uk">Основа</name>
+    <name xml:lang="ur">مرکز</name>
+    <name xml:lang="vi">Lõi</name>
+    <name xml:lang="zh_CN">核心</name>
+    <name xml:lang="zh_TW">主要</name>
+    <name xml:lang="zu">Okuyikhona</name>
+    <description>Smallest possible installation</description>
+    <description xml:lang="af">Kleinste moontlike installasie</description>
+    <description xml:lang="am">ትንሹ የሚቻለው የማስገባት ሥራ</description>
+    <description xml:lang="ar">أصغر تثبيت متاح</description>
+    <description xml:lang="as">ক্ষুদ্ৰতম সাম্ভৱপৰ সংস্থাপন</description>
+    <description xml:lang="ast">Instalación lo más pequeña dable</description>
+    <description xml:lang="bal">هوردترین نصب ممکن</description>
+    <description xml:lang="be">Найменшая з магчымых усталёўка</description>
+    <description xml:lang="bg">Най-малката възможна инсталация</description>
+    <description xml:lang="bn">ন্যূনতম ইনস্টলেশন</description>
+    <description xml:lang="bn_IN">ন্যূনতম ইনস্টলেশন</description>
+    <description xml:lang="bs">Najmanja moguća instalacija</description>
+    <description xml:lang="ca">La instal·lació més petita possible</description>
+    <description xml:lang="cs">Nejmenší možná instalace</description>
+    <description xml:lang="cy">Arsefydliad lleiaf posib</description>
+    <description xml:lang="da">Mindst mulige installation</description>
+    <description xml:lang="de">Kleinstmögliche Installation</description>
+    <description xml:lang="el">Μικρότερη δυνατή εγκατάσταση</description>
+    <description xml:lang="en_GB">Smallest possible installation</description>
+    <description xml:lang="es">Instalación lo más pequeña posible</description>
+    <description xml:lang="et">Väikseim võimalik paigaldus</description>
+    <description xml:lang="fa">کوچکترین نصب ممکن</description>
+    <description xml:lang="fi">Pienin mahdollinen asennus</description>
+    <description xml:lang="fr">Plus petite installation possible</description>
+    <description xml:lang="gl">Instalación o máis pequena posíbel</description>
+    <description xml:lang="gu">નાનામાં નાના શક્ય સ્થાપનો</description>
+    <description xml:lang="he">התקנה מזערית</description>
+    <description xml:lang="hi">लघुतम संभावित संस्थापन</description>
+    <description xml:lang="hr">Najmanja moguća instalacija</description>
+    <description xml:lang="hu">Lehető legkisebb telepítés</description>
+    <description xml:lang="hy">Փոքրագույն հնարավոր տեղադրում</description>
+    <description xml:lang="ia">Le plus parve installation possibile</description>
+    <description xml:lang="id">Instalasi sekecil mungkin</description>
+    <description xml:lang="is">Lágmarks uppsetning</description>
+    <description xml:lang="it">Installazione minima</description>
+    <description xml:lang="ja">最小限のインストール</description>
+    <description xml:lang="ka">უმცირესი შესაძლო ჩადგმა</description>
+    <description xml:lang="kn">ಅತ್ಯಲ್ಪಸಾಧ್ಯ ಅನುಸ್ಥಾಪನೆ</description>
+    <description xml:lang="ko">가능한 최소 설치</description>
+    <description xml:lang="lv">Vismazākā iespējamā instalācija</description>
+    <description xml:lang="mai">सबसँ छोट संभावित संस्थापन</description>
+    <description xml:lang="mk">Најмалата можна инсталација</description>
+    <description xml:lang="ml">സാധ്യമായ ഏറ്റവും ചെറിയ ഇന്‍സ്റ്റലേഷന്‍</description>
+    <description xml:lang="mr">सर्वात लहान शक्य प्रतिष्ठापन</description>
+    <description xml:lang="ms">Pemasangan sekecil mungkin</description>
+    <description xml:lang="nb">Minste mulige installering</description>
+    <description xml:lang="ne">सम्भावित सबैभन्दा सानो स्थापना</description>
+    <description xml:lang="nl">Kleinst mogelijke installatie</description>
+    <description xml:lang="no">Minste mulige installering</description>
+    <description xml:lang="nso">Go tsenya mo go kgonegago go gonyenyane kudu</description>
+    <description xml:lang="or">କ୍ଷୁଦ୍ରତମ ସମ୍ଭାବ୍ଯ ସ୍ଥାପନ</description>
+    <description xml:lang="pa">ਘੱਟੋ-ਘੱਟ ਸੰਭਵ ਇੰਸਟਾਲੇਸ਼ਨ</description>
+    <description xml:lang="pl">Najmniejsza możliwa instalacja</description>
+    <description xml:lang="pt">A mais pequena instalação possível</description>
+    <description xml:lang="pt_BR">Menor instalação possível</description>
+    <description xml:lang="ro">Cea mai mică instalare posibilă</description>
+    <description xml:lang="ru">Минимально возможная установка</description>
+    <description xml:lang="si">සිදුකල හැකි ඉතාම කුඩා ස්ථාපනය</description>
+    <description xml:lang="sk">Najmenšia možná inštalácia</description>
+    <description xml:lang="sl">Najmanjša možna namestitev</description>
+    <description xml:lang="sq">Instalimi më i vogël i mundshëm</description>
+    <description xml:lang="sr">Најмања могућа инсталација</description>
+    <description xml:lang="sr@Latn">Najmanja moguća instalacija</description>
+    <description xml:lang="sr@latin">Najmanja moguća instalacija</description>
+    <description xml:lang="sv">Minsta möjliga installation</description>
+    <description xml:lang="ta">மிக சிறிய நிறுவல்</description>
+    <description xml:lang="te">సాధ్యమగు చిన్న సంస్థాపన</description>
+    <description xml:lang="tg">Сабткунии оддӣ</description>
+    <description xml:lang="th">ติดตั้งให้มีขนาดเล็กที่สุดที่เป็นไปได้</description>
+    <description xml:lang="tr">Olası en küçük kurulum</description>
+    <description xml:lang="uk">Мінімально можливе встановлення</description>
+    <description xml:lang="ur">چھو ٹی ممکن انسٹللشن </description>
+    <description xml:lang="vi">Cài đặt nhỏ tối thiểu</description>
+    <description xml:lang="zh_CN">精简安装</description>
+    <description xml:lang="zh_TW">最小安裝</description>
+    <description xml:lang="zu">Ukufakwa okuncane</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">audit</packagereq>
+      <packagereq type="mandatory">basesystem</packagereq>
+      <packagereq type="mandatory">bash</packagereq>
+      <packagereq type="mandatory">coreutils</packagereq>
+      <packagereq type="mandatory">cronie</packagereq>
+      <packagereq type="mandatory">curl</packagereq>
+      <packagereq type="mandatory">dnf</packagereq>
+      <packagereq type="mandatory">e2fsprogs</packagereq>
+      <packagereq type="mandatory">filesystem</packagereq>
+      <packagereq type="mandatory">glibc</packagereq>
+      <packagereq type="mandatory">hostname</packagereq>
+      <packagereq type="mandatory">initscripts</packagereq>
+      <packagereq type="mandatory">iproute</packagereq>
+      <packagereq type="mandatory">iputils</packagereq>
+      <packagereq type="mandatory">kbd</packagereq>
+      <packagereq type="mandatory">less</packagereq>
+      <packagereq type="mandatory">man-db</packagereq>
+      <packagereq type="mandatory">ncurses</packagereq>
+      <packagereq type="mandatory">parted</packagereq>
+      <packagereq type="mandatory">passwd</packagereq>
+      <packagereq type="mandatory">plymouth</packagereq>
+      <packagereq type="mandatory">procps-ng</packagereq>
+      <packagereq type="mandatory">rootfiles</packagereq>
+      <packagereq type="mandatory">rpm</packagereq>
+      <packagereq type="mandatory">setup</packagereq>
+      <packagereq type="mandatory">shadow-utils</packagereq>
+      <packagereq type="mandatory">sudo</packagereq>
+      <packagereq type="mandatory">systemd</packagereq>
+      <packagereq type="mandatory">util-linux</packagereq>
+      <packagereq type="mandatory">vim-minimal</packagereq>
+      <packagereq type="default">dnf-plugins-core</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>fonts</id>
+    <name>Fonts</name>
+    <name xml:lang="ar">خطوط</name>
+    <name xml:lang="as">আখৰসমূহ</name>
+    <name xml:lang="ast">Fontes</name>
+    <name xml:lang="bal">فونت آن</name>
+    <name xml:lang="bg">Шрифтове</name>
+    <name xml:lang="bn">ফন্ট</name>
+    <name xml:lang="bn_IN">ফন্ট</name>
+    <name xml:lang="ca">Lletres</name>
+    <name xml:lang="cs">Písma</name>
+    <name xml:lang="da">Skrifttyper</name>
+    <name xml:lang="de">Schriftarten</name>
+    <name xml:lang="el">Γραμματοσειρές</name>
+    <name xml:lang="en_GB">Fonts</name>
+    <name xml:lang="es">Fuentes</name>
+    <name xml:lang="et">Kirjatüübid (fondid)</name>
+    <name xml:lang="eu">Letra-tipoak</name>
+    <name xml:lang="fa">قلم ها</name>
+    <name xml:lang="fi">Kirjasimet</name>
+    <name xml:lang="fr">Polices de caractères</name>
+    <name xml:lang="gl">Tipos de letra</name>
+    <name xml:lang="gu">ફોન્ટ</name>
+    <name xml:lang="he">גופנים</name>
+    <name xml:lang="hi">फ़ॉन्ट</name>
+    <name xml:lang="hu">Betűkészletek</name>
+    <name xml:lang="ia">Characteres</name>
+    <name xml:lang="id">Huruf</name>
+    <name xml:lang="is">Letur</name>
+    <name xml:lang="it">Font</name>
+    <name xml:lang="ja">フォント</name>
+    <name xml:lang="kn">ಅಕ್ಷರಶೈಲಿಗಳು</name>
+    <name xml:lang="ko">글꼴 </name>
+    <name xml:lang="lv">Fonti</name>
+    <name xml:lang="mai">फान्ट्स</name>
+    <name xml:lang="ml">ലിപികള്‍</name>
+    <name xml:lang="mr">फॉन्ट</name>
+    <name xml:lang="ms">Font</name>
+    <name xml:lang="nb">Skrifter</name>
+    <name xml:lang="ne">फन्ट</name>
+    <name xml:lang="nl">Lettertypen</name>
+    <name xml:lang="or">ଅକ୍ଷରରୂପ</name>
+    <name xml:lang="pa">ਫੋਂਟ</name>
+    <name xml:lang="pl">Czcionki</name>
+    <name xml:lang="pt">Tipos de Letra</name>
+    <name xml:lang="pt_BR">Fontes</name>
+    <name xml:lang="ru">Шрифты</name>
+    <name xml:lang="sk">Písma</name>
+    <name xml:lang="sr">Фонтови</name>
+    <name xml:lang="sr@Latn">Fontovi</name>
+    <name xml:lang="sr@latin">Fontovi</name>
+    <name xml:lang="sv">Typsnitt</name>
+    <name xml:lang="ta">எழுத்துருக்கள்</name>
+    <name xml:lang="te">ఫాంట్లు</name>
+    <name xml:lang="tg">Ҳарфҳо</name>
+    <name xml:lang="th">แบบอักษร</name>
+    <name xml:lang="tr">Fontlar</name>
+    <name xml:lang="uk">Шрифти</name>
+    <name xml:lang="zh_CN">字体</name>
+    <name xml:lang="zh_TW">字型</name>
+    <description>Fonts packages for rendering text on the desktop.</description>
+    <description xml:lang="ar">حزم الخطوط لإخراج النص على سطح المكتب.</description>
+    <description xml:lang="as">ডেষ্কট'পত আখৰ দেখুৱাবলৈ আখৰৰ সৰঞ্জাম ।</description>
+    <description xml:lang="ast">Paquete de fontes pa renderizar testu nel escritoriu</description>
+    <description xml:lang="bal">بستگان فوت په رندینگ متن ته دسکتاپ</description>
+    <description xml:lang="bg">Пакети с шрифтове за извеждане на текст в работната среда.</description>
+    <description xml:lang="bn">ডেস্কটপের মধ্যে টেক্সট রেন্ডার করতে ব্যবহৃত ফন্ট প্যাকেজ।</description>
+    <description xml:lang="bn_IN">ডেস্কটপের মধ্যে টেক্সট রেন্ডার করতে ব্যবহৃত ফন্ট প্যাকেজ।</description>
+    <description xml:lang="ca">Paquets de lletres per a la renderització de texts en l'escriptori.</description>
+    <description xml:lang="cs">Balíčky písem (fontů) pro zobrazování textu v systému.</description>
+    <description xml:lang="da">Skrifttypepakker til visning af tekst på skrivebordet.</description>
+    <description xml:lang="de">Schriftarten-Pakete zum Darstellen von Text auf dem Desktop.</description>
+    <description xml:lang="el">Πακέτα γραμματοσειρών για εμφάνιση κειμένου στην επιφάνεια εργασίας.</description>
+    <description xml:lang="en_GB">Fonts packages for rendering text on the desktop.</description>
+    <description xml:lang="es">Paquete de fuentes para renderizar texto en el escritorio</description>
+    <description xml:lang="et">Töölaual kasutatavad kirjatüübid</description>
+    <description xml:lang="eu">Letra-tipo paketeak testua mahaigainean errendatzeko.</description>
+    <description xml:lang="fa">بسته‌های قلم برای نمایش متن بر روی میزکار</description>
+    <description xml:lang="fi">Kirjasinpaketteja tekstin piirtämiseen työpöydällä.</description>
+    <description xml:lang="fr">Paquets de polices de caractères pour afficher du texte sur le bureau.</description>
+    <description xml:lang="gu">ડેસ્કટોપ પર લખાણ રેન્ડર કરવા માટેના ફોન્ટ પેકેજો.</description>
+    <description xml:lang="he">חבילות גופנים עבור שולחן העבודה.</description>
+    <description xml:lang="hi">डेस्कटॉप पर पाठ रेंडर करने के लिए फ़ॉन्ट संकुल</description>
+    <description xml:lang="hu">Betűkészlet csomagok szöveg megjelenítéséhez az asztalon.</description>
+    <description xml:lang="ia">Pacchettos de characteres pro render texto sur le scriptorio.</description>
+    <description xml:lang="id">Paket huruf untuk merender teks di desktop.</description>
+    <description xml:lang="is">Leturpakkar til birtingar texta áí skjáborðinu.</description>
+    <description xml:lang="it">Pacchetti di font per la rappresentazione di testo sul desktop.</description>
+    <description xml:lang="ja">デスクトップでテキストをレンダリングするためのフォントパッケージです。</description>
+    <description xml:lang="kn">ಗಣಕತೆರೆಯಲ್ಲಿ ಪಠ್ಯವನ್ನು ರೆಂಡರ್ ಮಾಡುವ ಅಕ್ಷರಶೈಲಿಗಳ ಪ್ಯಾಕೇಜ್‍ಗಳು.</description>
+    <description xml:lang="ko">데스크탑 상에서 텍스트 렌더링 용 글꼴 패키지 </description>
+    <description xml:lang="lv">Fontu pakas teksta renderēšanai uz darbvirsmas.</description>
+    <description xml:lang="mai">डेस्कटाप पर पाठ रेंडर करबा क' लेल फाँट संकुल</description>
+    <description xml:lang="ml">ഡസ്ക്ടോപ്പിലുള്ള വാചകങ്ങള്‍ റെന്‍ഡര്‍ ചെയ്യുന്നതിനുള്ള ലിപി പാക്കേജുകള്‍.</description>
+    <description xml:lang="mr">डेस्कटॉपवर मजकुर दर्शविण्याकरीता फॉन्ट संकुल.</description>
+    <description xml:lang="nb">Skriftpakker for å vise tekst på skrivebordet.</description>
+    <description xml:lang="ne">डेस्कटपमा पाठ रेन्डरिङका लागि फन्ट प्याकेज ।</description>
+    <description xml:lang="nl">Lettertype-pakketten voor het weergeven van tekst op het bureaublad.</description>
+    <description xml:lang="or">ଡେସ୍କଟପରେ ପାଠ୍ୟ ପ୍ରତିପାଦନ ପାଇଁ ଅକ୍ଷରରୂପ ପ୍ୟାକେଜଗୁଡିକ।</description>
+    <description xml:lang="pa">ਡੈਸਕਟਾਪ ਉੱਤੇ ਰੈਂਡਰਿੰਗ ਲਈ ਫੋਂਟ ਪੈਕੇਜ।</description>
+    <description xml:lang="pl">Pakiety czcionek do wyświetlania tekstu w środowisku graficznym.</description>
+    <description xml:lang="pt">Pacotes de tipos de letra para representar o texto no ecrã.</description>
+    <description xml:lang="pt_BR">Pacotes de fontes para renderizar textos no ambiente de trabalho.</description>
+    <description xml:lang="ru">Пакеты со шрифтами для отображения текста на рабочем столе.</description>
+    <description xml:lang="sk">Balíčky písiem pre zobrazovanie textu v systéme.</description>
+    <description xml:lang="sr">Пакети фонтова за приказ текста на радној површини.</description>
+    <description xml:lang="sr@Latn">Paketi fontova za prikaz teksta na radnoj površini.</description>
+    <description xml:lang="sr@latin">Paketi fontova za prikaz teksta na radnoj površini.</description>
+    <description xml:lang="sv">Typsnittspaket för att rendera text på skrivbordet.</description>
+    <description xml:lang="ta">பணிமேடையில் தோன்றும் உரைக்கான எழுத்துரு தொகுப்புகள்</description>
+    <description xml:lang="te">డెస్క్‍‌టాప్ పై పాఠ్యమును ప్రస్ఫుటం చేయుటకొరకు ఫాంట్స్‍ సంకలనాలు.</description>
+    <description xml:lang="tg">Ҳарфҳо барои намоиши матн дар мизи корӣ</description>
+    <description xml:lang="th">แพคเกจแบบอักษรสำหรับวาดข้อความบนพื้นโต๊ะ</description>
+    <description xml:lang="uk">Пакунки шрифтів для виводу тексту на екрані.</description>
+    <description xml:lang="zh_CN">用于渲染桌面上文字的字体软件包。</description>
+    <description xml:lang="zh_TW">在桌面上繪製文字的字型軟體包。</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="default">aajohan-comfortaa-fonts</packagereq>
+      <packagereq type="default">abattis-cantarell-fonts</packagereq>
+      <packagereq type="default">adobe-source-han-sans-cn-fonts</packagereq>
+      <packagereq type="default">adobe-source-han-sans-tw-fonts</packagereq>
+      <packagereq type="default">dejavu-sans-fonts</packagereq>
+      <packagereq type="default">dejavu-sans-mono-fonts</packagereq>
+      <packagereq type="default">dejavu-serif-fonts</packagereq>
+      <packagereq type="default">gnu-free-mono-fonts</packagereq>
+      <packagereq type="default">gnu-free-sans-fonts</packagereq>
+      <packagereq type="default">gnu-free-serif-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-lisu-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-mandaic-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-meetei-mayek-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-tagalog-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-tai-tham-fonts</packagereq>
+      <packagereq type="default">google-noto-sans-tai-viet-fonts</packagereq>
+      <packagereq type="default">jomolhari-fonts</packagereq>
+      <packagereq type="default">julietaula-montserrat-fonts</packagereq>
+      <packagereq type="default">khmeros-base-fonts</packagereq>
+      <packagereq type="default">liberation-mono-fonts</packagereq>
+      <packagereq type="default">liberation-sans-fonts</packagereq>
+      <packagereq type="default">liberation-serif-fonts</packagereq>
+      <packagereq type="default">lklug-fonts</packagereq>
+      <packagereq type="default">lohit-assamese-fonts</packagereq>
+      <packagereq type="default">lohit-bengali-fonts</packagereq>
+      <packagereq type="default">lohit-devanagari-fonts</packagereq>
+      <packagereq type="default">lohit-gujarati-fonts</packagereq>
+      <packagereq type="default">lohit-gurmukhi-fonts</packagereq>
+      <packagereq type="default">lohit-kannada-fonts</packagereq>
+      <packagereq type="default">lohit-odia-fonts</packagereq>
+      <packagereq type="default">lohit-tamil-fonts</packagereq>
+      <packagereq type="default">lohit-telugu-fonts</packagereq>
+      <packagereq type="default">naver-nanum-gothic-fonts</packagereq>
+      <packagereq type="default">paktype-naskh-basic-fonts</packagereq>
+      <packagereq type="default">paratype-pt-sans-fonts</packagereq>
+      <packagereq type="default">sil-abyssinica-fonts</packagereq>
+      <packagereq type="default">sil-mingzat-fonts</packagereq>
+      <packagereq type="default">sil-nuosu-fonts</packagereq>
+      <packagereq type="default">sil-padauk-fonts</packagereq>
+      <packagereq type="default">smc-meera-fonts</packagereq>
+      <packagereq type="default">stix-fonts</packagereq>
+      <packagereq type="default">tabish-eeyek-fonts</packagereq>
+      <packagereq type="default">thai-scalable-waree-fonts</packagereq>
+      <packagereq type="default">vlgothic-fonts</packagereq>
+      <packagereq type="optional">adf-accanthis-2-fonts</packagereq>
+      <packagereq type="optional">adf-accanthis-3-fonts</packagereq>
+      <packagereq type="optional">adf-accanthis-fonts</packagereq>
+      <packagereq type="optional">adf-gillius-2-fonts</packagereq>
+      <packagereq type="optional">adf-gillius-fonts</packagereq>
+      <packagereq type="optional">adf-tribun-fonts</packagereq>
+      <packagereq type="optional">aldusleaf-crimson-text-fonts</packagereq>
+      <packagereq type="optional">allgeyer-musiqwik-fonts</packagereq>
+      <packagereq type="optional">allgeyer-musisync-fonts</packagereq>
+      <packagereq type="optional">apa-new-athena-unicode-fonts</packagereq>
+      <packagereq type="optional">apanov-edrip-fonts</packagereq>
+      <packagereq type="optional">apanov-heuristica-fonts</packagereq>
+      <packagereq type="optional">baekmuk-ttf-batang-fonts</packagereq>
+      <packagereq type="optional">baekmuk-ttf-dotum-fonts</packagereq>
+      <packagereq type="optional">baekmuk-ttf-gulim-fonts</packagereq>
+      <packagereq type="optional">baekmuk-ttf-hline-fonts</packagereq>
+      <packagereq type="optional">beteckna-fonts</packagereq>
+      <packagereq type="optional">beteckna-lower-case-fonts</packagereq>
+      <packagereq type="optional">beteckna-small-caps-fonts</packagereq>
+      <packagereq type="optional">bitstream-vera-sans-fonts</packagereq>
+      <packagereq type="optional">bitstream-vera-sans-mono-fonts</packagereq>
+      <packagereq type="optional">bitstream-vera-serif-fonts</packagereq>
+      <packagereq type="optional">bpg-algeti-fonts</packagereq>
+      <packagereq type="optional">bpg-chveulebrivi-fonts</packagereq>
+      <packagereq type="optional">bpg-courier-fonts</packagereq>
+      <packagereq type="optional">bpg-courier-s-fonts</packagereq>
+      <packagereq type="optional">bpg-elite-fonts</packagereq>
+      <packagereq type="optional">bpg-excelsior-fonts</packagereq>
+      <packagereq type="optional">bpg-glaho-fonts</packagereq>
+      <packagereq type="optional">bpg-ingiri-fonts</packagereq>
+      <packagereq type="optional">bpg-nino-medium-cond-fonts</packagereq>
+      <packagereq type="optional">bpg-nino-medium-fonts</packagereq>
+      <packagereq type="optional">bpg-sans-fonts</packagereq>
+      <packagereq type="optional">bpg-sans-medium-fonts</packagereq>
+      <packagereq type="optional">bpg-sans-modern-fonts</packagereq>
+      <packagereq type="optional">bpg-sans-regular-fonts</packagereq>
+      <packagereq type="optional">bpg-serif-fonts</packagereq>
+      <packagereq type="optional">bpg-serif-modern-fonts</packagereq>
+      <packagereq type="optional">campivisivi-titillium-fonts</packagereq>
+      <packagereq type="optional">cave9-mutante-fonts</packagereq>
+      <packagereq type="optional">cf-bonveno-fonts</packagereq>
+      <packagereq type="optional">cf-sorts-mill-goudy-fonts</packagereq>
+      <packagereq type="optional">chisholm-letterslaughing-fonts</packagereq>
+      <packagereq type="optional">chisholm-to-be-continued-fonts</packagereq>
+      <packagereq type="optional">cjkuni-ukai-fonts</packagereq>
+      <packagereq type="optional">cjkuni-uming-fonts</packagereq>
+      <packagereq type="optional">comic-neue-fonts</packagereq>
+      <packagereq type="optional">conakry-fonts</packagereq>
+      <packagereq type="optional">ctan-cm-lgc-roman-fonts</packagereq>
+      <packagereq type="optional">ctan-cm-lgc-sans-fonts</packagereq>
+      <packagereq type="optional">ctan-cm-lgc-typewriter-fonts</packagereq>
+      <packagereq type="optional">ctan-kerkis-calligraphic-fonts</packagereq>
+      <packagereq type="optional">ctan-kerkis-sans-fonts</packagereq>
+      <packagereq type="optional">ctan-kerkis-serif-fonts</packagereq>
+      <packagereq type="optional">darkgarden-fonts</packagereq>
+      <packagereq type="optional">dejavu-lgc-sans-fonts</packagereq>
+      <packagereq type="optional">dejavu-lgc-sans-mono-fonts</packagereq>
+      <packagereq type="optional">dejavu-lgc-serif-fonts</packagereq>
+      <packagereq type="optional">denemo-emmentaler-fonts</packagereq>
+      <packagereq type="optional">denemo-feta-fonts</packagereq>
+      <packagereq type="optional">denemo-music-fonts</packagereq>
+      <packagereq type="optional">drehatlas-warender-bibliothek-fonts</packagereq>
+      <packagereq type="optional">drehatlas-widelands-fonts</packagereq>
+      <packagereq type="optional">drehatlas-xaporho-fonts</packagereq>
+      <packagereq type="optional">dustin-domestic-manners-fonts</packagereq>
+      <packagereq type="optional">dustin-dustismo-roman-fonts</packagereq>
+      <packagereq type="optional">dustin-dustismo-sans-fonts</packagereq>
+      <packagereq type="optional">ecolier-court-fonts</packagereq>
+      <packagereq type="optional">ecolier-court-lignes-fonts</packagereq>
+      <packagereq type="optional">extremetuxracer-papercuts-fonts</packagereq>
+      <packagereq type="optional">extremetuxracer-papercuts-outline-fonts</packagereq>
+      <packagereq type="optional">fontawesome-fonts</packagereq>
+      <packagereq type="optional">freecol-imperator-fonts</packagereq>
+      <packagereq type="optional">freecol-shadowedblack-fonts</packagereq>
+      <packagereq type="optional">gargi-fonts</packagereq>
+      <packagereq type="optional">gdouros-aegean-fonts</packagereq>
+      <packagereq type="optional">gdouros-aegyptus-fonts</packagereq>
+      <packagereq type="optional">gdouros-akkadian-fonts</packagereq>
+      <packagereq type="optional">gdouros-alexander-fonts</packagereq>
+      <packagereq type="optional">gdouros-anaktoria-fonts</packagereq>
+      <packagereq type="optional">gdouros-analecta-fonts</packagereq>
+      <packagereq type="optional">gdouros-aroania-fonts</packagereq>
+      <packagereq type="optional">gdouros-asea-fonts</packagereq>
+      <packagereq type="optional">gdouros-avdira-fonts</packagereq>
+      <packagereq type="optional">gdouros-musica-fonts</packagereq>
+      <packagereq type="optional">gdouros-symbola-fonts</packagereq>
+      <packagereq type="optional">gfs-ambrosia-fonts</packagereq>
+      <packagereq type="optional">gfs-artemisia-fonts</packagereq>
+      <packagereq type="optional">gfs-baskerville-fonts</packagereq>
+      <packagereq type="optional">gfs-bodoni-classic-fonts</packagereq>
+      <packagereq type="optional">gfs-bodoni-fonts</packagereq>
+      <packagereq type="optional">gfs-complutum-fonts</packagereq>
+      <packagereq type="optional">gfs-decker-fonts</packagereq>
+      <packagereq type="optional">gfs-didot-classic-fonts</packagereq>
+      <packagereq type="optional">gfs-didot-fonts</packagereq>
+      <packagereq type="optional">gfs-eustace-fonts</packagereq>
+      <packagereq type="optional">gfs-fleischman-fonts</packagereq>
+      <packagereq type="optional">gfs-garaldus-fonts</packagereq>
+      <packagereq type="optional">gfs-gazis-fonts</packagereq>
+      <packagereq type="optional">gfs-goschen-fonts</packagereq>
+      <packagereq type="optional">gfs-ignacio-fonts</packagereq>
+      <packagereq type="optional">gfs-jackson-fonts</packagereq>
+      <packagereq type="optional">gfs-neohellenic-fonts</packagereq>
+      <packagereq type="optional">gfs-nicefore-fonts</packagereq>
+      <packagereq type="optional">gfs-olga-fonts</packagereq>
+      <packagereq type="optional">gfs-philostratos-fonts</packagereq>
+      <packagereq type="optional">gfs-porson-fonts</packagereq>
+      <packagereq type="optional">gfs-pyrsos-fonts</packagereq>
+      <packagereq type="optional">gfs-solomos-fonts</packagereq>
+      <packagereq type="optional">gfs-theokritos-fonts</packagereq>
+      <packagereq type="optional">google-croscore-arimo-fonts</packagereq>
+      <packagereq type="optional">google-croscore-cousine-fonts</packagereq>
+      <packagereq type="optional">google-croscore-symbolneu-fonts</packagereq>
+      <packagereq type="optional">google-croscore-tinos-fonts</packagereq>
+      <packagereq type="optional">google-droid-kufi-fonts</packagereq>
+      <packagereq type="optional">google-droid-sans-fonts</packagereq>
+      <packagereq type="optional">google-droid-sans-mono-fonts</packagereq>
+      <packagereq type="optional">google-droid-serif-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-armenian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-avestan-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-bengali-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-bengali-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-brahmi-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-carian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-cherokee-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-coptic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-deseret-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-devanagari-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-devanagari-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-egyptian-hieroglyphs-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-ethiopic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-georgian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-glagolitic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-gujarati-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-gujarati-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-hebrew-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-imperial-aramaic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-kaithi-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-kannada-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-kannada-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-kayah-li-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-kharoshthi-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-khmer-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-khmer-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-lao-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-lao-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-lycian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-lydian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-malayalam-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-malayalam-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-nko-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-old-south-arabian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-old-turkic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-osmanya-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-phoenician-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-shavian-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-symbols-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-tamil-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-tamil-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-telugu-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-telugu-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-thaana-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-thai-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-thai-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-ugaritic-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-ui-fonts</packagereq>
+      <packagereq type="optional">google-noto-sans-vai-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-armenian-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-georgian-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-khmer-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-lao-fonts</packagereq>
+      <packagereq type="optional">google-noto-serif-thai-fonts</packagereq>
+      <packagereq type="optional">grimmer-proggy-tinysz-fonts</packagereq>
+      <packagereq type="optional">gubbi-fonts</packagereq>
+      <packagereq type="optional">hanazono-fonts</packagereq>
+      <packagereq type="optional">hiran-perizia-fonts</packagereq>
+      <packagereq type="optional">horai-ume-gothic-fonts</packagereq>
+      <packagereq type="optional">horai-ume-mincho-fonts</packagereq>
+      <packagereq type="optional">horai-ume-pgothic-fonts</packagereq>
+      <packagereq type="optional">horai-ume-pmincho-fonts</packagereq>
+      <packagereq type="optional">horai-ume-uigothic-fonts</packagereq>
+      <packagereq type="optional">impallari-lobster-fonts</packagereq>
+      <packagereq type="optional">inkboy-fonts</packagereq>
+      <packagereq type="optional">ipa-ex-gothic-fonts</packagereq>
+      <packagereq type="optional">ipa-ex-mincho-fonts</packagereq>
+      <packagereq type="optional">ipa-gothic-fonts</packagereq>
+      <packagereq type="optional">ipa-mincho-fonts</packagereq>
+      <packagereq type="optional">ipa-pgothic-fonts</packagereq>
+      <packagereq type="optional">ipa-pmincho-fonts</packagereq>
+      <packagereq type="optional">jsmath-fonts</packagereq>
+      <packagereq type="optional">kacst-art-fonts</packagereq>
+      <packagereq type="optional">kacst-book-fonts</packagereq>
+      <packagereq type="optional">kacst-decorative-fonts</packagereq>
+      <packagereq type="optional">kacst-digital-fonts</packagereq>
+      <packagereq type="optional">kacst-farsi-fonts</packagereq>
+      <packagereq type="optional">kacst-letter-fonts</packagereq>
+      <packagereq type="optional">kacst-naskh-fonts</packagereq>
+      <packagereq type="optional">kacst-office-fonts</packagereq>
+      <packagereq type="optional">kacst-one-fonts</packagereq>
+      <packagereq type="optional">kacst-pen-fonts</packagereq>
+      <packagereq type="optional">kacst-poster-fonts</packagereq>
+      <packagereq type="optional">kacst-qurn-fonts</packagereq>
+      <packagereq type="optional">kacst-screen-fonts</packagereq>
+      <packagereq type="optional">kacst-title-fonts</packagereq>
+      <packagereq type="optional">kacst-titlel-fonts</packagereq>
+      <packagereq type="optional">kalapi-fonts</packagereq>
+      <packagereq type="optional">kanjistrokeorders-fonts</packagereq>
+      <packagereq type="optional">kanotf-fonts</packagereq>
+      <packagereq type="optional">khmeros-battambang-fonts</packagereq>
+      <packagereq type="optional">khmeros-bokor-fonts</packagereq>
+      <packagereq type="optional">khmeros-handwritten-fonts</packagereq>
+      <packagereq type="optional">khmeros-metal-chrieng-fonts</packagereq>
+      <packagereq type="optional">khmeros-muol-fonts</packagereq>
+      <packagereq type="optional">khmeros-siemreap-fonts</packagereq>
+      <packagereq type="optional">kurdit-unikurd-web-fonts</packagereq>
+      <packagereq type="optional">lato-fonts</packagereq>
+      <packagereq type="optional">levien-inconsolata-fonts</packagereq>
+      <packagereq type="optional">levien-museum-fonts</packagereq>
+      <packagereq type="optional">liberation-narrow-fonts</packagereq>
+      <packagereq type="optional">libreoffice-opensymbol-fonts</packagereq>
+      <packagereq type="optional">lilypond-emmentaler-fonts</packagereq>
+      <packagereq type="optional">linux-libertine-biolinum-fonts</packagereq>
+      <packagereq type="optional">linux-libertine-fonts</packagereq>
+      <packagereq type="optional">lohit-malayalam-fonts</packagereq>
+      <packagereq type="optional">lohit-marathi-fonts</packagereq>
+      <packagereq type="optional">lohit-nepali-fonts</packagereq>
+      <packagereq type="optional">lohit-tamil-classical-fonts</packagereq>
+      <packagereq type="optional">madan-fonts</packagereq>
+      <packagereq type="optional">manchu-fonts</packagereq>
+      <packagereq type="optional">mgopen-canonica-fonts</packagereq>
+      <packagereq type="optional">mgopen-cosmetica-fonts</packagereq>
+      <packagereq type="optional">mgopen-modata-fonts</packagereq>
+      <packagereq type="optional">mgopen-moderna-fonts</packagereq>
+      <packagereq type="optional">mona-sazanami-fonts</packagereq>
+      <packagereq type="optional">mona-vlgothic-fonts</packagereq>
+      <packagereq type="optional">motoya-lcedar-fonts</packagereq>
+      <packagereq type="optional">motoya-lmaru-fonts</packagereq>
+      <packagereq type="optional">moyogo-molengo-fonts</packagereq>
+      <packagereq type="optional">mph-2b-damase-fonts</packagereq>
+      <packagereq type="optional">mplus-1c-fonts</packagereq>
+      <packagereq type="optional">mplus-1m-fonts</packagereq>
+      <packagereq type="optional">mplus-1mn-fonts</packagereq>
+      <packagereq type="optional">mplus-1p-fonts</packagereq>
+      <packagereq type="optional">mplus-2c-fonts</packagereq>
+      <packagereq type="optional">mplus-2m-fonts</packagereq>
+      <packagereq type="optional">mplus-2p-fonts</packagereq>
+      <packagereq type="optional">mscore-fonts</packagereq>
+      <packagereq type="optional">msimonson-anonymouspro-fonts</packagereq>
+      <packagereq type="optional">nafees-naskh-fonts</packagereq>
+      <packagereq type="optional">nafees-nastaleeq-fonts</packagereq>
+      <packagereq type="optional">nafees-pakistani-naskh-fonts</packagereq>
+      <packagereq type="optional">nafees-pakistani-web-naskh-fonts</packagereq>
+      <packagereq type="optional">nafees-riqa-fonts</packagereq>
+      <packagereq type="optional">nafees-tehreer-naskh-fonts</packagereq>
+      <packagereq type="optional">nafees-web-naskh-fonts</packagereq>
+      <packagereq type="optional">naver-nanum-barun-gothic-fonts</packagereq>
+      <packagereq type="optional">naver-nanum-brush-fonts</packagereq>
+      <packagereq type="optional">naver-nanum-myeongjo-fonts</packagereq>
+      <packagereq type="optional">naver-nanum-pen-fonts</packagereq>
+      <packagereq type="optional">navilu-fonts</packagereq>
+      <packagereq type="optional">nhn-nanum-gothic-coding-fonts</packagereq>
+      <packagereq type="optional">ns-bola-fonts</packagereq>
+      <packagereq type="optional">ns-tiza-chalk-fonts</packagereq>
+      <packagereq type="optional">oflb-asana-math-fonts</packagereq>
+      <packagereq type="optional">oflb-brett-fonts</packagereq>
+      <packagereq type="optional">oflb-goudy-bookletter-1911-fonts</packagereq>
+      <packagereq type="optional">oflb-icelandic-fonts</packagereq>
+      <packagereq type="optional">oflb-notcouriersans-fonts</packagereq>
+      <packagereq type="optional">oflb-prociono-fonts</packagereq>
+      <packagereq type="optional">oflb-riordonfancy-fonts</packagereq>
+      <packagereq type="optional">oflb-roadstencil-fonts</packagereq>
+      <packagereq type="optional">oflb-smonohand-fonts</packagereq>
+      <packagereq type="optional">oflb-sportrop-fonts</packagereq>
+      <packagereq type="optional">oldstandard-sfd-fonts</packagereq>
+      <packagereq type="optional">open-sans-fonts</packagereq>
+      <packagereq type="optional">overpass-fonts</packagereq>
+      <packagereq type="optional">pagul-fonts</packagereq>
+      <packagereq type="optional">paktype-ajrak-fonts</packagereq>
+      <packagereq type="optional">paktype-naqsh-fonts</packagereq>
+      <packagereq type="optional">paktype-tehreer-fonts</packagereq>
+      <packagereq type="optional">paratype-pt-mono-fonts</packagereq>
+      <packagereq type="optional">paratype-pt-sans-caption-fonts</packagereq>
+      <packagereq type="optional">paratype-pt-serif-caption-fonts</packagereq>
+      <packagereq type="optional">paratype-pt-serif-fonts</packagereq>
+      <packagereq type="optional">pothana2000-fonts</packagereq>
+      <packagereq type="optional">saab-fonts</packagereq>
+      <packagereq type="optional">samyak-devanagari-fonts</packagereq>
+      <packagereq type="optional">samyak-gujarati-fonts</packagereq>
+      <packagereq type="optional">samyak-malayalam-fonts</packagereq>
+      <packagereq type="optional">samyak-odia-fonts</packagereq>
+      <packagereq type="optional">samyak-tamil-fonts</packagereq>
+      <packagereq type="optional">sarai-fonts</packagereq>
+      <packagereq type="optional">sazanami-gothic-fonts</packagereq>
+      <packagereq type="optional">sazanami-mincho-fonts</packagereq>
+      <packagereq type="optional">scholarsfonts-cardo-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-fantuwua-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-hiwua-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-jiret-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-tint-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-wookianos-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-yebse-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-yigezu-bisrat-goffer-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-yigezu-bisrat-gothic-fonts</packagereq>
+      <packagereq type="optional">senamirmir-washra-zelan-fonts</packagereq>
+      <packagereq type="optional">serafettin-cartoon-fonts</packagereq>
+      <packagereq type="optional">sil-andika-fonts</packagereq>
+      <packagereq type="optional">sil-charis-compact-fonts</packagereq>
+      <packagereq type="optional">sil-charis-fonts</packagereq>
+      <packagereq type="optional">sil-doulos-fonts</packagereq>
+      <packagereq type="optional">sil-gentium-alt-fonts</packagereq>
+      <packagereq type="optional">sil-gentium-basic-book-fonts</packagereq>
+      <packagereq type="optional">sil-gentium-basic-fonts</packagereq>
+      <packagereq type="optional">sil-gentium-fonts</packagereq>
+      <packagereq type="optional">sil-lateef-fonts</packagereq>
+      <packagereq type="optional">sil-scheherazade-fonts</packagereq>
+      <packagereq type="optional">silkscreen-expanded-fonts</packagereq>
+      <packagereq type="optional">silkscreen-fonts</packagereq>
+      <packagereq type="optional">sj-delphine-fonts</packagereq>
+      <packagereq type="optional">sj-stevehand-fonts</packagereq>
+      <packagereq type="optional">smc-anjalioldlipi-fonts</packagereq>
+      <packagereq type="optional">smc-dyuthi-fonts</packagereq>
+      <packagereq type="optional">smc-kalyani-fonts</packagereq>
+      <packagereq type="optional">smc-rachana-fonts</packagereq>
+      <packagereq type="optional">smc-raghumalayalam-fonts</packagereq>
+      <packagereq type="optional">smc-suruma-fonts</packagereq>
+      <packagereq type="optional">stix-math-fonts</packagereq>
+      <packagereq type="optional">tangerine-fonts</packagereq>
+      <packagereq type="optional">thai-arundina-sans-fonts</packagereq>
+      <packagereq type="optional">thai-arundina-sans-mono-fonts</packagereq>
+      <packagereq type="optional">thai-arundina-serif-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-garuda-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-kinnari-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-loma-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-norasi-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-purisa-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-sawasdee-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-tlwgmono-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-tlwgtypewriter-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-tlwgtypist-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-tlwgtypo-fonts</packagereq>
+      <packagereq type="optional">thai-scalable-umpush-fonts</packagereq>
+      <packagereq type="optional">thibault-essays1743-fonts</packagereq>
+      <packagereq type="optional">thibault-isabella-fonts</packagereq>
+      <packagereq type="optional">thibault-rockets-fonts</packagereq>
+      <packagereq type="optional">thibault-staypuft-fonts</packagereq>
+      <packagereq type="optional">tibetan-machine-uni-fonts</packagereq>
+      <packagereq type="optional">tiresias-info-fonts</packagereq>
+      <packagereq type="optional">tiresias-info-z-fonts</packagereq>
+      <packagereq type="optional">tiresias-key-v2-fonts</packagereq>
+      <packagereq type="optional">tiresias-lp-fonts</packagereq>
+      <packagereq type="optional">tiresias-pc-fonts</packagereq>
+      <packagereq type="optional">tiresias-pc-z-fonts</packagereq>
+      <packagereq type="optional">tiresias-sign-fonts</packagereq>
+      <packagereq type="optional">tiresias-sign-z-fonts</packagereq>
+      <packagereq type="optional">tlomt-junction-fonts</packagereq>
+      <packagereq type="optional">tlomt-league-gothic-fonts</packagereq>
+      <packagereq type="optional">tlomt-orbitron-fonts</packagereq>
+      <packagereq type="optional">tlomt-sniglet-fonts</packagereq>
+      <packagereq type="optional">trabajo-fonts</packagereq>
+      <packagereq type="optional">tulrich-tuffy-fonts</packagereq>
+      <packagereq type="optional">typemade-josefinsansstd-light-fonts</packagereq>
+      <packagereq type="optional">ubuntu-title-fonts</packagereq>
+      <packagereq type="optional">ukij-tuz-fonts</packagereq>
+      <packagereq type="optional">un-core-batang-fonts</packagereq>
+      <packagereq type="optional">un-core-dinaru-fonts</packagereq>
+      <packagereq type="optional">un-core-dotum-fonts</packagereq>
+      <packagereq type="optional">un-core-graphic-fonts</packagereq>
+      <packagereq type="optional">un-core-gungseo-fonts</packagereq>
+      <packagereq type="optional">un-core-pilgi-fonts</packagereq>
+      <packagereq type="optional">un-extra-bom-fonts</packagereq>
+      <packagereq type="optional">un-extra-jamobatang-fonts</packagereq>
+      <packagereq type="optional">un-extra-jamodotum-fonts</packagereq>
+      <packagereq type="optional">un-extra-jamonovel-fonts</packagereq>
+      <packagereq type="optional">un-extra-jamosora-fonts</packagereq>
+      <packagereq type="optional">un-extra-pen-fonts</packagereq>
+      <packagereq type="optional">un-extra-penheulim-fonts</packagereq>
+      <packagereq type="optional">un-extra-pilgia-fonts</packagereq>
+      <packagereq type="optional">un-extra-shinmun-fonts</packagereq>
+      <packagereq type="optional">un-extra-taza-fonts</packagereq>
+      <packagereq type="optional">un-extra-vada-fonts</packagereq>
+      <packagereq type="optional">un-extra-yetgul-fonts</packagereq>
+      <packagereq type="optional">vdrsymbol-fonts</packagereq>
+      <packagereq type="optional">vemana2000-fonts</packagereq>
+      <packagereq type="optional">vlgothic-p-fonts</packagereq>
+      <packagereq type="optional">vollkorn-fonts</packagereq>
+      <packagereq type="optional">wine-marlett-fonts</packagereq>
+      <packagereq type="optional">wine-symbol-fonts</packagereq>
+      <packagereq type="optional">woodardworks-laconic-fonts</packagereq>
+      <packagereq type="optional">woodardworks-laconic-shadow-fonts</packagereq>
+      <packagereq type="optional">wqy-microhei-fonts</packagereq>
+      <packagereq type="optional">wqy-zenhei-fonts</packagereq>
+      <packagereq type="optional">xorg-x11-fonts-ethiopic</packagereq>
+      <packagereq type="optional">yanone-kaffeesatz-fonts</packagereq>
+      <packagereq type="optional">yanone-tagesschrift-fonts</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>hardware-support</id>
+    <name>Hardware Support</name>
+    <name xml:lang="ar">دعم العتاد</name>
+    <name xml:lang="as">যান্ত্ৰিক সামগ্ৰীৰ সমৰ্থন</name>
+    <name xml:lang="ast">Sofitu pal Hardware</name>
+    <name xml:lang="bal">حمایت سخت افزاری</name>
+    <name xml:lang="bg">Хардуерна поддръжка</name>
+    <name xml:lang="bn">হার্ডওয়্যার সমর্থন</name>
+    <name xml:lang="bn_IN">হার্ডওয়্যার সমর্থন</name>
+    <name xml:lang="ca">Suport per al maquinari</name>
+    <name xml:lang="cs">Podpora hardware</name>
+    <name xml:lang="da">Hardwareunderstøttelse</name>
+    <name xml:lang="de">Hardware-Unterstützung</name>
+    <name xml:lang="el">Υποστήριξη υλικού</name>
+    <name xml:lang="en_GB">Hardware Support</name>
+    <name xml:lang="es">Soporte para Hardware</name>
+    <name xml:lang="et">Riistvara tugi</name>
+    <name xml:lang="eu">Hardware euskarria</name>
+    <name xml:lang="fa">پشتیبانی سخت‌افزاری</name>
+    <name xml:lang="fi">Laitteistotuki</name>
+    <name xml:lang="fr">Prise en charge du matériel</name>
+    <name xml:lang="gl">Compatiblidade de hardware</name>
+    <name xml:lang="gu">હાર્ડવેર આધાર</name>
+    <name xml:lang="he">תמיכה בחומרה</name>
+    <name xml:lang="hi">हार्डवेयर समर्थन</name>
+    <name xml:lang="hr">Hardverska podrška</name>
+    <name xml:lang="hu">Hardvertámogatás</name>
+    <name xml:lang="ia">Supporto de hardware</name>
+    <name xml:lang="id">Dukungan Perangkat Keras</name>
+    <name xml:lang="is">Vélbúnaðarstuðningur</name>
+    <name xml:lang="it">Supporto hardware</name>
+    <name xml:lang="ja">ハードウェアサポート</name>
+    <name xml:lang="ka">აპარატურული ნაწილის მხარდაჭერა</name>
+    <name xml:lang="kn">ಯಂತ್ರಾಂಶ ಬೆಂಬಲ</name>
+    <name xml:lang="ko">하드웨어 지원 </name>
+    <name xml:lang="lv">Aparatūras atbalsts</name>
+    <name xml:lang="mai">हार्डवेयर समर्थन</name>
+    <name xml:lang="ml">ഹാര്‍ഡവെയര്‍ പിന്തുണ</name>
+    <name xml:lang="mr">हार्डवेअर समर्थन</name>
+    <name xml:lang="ms">Sokongan Perkakasan</name>
+    <name xml:lang="nb">Støtte for maskinvare</name>
+    <name xml:lang="nds">Hardware-Unnerstütten</name>
+    <name xml:lang="ne">हार्डवेयर समर्थन</name>
+    <name xml:lang="nl">Hardware-ondersteuning</name>
+    <name xml:lang="or">ହାର୍ଡୱେର ସହାୟତା</name>
+    <name xml:lang="pa">ਜੰਤਰ ਸਹਿਯੋਗ</name>
+    <name xml:lang="pl">Obsługa sprzętu</name>
+    <name xml:lang="pt">Suporte ao 'Hardware'</name>
+    <name xml:lang="pt_BR">Suporte de hardware</name>
+    <name xml:lang="ro">Suport hardware</name>
+    <name xml:lang="ru">Поддержка оборудования</name>
+    <name xml:lang="sk">Podpora hardvéru</name>
+    <name xml:lang="sl">Podpora strojni opremi</name>
+    <name xml:lang="sq">Mbulim "Hardware"-i</name>
+    <name xml:lang="sr">Хардверска подршка</name>
+    <name xml:lang="sr@Latn">Hardverska podrška</name>
+    <name xml:lang="sr@latin">Hardverska podrška</name>
+    <name xml:lang="sv">Stöd för maskinvara</name>
+    <name xml:lang="ta">வன்பொருள் துணை</name>
+    <name xml:lang="te">హార్డ్‍‌వేర్ మద్దతు</name>
+    <name xml:lang="tg">Пуштибонии сахтафзор</name>
+    <name xml:lang="th">การรองรับฮาร์ดแวร์</name>
+    <name xml:lang="tr">Donanım Desteği</name>
+    <name xml:lang="uk">Підтримка обладнання</name>
+    <name xml:lang="zh_CN">硬件支持</name>
+    <name xml:lang="zh_TW">硬體支援</name>
+    <description>This group is a collection of tools for various hardware specific utilities.</description>
+    <description xml:lang="ar">هذه المجموعة تحوي أدوات خاصة بعتاديات hardware معينة</description>
+    <description xml:lang="as">বিভিন্ন যন্ত্ৰ-ভিত্তিক সৰঞ্জামৰ বাবে এই গোট সৰঞ্জামৰ এটা সংগ্ৰহ ।</description>
+    <description xml:lang="ast">Esti grupu ye un conxuntu de ferramientes pa delles finalidaes específiques al hardware.</description>
+    <description xml:lang="bal">ای گروه شامل جمعین چه ابزاران په ابزاران خاص سخت افزار.</description>
+    <description xml:lang="bg">Тази група съдържа инструменти за различни хардуерни компоненти.</description>
+    <description xml:lang="bn">হার্ডওয়্যার পরিবেশে ব্যবহারযোগ্য সরঞ্জাম ও রিসোর্স সামগ্রী।</description>
+    <description xml:lang="bn_IN">হার্ডওয়্যার পরিবেশে ব্যবহারযোগ্য সরঞ্জাম ও রিসোর্স সামগ্রী।</description>
+    <description xml:lang="ca">Aquest grup és una col·lecció de diverses eines específiques del maquinari.</description>
+    <description xml:lang="cs">Kolekce nástrojů pro podporu různého specifického hardware.</description>
+    <description xml:lang="da">Denne gruppe er en samling af værktøjer til forskellige hardwarespecifikke hjælpeprogrammer.</description>
+    <description xml:lang="de">Diese Gruppe umfasst eine Sammlung von Werkzeugen für verschiedene hardwarespezifische Dienstprogramme.</description>
+    <description xml:lang="el">Αυτή η ομάδα είναι μια συλλογή από εργαλεία για διάφορα προγράμματα σχετικά με το υλικό του υπολογιστή.</description>
+    <description xml:lang="en_GB">This group is a collection of tools for various hardware specific utilities.</description>
+    <description xml:lang="es">Este grupo es un conjunto de herramientas para diversas finalidades específicas al hardware.</description>
+    <description xml:lang="et">See rühm on erinevate riistvaraspetsiifiliste tööriistade kogum.</description>
+    <description xml:lang="fa">این گروه مجموعه‌ای از ابزارها برای کاربردهای خاص سخت‌افزاری است.</description>
+    <description xml:lang="fi">Tämä ryhmä on kokoelma laitteistospesifisiä hyötyohjelmia.</description>
+    <description xml:lang="fr">Ce groupe comprend un ensemble d'outils pour divers utilitaires de matériel spécifique.</description>
+    <description xml:lang="gu">આ જૂથ એ વિવિધ હાર્ડવેર લગતી ઉપયોગીતાઓ માટે સાધનોનો સમૂહ છે.</description>
+    <description xml:lang="he">קבוצה זו מכילה אוסף כלים לטיפול בחומרה ספציפית.</description>
+    <description xml:lang="hi">यह समूह विविध हार्डवेयर विशिष्ट उपयोगिता के लिये औज़ारों का समूह है.</description>
+    <description xml:lang="hr">Ova grupa je kolekcija alata i namijenjenih određenom hardveru.</description>
+    <description xml:lang="hu">E csoport különböző hardverspecifikus segédprogramokhoz való eszközök gyűjteménye.</description>
+    <description xml:lang="ia">Iste gruppo es un collection de diverse utensiles de hardware.</description>
+    <description xml:lang="id">Kelompok ini adalah koleksi alat bantu untuk beragam utilitas perangkat keras tertentu.</description>
+    <description xml:lang="is">Þessi pakkahópur inniheldur ýmis vélbúnaðartól.</description>
+    <description xml:lang="it">Questo gruppo contiene strumenti specifici per vari componenti hardware.</description>
+    <description xml:lang="ja">このグループは各種ハードウェア固有のユーティリティ用のツールの集合です。</description>
+    <description xml:lang="kn">ಈ ಸಮೂಹವು ವಿವಿಧ ಯಂತ್ರಾಂಶ ನಿಶ್ಚಿತ ಸೌಲಭ್ಯಗಳ ಒಂದು ಪ್ಯಾಕೇಜ್‍ ಆಗಿದೆ.</description>
+    <description xml:lang="ko">이 그룹은 특정 하드웨어 유틸리티에 대한 도구 모음입니다. </description>
+    <description xml:lang="lv">Šī grupa ir rīku kolekcija aparatūras specifiskiem aprīkojumiem.</description>
+    <description xml:lang="mai">ई समूह विविध हार्डवेयर विशिष्ट उपयोगिता क' लेल अओजारसभक समूह अछि.</description>
+    <description xml:lang="ml">ഹാര്‍ഡ്‌വെയര്‍ ഉപയോഗിച്ചുളള പ്രയോഗങ്ങള്‍ക്ക് ആവശ്യമുളള പ്രോഗ്രാമുകളുടെ ഒരു കൂട്ടം.</description>
+    <description xml:lang="mr">हे समुह बहु हार्डवेअर विशिष्ट उपकार्यक्रमांकरीता साधनांचे गट आहे.</description>
+    <description xml:lang="ms">Kumpulan ini adalah koleksi alatan untuk pelbagai utiliti perkakasan spesifik.</description>
+    <description xml:lang="nb">Denne gruppen er en samling av verktøy for diverse maskinvare-spesifikke tilbehør.</description>
+    <description xml:lang="ne">यो समूह विभिन्न हार्डवेयर निर्दिष्ट उपयोगिताका लागि उपकरणको सङ्कलन हो ।</description>
+    <description xml:lang="nl">Deze groep is een collectie van hulpmiddelen voor diverse hardware-specifieke gereedschappen.</description>
+    <description xml:lang="or">ଏହି ସମୂହଟି ବିଭିନ୍ନ ହାର୍ଡୱେର ନିର୍ଦ୍ଦିଷ୍ଟ ଉପଯୋଗୀତା ମାନଙ୍କ ପାଇଁ ଉପକରଣ ମାନଙ୍କର ଗୋଟିଏ ସମଷ୍ଟି ଅଟେ।</description>
+    <description xml:lang="pa">ਇਹ ਗਰੁੱਪ ਵਿੱਚ ਜੰਤਰਾਂ ਲਈ ਖਾਸ ਸਹੂਲਤਾਂ ਉਪਲੱਬਧ ਹਨ।</description>
+    <description xml:lang="pl">Ta grupa jest zbiorem programów dla różnych narzędzi sprzętowych.</description>
+    <description xml:lang="pt">Este grupo é uma colecção de ferramentas para diversos utilitários específicos de 'hardware'.</description>
+    <description xml:lang="pt_BR">Este grupo é uma coleção de ferramentas para vários utilitários de hardwares específicos.</description>
+    <description xml:lang="ro">Acest grup este o colecție de unelte pentru diferite unelte cu specific hardware.</description>
+    <description xml:lang="ru">Эта группа содержит набор инструментов для различных утилит для работы с оборудованием.</description>
+    <description xml:lang="sk">Táto skupina je kolekciou nástrojov pre rôzne hardvérovo špecifické pomocné programy.</description>
+    <description xml:lang="sl">Ta skupina je nabor orodij za podporo specifični strojni opremi.</description>
+    <description xml:lang="sr">Ова група је скуп алатки за разне програме својствене хардверу.</description>
+    <description xml:lang="sr@Latn">Ova grupa je skup alatki za razne programe svojstvene hardveru.</description>
+    <description xml:lang="sr@latin">Ova grupa je skup alatki za razne programe svojstvene hardveru.</description>
+    <description xml:lang="sv">Denna grupp är en samling verktyg för olika maskinvaru-specifika tillbehör.</description>
+    <description xml:lang="ta">இந்தக் குழு பல்வேறு வன்பொருள் குறிப்பிட்ட வசதிகளை கொண்டு தொகுப்பாகும்.</description>
+    <description xml:lang="te">ఈ సమూహం పెక్కు హార్డువేరు వినియోగాలకు కావలసిన ఉపకరణాలను కలిగి ఉంది.</description>
+    <description xml:lang="tg">Ин гуруҳ дорои маҷмӯъи асбобҳо барои хусусиятҳои сахтафзори гуногун мебошад.</description>
+    <description xml:lang="th">กลุ่มนี้ประกอบด้วยเครื่องมือสำหรับอุปกรณ์ฮาร์ดแวร์ต่างๆ</description>
+    <description xml:lang="uk">Ця група містить набір інструментів для різних утиліт роботи з обладнанням.</description>
+    <description xml:lang="zh_CN">这组是针对各种硬件特制的实用程序的工具合集。</description>
+    <description xml:lang="zh_TW">這個群組包括多種特定硬體工具程式的工具與資源。</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="default">usb_modeswitch</packagereq>
+      <packagereq type="optional">acpi</packagereq>
+      <packagereq type="optional">acpitool</packagereq>
+      <packagereq type="optional">alsa-firmware</packagereq>
+      <packagereq type="optional">cmospwd</packagereq>
+      <packagereq type="optional">firmware-addon-dell</packagereq>
+      <packagereq type="optional">hddtemp</packagereq>
+      <packagereq type="optional">hdparm</packagereq>
+      <packagereq type="optional">i8kutils</packagereq>
+      <packagereq type="optional">libifp</packagereq>
+      <packagereq type="optional">lsscsi</packagereq>
+      <packagereq type="optional">openct</packagereq>
+      <packagereq type="optional">opensc</packagereq>
+      <packagereq type="optional">pcsc-lite-ccid</packagereq>
+      <packagereq type="optional">pcsc-lite</packagereq>
+      <packagereq type="optional">radeontop</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>kde-desktop-qubes</id>
+    <name>KDE</name>
+    <name xml:lang="bg">KDE</name>
+    <name xml:lang="ca">KDE</name>
+    <name xml:lang="cs">KDE</name>
+    <name xml:lang="de">KDE</name>
+    <name xml:lang="en_GB">KDE</name>
+    <name xml:lang="es">KDE</name>
+    <name xml:lang="fi">KDE</name>
+    <name xml:lang="fr">KDE</name>
+    <name xml:lang="hu">KDE</name>
+    <name xml:lang="ia">KDE</name>
+    <name xml:lang="id">KDE</name>
+    <name xml:lang="it">KDE</name>
+    <name xml:lang="ja">KDE</name>
+    <name xml:lang="nb">KDE</name>
+    <name xml:lang="nl">KDE</name>
+    <name xml:lang="pl">KDE</name>
+    <name xml:lang="pt">KDE</name>
+    <name xml:lang="pt_BR">KDE</name>
+    <name xml:lang="ru">KDE</name>
+    <name xml:lang="sk">KDE</name>
+    <name xml:lang="sr">KDE</name>
+    <name xml:lang="sv">KDE</name>
+    <name xml:lang="uk">KDE</name>
+    <name xml:lang="zh_CN">KDE</name>
+    <name xml:lang="zh_TW">KDE</name>
+    <description>The KDE Plasma Workspaces, a highly-configurable graphical user interface which includes a panel, desktop, system icons and desktop widgets, and many powerful KDE applications.</description>
+    <description xml:lang="bg">The KDE Plasma Workspaces, графичен потребителски интерфейс с големи възможности за конфигуриране, включващ панел, работна среда, системни икони и инструменти, и всякакви, много мощни KDE приложения.</description>
+    <description xml:lang="ca">KDE Plasma Workspaces, una interfície gràfica d'usuari molt configurable que inclou un tauler, un escriptori, icones de sistema i enginys per a l'escriptori i altres aplicacions útils de KDE.</description>
+    <description xml:lang="cs">Pracovní plochy KDE Plasma je vysoce-konfigurovatelné grafické uživatelské rozhraní zahrnující panely, pracovni plochu, systémové ikony, widgety a mnoho vykonných KDE aplikací.</description>
+    <description xml:lang="de">Die KDE Plasma-Arbeitsumgebung ist eine hoch-konfigurierbare grafische Benutzeroberfläche mit Menüleiste, Schreibtisch, Systemsymbolen, Widgets und vielen ausgefeilten KDE-Anwendungen.</description>
+    <description xml:lang="en_GB">The KDE Plasma Workspaces, a highly-configurable graphical user interface which includes a panel, desktop, system icons and desktop widgets, and many powerful KDE applications.</description>
+    <description xml:lang="es">Los espacios de trabajo KDE plasma tienen una interfaz totalmente configurable, que incluye un panel, un escritorio, sistema de iconos y widgets  y muchas aplicaciones de KDE.</description>
+    <description xml:lang="fi">KDE Plasma Workspaces, muokattava graafinen käyttöliittymä, johon kuuluu paneeli, työpöytä, järjestelmäkuvakkeet ja graafinen tiedostohallinta sekä useita KDE-ohjelmia.</description>
+    <description xml:lang="fr">L'interface graphique utilisateur hautement configurable KDE Plasma, qui contient un tableau de bord, un bureau, des icônes systèmes, des widgets de bureau ainsi que de nombreuses applications KDE.</description>
+    <description xml:lang="hu">A KDE Plasma munkafelületek, sokoldalúan beállítható grafikus felület, amely tartalmaz egy panelt, asztalt, rendszerikonokat, kisalkalmazásokat, és további komoly KDE programokat</description>
+    <description xml:lang="ia">Le spatios de travalio KDE Plasma es un interfacie graphic de usator multo configurabile que comprende un pannello, un scriptorio, icones de systema, widgets de scriptorio e numerose applicationes KDE.</description>
+    <description xml:lang="it">Spazi di lavoro Plasma per KDE, una interfaccia grafica molto configurabile che include un pannello, scrivania, icone di sistema e applicazioni su scrivania, e molte potenti applicazioni KDE</description>
+    <description xml:lang="ja">KDE Plasma ワークスペースはパネル、デスクトップ、システムアイコン、デスクトップウィジェット、および多くの強力なKDEアプリケーションを搭載するグラフィカルユーザーインターフェースです。</description>
+    <description xml:lang="nl">De KDE Plasma-werkruimtes is een heel configureerbare grafische gebruikersinterface met paneel, bureaublad, systeemiconen en bureaubladwidgets, met daarnaast vele krachtige KDE-toepassingen.</description>
+    <description xml:lang="pa">ਕੇਡੀਈ (KDE) ਪਲਾਜ਼ਮਾ ਵਰਕਸਪੇਸ, ਪੂਰੀ ਤਰ੍ਹਾਂ ਸੰਰਚਨਾ ਕਰਨ ਯੋਗ ਗਰਾਫਿਕਲ ਯੂਜ਼ਰ ਇੰਟਰਫੇਸ ਹੈ, ਜਿਸ ਵਿੱਚ ਪੈਨਲ, ਡੈਸਕਟਾਪ, ਸਿਸਟਮ ਆਈਕਾਨ ਅਤੇ ਡੈਸਕਟਾਪ ਵਿਦਜੈਟ ਹਨ, ਕਈ ਮਜ਼ਬੂਤ ਕੇਡੀਈ ਐਪਲੀਕੇਸ਼ਨ ਸਮੇਤ।</description>
+    <description xml:lang="pl">KDE Plasma, wysoce konfigurowalny graficzny interfejs użytkownika zawierający panel, pulpit, ikony systemowe, widżety pulpitu i wiele aplikacji KDE o dużych możliwościach.</description>
+    <description xml:lang="pt">O Plasma KDE Workspaces, um interface gráfico altamente configurável que inclui um painel, desktop, ícones do sistema e widgets de desktop, e muitos aplicativos do KDE poderosos.</description>
+    <description xml:lang="pt_BR">O ambiente de trabalho KDE Plasma, uma interface gráfica de usuário altamente configurável que inclui um painel, uma área de trabalho, ícones de sistema, widgets para a área de trabalho e muitos aplicativos poderosos do KDE.</description>
+    <description xml:lang="ru">KDE Plasma Workspaces - легко настраиваемый графический интерфейс пользователя, который содержит панель, рабочий стол, системные значки и виджеты рабочего стола, а также множество эффективных приложений KDE.</description>
+    <description xml:lang="sk">Pracovná plocha KDE Plasma , vysoko konfigurovateľné grafické používateľské rozhranie, ktoré obsahuje panel, pracovnú plochu, systémové ikony a widgety plochy a množstvo užitočných a výkonných KDE aplikácií.</description>
+    <description xml:lang="sr">KDE Plasma Workspaces, веома подесиво графичко окружење које укључује панел, позадину, системске иконице, виџете за позадину и много моћних KDE програма.</description>
+    <description xml:lang="sv">KDE Plasma arbetsytor, ett mycket konfigurerbart grafiskt användargränssnitt som inkluderar en panel, skrivbord, systemikoner och skrivbordsprogram och många kraftfulla KDE-program.</description>
+    <description xml:lang="te">KDE ప్లాస్మా పని ప్రదేశాలు, ఒక ప్యానెల్, డెస్క్టాప్, వ్యవస్థ గుర్తులు మరియు డెస్క్టాప్ విడ్జెట్, మరియు అనేక శక్తివంతమైన KDE అప్లికేషన్లు కలిగి అత్యంత నిర్వహించగల గ్రాఫికల్ యూజర్ ఇంటర్ఫేస్.</description>
+    <description xml:lang="uk">Робочий простір Плазми KDE складається з дуже гнучкого у налаштовуванні графічного інтерфейсу, що складається з панелі, стільниці, системних піктограм та віджетів стільниці, та багатьох потужних програм KDE.</description>
+    <description xml:lang="zh_CN">KDE Plasma 是一个可灵活配置的图形用户界面，包括面板，桌面，系统图标和桌面小部件，以及许多功能强大的 KDE 应用程序。</description>
+    <description xml:lang="zh_TW">KDE Plasma 工作空間，是設定可高度調整的圖形化使用介面，包含面板、桌面、系統圖示、桌面小工具、許多強大的 KDE 應用程式等。</description>
+    <default>true</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">adwaita-gtk2-theme</packagereq>
+      <packagereq type="mandatory">breeze-icon-theme</packagereq>
+      <packagereq type="mandatory">colord-kde</packagereq>
+      <packagereq type="mandatory">dolphin</packagereq>
+      <packagereq type="mandatory">kcm-gtk</packagereq>
+      <packagereq type="mandatory">kcm_systemd</packagereq>
+      <packagereq type="mandatory">kde-runtime</packagereq>
+      <packagereq type="mandatory">kde-settings-pulseaudio</packagereq>
+      <packagereq type="mandatory">kde-style-breeze</packagereq>
+      <packagereq type="mandatory">kdelibs</packagereq>
+      <packagereq type="mandatory">kdepasswd</packagereq>
+      <packagereq type="mandatory">kdeplasma-addons</packagereq>
+      <packagereq type="mandatory">kdialog</packagereq>
+      <packagereq type="mandatory">khelpcenter</packagereq>
+      <packagereq type="mandatory">khotkeys</packagereq>
+      <packagereq type="mandatory">kinfocenter</packagereq>
+      <packagereq type="mandatory">kmenuedit</packagereq>
+      <packagereq type="mandatory">konsole5</packagereq>
+      <packagereq type="mandatory">kscreen</packagereq>
+      <packagereq type="mandatory">ksnapshot</packagereq>
+      <packagereq type="mandatory">ksysguard</packagereq>
+      <packagereq type="mandatory">kwin</packagereq>
+      <packagereq type="mandatory">mesa-libEGL</packagereq>
+      <packagereq type="mandatory">phonon-backend-gstreamer</packagereq>
+      <packagereq type="mandatory">phonon-qt5-backend-gstreamer</packagereq>
+      <packagereq type="mandatory">plasma-breeze</packagereq>
+      <packagereq type="mandatory">plasma-desktop-doc</packagereq>
+      <packagereq type="mandatory">plasma-desktop</packagereq>
+      <packagereq type="mandatory">plasma-pa</packagereq>
+      <packagereq type="mandatory">plasma-user-manager</packagereq>
+      <packagereq type="mandatory">plasma-workspace-drkonqi</packagereq>
+      <packagereq type="mandatory">plasma-workspace</packagereq>
+      <packagereq type="mandatory">polkit-kde</packagereq>
+      <packagereq type="mandatory">qt5-qdbusviewer</packagereq>
+      <packagereq type="mandatory">qt5-qtbase-gui</packagereq>
+      <packagereq type="mandatory">qt5-qtdeclarative</packagereq>
+      <packagereq type="mandatory">qubes-kde-dom0</packagereq>
+      <packagereq type="mandatory">sddm-breeze</packagereq>
+      <packagereq type="mandatory">sddm-kcm</packagereq>
+      <packagereq type="mandatory">sddm</packagereq>
+      <packagereq type="mandatory">sni-qt</packagereq>
+      <packagereq type="mandatory">xorg-x11-drv-libinput</packagereq>
+      <packagereq type="mandatory">xsettings-kde</packagereq>
+      <packagereq type="default">apper</packagereq>
+      <packagereq type="default">kmix</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>sound-basic</id>
+    <name>Sound basic support</name>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="default">paman</packagereq>
+      <packagereq type="default">paprefs</packagereq>
+      <packagereq type="default">pavucontrol</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>xfce-desktop-qubes</id>
+    <name>Xfce</name>
+    <name xml:lang="as">Xfce</name>
+    <name xml:lang="bg">Xfce</name>
+    <name xml:lang="bn">Xfce</name>
+    <name xml:lang="bn_IN">Xfce</name>
+    <name xml:lang="ca">Xfce</name>
+    <name xml:lang="cs">Prostředí Xfce</name>
+    <name xml:lang="da">Xfce</name>
+    <name xml:lang="de">Xfce</name>
+    <name xml:lang="el">Xfce</name>
+    <name xml:lang="en_GB">Xfce</name>
+    <name xml:lang="es">Xfce</name>
+    <name xml:lang="et">Xfce</name>
+    <name xml:lang="eu">Xfce</name>
+    <name xml:lang="fa">Xfce</name>
+    <name xml:lang="fi">Xfce</name>
+    <name xml:lang="fr">Xfce</name>
+    <name xml:lang="gu">Xfce</name>
+    <name xml:lang="he">Xfce</name>
+    <name xml:lang="hi">एक्सएफसीई</name>
+    <name xml:lang="hu">Xfce</name>
+    <name xml:lang="ia">Xfce</name>
+    <name xml:lang="id">Xfce</name>
+    <name xml:lang="it">Xfce</name>
+    <name xml:lang="ja">Xfce</name>
+    <name xml:lang="kn">Xfce</name>
+    <name xml:lang="ko">Xfce</name>
+    <name xml:lang="lv">Xfce</name>
+    <name xml:lang="mr">Xfce</name>
+    <name xml:lang="nb">Xfce</name>
+    <name xml:lang="nl">Xfce</name>
+    <name xml:lang="or">Xfce</name>
+    <name xml:lang="pa">Xfce</name>
+    <name xml:lang="pl">Xfce</name>
+    <name xml:lang="pt">Xfce</name>
+    <name xml:lang="pt_BR">Xfce</name>
+    <name xml:lang="ru">Xfce</name>
+    <name xml:lang="sk">Xfce</name>
+    <name xml:lang="sr">Xfce</name>
+    <name xml:lang="sv">Xfce</name>
+    <name xml:lang="ta">Xfce</name>
+    <name xml:lang="te">Xfce</name>
+    <name xml:lang="tg">Xfce</name>
+    <name xml:lang="tr">Xfce</name>
+    <name xml:lang="uk">Xfce</name>
+    <name xml:lang="zh_CN">Xfce</name>
+    <name xml:lang="zh_TW">Xfce</name>
+    <description>A lightweight desktop environment that works well on low end machines.</description>
+    <description xml:lang="af">'n Liggewig werkskermomgewing wat goed werk op stadige rekenaars.</description>
+    <description xml:lang="am">የቀላል ክብደት ያለው ሠሌዳ አካባኪ በዝቅተኛው ጫፍ የማሽን ክፍል የሚሰራ።</description>
+    <description xml:lang="ar">بيئة سطح مكتب خفيفة تعمل جيدا على الأجهزة القديمة.</description>
+    <description xml:lang="as">এটা লঘুভাৰৰ ডেষ্কট'প পৰিবেশ যি নিম্ন বিন্যাসৰ যন্ত্ৰত ভালকৈ কাম কৰি ।</description>
+    <description xml:lang="ast">Un entornu d'escritoriu llixeru que furrula bien en máquines pequeñes.</description>
+    <description xml:lang="bal">یک سبکین محیط دسکتاپ که په خوبی ته ماشینان کنٹین کار کنت.</description>
+    <description xml:lang="bg">Лека десктоп работна среда, която работи добре на слаби машини.</description>
+    <description xml:lang="bn">নিম্ন ক্ষমতাসম্পন্ন মেশিনে সহজে সঞ্চালনযোগ্য স্বল্পমাপের ডেস্কটপ পরিবেশ।</description>
+    <description xml:lang="bn_IN">নিম্ন ক্ষমতাসম্পন্ন মেশিনে সহজে সঞ্চালনযোগ্য স্বল্পমাপের ডেস্কটপ পরিবেশ।</description>
+    <description xml:lang="ca">Un entorn d'escriptori lleuger que funciona en ordinadors senzills.</description>
+    <description xml:lang="cs">Odlehčené uživatelské prostředí, které dobře funguje na pomalejších počítačích.</description>
+    <description xml:lang="da">Et letvægtsskrivebordsmiljø der virker godt på langsomme computere.</description>
+    <description xml:lang="de">Eine schlanke Desktop-Umgebung, die gut auf älteren Systemen funktioniert.</description>
+    <description xml:lang="el">Μια ελαφριά επιφάνεια εργασίας που αποδίδει πολύ καλά σε παλαιότερα μηχανήματα.</description>
+    <description xml:lang="en_GB">A lightweight desktop environment that works well on low end machines.</description>
+    <description xml:lang="es">Un entorno de escritorio liviano que funciona bien en máquinas pequeñas.</description>
+    <description xml:lang="et">Väikese ressursivajadusega töölauakeskkond, mis sobib väiksema võimsusega arvutitesse.</description>
+    <description xml:lang="fa">یک محیط رومیزی سبک‌وزن که روی دستگاه‌های ضعیف خوب کار می‌کند.</description>
+    <description xml:lang="fi">Kevyt työpöytäympäristö, joka toimii hyvin tehottomillakin koneilla.</description>
+    <description xml:lang="fr">Un environnement de bureau léger adapté aux machines peu puissantes.</description>
+    <description xml:lang="gu">હલકું ડેસ્કટોપ પર્યાવરણ કે જે નીચા મશીનો સાથે યોગ્ય રીતે કામ કરે.</description>
+    <description xml:lang="he">סביבה שולחנית קלה הפועלת היטב גם על מחשבים שאינם רבי עצמה.</description>
+    <description xml:lang="hi">हल्का डेस्कटॉप वातावरण जो कि न्यूनांत मशीन पर ठीक काम करता है.</description>
+    <description xml:lang="hr">Jednostavno okruženje radne površine koje dobro funkcionira na slabijim računalima.</description>
+    <description xml:lang="hu">Pehelysúlyú asztal környezet, ami gyengébb gépeken is jól használható.</description>
+    <description xml:lang="ia">Un ambiente de scriptorio legier que functiona ben sur machinas exigue.</description>
+    <description xml:lang="id">Lingkungan dekstop yang ringan yang dapat bekerja dengan baik pada mesin yang rendah.</description>
+    <description xml:lang="is">Létt skjáborðsumhverfi sem virkar vel á aflminni vélum.</description>
+    <description xml:lang="it">Un ambiente desktop performante anche per computer meno potenti.</description>
+    <description xml:lang="ja">低スペックなマシンでもサクサクと動作する軽量デスクトップ環境です。</description>
+    <description xml:lang="kn">ಕೆಳಮಟ್ಟದ ಗಣಕಗಳಲ್ಲಿಯೂ ಕೆಲಸ ಮಾಡಬಲ್ಲಂತಹ ಒಂದು ಹಗುರ ತೂಕದ ಗಣಕತೆರೆ ಪರಿಸರ.</description>
+    <description xml:lang="ko">저 사양 컴퓨터에서도 잘 작동하는 경량의 데스크탑 환경입니다.</description>
+    <description xml:lang="lv">Viegla darbvirsma, kas labi darbojas uz mazjaudīgiem datoriem.</description>
+    <description xml:lang="mai">हलुक डेस्कटाप वातावरण जे न्यूनांत मशीन पर नीक काज करैत अछि.</description>
+    <description xml:lang="mk">Едноставна работна околина што работи одлично на поспори машини.</description>
+    <description xml:lang="ml">ലോ എന്‍ഡ് മഷീനുകളില്‍ ശരിയായി പ്രവര്‍ത്തിക്കുന്ന ലൈറ്റ് വെയിറ്റ് ഡസ്ക്ടോപ്പ് എന്‍വയോണ്മെന്റ്.</description>
+    <description xml:lang="mr">एक हलके डेस्कटॉप वातावरण जे कमी रचनात्मक प्रणालींवर चांगल्या प्रकारे काम करते.</description>
+    <description xml:lang="ms">Persekitaran desktop ringan yang berfungsi dengan baik pada mesin berkuasa rendah.</description>
+    <description xml:lang="nb">Et lettvektig skrivebordsmiljø som fungerer bra på eldre og tregere maskiner.</description>
+    <description xml:lang="ne">चाँडो अन्त्य हुने मेसिनमा राम्रोसँग कार्य गर्ने हल्का डेस्कटप परिवेश ।</description>
+    <description xml:lang="nl">Een lichtgewicht bureaubladomgeving die zeer geschikt is voor minder krachtige machines.</description>
+    <description xml:lang="nso">Tikologo ya teseke e bohwefo yeo e šomago gabotse kudu metšheneng ya tlase.</description>
+    <description xml:lang="or">ଗୋଟିଏ ହାଲୁକା ଡେସ୍କଟପ ପରିବେଶ ଯାହାକି ନିମ୍ନ ଭାଗ ମେସିନ ମାନଙ୍କରେ ଉତ୍ତମ ରୂପେ କାର୍ଯ୍ଯ କରିଥାଏ।</description>
+    <description xml:lang="pa">ਇੱਕ ਹਲਕਾ ਡੈਸਕਟਾਪ ਇੰਵਾਇਰਨਮੈਂਟ, ਜੋ ਕਿ ਘੱਟ ਸੰਰਚਨਾ ਵਾਲੀਆਂ ਮਸ਼ੀਨਾਂ ਉੱਤੇ ਕੰਮ ਕਰਦਾ ਹੈ।</description>
+    <description xml:lang="pl">Lekkie środowisko graficzne, które dobrze działa na słabych komputerach.</description>
+    <description xml:lang="pt">Um ambiente de trabalho leve que funciona bem em máquinas com recursos modestos.</description>
+    <description xml:lang="pt_BR">Um ambiente de trabalho leve que funciona bem em máquinas de baixo custo.</description>
+    <description xml:lang="ro">Un mediu de lucru lejer care funcționează bine pe calculatoare mai slabe.</description>
+    <description xml:lang="ru">Облегчённая среда рабочего стола, подходящая для слабых машин.</description>
+    <description xml:lang="sk">Jednoduché pracovné prostredie, ktoré dobre pracuje na pomalších počítačoch.</description>
+    <description xml:lang="sl">Lahko namizje, ki deluje dobro tudi na skromnih računalnikih.</description>
+    <description xml:lang="sq">Mjedis dekstop i peshës së lehtë që punon bukur në makina të shkallës së fundit.</description>
+    <description xml:lang="sr">Лагано радно окружење које ради добро на слабијим машинама.</description>
+    <description xml:lang="sr@Latn">Lagano radno okruženje koje radi dobro na slabijim mašinama.</description>
+    <description xml:lang="sr@latin">Lagano radno okruženje koje radi dobro na slabijim mašinama.</description>
+    <description xml:lang="sv">En lättviktig skrivbordsmiljö som fungerar bra på långsammare maskiner.</description>
+    <description xml:lang="ta">ஒரு lightweight பணிமேடை சூழல் குறைந்த செயல்திறன் கொண்ட கணினிகளில் நன்றாக பணியாற்றுகிறது.</description>
+    <description xml:lang="te">తక్కువ బరువున్న డెస్కుటాప్ వాతావరణం అది తక్కువ సమాప్తిగల కంప్యూటర్లలో పనిచేస్తుంది.</description>
+    <description xml:lang="tg">Муҳити мизи корие, ки ҳам дар компютерҳои суст кор мекунад.</description>
+    <description xml:lang="th">สภาพแวดล้อมเดสก์ท็อปที่สามารถทำงานได้ดีบนเครื่องรุ่นเก่า</description>
+    <description xml:lang="uk">Невибагливий до ресурсів робочий стіл, що добре працює на слабких машинах.</description>
+    <description xml:lang="zh_CN">一个能在低端机器上良好运行的轻便桌面环境。</description>
+    <description xml:lang="zh_TW">輕型的桌面環境，適用於低階電腦。</description>
+    <default>true</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>adwaita-cursor-theme</packagereq>
+      <packagereq>adwaita-gtk2-theme</packagereq>
+      <packagereq>adwaita-icon-theme</packagereq>
+      <packagereq>albatross-gtk2-theme</packagereq>
+      <packagereq>albatross-gtk3-theme</packagereq>
+      <packagereq>albatross-xfwm4-theme</packagereq>
+      <packagereq>alsa-utils</packagereq>
+      <packagereq>bluebird-gtk2-theme</packagereq>
+      <packagereq>bluebird-gtk3-theme</packagereq>
+      <packagereq>bluebird-xfwm4-theme</packagereq>
+      <packagereq>greybird-gtk2-theme</packagereq>
+      <packagereq>greybird-gtk3-theme</packagereq>
+      <packagereq>greybird-xfce4-notifyd-theme</packagereq>
+      <packagereq>greybird-xfwm4-theme</packagereq>
+      <packagereq>gtk-xfce-engine</packagereq>
+      <packagereq>gvfs</packagereq>
+      <packagereq>initial-setup-gui</packagereq>
+      <packagereq>lightdm-gtk</packagereq>
+      <packagereq>openssh-askpass</packagereq>
+      <packagereq>xdg-user-dirs-gtk</packagereq>
+      <packagereq>xfce4-about</packagereq>
+      <packagereq>xfce4-appfinder</packagereq>
+      <packagereq>xfce4-datetime-plugin</packagereq>
+      <packagereq>xfce4-fsguard-plugin</packagereq>
+      <packagereq>xfce4-panel</packagereq>
+      <packagereq>xfce4-places-plugin</packagereq>
+      <packagereq>xfce4-power-manager</packagereq>
+      <packagereq>xfce4-screenshooter-plugin</packagereq>
+      <packagereq>xfce4-session-engines</packagereq>
+      <packagereq>xfce4-session</packagereq>
+      <packagereq>xfce4-settings-qubes</packagereq>
+      <packagereq>xfce4-settings</packagereq>
+      <packagereq>xfce4-terminal</packagereq>
+      <packagereq>xfce4-whiskermenu-plugin</packagereq>
+      <packagereq>xfconf</packagereq>
+      <packagereq>xfdesktop</packagereq>
+      <packagereq>xfwm4-theme-nodoka</packagereq>
+      <packagereq>xfwm4-themes</packagereq>
+      <packagereq>xfwm4</packagereq>
+      <packagereq>xscreensaver-base</packagereq>
+      <packagereq>yumex-dnf</packagereq>
+      <packagereq>zenity</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>xfce-extra-plugins</id>
+    <name>Extra plugins for the Xfce panel</name>
+    <name xml:lang="de">Zusätzliche Plugins für die Xfce-Menüleiste</name>
+    <name xml:lang="hu">Kiegészítő modulok az XFCE panelhez</name>
+    <name xml:lang="ja">Xfce パネルの拡張プラグイン</name>
+    <name xml:lang="nl">Extra plug-ins voor het Xfce paneel</name>
+    <name xml:lang="pl">Dodatkowe wtyczki dla panelu Xfce</name>
+    <name xml:lang="uk">Додатки для панелі Xfce</name>
+    <name xml:lang="zh_TW">Xfce 面板的額外插件</name>
+    <description>Extend the functionality of the Xfce panel</description>
+    <description xml:lang="de">Erweiterung der Funktionalität des Xfce-Menüleiste</description>
+    <description xml:lang="hu">Kibővíti az XFCE panel képességeit</description>
+    <description xml:lang="ja">Xfce パネルの機能拡張</description>
+    <description xml:lang="nl">Breidt de functionaliteit van het Xfce paneel uit</description>
+    <description xml:lang="pl">Rozszerza funkcjonalność panelu Xfce</description>
+    <description xml:lang="uk">Додатки, що розширюють функціональні можливості панелі Xfce</description>
+    <description xml:lang="zh_TW">擴增 Xfce 面板提供的功能</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>xfce4-battery-plugin</packagereq>
+      <packagereq>xfce4-cellmodem-plugin</packagereq>
+      <packagereq>xfce4-cpugraph-plugin</packagereq>
+      <packagereq>xfce4-diskperf-plugin</packagereq>
+      <packagereq>xfce4-eyes-plugin</packagereq>
+      <packagereq>xfce4-fsguard-plugin</packagereq>
+      <packagereq>xfce4-genmon-plugin</packagereq>
+      <packagereq>xfce4-mailwatch-plugin</packagereq>
+      <packagereq>xfce4-mount-plugin</packagereq>
+      <packagereq>xfce4-sensors-plugin</packagereq>
+      <packagereq>xfce4-systemload-plugin</packagereq>
+      <packagereq>xfce4-taskmanager</packagereq>
+      <packagereq>xfce4-time-out-plugin</packagereq>
+      <packagereq>xfce4-timer-plugin</packagereq>
+      <packagereq>xfce4-verve-plugin</packagereq>
+      <packagereq>xfce4-xkb-plugin</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>xfce-media</id>
+    <name>Multimedia support for Xfce</name>
+    <name xml:lang="de">Multimedia-Unterstützung für Xfce</name>
+    <name xml:lang="hu">Multimédia támogatás az XFCE számára</name>
+    <name xml:lang="ja">Xfce 向けのマルチメディアサポート</name>
+    <name xml:lang="nl">Multimedia ondersteuning voor Xfce</name>
+    <name xml:lang="pl">Obsługa multimediów w środowisku Xfce</name>
+    <name xml:lang="uk">Мультимедійні програми для Xfce</name>
+    <name xml:lang="zh_TW">Xfce 多媒體支援</name>
+    <description>Multimedia support for Xfce</description>
+    <description xml:lang="de">Multimedia-Unterstützung für Xfce</description>
+    <description xml:lang="hu">Multimédia támogatás az XFCE számára</description>
+    <description xml:lang="ja">Xfce 向けのマルチメディアサポート</description>
+    <description xml:lang="nl">Multimedia ondersteuning voor Xfce</description>
+    <description xml:lang="pl">Obsługa multimediów w środowisku Xfce</description>
+    <description xml:lang="uk">Мультимедійні програми для Xfce</description>
+    <description xml:lang="zh_TW">Xfce 多媒體支援</description>
+    <default>false</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq>pavucontrol</packagereq>
+      <packagereq>xfce4-pulseaudio-plugin</packagereq>
+      <packagereq type="default">alsa-utils</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>qubes</id>
+    <name>Qubes Environment</name>
+    <default>true</default>
+    <uservisible>false</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">kernel-qubes-vm</packagereq>
+      <packagereq type="mandatory">kernel</packagereq>
+      <packagereq type="mandatory">qubes-artwork</packagereq>
+      <packagereq type="mandatory">qubes-core-dom0</packagereq>
+      <packagereq type="mandatory">qubes-desktop-linux-common</packagereq>
+      <packagereq type="mandatory">qubes-gui-dom0</packagereq>
+      <packagereq type="mandatory">qubes-desktop-linux-manager</packagereq>
+      <packagereq type="mandatory">qubes-mgmt-salt-dom0</packagereq>
+      <packagereq type="mandatory">qubes-template-fedora-26</packagereq>
+      <packagereq type="default">qubes-gpg-split-dom0</packagereq>
+      <packagereq type="default">qubes-img-converter-dom0</packagereq>
+      <packagereq type="default">qubes-input-proxy</packagereq>
+      <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
+      <packagereq type="default">qubes-usb-proxy-dom0</packagereq>
+      <packagereq type="default">libvirt-client</packagereq>
+    </packagelist>
+  </group>
+
+  <group>
+    <id>debian</id>
+    <name>Debian 9 (stretch) template</name>
+    <description>Debian 9 (stretch) template</description>
+    <default>true</default>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>qubes-template-debian-9</packagereq>
+    </packagelist>
+  </group>
+
+  <group>
+    <id>whonix</id>
+    <name>Whonix</name>
+    <default>true</default>
+    <description>Whonix templates (gateway and workstation)</description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq>qubes-template-whonix-gw</packagereq>
+      <packagereq>qubes-template-whonix-ws</packagereq>
+    </packagelist>
+  </group>
+
+  <environment>
+   <id>qubes-xfce</id>
+   <display_order>3</display_order>
+   <name>Qubes OS with Xfce</name>
+   <description>Standard installation with Xfce enviroment in Dom0.</description>
+    <grouplist>
+     <groupid>base</groupid>
+     <groupid>base-x</groupid>
+     <groupid>hardware-support</groupid>
+     <groupid>fonts</groupid>
+     <groupid>sound-basic</groupid>
+     <groupid>qubes</groupid>
+     <groupid>xfce-desktop-qubes</groupid>
+     <groupid>xfce-extra-plugins</groupid>
+     <groupid>xfce-media</groupid>
+    </grouplist>
+    <optionlist>
+     <groupid default='true'>debian</groupid>
+     <groupid default='true'>whonix</groupid>
+    </optionlist>
+  </environment>
+  <langpacks>
+    <match name="kdelibs" install="kde-l10n-%s"/>
+  </langpacks>
+</comps>

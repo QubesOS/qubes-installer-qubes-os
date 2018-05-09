@@ -8,8 +8,7 @@ Version:	%{dist_version}
 Release:	2
 License:	GPLv2
 Group:		System Environment/Base
-Source:		%{name}-%{version}.tar.bz2
-Source1:	Qubes-comps.xml
+Source0:	%{name}-%{version}.tar.bz2
 Obsoletes:	fedora-release
 Obsoletes:	redhat-release
 Provides:	fedora-release = %{fedora_base_version}-%{release}
@@ -71,11 +70,7 @@ sed -e "s/%%FCREL%%/%{fedora_base_version}/" fedora-updates.repo.in > $RPM_BUILD
 install -m 644 qubes-templates.repo $RPM_BUILD_ROOT/etc/yum.repos.d
 
 install -d -m 755 $RPM_BUILD_ROOT/usr/share/qubes
-%if 0%{?qubes_builder}
-install -m 644 ../conf/comps-qubes.xml $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
-%else
-install -m 644 %{SOURCE1} $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
-%endif
+install -m 644 comps-qubes.xml $RPM_BUILD_ROOT/usr/share/qubes/Qubes-comps.xml
 
 # Set up the dist tag macros
 install -d -m 755 $RPM_BUILD_ROOT/etc/rpm
