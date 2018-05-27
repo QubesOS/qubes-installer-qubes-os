@@ -43,10 +43,10 @@ class WarningsSpoke(StandaloneTUISpoke):
     def __init__(self, *args, **kwargs):
         StandaloneTUISpoke.__init__(self, *args, **kwargs)
 
-        self._message = _("This hardware lack features required by Qubes OS. "
+        self._message = _("This hardware lacks features required by Qubes OS. "
                           "Missing features: %(features)s. "
                           "For more information on supported hardware, "
-                          "please refer to https://www.qubes-os.org/system-requirements/")
+                          "please refer to https://www.qubes-os.org/doc/system-requirements/")
         # Does anything need to be displayed?
         # pylint: disable=no-member
         #   self._unsupported = not self.data.unsupportedhardware.unsupported_hardware \
