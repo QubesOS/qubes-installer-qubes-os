@@ -86,7 +86,7 @@ EOF
 
 %posttrans
 # Import all keys b/c rpm won't do it automatically (as opposite to yum)
-rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-* || true
+systemd-run --on-active=5min rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-*
 
 
 %clean
