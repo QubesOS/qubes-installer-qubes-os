@@ -307,6 +307,8 @@ class XklWrapper(object):
             raise XklWrapperError("Failed to add layout '%s (%s)'" % (layout,
                                                                       variant))
 
+        self.save_layouts_to_udev(self._rec.layouts, self._rec.variants)
+
     @gtk_action_wait
     def remove_layout(self, layout):
         """
@@ -341,6 +343,8 @@ class XklWrapper(object):
             raise XklWrapperError("Failed to remove layout '%s (%s)'" % (layout,
                                                                        variant))
 
+        self.save_layouts_to_udev(new_layouts, new_variants)
+
     @gtk_action_wait
     def replace_layouts(self, layouts_list):
         """
@@ -368,6 +372,8 @@ class XklWrapper(object):
             msg = "Failed to replace layouts with: %s" % ",".join(layouts_list)
             raise XklWrapperError(msg)
 
+        self.save_layouts_to_udev(new_layouts, new_variants)
+
     @gtk_action_wait
     def set_switching_options(self, options):
         """
@@ -391,3 +397,26 @@ class XklWrapper(object):
             msg = "Failed to set switching options to: %s" % ",".join(options)
             raise XklWrapperError(msg)
 
+    def save_layouts_to_udev(self, layouts, variants):
+        """
+        Sets layouts to udev, so it will also apply to newly connected
+        keyboards (or existing after udevadm trigger). Otherwise Xorg setup
+        them based on xorg.conf with a fallback to hardcoded values.
+
+        :param layouts: list of layouts
+        :param variants: list of layout variants, matching *layouts*
+        """
+
+        udev_rules_dir = '/run/udev/rules.d'
+        udev_rules_path = udev_rules_dir + '/90-keyboard-layout.rules'
+        try:
+            iutil.mkdirChain(udev_rules_dir)
+        except FileExistsError:
+            pass
+        with open(udev_rules_path, 'w') as rules:
+            rules.write('ENV{{ID_INPUT_KEYBOARD}}=="1", '
+                    'ENV{{xkblayout}}="{layouts}", '
+                    'ENV{{xkbvariant}}="{variants}"\n'.format(
+                layouts=','.join(layouts), variants=','.join(variants)))
+
+        iutil.startProgram(['udevadm', 'control', '-R']).communicate()
