@@ -99,6 +99,8 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
             self.pw.set_placeholder_text(_("The password is set."))
             self.confirm.set_placeholder_text(_("The password is set."))
 
+        self._lock = self.data.rootpw.lock
+
         self.pw_bar = self.builder.get_object("password_bar")
         self.pw_label = self.builder.get_object("password_label")
 
@@ -131,6 +133,7 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         self.confirm.set_sensitive(not lock.get_active())
         if not lock.get_active():
             self.pw.grab_focus()
+        self._lock = lock.get_active()
 
 # Caps lock detection isn't hooked up right now
 #    def setCapsLockLabel(self):
@@ -161,10 +164,12 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
         self.data.rootpw.seen = False
         self._kickstarted = False
 
-        if pw:
+        if self._lock:
+            self.data.rootpw.lock = True
+        elif pw:
+            self.data.rootpw.lock = False
             self.data.rootpw.password = cryptPassword(pw)
             self.data.rootpw.isCrypted = True
-        self.data.rootpw.lock = self._lock
 
         self.pw.set_placeholder_text("")
         self.confirm.set_placeholder_text("")
@@ -265,7 +270,7 @@ class PasswordSpoke(FirstbootSpokeMixIn, NormalSpoke, GUISpokeInputCheckHandler)
             return InputCheck.CHECK_OK
 
         # If the password is empty, clear the strength bar and skip this check
-        if not pw and not confirm:
+        if self.lock.get_active() or (not pw and not confirm):
             self._updatePwQuality(True, 0)
             return InputCheck.CHECK_OK
 
