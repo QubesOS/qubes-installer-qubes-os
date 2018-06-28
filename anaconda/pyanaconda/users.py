@@ -123,7 +123,7 @@ def validatePassword(pw, user="root", settings=None, minlen=None):
     return (valid, strength, message)
 
 def check_username(name):
-    if name in os.listdir("/") + ["root", "home", "daemon", "system"]:
+    if name in os.listdir("/") + ["root", "home", "daemon", "system", "qubes"]:
         return (False, _("User name is reserved for system: %s") % name)
 
     if name.startswith("-"):
