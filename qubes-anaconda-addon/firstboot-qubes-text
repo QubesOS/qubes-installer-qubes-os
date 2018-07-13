@@ -104,7 +104,7 @@ if [ "$vms_template" == "yes" ]; then
         qvm-shutdown --wait $template
     done
 
-    qubes-prefs --set default-template 'fedora-26'
+    qubes-prefs --set default-template 'fedora-28'
 fi
 
 if [ "$vms_service" == "yes" -o "$vms_app" == "yes" ]; then
