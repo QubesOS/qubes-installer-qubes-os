@@ -1426,8 +1426,8 @@
     <description>Whonix templates (gateway and workstation)</description>
     <uservisible>true</uservisible>
     <packagelist>
-      <packagereq>qubes-template-whonix-gw</packagereq>
-      <packagereq>qubes-template-whonix-ws</packagereq>
+      <packagereq>qubes-template-whonix-gw-14</packagereq>
+      <packagereq>qubes-template-whonix-ws-14</packagereq>
     </packagelist>
   </group>
 
