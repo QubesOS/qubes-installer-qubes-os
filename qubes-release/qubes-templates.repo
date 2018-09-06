@@ -1,7 +1,7 @@
 [qubes-templates-itl]
 name = Qubes Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-itl
-#baseurl = https://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-itl
+#baseurl = http://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-itl
 metalink = https://yum.qubes-os.org/r$releasever/templates-itl/repodata/repomd.xml.metalink
 enabled = 1
 fastestmirror = 1
@@ -12,7 +12,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
 [qubes-templates-itl-testing]
 name = Qubes Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-itl-testing
-#baseurl = https://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-itl-testing
+#baseurl = http://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-itl-testing
 metalink = https://yum.qubes-os.org/r$releasever/templates-itl-testing/repodata/repomd.xml.metalink
 enabled = 0
 fastestmirror = 1
@@ -22,7 +22,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-primary
 [qubes-templates-community]
 name = Qubes Community Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-community
-#baseurl = https://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-community
+#baseurl = http://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-community
 metalink = https://yum.qubes-os.org/r$releasever/templates-community/repodata/repomd.xml.metalink
 enabled = 0
 fastestmirror = 1
@@ -33,7 +33,7 @@ gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-qubes-$releasever-templates-communi
 [qubes-templates-community-testing]
 name = Qubes Community Templates repository
 #baseurl = https://yum.qubes-os.org/r$releasever/templates-community-testing
-#baseurl = https://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-community-testing
+#baseurl = http://yum.sik5nlgfc5qylnnsr57qrbm64zbdx6t4lreyhpon3ychmxmiem7tioad.onion/r$releasever/templates-community-testing
 metalink = https://yum.qubes-os.org/r$releasever/templates-community-testing/repodata/repomd.xml.metalink
 enabled = 0
 fastestmirror = 1
