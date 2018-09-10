@@ -2,7 +2,7 @@
 name=Fedora %FCREL% - x86_64 - Updates
 failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/%FCREL%/x86_64/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f%FCREL%&arch=x86_64
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f%FCREL%&arch=x86_64
 enabled=1
 enablegroups=0
 gpgcheck=1
@@ -12,7 +12,7 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-%FCREL%-primary
 name=Fedora %FCREL% - x86_64 - Updates - Debug
 failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/%FCREL%/x86_64/debug/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-debug-f%FCREL%&arch=x86_64
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-debug-f%FCREL%&arch=x86_64
 enabled=0
 enablegroups=0
 gpgcheck=1
@@ -22,7 +22,7 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-%FCREL%-primary
 name=Fedora %FCREL% - Updates Source
 failovermethod=priority
 #baseurl=http://download.fedoraproject.org/pub/fedora/linux/updates/%FCREL%/SRPMS/
-mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-source-f%FCREL%&arch=x86_64
+metalink=https://mirrors.fedoraproject.org/metalink?repo=updates-released-source-f%FCREL%&arch=x86_64
 enabled=0
 enablegroups=0
 gpgcheck=1
