@@ -57,8 +57,8 @@ from pyanaconda.ui.common import FirstbootOnlySpokeMixIn
 __all__ = ["QubesOsSpoke"]
 
 def is_package_installed(pkgname):
-    return not subprocess.call(['rpm', '-q', pkgname],
-        stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
+    pkglist = subprocess.check_output(['rpm', '-qa', pkgname])
+    return bool(pkglist)
 
 def usb_keyboard_present():
     context = pyudev.Context()
@@ -245,8 +245,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
             ('qvm.personal', 'qvm.work', 'qvm.untrusted', 'qvm.vault'),
             depend=self.choice_network)
 
-        if (is_package_installed('qubes-template-whonix-gw') and
-                is_package_installed('qubes-template-whonix-ws')):
+        if (is_package_installed('qubes-template-whonix-gw*') and
+                is_package_installed('qubes-template-whonix-ws*')):
             self.choice_whonix = QubesChoice(
                 _('Create Whonix Gateway and Workstation qubes '
                     '(sys-whonix, anon-whonix)'),
