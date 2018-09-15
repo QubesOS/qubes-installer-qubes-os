@@ -82,5 +82,7 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
     mkdir "${EFIBOOTDIR}/System Volume Information"
     install "${configdir}/System Volume Information/*" "${EFIBOOTDIR}/System Volume Information/"
     runcmd umount ${outroot}/${img}
+    # verify if the image is under 32MB (max size of boot image on iso9660)
+    runcmd sh -x -c '[ $(stat -c %s ${outroot}/${img}) -le 33554432 ]'
 
 </%def>
