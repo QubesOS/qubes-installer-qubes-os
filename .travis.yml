@@ -12,3 +12,8 @@ env:
   - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-full.ks USE_QUBES_REPO_VERSION=4.0 RPM_BUILD_DEFINES=--nocheck
   - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-unsigned.ks USE_QUBES_REPO_VERSION=4.0 EXPECT_FAILURE=./expected-failure
   - DIST_DOM0=fc25 INSTALLER_KICKSTART=/tmp/qubes-installer/conf/travis-iso-unknown-key.ks USE_QUBES_REPO_VERSION=4.0 EXPECT_FAILURE=./expected-failure
+
+# don't build tags which are meant for code signing only
+branches:
+  except:
+    - /.*_.*/
