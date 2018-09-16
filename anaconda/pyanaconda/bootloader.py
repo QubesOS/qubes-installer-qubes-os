@@ -1854,7 +1854,7 @@ class XenEFI(EFIGRUB):
 
     def write_config_images(self, config):
         for image in self.images:
-            root_args = 'root=' + image.device.fstab_spec
+            root_args = 'root=' + image.device.fstabSpec
             if image.device.type == "btrfs subvolume":
                 root_args += " rootflags=subvol=%s" % image.device.name
             config.write("\n")
