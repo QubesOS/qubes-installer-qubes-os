@@ -3,7 +3,7 @@
 %endif
 
 Name:           qubes-anaconda-addon
-Version:        3.2.3
+Version:        3.2.4
 Release:        1%{?dist}
 Summary:        Anaconda addon useful for Qubes OS specific setup procedures
 
