@@ -5,7 +5,7 @@
 Summary:	Qubes release files
 Name:		qubes-release
 Version:	%{dist_version}
-Release:	4
+Release:	5
 License:	GPLv2
 Group:		System Environment/Base
 Source0:	%{name}-%{version}.tar.bz2
