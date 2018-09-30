@@ -14,9 +14,7 @@ installpkg rpm-ostree
 installpkg pigz
 
 ## kernel and firmware
-## NOTE: Without explicitly including kernel-modules-extra dnf will choose kernel-debuginfo-*
-##       to satify a gfs2-utils kmod requirement
-installpkg kernel kernel-modules kernel-modules-extra
+installpkg kernel
 installpkg grubby
 %if basearch != "s390x":
     installpkg linux-firmware
@@ -81,7 +79,7 @@ installpkg nm-connection-editor
 installpkg librsvg2
 
 ## filesystem tools
-installpkg btrfs-progs jfsutils xfsprogs reiserfs-utils gfs2-utils ntfs-3g ntfsprogs
+installpkg btrfs-progs jfsutils xfsprogs reiserfs-utils ntfs-3g ntfsprogs
 installpkg system-storage-manager
 installpkg device-mapper-persistent-data
 installpkg xfsdump
