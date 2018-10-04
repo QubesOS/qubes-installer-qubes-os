@@ -43,7 +43,7 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
         runcmd chroot ${inroot} dracut --conf /dev/null --confdir /var/empty \
           --nomdadmconf --nolvmconf --nofscks --no-early-microcode \
           --no-hostonly --xz --install '/.buildstamp' \
-          --add 'anaconda pollcdrom dmsquash-live' \
+          --add 'anaconda pollcdrom' \
           --omit="${extra_dracut_modules}" --omit-drivers="${scsi_modules}" --omit-drivers="${extra_modules}" \
           /boot/efi/EFI/qubes/initrd-small.img ${kver}
         runcmd chroot ${inroot} rm -f /proc/modules
