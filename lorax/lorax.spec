@@ -20,6 +20,7 @@ Patch1:         0001-Allow-specify-gpg-key-for-a-repository.patch
 Patch2:         0002-verify-packages-signature.patch
 Patch3:         0003-Update-package-verification-for-dnf-API.patch
 Patch4:         0004-Remove-branding-code.patch
+Patch5:         0005-Drop-inner-rootfs.img-layer.patch
 
 BuildRequires:  python3-devel
 
@@ -126,6 +127,7 @@ Lorax templates for creating the boot.iso and live isos are placed in
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 %build
 
