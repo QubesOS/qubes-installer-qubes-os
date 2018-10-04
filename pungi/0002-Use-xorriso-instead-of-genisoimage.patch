@@ -1,0 +1,49 @@
+From d33b8f9995070d68472c25779dfa543d6d7535db Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 4 Oct 2018 23:37:35 +0200
+Subject: [PATCH 2/6] Use xorriso instead of genisoimage
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+xorriso make the image reproducible (given the same input files),
+including support for SOURCE_DATE_EPOCH in various metadata.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi.spec      | 2 +-
+ pungi/gather.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pungi.spec b/pungi.spec
+index 6a23a63..d7bdc66 100644
+--- a/pungi.spec
++++ b/pungi.spec
+@@ -35,7 +35,7 @@ Requires:       jigdo
+ Requires:       cvs
+ Requires:       yum-utils
+ Requires:       isomd5sum
+-Requires:       genisoimage
++Requires:       xorriso
+ Requires:       gettext
+ Requires:       syslinux
+ Requires:       git
+diff --git a/pungi/gather.py b/pungi/gather.py
+index 20cc33d..15dfcee 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -1709,7 +1709,7 @@ class Pungi(PungiBase):
+                            clean=True) # This is risky...
+ 
+         # setup the base command
+-        mkisofs = ['/usr/bin/mkisofs']
++        mkisofs = ['/usr/bin/xorriso', '-as', 'mkisofs']
+         mkisofs.extend(['-v', '-U', '-J', '-R', '-T', '-m', 'repoview', '-m', 'boot.iso']) # common mkisofs flags
+ 
+         x86bootargs = ['-b', 'isolinux/isolinux.bin', '-c', 'isolinux/boot.cat', 
+-- 
+2.17.1
+

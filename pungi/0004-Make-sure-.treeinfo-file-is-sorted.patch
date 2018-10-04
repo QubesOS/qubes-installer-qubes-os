@@ -1,0 +1,67 @@
+From 57e49f366a34e3d8fdb020d7f19bc2fec8547ec9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 4 Oct 2018 23:42:19 +0200
+Subject: [PATCH 4/6] Make sure .treeinfo file is sorted
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+OrderedDict used by default by ConfigParser isn't enough because order
+of entries being added may not be deterministic (depends on directory
+list order). To solve this problem, use SortedDict as a base.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi.spec      | 2 ++
+ pungi/gather.py | 5 +++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/pungi.spec b/pungi.spec
+index d7bdc66..dcb1986 100644
+--- a/pungi.spec
++++ b/pungi.spec
+@@ -17,6 +17,7 @@ BuildRequires:  python-jsonschema
+ BuildRequires:  python-enum34
+ BuildRequires:  python2-dnf
+ BuildRequires:  python2-multilib
++BuildRequires:  python2-dict-sorted
+ 
+ Requires:       createrepo >= 0.4.11
+ Requires:       yum => 3.4.3-28
+@@ -44,6 +45,7 @@ Requires:       libguestfs-tools-c
+ Requires:       python-enum34
+ Requires:       python2-dnf
+ Requires:       python2-multilib
++Requires:       python2-dict-sorted
+ 
+ BuildArch:      noarch
+ 
+diff --git a/pungi/gather.py b/pungi/gather.py
+index 6f52bc6..1035036 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -26,6 +26,7 @@ import urlgrabber.progress
+ import subprocess
+ import createrepo
+ import ConfigParser
++from sdict import AlphaSortedDict
+ from fnmatch import fnmatch
+ 
+ import arch as arch_module
+@@ -95,6 +96,10 @@ def is_package(po):
+ class MyConfigParser(ConfigParser.ConfigParser):
+     """A subclass of ConfigParser which does not lowercase options"""
+ 
++    def __init__(self, *args, **kwargs):
++        kwargs['dict_type'] = AlphaSortedDict
++        ConfigParser.ConfigParser.__init__(self, *args, **kwargs)
++
+     def optionxform(self, optionstr):
+         return optionstr
+ 
+-- 
+2.17.1
+
