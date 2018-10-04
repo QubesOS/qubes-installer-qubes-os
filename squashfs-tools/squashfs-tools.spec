@@ -25,6 +25,10 @@ Patch2:  2gb.patch
 Patch3:  cve-2015-4645.patch
 # Update formats to match changes in cve-2015-4645.patch
 Patch4:  local-cve-fix.patch
+# Backports from 5.0-rc1 for reproducible builds
+Patch5: remove-frag_deflator_thread.patch
+Patch6: If-SOURCE_DATE_EPOCH-is-set-override-timestamps-with.patch
+Patch7: If-SOURCE_DATE_EPOCH-is-set-also-clamp-content-times.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires: zlib-devel
 BuildRequires: xz-devel
@@ -43,6 +47,9 @@ contains the utilities for manipulating squashfs filesystems.
 %patch2 -p0
 %patch3 -p1
 %patch4 -p0
+%patch5 -p1
+%patch6 -p1
+%patch7 -p1
 
 %build
 pushd squashfs-tools
