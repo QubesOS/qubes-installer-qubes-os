@@ -27,12 +27,15 @@ ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
     PUNGI_OPTS += --isfinal
 else
-    ISO_VERSION := $(shell date +%Y%m%d)
+    ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
 PUNGI_OPTS += --ver="$(ISO_VERSION)"
 
 INSTALLER_KICKSTART ?= $(PWD)/conf/qubes-kickstart.cfg
 LIVE_KICKSTART ?= $(PWD)/conf/liveusb.ks
+
+SOURCE_DATE_EPOCH ?= $(shell git show -s --pretty=format:%at)
+export SOURCE_DATE_EPOCH
 
 help:
 	@echo "make iso              <== \o/";\

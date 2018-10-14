@@ -1,0 +1,60 @@
+From 8eaee0ada8caa8b509b96867b06b876ef606d64f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 4 Oct 2018 23:44:06 +0200
+Subject: [PATCH 5/6] Set repodata mtime to SOURCE_DATE_EPOCH
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+repodata/repomd.xml include timestamps of all the other repodata files.
+Even when those files are created reproducibly, they have current
+modification time. In general case this is a good thing (ease checking
+if repodata cache is up to date). But in case of composing installation
+image, it breaks reproducibility.
+Avoid this by reseting mtime of repodata/* to $SOURCE_DATE_EPOCH, just
+before creating repomd.xml.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/gather.py | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/pungi/gather.py b/pungi/gather.py
+index 1035036..dbe38f7 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -25,6 +25,7 @@ import logging
+ import urlgrabber.progress
+ import subprocess
+ import createrepo
++import glob
+ import ConfigParser
+ from sdict import AlphaSortedDict
+ from fnmatch import fnmatch
+@@ -1409,9 +1410,20 @@ class Pungi(PungiBase):
+             conf.baseurl = baseurl
+         if compress_type:
+             conf.compress_type = compress_type
++        if 'SOURCE_DATE_EPOCH' in os.environ:
++            conf.revision = os.environ['SOURCE_DATE_EPOCH']
+         repomatic = createrepo.MetaDataGenerator(conf)
+         self.logger.info('Making repodata')
+         repomatic.doPkgMetadata()
++
++        # set mtime to $SOURCE_DATE_EPOCH, do that just before creating
++        # repomd.xml, because it includes timestamps of referenced files
++        if 'SOURCE_DATE_EPOCH' in os.environ:
++            s_d_e = int(os.environ['SOURCE_DATE_EPOCH'])
++            for repo_file in glob.glob(
++                    os.path.join(conf.outputdir, conf.tempdir, "*")):
++                os.utime(repo_file, (s_d_e, s_d_e))
++
+         repomatic.doRepoMetadata()
+         repomatic.doFinalMove()
+         
+-- 
+2.17.1
+

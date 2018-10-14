@@ -1,0 +1,34 @@
+From 61ed5d6ea5b1beedb59b3962d0df99f0b3c69402 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 4 Oct 2018 23:38:57 +0200
+Subject: [PATCH 3/6] Use constant MBR ID for isohybrid
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+If not set explicitly, isohybrid choose it randomly, which harm
+reproducibility.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/gather.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pungi/gather.py b/pungi/gather.py
+index 15dfcee..6f52bc6 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -1731,6 +1731,7 @@ class Pungi(PungiBase):
+         ppcbootargs.append('-hfs-bless') # must be last
+ 
+         isohybrid = ['/usr/bin/isohybrid']
++        isohybrid.extend(['--id', '42'])
+ 
+         # Check the size of the tree
+         # This size checking method may be bunk, accepting patches...
+-- 
+2.17.1
+

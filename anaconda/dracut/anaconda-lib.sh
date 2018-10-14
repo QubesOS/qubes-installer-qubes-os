@@ -101,13 +101,30 @@ anaconda_live_root_dir() {
     anaconda_mount_sysroot $img
 }
 
+anaconda_mount_root_squashfs() {
+    local img="$1"
+
+    ROOTFLAGS="$(getarg rootflags)"
+
+    modprobe squashfs || die "squashfs not supported"
+    modprobe overlay || die "overlayfs not supported"
+    mkdir -m 0755 -p /run/overlayfs
+    mkdir -m 0755 -p /run/rootfsbase
+    mkdir -m 0755 -p /run/ovlwork
+
+    mount -r "$img" /run/rootfsbase
+
+    printf 'mount -t overlay LiveOS_rootfs -o%s,%s %s\n' "$ROOTFLAGS" \
+        'lowerdir=/run/rootfsbase,upperdir=/run/overlayfs,workdir=/run/ovlwork' \
+        "$NEWROOT" > $hookdir/mount/01-$$-live.sh
+    # satisfy wait_for_dev /dev/root
+    ln -s /dev/null /dev/root
+}
+
 anaconda_mount_sysroot() {
     local img="$1"
     if [ -e "$img" ]; then
-        /sbin/dmsquash-live-root $img
-        # dracut & systemd only mount things with root=live: so we have to do this ourselves
-        # See https://bugzilla.redhat.com/show_bug.cgi?id=1232411
-        printf 'mount /dev/mapper/live-rw %s\n' "$NEWROOT" > $hookdir/mount/01-$$-anaconda.sh
+        anaconda_mount_root_squashfs "$img"
     fi
 }
 

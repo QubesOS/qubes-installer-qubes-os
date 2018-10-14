@@ -1,4 +1,5 @@
 RPM_SPEC_FILES.dom0 := \
+    squashfs-tools/squashfs-tools.spec \
     pykickstart/pykickstart.spec \
     blivet/python-blivet.spec \
     lorax/lorax.spec \

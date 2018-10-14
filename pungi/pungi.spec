@@ -14,6 +14,13 @@ Patch3:         disable-efi.patch
 Patch4:         Hacky-way-to-pass-gpgkey-to-lorax.patch
 #Patch5:         fix-recursive-partition-table-on-iso-image.patch
 #Patch6:         disable-upgrade.patch
+Patch7:         0001-Use-SOURCE_DATE_EPOCH-if-set-in-discinfo-file.patch
+Patch8:         0002-Use-xorriso-instead-of-genisoimage.patch
+Patch9:         0003-Use-constant-MBR-ID-for-isohybrid.patch
+Patch10:       	0004-Make-sure-.treeinfo-file-is-sorted.patch
+Patch11:       	0005-Set-repodata-mtime-to-SOURCE_DATE_EPOCH.patch
+Patch12:        0006-Monkey-patch-createrepo-to-clamp-repodata-mtime.patch
+
 BuildRequires:  python-nose, python-mock
 BuildRequires:  python-devel, python-setuptools, python2-productmd >= 1.3
 BuildRequires:  python-lockfile, kobo, kobo-rpmlib, python-kickstart, createrepo_c
@@ -24,6 +31,7 @@ BuildRequires:  python-jsonschema
 BuildRequires:  python-enum34
 BuildRequires:  python2-dnf
 BuildRequires:  python2-multilib
+BuildRequires:  python2-dict-sorted
 
 #deps for doc building
 BuildRequires:  python-sphinx, texlive-latex-bin-bin, texlive-collection-fontsrecommended
@@ -52,7 +60,7 @@ Requires:       koji >= 1.10.1-13
 Requires:       cvs
 Requires:       yum-utils
 Requires:       isomd5sum
-Requires:       genisoimage
+Requires:       xorriso
 Requires:       gettext
 # this is x86 only 
 #Requires:       syslinux
@@ -61,6 +69,7 @@ Requires:       python-jsonschema
 Requires:       python-enum34
 Requires:       python2-dnf
 Requires:       python2-multilib
+Requires:       python2-dict-sorted
 
 BuildArch:      noarch
 
@@ -86,6 +95,12 @@ notification to Fedora Message Bus.
 %patch4 -p1
 #%%patch5 -p1
 #%%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
+%patch11 -p1
+%patch12 -p1
 
 %build
 %{__python} setup.py build

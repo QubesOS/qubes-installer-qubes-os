@@ -1,0 +1,40 @@
+From 7e29418e9a5692c1f5ff7327929cd48f543d3d80 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 5 Oct 2018 04:48:57 +0200
+Subject: [PATCH 4/4] Use SOURCE_DATE_EPOCH for volumeid of efi boot image
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+By default mkfs.mksdos choose volume id based on current time. If
+SOURCE_DATE_EPOCH is set, use that instead.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ src/pylorax/imgutils.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/pylorax/imgutils.py b/src/pylorax/imgutils.py
+index 6cd67e0..92de296 100644
+--- a/src/pylorax/imgutils.py
++++ b/src/pylorax/imgutils.py
+@@ -398,8 +398,12 @@ def mkfsimage(fstype, rootdir, outfile, size=None, mkfsargs=None, mountargs="",
+ # convenience functions with useful defaults
+ def mkdosimg(rootdir, outfile, size=None, label="", mountargs="shortname=winnt,umask=0077", graft=None):
+     graft = graft or {}
++    mkfsargs = ["-n", label]
++    if 'SOURCE_DATE_EPOCH' in os.environ:
++        mkfsargs.extend(["-i",
++                "{:x}".format(int(os.environ['SOURCE_DATE_EPOCH']))])
+     mkfsimage("msdos", rootdir, outfile, size, mountargs=mountargs,
+-              mkfsargs=["-n", label], graft=graft)
++              mkfsargs=mkfsargs, graft=graft)
+ 
+ def mkext4img(rootdir, outfile, size=None, label="", mountargs="", graft=None):
+     graft = graft or {}
+-- 
+2.17.1
+

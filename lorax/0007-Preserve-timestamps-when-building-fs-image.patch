@@ -1,0 +1,34 @@
+From 3457b203feac0af5ee5c388a6c0351978dadcc1a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 5 Oct 2018 04:48:09 +0200
+Subject: [PATCH 3/4] Preserve timestamps when building fs image
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Even when FS do not support owner/modes, preserve timestamps.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ src/pylorax/imgutils.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pylorax/imgutils.py b/src/pylorax/imgutils.py
+index 25c300d..942695f 100644
+--- a/src/pylorax/imgutils.py
++++ b/src/pylorax/imgutils.py
+@@ -219,7 +219,7 @@ def copytree(src, dest, preserve=True):
+     If preserve is False, uses cp -R (useful for modeless filesystems)
+     raises CalledProcessError if copy fails.'''
+     logger.debug("copytree %s %s", src, dest)
+-    cp = ["cp", "-a"] if preserve else ["cp", "-R", "-L"]
++    cp = ["cp", "-a"] if preserve else ["cp", "-R", "-L", "--preserve=timestamps"]
+     cp += [join(src, "."), os.path.abspath(dest)]
+     runcmd(cp)
+ 
+-- 
+2.17.1
+

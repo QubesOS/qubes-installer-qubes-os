@@ -4,6 +4,8 @@ EFIARCH_LOWER=efiarch.lower()
 EFIBOOTDIR="EFI/BOOT"
 APPLE_EFI_ICON=inroot+"/usr/share/pixmaps/bootloader/fedora.icns"
 APPLE_EFI_DISKNAME=inroot+"/usr/share/pixmaps/bootloader/fedora-media.vol"
+import os, time
+SOURCE_DATE_EPOCH = os.environ.get('SOURCE_DATE_EPOCH', str(int(time.time())))
 %>
 
 mkdir ${EFIBOOTDIR}
@@ -43,7 +45,7 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
         runcmd chroot ${inroot} dracut --conf /dev/null --confdir /var/empty \
           --nomdadmconf --nolvmconf --nofscks --no-early-microcode \
           --no-hostonly --xz --install '/.buildstamp' \
-          --add 'anaconda pollcdrom dmsquash-live' \
+          --add 'anaconda pollcdrom' \
           --omit="${extra_dracut_modules}" --omit-drivers="${scsi_modules}" --omit-drivers="${extra_modules}" \
           /boot/efi/EFI/qubes/initrd-small.img ${kver}
         runcmd chroot ${inroot} rm -f /proc/modules
@@ -62,6 +64,8 @@ install boot/efi/EFI/*/fonts/unicode.pf2 ${EFIBOOTDIR}/fonts/
     runcmd mount ${outroot}/${img} ${outroot}/${EFIBOOTDIR} -o loop
     mkdir "${EFIBOOTDIR}/System Volume Information"
     install "${configdir}/System Volume Information/*" "${EFIBOOTDIR}/System Volume Information/"
+    runcmd find ${outroot}/${EFIBOOTDIR} -newermt "@${SOURCE_DATE_EPOCH}" -exec \
+        touch --no-dereference --date="@${SOURCE_DATE_EPOCH}" {} +
     runcmd umount ${outroot}/${img}
     # verify if the image is under 32MB (max size of boot image on iso9660)
     runcmd sh -x -c '[ $(stat -c %s ${outroot}/${img}) -le 33554432 ]'

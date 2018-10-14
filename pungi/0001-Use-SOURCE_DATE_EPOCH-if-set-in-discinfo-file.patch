@@ -1,0 +1,45 @@
+From 1b0ff7f98bdce87deb7bc61d6c227be21fa43a94 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 4 Oct 2018 23:36:15 +0200
+Subject: [PATCH 1/6] Use $SOURCE_DATE_EPOCH (if set) in discinfo file
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+This helps the output image to be reproducible.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/compose_metadata/discinfo.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/pungi/compose_metadata/discinfo.py b/pungi/compose_metadata/discinfo.py
+index df61ca0..758feef 100644
+--- a/pungi/compose_metadata/discinfo.py
++++ b/pungi/compose_metadata/discinfo.py
+@@ -32,6 +32,7 @@ __all__ = (
+ )
+ 
+ 
++import os
+ import time
+ 
+ 
+@@ -43,7 +44,10 @@ def write_discinfo(file_path, description, arch, disc_numbers=None, timestamp=No
+     if not isinstance(disc_numbers, list):
+         raise TypeError("Invalid type: disc_numbers type is %s; expected: <list>" % type(disc_numbers))
+     if not timestamp:
+-        timestamp = "%f" % time.time()
++        if 'SOURCE_DATE_EPOCH' in os.environ:
++            timestamp = os.environ['SOURCE_DATE_EPOCH']
++        else:
++            timestamp = "%f" % time.time()
+     with open(file_path, "w") as f:
+         f.write("%s\n" % timestamp)
+         f.write("%s\n" % description)
+-- 
+2.17.1
+

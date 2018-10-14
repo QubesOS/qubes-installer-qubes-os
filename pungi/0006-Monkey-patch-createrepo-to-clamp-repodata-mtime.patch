@@ -1,0 +1,53 @@
+From aaae0547c9bfefac7aa0d431cc4065eb369a7605 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 5 Oct 2018 15:26:36 +0200
+Subject: [PATCH 6/6] Monkey patch createrepo to clamp repodata mtime
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Unfortunately some files are created during repomatic.doRepoMetadata(),
+so clamping mtime before the call isn't enough. To limit changes to just
+one component, monkey patch createrepo function.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pungi/gather.py | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/pungi/gather.py b/pungi/gather.py
+index dbe38f7..9963dc6 100644
+--- a/pungi/gather.py
++++ b/pungi/gather.py
+@@ -1424,6 +1424,25 @@ class Pungi(PungiBase):
+                     os.path.join(conf.outputdir, conf.tempdir, "*")):
+                 os.utime(repo_file, (s_d_e, s_d_e))
+ 
++            # unfortunately the above is not enough, because some files are created
++            # during doRepoMetadata(). This include:
++            #  - compressed sqlite versions of the metadata - needed by repoview
++            #  - group file (compressed and not) - this is needed, so the timestamp
++            #    problem needs to be solved anyway
++            orig_createRepoDataObject = repomatic._createRepoDataObject
++            def wrapped_createRepoDataObject(*args, **kwargs):
++                repodata = orig_createRepoDataObject(*args, **kwargs)
++                if int(repodata.timestamp) > s_d_e:
++                    repodata.timestamp = str(s_d_e)
++                return repodata
++            repomatic._createRepoDataObject = wrapped_createRepoDataObject
++
++            orig_compressFile = createrepo.utils.compressFile
++            def wrapped_compressFile(source, dest, compress_type):
++                orig_compressFile(source, dest, compress_type)
++                os.utime(dest, (s_d_e, s_d_e))
++            createrepo.utils.compressFile = wrapped_compressFile
++
+         repomatic.doRepoMetadata()
+         repomatic.doFinalMove()
+         
+-- 
+2.17.1
+
