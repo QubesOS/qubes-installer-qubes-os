@@ -1,0 +1,32 @@
+From 0ac6e123eb37cec6e5f5849e861e2e6d76f3be05 Mon Sep 17 00:00:00 2001
+From: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: lock root account by default
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/kickstart.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
+index 5ac54b4fd..c0db1b614 100644
+--- a/pyanaconda/kickstart.py
++++ b/pyanaconda/kickstart.py
+@@ -1665,6 +1665,11 @@ class ReqPart(commands.reqpart.F23_ReqPart):
+         do_reqpart(storage, reqs)
+ 
+ class RootPw(commands.rootpw.F18_RootPw):
++    def __init__(self, writePriority=100, *args, **kwargs):
++        if 'lock' not in kwargs:
++            kwargs['lock'] = True
++        super(RootPw, self).__init__(writePriority=writePriority, *args, **kwargs)
++
+     def execute(self, storage, ksdata, instClass, users):
+         if not self.password and not flags.automatedInstall:
+             self.lock = True
+-- 
+2.14.4
+

@@ -1,0 +1,32 @@
+From 2cdfe3b92b5997d03f22521a2d4edb1d42ea443f Mon Sep 17 00:00:00 2001
+From: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:11 +0200
+Subject: [PATCH] anaconda: make encrypted partitions by default
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/kickstart.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
+index dc58d9b65..7d67bf1a6 100644
+--- a/pyanaconda/kickstart.py
++++ b/pyanaconda/kickstart.py
+@@ -252,6 +252,11 @@ class Authconfig(commands.authconfig.FC3_Authconfig):
+             log.error("Error running %s %s: %s", cmd, args, msg)
+ 
+ class AutoPart(commands.autopart.F21_AutoPart):
++    def __init__(self, writePriority=100, *args, **kwargs):
++        if 'encrypted' not in kwargs:
++            kwargs['encrypted'] = True
++        super(AutoPart, self).__init__(writePriority=writePriority, *args, **kwargs)
++
+     def parse(self, args):
+         retval = commands.autopart.F21_AutoPart.parse(self, args)
+ 
+-- 
+2.14.4
+

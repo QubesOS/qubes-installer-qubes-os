@@ -1,0 +1,46 @@
+From bcb258acbfb3b21c44422bdd9490e5f57c1e03fe Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:13 +0200
+Subject: [PATCH] anaconda: use proper subvolume argument when booting from
+ btrfs (EFI)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Kernel command line in legacy mode is constructed by grub scripts and
+properly handle btrfs subvolumes. For EFI, it is built directly by
+anaconda and 'rootflags=subvol=...' argument need to be added manually.
+
+Fixes QubesOS/qubes-issues#1871
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/bootloader.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
+index 821eb2100..c68b8b1e8 100644
+--- a/pyanaconda/bootloader.py
++++ b/pyanaconda/bootloader.py
+@@ -1886,12 +1886,15 @@ class XenEFI(EFIGRUB):
+ 
+     def write_config_images(self, config):
+         for image in self.images:
++            root_args = 'root=' + image.device.fstab_spec
++            if image.device.type == "btrfs subvolume":
++                root_args += " rootflags=subvol=%s" % image.device.name
+             config.write("\n")
+             config.write("[{}]\n".format(image.version))
+             config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx\n")
+-            config.write("kernel={} root={} {}\n".format(
++            config.write("kernel={} {} {}\n".format(
+                 image.kernel,
+-                image.device.fstab_spec,
++                root_args,
+                 self.boot_args))
+             config.write("ramdisk={}\n".format(image.initrd))
+ 
+-- 
+2.14.4
+

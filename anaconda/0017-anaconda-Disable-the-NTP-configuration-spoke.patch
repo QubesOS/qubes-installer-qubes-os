@@ -1,0 +1,733 @@
+From dc6d56efd644de06468ddd225c436bd3610a6527 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <m.v.b@runbox.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: Disable the NTP configuration spoke
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/ui/gui/spokes/datetime_spoke.glade | 300 +----------------------
+ pyanaconda/ui/gui/spokes/datetime_spoke.py    | 332 --------------------------
+ 2 files changed, 2 insertions(+), 630 deletions(-)
+
+diff --git a/pyanaconda/ui/gui/spokes/datetime_spoke.glade b/pyanaconda/ui/gui/spokes/datetime_spoke.glade
+index 9179640fe..fab5ad067 100644
+--- a/pyanaconda/ui/gui/spokes/datetime_spoke.glade
++++ b/pyanaconda/ui/gui/spokes/datetime_spoke.glade
+@@ -1,14 +1,9 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<!-- Generated with glade 3.18.3 -->
++<!-- Generated with glade 3.19.0 -->
+ <interface>
+   <requires lib="gtk+" version="3.12"/>
+   <requires lib="AnacondaWidgets" version="1.0"/>
+   <requires lib="TimezoneMap" version="0.4"/>
+-  <object class="GtkImage" id="addImage">
+-    <property name="visible">True</property>
+-    <property name="can_focus">False</property>
+-    <property name="icon_name">list-add-symbolic</property>
+-  </object>
+   <object class="GtkListStore" id="cities">
+     <columns>
+       <!-- column-name name -->
+@@ -26,11 +21,6 @@
+     <property name="inline_completion">True</property>
+     <signal name="match-selected" handler="on_completion_match_selected" object="cityCombobox" swapped="no"/>
+   </object>
+-  <object class="GtkImage" id="configImage">
+-    <property name="visible">True</property>
+-    <property name="can_focus">False</property>
+-    <property name="icon_name">system-run-symbolic</property>
+-  </object>
+   <object class="GtkListStore" id="days">
+     <columns>
+       <!-- column-name idx -->
+@@ -91,221 +81,6 @@
+       <column type="gboolean"/>
+     </columns>
+   </object>
+-  <object class="GtkDialog" id="ntpConfigDialog">
+-    <property name="can_focus">False</property>
+-    <property name="border_width">6</property>
+-    <property name="type_hint">dialog</property>
+-    <property name="decorated">False</property>
+-    <child internal-child="vbox">
+-      <object class="GtkBox" id="dialog-vbox1">
+-        <property name="can_focus">False</property>
+-        <property name="orientation">vertical</property>
+-        <property name="spacing">6</property>
+-        <child internal-child="action_area">
+-          <object class="GtkButtonBox" id="dialog-action_area1">
+-            <property name="can_focus">False</property>
+-            <property name="layout_style">end</property>
+-            <child>
+-              <object class="GtkButton" id="cancelButton">
+-                <property name="label" translatable="yes" context="GUI|Date and Time|NTP">_Cancel</property>
+-                <property name="visible">True</property>
+-                <property name="can_focus">True</property>
+-                <property name="receives_default">True</property>
+-                <property name="use_underline">True</property>
+-              </object>
+-              <packing>
+-                <property name="expand">False</property>
+-                <property name="fill">True</property>
+-                <property name="position">0</property>
+-              </packing>
+-            </child>
+-            <child>
+-              <object class="GtkButton" id="okButton">
+-                <property name="label" translatable="yes" context="GUI|Date and Time|NTP">_OK</property>
+-                <property name="visible">True</property>
+-                <property name="can_focus">True</property>
+-                <property name="receives_default">True</property>
+-                <property name="use_underline">True</property>
+-              </object>
+-              <packing>
+-                <property name="expand">False</property>
+-                <property name="fill">True</property>
+-                <property name="position">1</property>
+-              </packing>
+-            </child>
+-          </object>
+-          <packing>
+-            <property name="expand">False</property>
+-            <property name="fill">True</property>
+-            <property name="pack_type">end</property>
+-            <property name="position">4</property>
+-          </packing>
+-        </child>
+-        <child>
+-          <object class="GtkLabel" id="configHeadingLabel">
+-            <property name="visible">True</property>
+-            <property name="can_focus">False</property>
+-            <property name="xalign">0</property>
+-            <property name="label" translatable="yes">Add and mark for usage NTP servers</property>
+-            <attributes>
+-              <attribute name="font-desc" value="Sans Bold 12"/>
+-            </attributes>
+-          </object>
+-          <packing>
+-            <property name="expand">False</property>
+-            <property name="fill">True</property>
+-            <property name="position">0</property>
+-          </packing>
+-        </child>
+-        <child>
+-          <object class="GtkBox" id="box3">
+-            <property name="visible">True</property>
+-            <property name="can_focus">False</property>
+-            <child>
+-              <object class="GtkEntry" id="serverEntry">
+-                <property name="visible">True</property>
+-                <property name="can_focus">True</property>
+-                <signal name="activate" handler="on_entry_activated" swapped="no"/>
+-                <child internal-child="accessible">
+-                  <object class="AtkObject" id="serverEntry-atkobject">
+-                    <property name="AtkObject::accessible-name" translatable="yes">New NTP Server</property>
+-                  </object>
+-                </child>
+-              </object>
+-              <packing>
+-                <property name="expand">True</property>
+-                <property name="fill">True</property>
+-                <property name="position">0</property>
+-              </packing>
+-            </child>
+-            <child>
+-              <object class="GtkButton" id="addButton">
+-                <property name="visible">True</property>
+-                <property name="can_focus">True</property>
+-                <property name="receives_default">True</property>
+-                <property name="image">addImage</property>
+-                <signal name="clicked" handler="on_add_clicked" swapped="no"/>
+-                <child internal-child="accessible">
+-                  <object class="AtkObject" id="addButton-atkobject">
+-                    <property name="AtkObject::accessible-name" translatable="yes">Add NTP Server</property>
+-                  </object>
+-                </child>
+-              </object>
+-              <packing>
+-                <property name="expand">False</property>
+-                <property name="fill">True</property>
+-                <property name="padding">4</property>
+-                <property name="position">1</property>
+-              </packing>
+-            </child>
+-          </object>
+-          <packing>
+-            <property name="expand">False</property>
+-            <property name="fill">True</property>
+-            <property name="position">1</property>
+-          </packing>
+-        </child>
+-        <child>
+-          <object class="GtkCheckButton" id="poolCheckButton">
+-            <property name="label" translatable="yes">This URL refers to a pool of NTP servers</property>
+-            <property name="visible">True</property>
+-            <property name="can_focus">True</property>
+-            <property name="receives_default">False</property>
+-            <property name="xalign">0</property>
+-            <property name="draw_indicator">True</property>
+-          </object>
+-          <packing>
+-            <property name="expand">False</property>
+-            <property name="fill">True</property>
+-            <property name="position">3</property>
+-          </packing>
+-        </child>
+-        <child>
+-          <object class="GtkScrolledWindow" id="scrolledWindow">
+-            <property name="visible">True</property>
+-            <property name="can_focus">True</property>
+-            <property name="hscrollbar_policy">never</property>
+-            <property name="shadow_type">in</property>
+-            <child>
+-              <object class="GtkTreeView" id="serversView">
+-                <property name="visible">True</property>
+-                <property name="can_focus">True</property>
+-                <property name="model">serversStore</property>
+-                <property name="headers_clickable">False</property>
+-                <property name="search_column">0</property>
+-                <child internal-child="selection">
+-                  <object class="GtkTreeSelection" id="treeview-selection"/>
+-                </child>
+-                <child>
+-                  <object class="GtkTreeViewColumn" id="hostnameColumn">
+-                    <property name="title" translatable="yes">Host Name</property>
+-                    <property name="expand">True</property>
+-                    <child>
+-                      <object class="GtkCellRendererText" id="hostnameRenderer">
+-                        <property name="editable">True</property>
+-                        <signal name="edited" handler="on_server_edited" swapped="no"/>
+-                      </object>
+-                      <attributes>
+-                        <attribute name="text">0</attribute>
+-                      </attributes>
+-                    </child>
+-                  </object>
+-                </child>
+-                <child>
+-                  <object class="GtkTreeViewColumn" id="pool">
+-                    <property name="title" translatable="yes">Pool</property>
+-                    <child>
+-                      <object class="GtkCellRendererToggle" id="poolRenderer">
+-                        <signal name="toggled" handler="on_pool_toggled" swapped="no"/>
+-                      </object>
+-                      <attributes>
+-                        <attribute name="active">1</attribute>
+-                      </attributes>
+-                    </child>
+-                  </object>
+-                </child>
+-                <child>
+-                  <object class="GtkTreeViewColumn" id="workingColumn">
+-                    <property name="title" translatable="yes">Working</property>
+-                    <child>
+-                      <object class="GtkCellRendererPixbuf" id="workingRenderer"/>
+-                    </child>
+-                  </object>
+-                </child>
+-                <child>
+-                  <object class="GtkTreeViewColumn" id="removeColumn">
+-                    <property name="title" translatable="yes">Use</property>
+-                    <child>
+-                      <object class="GtkCellRendererToggle" id="removeRenderer">
+-                        <signal name="toggled" handler="on_use_server_toggled" swapped="no"/>
+-                      </object>
+-                      <attributes>
+-                        <attribute name="active">3</attribute>
+-                      </attributes>
+-                    </child>
+-                  </object>
+-                </child>
+-              </object>
+-            </child>
+-          </object>
+-          <packing>
+-            <property name="expand">True</property>
+-            <property name="fill">True</property>
+-            <property name="position">4</property>
+-          </packing>
+-        </child>
+-      </object>
+-    </child>
+-    <action-widgets>
+-      <action-widget response="0">cancelButton</action-widget>
+-      <action-widget response="1">okButton</action-widget>
+-    </action-widgets>
+-    <child internal-child="accessible">
+-      <object class="AtkObject" id="ntpConfigDialog-atkobject">
+-        <property name="AtkObject::accessible-name" translatable="yes">Configure NTP</property>
+-      </object>
+-    </child>
+-  </object>
+   <object class="GtkImage" id="upImage">
+     <property name="visible">True</property>
+     <property name="can_focus">False</property>
+@@ -463,78 +238,7 @@
+                               </packing>
+                             </child>
+                             <child>
+-                              <object class="GtkAlignment" id="alignment4">
+-                                <property name="visible">True</property>
+-                                <property name="can_focus">False</property>
+-                                <property name="xalign">1</property>
+-                                <property name="xscale">0.20000000298023224</property>
+-                                <property name="right_padding">24</property>
+-                                <child>
+-                                  <object class="GtkBox" id="box6">
+-                                    <property name="visible">True</property>
+-                                    <property name="can_focus">False</property>
+-                                    <property name="halign">end</property>
+-                                    <child>
+-                                      <object class="GtkLabel" id="networkTimeLabel">
+-                                        <property name="visible">True</property>
+-                                        <property name="can_focus">False</property>
+-                                        <property name="label" translatable="yes" context="GUI|Date and Time">_Network Time</property>
+-                                        <property name="use_underline">True</property>
+-                                        <property name="mnemonic_widget">networkTimeSwitch</property>
+-                                      </object>
+-                                      <packing>
+-                                        <property name="expand">False</property>
+-                                        <property name="fill">True</property>
+-                                        <property name="padding">3</property>
+-                                        <property name="position">0</property>
+-                                      </packing>
+-                                    </child>
+-                                    <child>
+-                                      <object class="GtkSwitch" id="networkTimeSwitch">
+-                                        <property name="visible">True</property>
+-                                        <property name="can_focus">True</property>
+-                                        <signal name="notify::active" handler="on_ntp_switched" swapped="no"/>
+-                                        <child internal-child="accessible">
+-                                          <object class="AtkObject" id="networkTimeSwitch-atkobject">
+-                                            <property name="AtkObject::accessible-name" translatable="yes">Use Network Time</property>
+-                                          </object>
+-                                        </child>
+-                                      </object>
+-                                      <packing>
+-                                        <property name="expand">False</property>
+-                                        <property name="fill">True</property>
+-                                        <property name="padding">1</property>
+-                                        <property name="position">1</property>
+-                                      </packing>
+-                                    </child>
+-                                    <child>
+-                                      <object class="GtkButton" id="ntpConfigButton">
+-                                        <property name="visible">True</property>
+-                                        <property name="can_focus">True</property>
+-                                        <property name="receives_default">True</property>
+-                                        <property name="image">configImage</property>
+-                                        <signal name="clicked" handler="on_ntp_config_clicked" swapped="no"/>
+-                                        <child internal-child="accessible">
+-                                          <object class="AtkObject" id="ntpConfigButton-atkobject">
+-                                            <property name="AtkObject::accessible-name" translatable="yes">Configure NTP</property>
+-                                          </object>
+-                                        </child>
+-                                      </object>
+-                                      <packing>
+-                                        <property name="expand">False</property>
+-                                        <property name="fill">True</property>
+-                                        <property name="padding">1</property>
+-                                        <property name="position">2</property>
+-                                      </packing>
+-                                    </child>
+-                                  </object>
+-                                </child>
+-                              </object>
+-                              <packing>
+-                                <property name="expand">True</property>
+-                                <property name="fill">True</property>
+-                                <property name="position">4</property>
+-                              </packing>
++                              <placeholder/>
+                             </child>
+                           </object>
+                         </child>
+diff --git a/pyanaconda/ui/gui/spokes/datetime_spoke.py b/pyanaconda/ui/gui/spokes/datetime_spoke.py
+index 0a1b0b5a8..5fffb670a 100644
+--- a/pyanaconda/ui/gui/spokes/datetime_spoke.py
++++ b/pyanaconda/ui/gui/spokes/datetime_spoke.py
+@@ -45,7 +45,6 @@ from pyanaconda import iutil
+ from pyanaconda import isys
+ from pyanaconda import network
+ from pyanaconda import nm
+-from pyanaconda import ntp
+ from pyanaconda import flags
+ from pyanaconda import constants
+ from pyanaconda.threads import threadMgr, AnacondaThread
+@@ -149,247 +148,6 @@ def _new_date_field_box(store):
+ 
+     return (box, combo, suffix_label)
+ 
+-class NTPconfigDialog(GUIObject, GUIDialogInputCheckHandler):
+-    builderObjects = ["ntpConfigDialog", "addImage", "serversStore"]
+-    mainWidgetName = "ntpConfigDialog"
+-    uiFile = "spokes/datetime_spoke.glade"
+-
+-    def __init__(self, *args):
+-        GUIObject.__init__(self, *args)
+-
+-        # Use GUIDIalogInputCheckHandler to manipulate the sensitivity of the
+-        # add button, and check for valid input in on_entry_activated
+-        add_button = self.builder.get_object("addButton")
+-        GUIDialogInputCheckHandler.__init__(self, add_button)
+-
+-        #epoch is increased when serversStore is repopulated
+-        self._epoch = 0
+-        self._epoch_lock = threading.Lock()
+-
+-    @property
+-    def working_server(self):
+-        for row in self._serversStore:
+-            if row[SERVER_WORKING] == constants.NTP_SERVER_OK and row[SERVER_USE]:
+-                #server is checked and working
+-                return row[SERVER_HOSTNAME]
+-
+-        return None
+-
+-    @property
+-    def pools_servers(self):
+-        pools = list()
+-        servers = list()
+-
+-        for used_row in (row for row in self._serversStore if row[SERVER_USE]):
+-            if used_row[SERVER_POOL]:
+-                pools.append(used_row[SERVER_HOSTNAME])
+-            else:
+-                servers.append(used_row[SERVER_HOSTNAME])
+-
+-        return (pools, servers)
+-
+-    def _render_working(self, column, renderer, model, itr, user_data=None):
+-        value = model[itr][SERVER_WORKING]
+-
+-        if value == constants.NTP_SERVER_QUERY:
+-            return "dialog-question"
+-        elif value == constants.NTP_SERVER_OK:
+-            return "emblem-default"
+-        else:
+-            return "dialog-error"
+-
+-    def initialize(self):
+-        self.window.set_size_request(500, 400)
+-
+-        workingColumn = self.builder.get_object("workingColumn")
+-        workingRenderer = self.builder.get_object("workingRenderer")
+-        override_cell_property(workingColumn, workingRenderer, "icon-name",
+-                self._render_working)
+-
+-        self._serverEntry = self.builder.get_object("serverEntry")
+-        self._serversStore = self.builder.get_object("serversStore")
+-
+-        self._addButton = self.builder.get_object("addButton")
+-
+-        self._poolCheckButton = self.builder.get_object("poolCheckButton")
+-
+-        # Validate the server entry box
+-        self._serverCheck = self.add_check(self._serverEntry, self._validateServer)
+-        self._serverCheck.update_check_status()
+-
+-        self._initialize_store_from_config()
+-
+-    def _initialize_store_from_config(self):
+-        self._serversStore.clear()
+-
+-        if self.data.timezone.ntpservers:
+-            pools, servers = ntp.internal_to_pools_and_servers(self.data.timezone.ntpservers)
+-        else:
+-            try:
+-                pools, servers = ntp.get_servers_from_config()
+-            except ntp.NTPconfigError:
+-                log.warning("Failed to load NTP servers configuration")
+-                return
+-
+-        for pool in pools:
+-            self._add_server(pool, True)
+-        for server in servers:
+-            self._add_server(server, False)
+-
+-
+-    def _validateServer(self, inputcheck):
+-        server = self.get_input(inputcheck.input_obj)
+-
+-        # If not set, fail the check to keep the button insensitive, but don't
+-        # display an error
+-        if not server:
+-            return InputCheck.CHECK_SILENT
+-
+-        (valid, error) = network.sanityCheckHostname(server)
+-        if not valid:
+-            return "'%s' is not a valid hostname: %s" % (server, error)
+-        else:
+-            return InputCheck.CHECK_OK
+-
+-    def refresh(self):
+-        self._serverEntry.grab_focus()
+-
+-    def refresh_servers_state(self):
+-        itr = self._serversStore.get_iter_first()
+-        while itr:
+-            self._refresh_server_working(itr)
+-            itr = self._serversStore.iter_next(itr)
+-
+-    def run(self):
+-        self.window.show()
+-        rc = self.window.run()
+-        self.window.hide()
+-
+-        #OK clicked
+-        if rc == 1:
+-            new_pools, new_servers = self.pools_servers
+-
+-            if flags.can_touch_runtime_system("save NTP servers configuration"):
+-                ntp.save_servers_to_config(new_pools, new_servers)
+-                iutil.restart_service(NTP_SERVICE)
+-
+-        #Cancel clicked, window destroyed...
+-        else:
+-            self._epoch_lock.acquire()
+-            self._epoch += 1
+-            self._epoch_lock.release()
+-
+-            self._initialize_store_from_config()
+-
+-        return rc
+-
+-    def _set_server_ok_nok(self, itr, epoch_started):
+-        """
+-        If the server is working, set its data to NTP_SERVER_OK, otherwise set its
+-        data to NTP_SERVER_NOK.
+-
+-        :param itr: iterator of the $server's row in the self._serversStore
+-
+-        """
+-
+-        @gtk_action_nowait
+-        def set_store_value(arg_tuple):
+-            """
+-            We need a function for this, because this way it can be added to
+-            the MainLoop with thread-safe GLib.idle_add (but only with one
+-            argument).
+-
+-            :param arg_tuple: (store, itr, column, value)
+-
+-            """
+-
+-            (store, itr, column, value) = arg_tuple
+-            store.set_value(itr, column, value)
+-
+-        orig_hostname = self._serversStore[itr][SERVER_HOSTNAME]
+-        server_working = ntp.ntp_server_working(self._serversStore[itr][SERVER_HOSTNAME])
+-
+-        #do not let dialog change epoch while we are modifying data
+-        self._epoch_lock.acquire()
+-
+-        #check if we are in the same epoch as the dialog (and the serversStore)
+-        #and if the server wasn't changed meanwhile
+-        if epoch_started == self._epoch:
+-            actual_hostname = self._serversStore[itr][SERVER_HOSTNAME]
+-
+-            if orig_hostname == actual_hostname:
+-                if server_working:
+-                    set_store_value((self._serversStore,
+-                                    itr, SERVER_WORKING, constants.NTP_SERVER_OK))
+-                else:
+-                    set_store_value((self._serversStore,
+-                                    itr, SERVER_WORKING, constants.NTP_SERVER_NOK))
+-        self._epoch_lock.release()
+-
+-    @gtk_action_nowait
+-    def _refresh_server_working(self, itr):
+-        """ Runs a new thread with _set_server_ok_nok(itr) as a taget. """
+-
+-        self._serversStore.set_value(itr, SERVER_WORKING, constants.NTP_SERVER_QUERY)
+-        threadMgr.add(AnacondaThread(prefix=constants.THREAD_NTP_SERVER_CHECK,
+-                                     target=self._set_server_ok_nok,
+-                                     args=(itr, self._epoch)))
+-
+-    def _add_server(self, server, pool=False):
+-        """
+-        Checks if a given server is a valid hostname and if yes, adds it
+-        to the list of servers.
+-
+-        :param server: string containing hostname
+-
+-        """
+-
+-        itr = self._serversStore.append([server, pool, constants.NTP_SERVER_QUERY, True])
+-
+-        #do not block UI while starting thread (may take some time)
+-        self._refresh_server_working(itr)
+-
+-    def on_entry_activated(self, entry, *args):
+-        # Check that the input check has passed
+-        if self._serverCheck.check_status == InputCheck.CHECK_OK:
+-            self._add_server(entry.get_text(), self._poolCheckButton.get_active())
+-            entry.set_text("")
+-            self._poolCheckButton.set_active(False)
+-
+-    def on_add_clicked(self, *args):
+-        self._serverEntry.emit("activate")
+-
+-    def on_use_server_toggled(self, renderer, path, *args):
+-        itr = self._serversStore.get_iter(path)
+-        old_value = self._serversStore[itr][SERVER_USE]
+-
+-        self._serversStore.set_value(itr, SERVER_USE, not old_value)
+-
+-    def on_pool_toggled(self, renderer, path, *args):
+-        itr = self._serversStore.get_iter(path)
+-        old_value = self._serversStore[itr][SERVER_POOL]
+-
+-        self._serversStore.set_value(itr, SERVER_POOL, not old_value)
+-
+-    def on_server_edited(self, renderer, path, new_text, *args):
+-        if not path:
+-            return
+-
+-        (valid, error) = network.sanityCheckHostname(new_text)
+-        if not valid:
+-            log.error("'%s' is not a valid hostname: %s", new_text, error)
+-            return
+-
+-        itr = self._serversStore.get_iter(path)
+-
+-        if self._serversStore[itr][SERVER_HOSTNAME] == new_text:
+-            return
+-
+-        self._serversStore.set_value(itr, SERVER_HOSTNAME, new_text)
+-        self._serversStore.set_value(itr, SERVER_WORKING, constants.NTP_SERVER_QUERY)
+-
+-        self._refresh_server_working(itr)
+-
+ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+     """
+        .. inheritance-diagram:: DatetimeSpoke
+@@ -480,8 +238,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+         self._year_format, suffix = formats[widgets.index(year_box)]
+         year_label.set_text(suffix)
+ 
+-        self._ntpSwitch = self.builder.get_object("networkTimeSwitch")
+-
+         self._regions_zones = get_all_regions_and_timezones()
+ 
+         # Set the initial sensitivity of the AM/PM toggle based on the time-type selected
+@@ -490,9 +246,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+         if not flags.can_touch_runtime_system("modify system time and date"):
+             self._set_date_time_setting_sensitive(False)
+ 
+-        self._config_dialog = NTPconfigDialog(self.data)
+-        self._config_dialog.initialize()
+-
+         threadMgr.add(AnacondaThread(name=constants.THREAD_DATE_TIME,
+                                      target=self._initialize))
+ 
+@@ -574,8 +327,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+             self.data.timezone.seen = False
+             self._kickstarted = False
+ 
+-        self.data.timezone.nontp = not self._ntpSwitch.get_active()
+-
+     def execute(self):
+         if self._update_datetime_timer_id is not None:
+             GLib.source_remove(self._update_datetime_timer_id)
+@@ -610,20 +361,6 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+ 
+         self._update_datetime()
+ 
+-        has_active_network = nm.nm_is_connected()
+-        if not has_active_network:
+-            self._show_no_network_warning()
+-        else:
+-            self.clear_info()
+-            gtk_call_once(self._config_dialog.refresh_servers_state)
+-
+-        if flags.can_touch_runtime_system("get NTP service state"):
+-            ntp_working = has_active_network and iutil.service_running(NTP_SERVICE)
+-        else:
+-            ntp_working = not self.data.timezone.nontp
+-
+-        self._ntpSwitch.set_active(ntp_working)
+-
+     @gtk_action_wait
+     def _set_timezone(self, timezone):
+         """
+@@ -1078,72 +815,3 @@ class DatetimeSpoke(FirstbootSpokeMixIn, NormalSpoke):
+         #contains all date/time setting widgets
+         footer_alignment = self.builder.get_object("footerAlignment")
+         footer_alignment.set_sensitive(sensitive)
+-
+-    def _show_no_network_warning(self):
+-        self.set_warning(_("You need to set up networking first if you "\
+-                           "want to use NTP"))
+-
+-    def _show_no_ntp_server_warning(self):
+-        self.set_warning(_("You have no working NTP server configured"))
+-
+-    def on_ntp_switched(self, switch, *args):
+-        if switch.get_active():
+-            #turned ON
+-            if not flags.can_touch_runtime_system("start NTP service"):
+-                #cannot touch runtime system, not much to do here
+-                return
+-
+-            if not nm.nm_is_connected():
+-                self._show_no_network_warning()
+-                switch.set_active(False)
+-                return
+-            else:
+-                self.clear_info()
+-
+-                working_server = self._config_dialog.working_server
+-                if working_server is None:
+-                    self._show_no_ntp_server_warning()
+-                else:
+-                    #we need a one-time sync here, because chronyd would not change
+-                    #the time as drastically as we need
+-                    ntp.one_time_sync_async(working_server)
+-
+-            ret = iutil.start_service(NTP_SERVICE)
+-            self._set_date_time_setting_sensitive(False)
+-
+-            #if starting chronyd failed and chronyd is not running,
+-            #set switch back to OFF
+-            if (ret != 0) and not iutil.service_running(NTP_SERVICE):
+-                switch.set_active(False)
+-
+-        else:
+-            #turned OFF
+-            if not flags.can_touch_runtime_system("stop NTP service"):
+-                #cannot touch runtime system, nothing to do here
+-                return
+-
+-            self._set_date_time_setting_sensitive(True)
+-            ret = iutil.stop_service(NTP_SERVICE)
+-
+-            #if stopping chronyd failed and chronyd is running,
+-            #set switch back to ON
+-            if (ret != 0) and iutil.service_running(NTP_SERVICE):
+-                switch.set_active(True)
+-
+-            self.clear_info()
+-
+-    def on_ntp_config_clicked(self, *args):
+-        self._config_dialog.refresh()
+-
+-        with self.main_window.enlightbox(self._config_dialog.window):
+-            response = self._config_dialog.run()
+-
+-        if response == 1:
+-            pools, servers = self._config_dialog.pools_servers
+-            self.data.timezone.ntpservers = ntp.pools_servers_to_internal(pools, servers)
+-
+-            if self._config_dialog.working_server is None:
+-                self._show_no_ntp_server_warning()
+-            else:
+-                self.clear_info()
+-
+-- 
+2.14.4
+
