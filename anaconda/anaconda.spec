@@ -289,7 +289,7 @@ runtime on NFS/HTTP/FTP servers or local disks.
 %autosetup -p1
 
 %build
-./autogen.sh
+autoreconf -v --install .
 %configure
 %{__make} %{?_smp_mflags}
 
