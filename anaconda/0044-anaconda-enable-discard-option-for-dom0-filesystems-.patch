@@ -1,0 +1,86 @@
+From 99ea01b31f1733910123eff96a226f1183458839 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:13 +0200
+Subject: [PATCH] anaconda: enable discard option for dom0 filesystems by
+ default
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This may have performance impact on some older SSD, but on the other
+hand, without this option it's pretty easy to fill the whole LVM thin
+pool even if there is plenty free space in dom0.
+Note that this doesn't enable it on LUKS layer, this is still disabled
+by default.
+
+Fixes QubesOS/qubes-issues#3226
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/install.py   | 11 +++++++++++
+ pyanaconda/kickstart.py | 12 ++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/pyanaconda/install.py b/pyanaconda/install.py
+index a11b6b43b..324e136c7 100644
+--- a/pyanaconda/install.py
++++ b/pyanaconda/install.py
+@@ -211,6 +211,17 @@ def doInstall(storage, payload, ksdata, instClass):
+                                                             wait_for_entropy=entropy_wait_clbk)
+ 
+     turn_on_filesystems(storage, mount_only=flags.flags.dirInstall, callbacks=callbacks_reg)
++
++    # For autopart, actual partition related objects (especially
++    # blivet.format.FS objects) are created by the above call. And autopart
++    # does not provide any way to specify default mount options (unlike manual
++    # partitioning). Because of this, patch it now to add 'discard' option.
++    if storage.root_device.format.options and \
++            'discard' not in storage.root_device.format.options:
++        storage.root_device.format.options += ',discard'
++    else:
++        storage.root_device.format.options = 'defaults,discard'
++
+     payload.writeStorageEarly()
+ 
+     # Run %pre-install scripts with the filesystem mounted and no packages
+diff --git a/pyanaconda/kickstart.py b/pyanaconda/kickstart.py
+index c0db1b614..5cd86d5fb 100644
+--- a/pyanaconda/kickstart.py
++++ b/pyanaconda/kickstart.py
+@@ -885,6 +885,10 @@ class LogVolData(commands.logvol.F23_LogVolData):
+             self.mountpoint = ""
+             ty = None
+ 
++        if self.mountpoint.startswith('/') and not self.fsopts:
++            # enable discard for normal filesystems in dom0
++            self.fsopts = "defaults,discard"
++
+         # Sanity check mountpoint
+         if self.mountpoint != "" and self.mountpoint[0] != '/':
+             raise KickstartParseError(formatErrorMsg(self.lineno,
+@@ -1245,6 +1249,10 @@ class PartitionData(commands.partition.F23_PartData):
+             else:
+                 ty = storage.default_fstype
+ 
++        if self.mountpoint.startswith('/') and not self.fsopts:
++            # enable discard for normal filesystems in dom0
++            self.fsopts = "defaults,discard"
++
+         if not size and self.size:
+             try:
+                 size = Size("%d MiB" % self.size)
+@@ -1490,6 +1498,10 @@ class RaidData(commands.raid.F25_RaidData):
+             else:
+                 ty = storage.default_fstype
+ 
++        if self.mountpoint.startswith('/') and not self.fsopts:
++            # enable discard for normal filesystems in dom0
++            self.fsopts = "defaults,discard"
++
+         # Sanity check mountpoint
+         if self.mountpoint != "" and self.mountpoint[0] != '/':
+             raise KickstartParseError(formatErrorMsg(self.lineno,
+-- 
+2.14.4
+

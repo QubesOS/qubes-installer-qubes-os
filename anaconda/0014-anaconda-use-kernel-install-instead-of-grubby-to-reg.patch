@@ -1,0 +1,51 @@
+From 73b928fd84acfde8a8f20ddf20241da9085b87b2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: use kernel-install instead of grubby to regenerate
+ initrd/grub.conf
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Since we have own hook there, it properly handles Xen. This means we no longer need post scripts in kickstart for that.
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/packaging/__init__.py | 11 +++--------
+ 1 file changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/pyanaconda/packaging/__init__.py b/pyanaconda/packaging/__init__.py
+index a99fbe973..8332ce0e5 100644
+--- a/pyanaconda/packaging/__init__.py
++++ b/pyanaconda/packaging/__init__.py
+@@ -608,23 +608,18 @@ class Payload(object):
+                 #           prevent boot on some systems
+ 
+     def recreateInitrds(self):
+-        """ Recreate the initrds by calling new-kernel-pkg
++        """ Recreate the initrds by calling kernel-install
+ 
+             This needs to be done after all configuration files have been
+             written, since dracut depends on some of them.
+ 
+             :returns: None
+         """
+-        if not os.path.exists(iutil.getSysroot() + "/usr/sbin/new-kernel-pkg"):
+-            log.error("new-kernel-pkg does not exist - grubby wasn't installed?  skipping")
+-            return
+-
+         for kernel in self.kernelVersionList:
+             log.info("recreating initrd for %s", kernel)
+             if not flags.imageInstall:
+-                iutil.execInSysroot("new-kernel-pkg",
+-                                    ["--mkinitrd", "--dracut",
+-                                    "--depmod", "--update", kernel])
++                iutil.execInSysroot("kernel-install",
++                                    ["add", kernel, "/boot/vmlinuz-%s" % kernel])
+             else:
+                 # hostonly is not sensible for disk image installations
+                 # using /dev/disk/by-uuid/ is necessary due to disk image naming
+-- 
+2.14.4
+

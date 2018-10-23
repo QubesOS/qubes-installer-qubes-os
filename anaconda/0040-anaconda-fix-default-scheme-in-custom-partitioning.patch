@@ -1,0 +1,43 @@
+From 4c4c8e2f14c53e1a79edd9545e73945aba66c876 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: fix default scheme in custom partitioning
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Update to LVM Thin Provisioning there too.
+
+Fixes QubesOS/qubes-issues#3225
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/constants.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pyanaconda/constants.py b/pyanaconda/constants.py
+index 3531fdca6..0e6270451 100644
+--- a/pyanaconda/constants.py
++++ b/pyanaconda/constants.py
+@@ -27,7 +27,7 @@ SELINUX_DEFAULT = -1
+ # where to look for 3rd party addons
+ ADDON_PATHS = ["/usr/share/anaconda/addons"]
+ 
+-from pykickstart.constants import AUTOPART_TYPE_LVM
++from pykickstart.constants import AUTOPART_TYPE_LVM_THINP
+ 
+ # common string needs to be easy to change
+ from pyanaconda import product
+@@ -169,7 +169,7 @@ SCREENSHOTS_TARGET_DIRECTORY = "/root/anaconda-screenshots"
+ # cmdline arguments that append instead of overwrite
+ CMDLINE_APPEND = ["modprobe.blacklist", "ifname"]
+ 
+-DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM
++DEFAULT_AUTOPART_TYPE = AUTOPART_TYPE_LVM_THINP
+ 
+ # Default to these units when reading user input when no units given
+ SIZE_UNITS_DEFAULT = "MiB"
+-- 
+2.14.4
+

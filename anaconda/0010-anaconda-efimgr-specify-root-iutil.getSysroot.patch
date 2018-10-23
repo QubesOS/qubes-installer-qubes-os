@@ -1,0 +1,31 @@
+From b0d781737479e11c4b138ef6df4d372d8fbd2503 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
+ <frederic.epitre@orange.fr>
+Date: Fri, 19 Oct 2018 08:02:11 +0200
+Subject: [PATCH] anaconda: efimgr specify root=iutil.getSysroot()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/bootloader.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
+index 083b99f1a..acdfb8322 100644
+--- a/pyanaconda/bootloader.py
++++ b/pyanaconda/bootloader.py
+@@ -1743,7 +1743,8 @@ class EFIBase(object):
+                     log.warning("failed to parse efi boot slot (%s)", slot)
+                     continue
+ 
+-                rc = self.efibootmgr("-b", slot_id, "-B")
++                rc = self.efibootmgr("-b", slot_id, "-B",
++                                     root=iutil.getSysroot())
+                 if rc:
+                     raise BootLoaderError("failed to remove old efi boot entry.  This is most likely a kernel or firmware bug.")
+ 
+-- 
+2.14.4
+

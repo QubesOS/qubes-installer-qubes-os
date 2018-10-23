@@ -1,0 +1,154 @@
+From 5ccbe4b9f6265ac4e07f0539da39db809fc8020a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
+ <frederic.epitre@orange.fr>
+Date: Fri, 19 Oct 2018 08:02:11 +0200
+Subject: [PATCH] anaconda: remove other installclasses
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/installclasses/fedora.py | 58 ---------------------------------
+ pyanaconda/installclasses/rhel.py   | 64 -------------------------------------
+ 2 files changed, 122 deletions(-)
+ delete mode 100644 pyanaconda/installclasses/fedora.py
+ delete mode 100644 pyanaconda/installclasses/rhel.py
+
+diff --git a/pyanaconda/installclasses/fedora.py b/pyanaconda/installclasses/fedora.py
+deleted file mode 100644
+index c9ced65fd..000000000
+--- a/pyanaconda/installclasses/fedora.py
++++ /dev/null
+@@ -1,58 +0,0 @@
+-#
+-# fedora.py
+-#
+-# Copyright (C) 2007  Red Hat, Inc.  All rights reserved.
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-#
+-
+-from pyanaconda.installclass import BaseInstallClass
+-from pyanaconda.product import productName
+-from pyanaconda import network
+-from pyanaconda import nm
+-
+-class FedoraBaseInstallClass(BaseInstallClass):
+-    name = "Fedora"
+-    sortPriority = 10000
+-    if productName.startswith("Red Hat "):          # pylint: disable=no-member
+-        hidden = True
+-
+-    _l10n_domain = "anaconda"
+-
+-    efi_dir = "fedora"
+-
+-    help_placeholder = "FedoraPlaceholder.html"
+-    help_placeholder_with_links = "FedoraPlaceholderWithLinks.html"
+-
+-    def configure(self, anaconda):
+-        BaseInstallClass.configure(self, anaconda)
+-        BaseInstallClass.setDefaultPartitioning(self, anaconda.storage)
+-
+-    def setNetworkOnbootDefault(self, ksdata):
+-        if any(nd.onboot for nd in ksdata.network.network if nd.device):
+-            return
+-        # choose first wired device having link
+-        for dev in nm.nm_devices():
+-            if nm.nm_device_type_is_wifi(dev):
+-                continue
+-            try:
+-                link_up = nm.nm_device_carrier(dev)
+-            except (nm.UnknownDeviceError, nm.PropertyNotFoundError):
+-                continue
+-            if link_up:
+-                network.update_onboot_value(dev, True, ksdata=ksdata)
+-                break
+-
+-    def __init__(self):
+-        BaseInstallClass.__init__(self)
+diff --git a/pyanaconda/installclasses/rhel.py b/pyanaconda/installclasses/rhel.py
+deleted file mode 100644
+index 7e907e4bd..000000000
+--- a/pyanaconda/installclasses/rhel.py
++++ /dev/null
+@@ -1,64 +0,0 @@
+-#
+-# rhel.py
+-#
+-# Copyright (C) 2010  Red Hat, Inc.  All rights reserved.
+-#
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-#
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-#
+-
+-from pyanaconda.installclass import BaseInstallClass
+-from pyanaconda.product import productName
+-from pyanaconda import network
+-from pyanaconda import nm
+-
+-class RHELBaseInstallClass(BaseInstallClass):
+-    name = "Red Hat Enterprise Linux"
+-    sortPriority = 10000
+-    if not productName.startswith("Red Hat "):          # pylint: disable=no-member
+-        hidden = True
+-    defaultFS = "xfs"
+-
+-    bootloaderTimeoutDefault = 5
+-
+-    ignoredPackages = ["ntfsprogs"]
+-
+-    installUpdates = False
+-
+-    _l10n_domain = "comps"
+-
+-    efi_dir = "redhat"
+-
+-    help_placeholder = "RHEL7Placeholder.html"
+-    help_placeholder_with_links = "RHEL7PlaceholderWithLinks.html"
+-
+-    def configure(self, anaconda):
+-        BaseInstallClass.configure(self, anaconda)
+-        BaseInstallClass.setDefaultPartitioning(self, anaconda.storage)
+-
+-    def setNetworkOnbootDefault(self, ksdata):
+-        if any(nd.onboot for nd in ksdata.network.network if nd.device):
+-            return
+-        # choose the device used during installation
+-        # (ie for majority of cases the one having the default route)
+-        dev = network.default_route_device() \
+-              or network.default_route_device(family="inet6")
+-        if not dev:
+-            return
+-        # ignore wireless (its ifcfgs would need to be handled differently)
+-        if nm.nm_device_type_is_wifi(dev):
+-            return
+-        network.update_onboot_value(dev, True, ksdata=ksdata)
+-
+-    def __init__(self):
+-        BaseInstallClass.__init__(self)
+-- 
+2.14.4
+

@@ -1,0 +1,65 @@
+From 1c37fe7581a01b93d1f46b8eb03b37f5cb09bb0e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: fix dracut module to work with reduced dependencies
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Do not fail because of not present url-lib. Also 'loop' module requires manual
+loading now.
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ dracut/anaconda-diskroot         | 2 ++
+ dracut/module-setup.sh           | 2 +-
+ dracut/parse-anaconda-options.sh | 6 +++++-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/dracut/anaconda-diskroot b/dracut/anaconda-diskroot
+index 7e52e052b..230b20418 100755
+--- a/dracut/anaconda-diskroot
++++ b/dracut/anaconda-diskroot
+@@ -43,6 +43,8 @@ kickstart="$(getarg ks= inst.ks=)"
+ 
+ [ -e "/dev/root" ] && exit 1 # we already have a root device!
+ 
++modprobe -q loop
++
+ # If we're waiting for a cdrom kickstart, the user might need to swap discs.
+ # So if this is a CDROM drive, make a note of it, but don't mount it (yet).
+ # Once we get the kickstart either the udev trigger or disk-reinsertion will
+diff --git a/dracut/module-setup.sh b/dracut/module-setup.sh
+index 184036188..9f4e9d48c 100755
+--- a/dracut/module-setup.sh
++++ b/dracut/module-setup.sh
+@@ -7,7 +7,7 @@ check() {
+ }
+ 
+ depends() {
+-    echo livenet nfs img-lib convertfs ifcfg
++    echo img-lib dmsquash-live
+     case "$(uname -m)" in
+         s390*) echo cms ;;
+     esac
+diff --git a/dracut/parse-anaconda-options.sh b/dracut/parse-anaconda-options.sh
+index fa1455f8b..8fce64aed 100755
+--- a/dracut/parse-anaconda-options.sh
++++ b/dracut/parse-anaconda-options.sh
+@@ -2,7 +2,11 @@
+ # parse-anaconda-options.sh - parse installer-specific options
+ 
+ . /lib/anaconda-lib.sh
+-. /lib/url-lib.sh
++if [ -r /lib/url-lib.sh ]; then
++    . /lib/url-lib.sh
++else
++    alias set_http_header=:
++fi
+ 
+ # create the repodir and isodir that anaconda will look for
+ mkdir -p $repodir $isodir
+-- 
+2.14.4
+

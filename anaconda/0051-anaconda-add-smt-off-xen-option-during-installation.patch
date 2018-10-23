@@ -1,0 +1,44 @@
+From 3bf0a8b70e34c5019adf39b1a7439efa93e28ac6 Mon Sep 17 00:00:00 2001
+From: Marek Marczykowski <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:13 +0200
+Subject: [PATCH] anaconda: add smt=off xen option during installation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Defaults set during package installation do not apply, as booloader
+configuration doesn't exist at that stage yet.
+
+Reported by @rustybird
+QubesOS/qubes-issues#4252
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/bootloader.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
+index 27cc480b5..deab41cf1 100644
+--- a/pyanaconda/bootloader.py
++++ b/pyanaconda/bootloader.py
+@@ -1504,7 +1504,7 @@ class GRUB2(GRUB):
+         # boot arguments
+         log.info("bootloader.py: used boot args: %s ", self.boot_args)
+         defaults.write("GRUB_CMDLINE_LINUX=\"%s\"\n" % self.boot_args)
+-        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx ucode=scan\"\n")
++        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx ucode=scan smt=off\"\n")
+         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
+         defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
+         defaults.close()
+@@ -1891,7 +1891,7 @@ class XenEFI(EFIGRUB):
+                 root_args += " rootflags=subvol=%s" % image.device.name
+             config.write("\n")
+             config.write("[{}]\n".format(image.version))
+-            config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx ucode=scan\n")
++            config.write("options=loglvl=all dom0_mem=min:1024M dom0_mem=max:4096M iommu=no-igfx ucode=scan smt=off\n")
+             config.write("kernel={} {} {}\n".format(
+                 image.kernel,
+                 root_args,
+-- 
+2.14.4
+

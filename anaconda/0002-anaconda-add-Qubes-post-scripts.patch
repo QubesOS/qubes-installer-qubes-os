@@ -1,0 +1,89 @@
+From 0cb13168feb3dfd4b9510c89ed3bc005a23795ca Mon Sep 17 00:00:00 2001
+From: Tomasz Sterna <tomek@xiaoka.com>
+Date: Fri, 19 Oct 2018 08:02:11 +0200
+Subject: [PATCH] anaconda: add Qubes post-scripts
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ data/post-scripts/40-qubes-alt-kernels.ks | 20 ++++++++++++++++++++
+ data/post-scripts/50-qubes.ks             |  5 +++++
+ data/post-scripts/60-systemd-preset.ks    | 13 +++++++++++++
+ data/post-scripts/Makefile.am             |  2 +-
+ 4 files changed, 39 insertions(+), 1 deletion(-)
+ create mode 100644 data/post-scripts/40-qubes-alt-kernels.ks
+ create mode 100644 data/post-scripts/50-qubes.ks
+ create mode 100644 data/post-scripts/60-systemd-preset.ks
+
+diff --git a/data/post-scripts/40-qubes-alt-kernels.ks b/data/post-scripts/40-qubes-alt-kernels.ks
+new file mode 100644
+index 000000000..4909a99ee
+--- /dev/null
++++ b/data/post-scripts/40-qubes-alt-kernels.ks
+@@ -0,0 +1,20 @@
++%post --nochroot
++
++for pkg in /run/install/repo/extrakernels/*.rpm; do
++  name=`basename $pkg .rpm`
++  rpm --root=$ANA_INSTALL_PATH -q $name > /dev/null || rpm --root=$ANA_INSTALL_PATH -i --oldpackage $pkg
++done
++
++# Set grub default to the current kernel if running not the latest one
++latest=`basename /run/install/repo/Packages/k/kernel-[0-9]*.rpm .rpm|cut -d- -f2-`
++if [ "$latest" != "`uname -r`" ]; then
++    rootdev=`grep " $ANA_INSTALL_PATH " /proc/mounts | cut -f 1 -d ' '`
++    sysid=`blkid -o value -s UUID $rootdev`
++    xenver=`dmesg | grep 'Xen version:' | sed -e 's/.*version: \([0-9.]\+\).*/\1/'`
++    grubid="gnulinux-advanced-$sysid"
++    grubid="$grubid>xen-hypervisor-$xenver-$sysid"
++    grubid="$grubid>xen-gnulinux-`uname -r`-advanced-$sysid"
++    grub2-set-default --boot-directory=$ANA_INSTALL_PATH/boot "$grubid"
++fi
++
++%end
+diff --git a/data/post-scripts/50-qubes.ks b/data/post-scripts/50-qubes.ks
+new file mode 100644
+index 000000000..1b9238b40
+--- /dev/null
++++ b/data/post-scripts/50-qubes.ks
+@@ -0,0 +1,5 @@
++%post
++
++rpm --import /etc/pki/rpm-gpg/*
++
++%end
+diff --git a/data/post-scripts/60-systemd-preset.ks b/data/post-scripts/60-systemd-preset.ks
+new file mode 100644
+index 000000000..9e6cb3f3a
+--- /dev/null
++++ b/data/post-scripts/60-systemd-preset.ks
+@@ -0,0 +1,13 @@
++%post
++
++# preset all services, to not worry about package installation order (preset
++# files vs services)
++systemctl preset-all
++
++systemctl enable initial-setup.service
++
++# systemctl preset-all disables default target
++# (https://bugzilla.redhat.com/1316387), re-enable it manually
++systemctl set-default graphical.target
++
++%end
+diff --git a/data/post-scripts/Makefile.am b/data/post-scripts/Makefile.am
+index 7d78d4bc3..ad2f6497d 100644
+--- a/data/post-scripts/Makefile.am
++++ b/data/post-scripts/Makefile.am
+@@ -16,5 +16,5 @@
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ postscriptsdir = $(datadir)/$(PACKAGE_NAME)/post-scripts
+-dist_postscripts_DATA = 80-setfilecons.ks 90-copy-screenshots.ks 99-copy-logs.ks
++dist_postscripts_DATA = 40-qubes-alt-kernels.ks 50-qubes.ks 60-systemd-preset.ks 80-setfilecons.ks 90-copy-screenshots.ks 99-copy-logs.ks
+ MAINTAINERCLEANFILES = Makefile.in
+-- 
+2.14.4
+

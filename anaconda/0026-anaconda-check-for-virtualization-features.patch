@@ -1,0 +1,121 @@
+From 1e8e3f8cef09f30e31f878ef4ccade45cb00a6d1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: check for virtualization features
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Warn if the hardware lack features required for proper Qubes OS operation.
+
+Fixes QubesOS/qubes-issues#2977
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/iutil.py                        | 17 +++++++++++++++++
+ pyanaconda/ui/gui/spokes/welcome.glade     |  2 +-
+ pyanaconda/ui/gui/spokes/welcome.py        |  8 ++++++--
+ pyanaconda/ui/tui/spokes/warnings_spoke.py | 16 ++++++++--------
+ 4 files changed, 32 insertions(+), 11 deletions(-)
+
+diff --git a/pyanaconda/iutil.py b/pyanaconda/iutil.py
+index d966ca65c..20ed54302 100644
+--- a/pyanaconda/iutil.py
++++ b/pyanaconda/iutil.py
+@@ -1098,6 +1098,23 @@ def is_unsupported_hw():
+         tainted = 0
+ 
+     status = bool(tainted & UNSUPPORTED_HW)
++    try:
++        xl_info = subprocess.check_output(['xl', 'info'])
++        xl_dmesg = subprocess.check_output(['xl', 'dmesg'])
++    except subprocess.CalledProcessError:
++        status = 'xl call failed'
++    else:
++        missing_features = []
++        for line in xl_info.splitlines():
++            if line.startswith(b'virt_caps'):
++                if b'hvm' not in line:
++                    missing_features.append('HVM/VT-x/AMD-V')
++                if b'hvm_directio' not in line:
++                    missing_features.append('IOMMU/VT-d/AMD-Vi')
++        if b'HVM: Hardware Assisted Paging (HAP) detected' not in xl_dmesg:
++            missing_features.append('HAP/SLAT/EPT/RVI')
++        status = ', '.join(missing_features)
++
+     if status:
+         log.debug("Installing on Unsupported Hardware")
+     return status
+diff --git a/pyanaconda/ui/gui/spokes/welcome.glade b/pyanaconda/ui/gui/spokes/welcome.glade
+index 2373a75f1..87e5bf0e9 100644
+--- a/pyanaconda/ui/gui/spokes/welcome.glade
++++ b/pyanaconda/ui/gui/spokes/welcome.glade
+@@ -507,7 +507,7 @@
+                 <property name="visible">True</property>
+                 <property name="can_focus">False</property>
+                 <property name="valign">start</property>
+-                <property name="label" translatable="yes">This hardware (or a combination thereof) is not supported by Red Hat.  For more information on supported hardware, please refer to http://www.redhat.com/hardware.</property>
++                <property name="label" translatable="yes">This hardware lack features required by Qubes OS. Missing features: %(features)s. For more information on supported hardware, please refer to https://www.qubes-os.org/system-requirements/</property>
+                 <property name="wrap">True</property>
+                 <attributes>
+                   <attribute name="font-desc" value="Cantarell 12"/>
+diff --git a/pyanaconda/ui/gui/spokes/welcome.py b/pyanaconda/ui/gui/spokes/welcome.py
+index c77e36214..802a2179b 100644
+--- a/pyanaconda/ui/gui/spokes/welcome.py
++++ b/pyanaconda/ui/gui/spokes/welcome.py
+@@ -295,9 +295,13 @@ class WelcomeLanguageSpoke(LangLocaleHandler, StandaloneSpoke):
+                 sys.exit(0)
+ 
+         # pylint: disable=no-member
+-        if productName.startswith("Red Hat ") and \
+-          is_unsupported_hw() and not self.data.unsupportedhardware.unsupported_hardware:
++        unsupported_status = is_unsupported_hw()
++        if unsupported_status:
++            # Fedora kickstart do not have unsupported_hardware option:
++            #   and not self.data.unsupportedhardware.unsupported_hardware:
+             dlg = self.builder.get_object("unsupportedHardwareDialog")
++            msg = self.builder.get_object("unsupportedHardwareDesc")
++            msg.set_text(_(msg.get_text()) % {'features': unsupported_status})
+             with self.main_window.enlightbox(dlg):
+                 rc = dlg.run()
+                 dlg.destroy()
+diff --git a/pyanaconda/ui/tui/spokes/warnings_spoke.py b/pyanaconda/ui/tui/spokes/warnings_spoke.py
+index 6334c656c..8aed09625 100644
+--- a/pyanaconda/ui/tui/spokes/warnings_spoke.py
++++ b/pyanaconda/ui/tui/spokes/warnings_spoke.py
+@@ -43,15 +43,15 @@ class WarningsSpoke(StandaloneTUISpoke):
+     def __init__(self, *args, **kwargs):
+         StandaloneTUISpoke.__init__(self, *args, **kwargs)
+ 
+-        self._message = _("This hardware (or a combination thereof) is not "
+-                          "supported by Red Hat.  For more information on "
+-                          "supported hardware, please refer to "
+-                          "http://www.redhat.com/hardware.")
++        self._message = _("This hardware lack features required by Qubes OS. "
++                          "Missing features: %(features)s. "
++                          "For more information on supported hardware, "
++                          "please refer to https://www.qubes-os.org/system-requirements/")
+         # Does anything need to be displayed?
+         # pylint: disable=no-member
+-        self._unsupported = productName.startswith("Red Hat ") and \
+-                            is_unsupported_hw() and \
+-                            not self.data.unsupportedhardware.unsupported_hardware
++        #   self._unsupported = not self.data.unsupportedhardware.unsupported_hardware \
++        #                       and is_unsupported_hw()
++        self._unsupported = is_unsupported_hw()
+ 
+     @property
+     def completed(self):
+@@ -60,7 +60,7 @@ class WarningsSpoke(StandaloneTUISpoke):
+     def refresh(self, args=None):
+         StandaloneTUISpoke.refresh(self, args)
+ 
+-        self._window += [TextWidget(self._message), ""]
++        self._window += [TextWidget(self._message % {'features': self._unsupported}), ""]
+ 
+         return True
+ 
+-- 
+2.14.4
+

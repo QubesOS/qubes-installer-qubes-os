@@ -1,0 +1,30 @@
+From 4efdab482cd1b73f58abf4f6cf16be4965ab49ee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Pierret=20=28fepitre=29?=
+ <frederic.epitre@orange.fr>
+Date: Fri, 19 Oct 2018 08:02:11 +0200
+Subject: [PATCH] anaconda: add options can_dual_boot and can_update to grub
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/bootloader.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
+index b6488c5fd..083b99f1a 100644
+--- a/pyanaconda/bootloader.py
++++ b/pyanaconda/bootloader.py
+@@ -1403,6 +1403,8 @@ class GRUB2(GRUB):
+     defaults_file = "/etc/default/grub"
+     terminal_type = "gfxterm"
+     stage2_max_end = None
++    can_dual_boot = True
++    can_update = True
+ 
+     # requirements for boot devices
+     stage2_device_types = ["partition", "mdarray", "lvmlv"]
+-- 
+2.14.4
+

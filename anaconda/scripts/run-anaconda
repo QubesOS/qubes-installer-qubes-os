@@ -1,6 +1,0 @@
-#!/usr/bin/bash
-#
-# Quick script to attach to tmux where anaconda is running
-#
-
-/usr/bin/tmux -u attach -t anaconda

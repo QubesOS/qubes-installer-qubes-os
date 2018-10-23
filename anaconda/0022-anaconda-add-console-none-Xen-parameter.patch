@@ -1,0 +1,29 @@
+From 9891905a9d0b3ae52fafdfeae35b062a9b94bccb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Fri, 19 Oct 2018 08:02:12 +0200
+Subject: [PATCH] anaconda: add "console=none" Xen parameter
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
+---
+ pyanaconda/bootloader.py | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pyanaconda/bootloader.py b/pyanaconda/bootloader.py
+index fa56b532a..0e5a9a062 100644
+--- a/pyanaconda/bootloader.py
++++ b/pyanaconda/bootloader.py
+@@ -1504,6 +1504,7 @@ class GRUB2(GRUB):
+         # boot arguments
+         log.info("bootloader.py: used boot args: %s ", self.boot_args)
+         defaults.write("GRUB_CMDLINE_LINUX=\"%s\"\n" % self.boot_args)
++        defaults.write("GRUB_CMDLINE_XEN_DEFAULT=\"console=none\"\n")
+         defaults.write("GRUB_DISABLE_RECOVERY=\"true\"\n")
+         defaults.write("GRUB_THEME=\"/boot/grub2/themes/system/theme.txt\"\n")
+         defaults.close()
+-- 
+2.14.4
+
