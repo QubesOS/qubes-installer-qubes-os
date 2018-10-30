@@ -84,7 +84,7 @@ index 000000000..e98912b63
 +    def setDefaultPartitioning(self, storage):
 +        BaseInstallClass.setDefaultPartitioning(self,
 +                                                storage)
-+        for autoreq in storage.autopart_requests:
++        for autoreq in list(storage.autopart_requests):
 +            if autoreq.mountpoint == "/":
 +                autoreq.max_size=None
 +                autoreq.required_space=Size("10GiB")
