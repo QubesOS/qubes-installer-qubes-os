@@ -228,7 +228,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         self.qubes_user = None
         self.qubes_gid = None
-        self.default_template = 'fedora-28'
+        self.default_template = 'fedora-29'
 
         self.set_stage("Start-up")
         self.done = False
