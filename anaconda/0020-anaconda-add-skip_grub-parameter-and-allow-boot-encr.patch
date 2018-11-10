@@ -2,16 +2,14 @@ From fd7575cbd24f9f72447755995cd9e6694e23f149 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
  <marmarek@invisiblethingslab.com>
 Date: Fri, 19 Oct 2018 08:02:12 +0200
-Subject: [PATCH] anaconda: don't force non-encrypted /boot on coreboot systems
+Subject: [PATCH] anaconda: add skip_grub parameter and allow boot encryption and the lvmlv format
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-With grub payload it is possible to have all the partitions encrypted.
+On coreboot systems, as grub2 can be used a payload it is possible to have all the partitions encrypted.
 
-Based on patch by @tlaurion
-
-Fixes QubesOS/qubes-issues#2118
+Based on commits bf803e7 and 62cb1ca.
 
 Signed-off-by: Frédéric Pierret <frederic.epitre@orange.fr>
 ---
