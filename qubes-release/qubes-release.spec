@@ -14,6 +14,7 @@ Obsoletes:	redhat-release
 Provides:	fedora-release = %{fedora_base_version}-%{release}
 Provides:	redhat-release = %{fedora_base_version}-%{release}
 Provides:	system-release = %{fedora_base_version}-%{release}
+Provides:	system-release(releasever) = %{version}
 Obsoletes:	qubes-dom0-dist-upgrade <= 3.2
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
