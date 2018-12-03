@@ -37,7 +37,7 @@ Patch16: 0016-anaconda-Do-not-fail-during-initramfs-start-up-due-t.patch
 Patch17: 0017-anaconda-Disable-the-NTP-configuration-spoke.patch
 Patch18: 0018-anaconda-drop-useless-on-Qubes-dependencies-on-netwo.patch
 Patch19: 0019-anaconda-skip-NTP-installation-and-setup-in-dom0.patch
-Patch20: 0020-anaconda-don-t-force-non-encrypted-boot-on-coreboot-.patch
+Patch20: 0020-anaconda-add-skip_grub-parameter-and-allow-boot-encr.patch
 Patch21: 0021-anaconda-switch-default-partitioning-scheme-to-LVM-T.patch
 Patch22: 0022-anaconda-add-console-none-Xen-parameter.patch
 Patch23: 0023-anaconda-add-dom0_mem-min-1024M-to-default-xen-cmdli.patch
