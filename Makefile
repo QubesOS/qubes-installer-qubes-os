@@ -30,6 +30,7 @@ else
     ISO_VERSION := $(shell date +%Y%m%d)
 endif
 PUNGI_OPTS += --ver="$(ISO_VERSION)"
+PUNGI_OPTS += --rootfs-size=4
 
 INSTALLER_KICKSTART ?= $(PWD)/conf/qubes-kickstart.cfg
 LIVE_KICKSTART ?= $(PWD)/conf/liveusb.ks
