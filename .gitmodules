@@ -1,0 +1,3 @@
+[submodule "qubes-release"]
+	path = qubes-release
+	url = https://github.com/fepitre/qubes-qubes-release
