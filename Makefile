@@ -82,6 +82,9 @@ clean-repos:
 clean:
 	sudo rm -fr build/*
 
+get-sources:
+	git submodule update --init --recursive
+
 ifeq ($(ISO_LIVEUSB),1)
 get-sources:
 	$(MAKE) -C livecd-tools get-sources
