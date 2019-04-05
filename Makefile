@@ -60,6 +60,7 @@ iso-installer: iso-prepare
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso
 	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD*.iso build/ISO/qubes-x86_64/iso/
+	echo $(ISO_VERSION) > build/ISO/qubes-x86_64/iso/build_latest
 	rm -rf build/work
 	mv work build/work
 	chown --reference=Makefile -R build yum
