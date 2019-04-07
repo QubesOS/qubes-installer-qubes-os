@@ -1405,6 +1405,13 @@
       <packagereq type="default">qubes-pdf-converter-dom0</packagereq>
       <packagereq type="default">qubes-usb-proxy-dom0</packagereq>
       <packagereq type="default">libvirt-client</packagereq>
+      <!--
+      We add 'kernel-latest' and 'kernel-latest-qubes-vm' only as
+      optional because it is not included in stable official releases
+      but only in testing releases with latest kernels
+      -->
+      <packagereq type="optional">kernel-latest</packagereq>
+      <packagereq type="optional">kernel-latest-qubes-vm</packagereq>
     </packagelist>
   </group>
 
