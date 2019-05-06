@@ -57,7 +57,7 @@ iso-prepare:
 
 iso-installer: iso-prepare
 	mkdir -p work
-	pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(INSTALLER_KICKSTART) && popd
+	umask 022; pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(INSTALLER_KICKSTART) && popd
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso
 	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD*.iso build/ISO/qubes-x86_64/iso/Qubes-$(ISO_VERSION)-x86_64.iso
