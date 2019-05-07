@@ -27,7 +27,7 @@ ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
     PUNGI_OPTS += --isfinal
 else
-    ISO_VERSION := $(shell date +%Y%m%d)
+    ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
 PUNGI_OPTS += --ver="$(ISO_VERSION)"
 PUNGI_OPTS += --rootfs-size=4
