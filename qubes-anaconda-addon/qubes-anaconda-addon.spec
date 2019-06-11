@@ -25,16 +25,12 @@ at first boot time.
 %install
 rm -rf $RPM_BUILD_ROOT
 
-install -d $RPM_BUILD_ROOT/%{_datadir}/qubes
-install --mode 0755 firstboot-qubes-text $RPM_BUILD_ROOT/%{_datadir}/qubes/firstboot-qubes-text
-
 install -d $RPM_BUILD_ROOT/%{_datadir}/anaconda/addons
 cp -a org_qubes_os_initial_setup $RPM_BUILD_ROOT/%{_datadir}/anaconda/addons/
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE README
-%{_datadir}/qubes/firstboot-qubes-text
 %dir %{_datadir}/anaconda/addons/org_qubes_os_initial_setup
 %{_datadir}/anaconda/addons/org_qubes_os_initial_setup/*
 

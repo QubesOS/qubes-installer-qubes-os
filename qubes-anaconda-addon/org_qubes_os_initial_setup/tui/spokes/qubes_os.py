@@ -27,11 +27,11 @@
 _ = lambda x: x
 N_ = lambda x: x
 
-import subprocess
-
 from pyanaconda.ui.categories.system import SystemCategory
 from pyanaconda.ui.tui.spokes import NormalTUISpoke
-from pyanaconda.constants_text import INPUT_PROCESSED, INPUT_DISCARDED
+from simpleline.render.containers import ListColumnContainer
+from simpleline.render.widgets import CheckboxWidget
+from simpleline.render.screen import InputState
 from pyanaconda.ui.common import FirstbootOnlySpokeMixIn
 
 # export only the HelloWorldSpoke and HelloWorldEditSpoke classes
@@ -51,21 +51,14 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
 
     ### class attributes defined by API ###
 
-    # title of the spoke
-    title = N_("Qubes OS")
 
     # category this spoke belongs to
     category = SystemCategory
 
-    def __init__(self, app, data, storage, payload, instclass):
+    def __init__(self, data, storage, payload, instclass):
         """
         :see: pyanaconda.ui.tui.base.UIScreen
         :see: pyanaconda.ui.tui.base.App
-        :param app: reference to application which is a main class for TUI
-                    screen handling, it is responsible for mainloop control
-                    and keeping track of the stack where all TUI screens are
-                    scheduled
-        :type app: instance of pyanaconda.ui.tui.base.App
         :param data: data object passed to every spoke to load/store data
                      from/to it
         :type data: pykickstart.base.BaseHandler
@@ -79,9 +72,22 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
 
         """
 
-        NormalTUISpoke.__init__(self, app, data, storage, payload, instclass)
+        NormalTUISpoke.__init__(self, data, storage, payload, instclass)
 
-        self.done = False
+        self.initialize_start()
+
+        # title of the spoke
+        self.title = N_("Qubes OS")
+
+        self._container = None
+
+        self.qubes_data = self.data.addons.org_qubes_os_initial_setup
+
+        for attr in self.qubes_data.bool_options:
+            setattr(self, '_' + attr, getattr(self.qubes_data, attr))
+
+        self.initialize_done()
+
 
     def initialize(self):
         """
@@ -94,6 +100,10 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
         """
 
         NormalTUISpoke.initialize(self)
+
+    def _add_checkbox(self, name, title):
+        w = CheckboxWidget(title=title, completed=getattr(self, name))
+        self._container.add(w, self._set_checkbox, name)
 
     def refresh(self, args=None):
         """
@@ -110,8 +120,44 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
         :rtype: bool
 
         """
+        super(QubesOsSpoke, self).refresh()
+        self._container = ListColumnContainer(1)
 
-        return True
+        w = CheckboxWidget(title=_('Create default system qubes '
+                                   '(sys-net, sys-firewall, default DispVM)'),
+                           completed=self._system_vms)
+        self._container.add(w, self._set_checkbox, '_system_vms')
+        w = CheckboxWidget(title=_('Create default application qubes '
+                                   '(personal, work, untrusted, vault)'),
+                           completed=self._default_vms)
+        self._container.add(w, self._set_checkbox, '_default_vms')
+        if self.qubes_data.whonix_available:
+            w = CheckboxWidget(
+                title=_('Create Whonix Gateway and Workstation qubes '
+                        '(sys-whonix, anon-whonix)'),
+                completed=self._whonix_vms)
+            self._container.add(w, self._set_checkbox, '_whonix_vms')
+        if self._whonix_vms:
+            w = CheckboxWidget(
+                title=_('Enable system and template updates over the Tor anonymity '
+                        'network using Whonix'),
+                completed=self._whonix_default)
+            self._container.add(w, self._set_checkbox, '_whonix_default')
+        if self.qubes_data.usbvm_available:
+            w = CheckboxWidget(
+                title=_('Create USB qube holding all USB controllers (sys-usb)'),
+                completed=self._usbvm)
+            self._container.add(w, self._set_checkbox, '_usbvm')
+        if self._usbvm:
+            w = CheckboxWidget(
+                title=_('Use sys-net qube for both networking and USB devices'),
+                completed=self._usbvm_with_netvm)
+            self._container.add(w, self._set_checkbox, '_usbvm_with_netvm')
+
+        self.window.add_with_separator(self._container)
+
+    def _set_checkbox(self, name):
+        setattr(self, name, not getattr(self, name))
 
     def apply(self):
         """
@@ -120,10 +166,10 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
 
         """
 
-        proc = subprocess.Popen(["/usr/share/qubes/firstboot-qubes-text"])
-        proc.wait()
+        for attr in self.qubes_data.bool_options:
+            setattr(self.qubes_data, attr, getattr(self, '_' + attr))
 
-        self.done = True
+        self.qubes_data.seen = True
 
     def execute(self):
         """
@@ -147,7 +193,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
 
         """
 
-        return self.done
+        return self.qubes_data.seen
 
     @property
     def status(self):
@@ -179,28 +225,8 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalTUISpoke):
 
         """
 
-        if key:
-            # Do something with the user's input.
-            pass
+        if self._container.process_user_input(key):
+            self.apply()
+            return InputState.PROCESSED_AND_REDRAW
 
-        # no other actions scheduled, apply changes
-        self.apply()
-
-        # close the current screen (remove it from the stack)
-        self.close()
-        return INPUT_PROCESSED
-
-    def prompt(self, args=None):
-        """
-        The prompt method that is called by the main loop to get the prompt
-        for this screen.
-
-        :param args: optional argument that can be passed to App.switch_screen*
-                     methods
-        :type args: anything
-        :return: text that should be used in the prompt for the input
-        :rtype: unicode|None
-
-        """
-
-        return _("Please press enter to start Qubes OS configuration.")
+        return super().input(args, key)

@@ -178,6 +178,8 @@ class QubesData(AddonData):
     def set_stage(self, stage):
         if self.thread_dialog is not None:
             self.thread_dialog.set_text(stage)
+        else:
+            print(stage)
 
     def do_setup(self):
         qubes_gid = grp.getgrnam('qubes').gr_gid
