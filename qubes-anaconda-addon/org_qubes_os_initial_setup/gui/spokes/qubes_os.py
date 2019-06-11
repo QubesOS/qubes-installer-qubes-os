@@ -29,15 +29,7 @@
 _ = lambda x: x
 N_ = lambda x: x
 
-import distutils.version
-import functools
-import grp
 import logging
-import os
-import os.path
-import pyudev
-import subprocess
-import threading
 
 import gi
 
@@ -46,10 +38,7 @@ gi.require_version('Gdk', '3.0')
 gi.require_version('GLib', '2.0')
 
 from gi.repository import Gtk
-from gi.repository import Gdk
-from gi.repository import GLib
 
-from pyanaconda import iutil
 from pyanaconda.ui.categories.system import SystemCategory
 from pyanaconda.ui.gui.spokes import NormalSpoke
 from pyanaconda.ui.common import FirstbootOnlySpokeMixIn
@@ -57,53 +46,15 @@ from pyanaconda.ui.common import FirstbootOnlySpokeMixIn
 # export only the spoke, no helper functions, classes or constants
 __all__ = ["QubesOsSpoke"]
 
-def is_package_installed(pkgname):
-    pkglist = subprocess.check_output(['rpm', '-qa', pkgname])
-    return bool(pkglist)
-
-def usb_keyboard_present():
-    context = pyudev.Context()
-    keyboards = context.list_devices(subsystem='input', ID_INPUT_KEYBOARD='1')
-    return any([d.get('ID_USB_INTERFACES', False) for d in keyboards])
-
-def started_from_usb():
-    def get_all_used_devices(dev):
-        stat = os.stat(dev)
-        if stat.st_rdev:
-            # XXX any better idea how to handle device-mapper?
-            sysfs_slaves = '/sys/dev/block/{}:{}/slaves'.format(
-                os.major(stat.st_rdev), os.minor(stat.st_rdev))
-            if os.path.exists(sysfs_slaves):
-                for slave_dev in os.listdir(sysfs_slaves):
-                    for d in get_all_used_devices('/dev/{}'.format(slave_dev)):
-                        yield d
-            else:
-                yield dev
-
-    context = pyudev.Context()
-    mounts = open('/proc/mounts').readlines()
-    for mount in mounts:
-        device = mount.split(' ')[0]
-        if not os.path.exists(device):
-            continue
-        for dev in get_all_used_devices(device):
-            udev_info = pyudev.Device.from_device_file(context, dev)
-            if udev_info.get('ID_USB_INTERFACES', False):
-                return True
-
-    return False
-
 class QubesChoice(object):
     instances = []
 
-    def __init__(self, label, states, depend=None, extra_check=None,
-                 replace=None, indent=False):
+    def __init__(self, label, depend=None, extra_check=None,
+                 indent=False):
         self.widget = Gtk.CheckButton(label=label)
-        self.states = states
         self.depend = depend
         self.extra_check = extra_check
         self.selected = None
-        self.replace = replace
 
         self._can_be_sensitive = True
 
@@ -129,6 +80,11 @@ class QubesChoice(object):
                 if self.selected is not None
                 else self.widget.get_sensitive() and self.widget.get_active())
 
+    def set_selected(self, value):
+        self.widget.set_active(value)
+        if self.selected is not None:
+            self.selected = value
+
     def store_selected(self):
         self.selected = self.get_selected()
 
@@ -146,26 +102,13 @@ class QubesChoice(object):
             choice.set_sensitive(not selected and
                 (choice.depend is None or choice.depend.get_selected()))
 
-    @classmethod
-    def get_states(cls):
-        replaced = functools.reduce(
-            lambda x, y: x+y if y else x,
-            (choice.replace for choice in cls.instances if
-             choice.get_selected()),
-            ()
-        )
-        for choice in cls.instances:
-            if choice.get_selected():
-                for state in choice.states:
-                    if state not in replaced:
-                        yield state
-
 
 class DisabledChoice(QubesChoice):
     def __init__(self, label):
-        super(DisabledChoice, self).__init__(label, ())
+        super(DisabledChoice, self).__init__(label)
         self.widget.set_sensitive(False)
         self._can_be_sensitive = False
+
 
 class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
     """
@@ -226,55 +169,43 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         self.main_box = self.builder.get_object("mainBox")
         self.thread_dialog = None
 
-        self.qubes_user = None
-        self.qubes_gid = None
-        self.default_template = 'fedora-30'
-
-        self.set_stage("Start-up")
-        self.done = False
+        self.qubes_data = self.data.addons.org_qubes_os_initial_setup
 
         self.__init_qubes_choices()
 
     def __init_qubes_choices(self):
-        self.choice_network = QubesChoice(
-            _('Create default system qubes (sys-net, sys-firewall, default DispVM)'),
-            ('qvm.sys-net', 'qvm.sys-firewall', 'qvm.default-dispvm'))
+        self.choice_system = QubesChoice(
+            _('Create default system qubes (sys-net, sys-firewall, default DispVM)'))
 
         self.choice_default = QubesChoice(
             _('Create default application qubes '
                 '(personal, work, untrusted, vault)'),
-            ('qvm.personal', 'qvm.work', 'qvm.untrusted', 'qvm.vault'),
-            depend=self.choice_network)
+            depend=self.choice_system)
 
-        if (is_package_installed('qubes-template-whonix-gw*') and
-                is_package_installed('qubes-template-whonix-ws*')):
+        if self.qubes_data.whonix_available:
             self.choice_whonix = QubesChoice(
                 _('Create Whonix Gateway and Workstation qubes '
                     '(sys-whonix, anon-whonix)'),
-                ('qvm.sys-whonix', 'qvm.anon-whonix'),
-                depend=self.choice_network)
+                depend=self.choice_system)
         else:
             self.choice_whonix = DisabledChoice(_("Whonix not installed"))
 
         self.choice_whonix_updates = QubesChoice(
             _('Enable system and template updates over the Tor anonymity '
               'network using Whonix'),
-            ('qvm.updates-via-whonix',),
             depend=self.choice_whonix,
             indent=True)
 
-        if not usb_keyboard_present() and not started_from_usb():
+        if self.qubes_data.usbvm_available:
             self.choice_usb = QubesChoice(
-                _('Create USB qube holding all USB controllers (sys-usb)'),
-                ('qvm.sys-usb',))
+                _('Create USB qube holding all USB controllers (sys-usb)'))
         else:
             self.choice_usb = DisabledChoice(
                 _('USB qube configuration disabled - you are using USB '
                   'keyboard or USB disk'))
 
-        self.choice_usb_with_net = QubesChoice(
+        self.choice_usb_with_netvm = QubesChoice(
             _("Use sys-net qube for both networking and USB devices"),
-            ('pillar.qvm.sys-net-as-usbvm',),
             depend=self.choice_usb,
             indent=True
         )
@@ -289,7 +220,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         self.check_advanced.set_active(False)
 
-        self.choice_network.widget.set_active(True)
+        self.choice_system.widget.set_active(True)
         self.choice_default.widget.set_active(True)
         if self.choice_whonix.widget.get_sensitive():
             self.choice_whonix.widget.set_active(True)
@@ -307,6 +238,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         """
 
         NormalSpoke.initialize(self)
+        self.qubes_data.gui_mode = True
 
     def refresh(self):
         """
@@ -318,8 +250,12 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         """
 
-        # nothing to do here
-        pass
+        self.choice_system.set_selected(self.qubes_data.system_vms)
+        self.choice_default.set_selected(self.qubes_data.default_vms)
+        self.choice_whonix.set_selected(self.qubes_data.whonix_vms)
+        self.choice_whonix_updates.set_selected(self.qubes_data.whonix_default)
+        self.choice_usb.set_selected(self.qubes_data.usbvm)
+        self.choice_usb_with_netvm.set_selected(self.qubes_data.usbvm_with_netvm)
 
     def apply(self):
         """
@@ -328,8 +264,16 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         """
 
-        # nothing to do here
-        pass
+        self.qubes_data.skip = self.check_advanced.get_active()
+
+        self.qubes_data.system_vms = self.choice_system.get_selected()
+        self.qubes_data.default_vms = self.choice_default.get_selected()
+        self.qubes_data.whonix_vms = self.choice_whonix.get_selected()
+        self.qubes_data.whonix_default = self.choice_whonix_updates.get_selected()
+        self.qubes_data.usbvm = self.choice_usb.get_selected()
+        self.qubes_data.usbvm_with_netvm = self.choice_usb_with_netvm.get_selected()
+
+        self.qubes_data.seen = True
 
     @property
     def ready(self):
@@ -354,7 +298,7 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
 
         """
 
-        return self.done
+        return self.qubes_data.seen
 
     @property
     def mandatory(self):
@@ -388,274 +332,4 @@ class QubesOsSpoke(FirstbootOnlySpokeMixIn, NormalSpoke):
         the values set in the GUI elements.
 
         """
-        for choice in QubesChoice.instances:
-            choice.store_selected()
-
-        self.thread_dialog = ThreadDialog("Qubes OS Setup", self.do_setup, (), transient_for=self.main_window)
-        self.thread_dialog.run()
-        self.thread_dialog.destroy()
-
-    def do_setup(self, *args):
-        try:
-            self.qubes_gid = grp.getgrnam('qubes').gr_gid
-
-            qubes_users = grp.getgrnam('qubes').gr_mem
-
-            if len(qubes_users) < 1:
-                self.showErrorMessage(_("You must create a user account to create default VMs."))
-                return
-            else:
-                self.qubes_user = qubes_users[0]
-
-            if self.check_advanced.get_active():
-                return
-
-            errors = []
-
-            os.setgid(self.qubes_gid)
-            os.umask(0o0007)
-
-            self.configure_default_kernel()
-
-            # Finish template(s) installation, because it wasn't fully possible
-            # from anaconda (it isn't possible to start a VM there).
-            # This is specific to firstboot, not general configuration.
-            for template in os.listdir('/var/lib/qubes/vm-templates'):
-                try:
-                    self.configure_template(template,
-                        '/var/lib/qubes/vm-templates/' + template)
-                except Exception as e:
-                    errors.append((self.stage, str(e)))
-
-            self.configure_dom0()
-            self.configure_default_template()
-            self.configure_qubes()
-            if self.choice_network.get_selected():
-                self.configure_network()
-            if self.choice_usb.get_selected() and not self.choice_usb_with_net.get_selected():
-                # Workaround for #1464 (so qvm.start from salt can't be used)
-                self.run_command(['systemctl', 'start', 'qubes-vm@sys-usb.service'])
-
-            try:
-                self.configure_default_dvm()
-            except Exception as e:
-                errors.append((self.stage, str(e)))
-
-            if errors:
-                msg = ""
-                for (stage, error) in errors:
-                    msg += "{} failed:\n{}\n\n".format(stage, error)
-
-                raise Exception(msg)
-
-        except Exception as e:
-            self.showErrorMessage(str(e))
-
-        finally:
-            self.thread_dialog.done()
-            self.done = True
-
-    def set_stage(self, stage):
-        self.stage = stage
-
-        if self.thread_dialog != None:
-            self.thread_dialog.set_text(stage)
-
-    def run_command(self, command, stdin=None, ignore_failure=False):
-        process_error = None
-
-        try:
-            sys_root = iutil.getSysroot()
-
-            cmd = iutil.startProgram(command, stderr=subprocess.PIPE, stdin=stdin, root=sys_root)
-
-            (stdout, stderr) = cmd.communicate()
-
-            stdout = stdout.decode("utf-8")
-            stderr = stderr.decode("utf-8")
-
-            if not ignore_failure and cmd.returncode != 0:
-                process_error = "{} failed:\nstdout: \"{}\"\nstderr: \"{}\"".format(command, stdout, stderr)
-
-        except Exception as e:
-            process_error = str(e)
-
-        if process_error:
-            self.logger.error(process_error)
-            raise Exception(process_error)
-
-        return (stdout, stderr)
-
-    def configure_default_kernel(self):
-        self.set_stage("Setting up default kernel")
-        installed_kernels = os.listdir('/var/lib/qubes/vm-kernels')
-        installed_kernels = [distutils.version.LooseVersion(x) for x in installed_kernels]
-        default_kernel = str(sorted(installed_kernels)[-1])
-        self.run_command(['/usr/bin/qubes-prefs', 'default-kernel', default_kernel])
-
-    def configure_dom0(self):
-        self.set_stage("Setting up administration VM (dom0)")
-
-        for service in [ 'rdisc', 'kdump', 'libvirt-guests', 'salt-minion' ]:
-            self.run_command(['systemctl', 'disable', '{}.service'.format(service) ], ignore_failure=True)
-            self.run_command(['systemctl', 'stop',    '{}.service'.format(service) ], ignore_failure=True)
-
-    def configure_qubes(self):
-        self.set_stage('Executing qubes configuration')
-
-        try:
-            # get rid of initial entries (from package installation time)
-            os.rename('/var/log/salt/minion', '/var/log/salt/minion.install')
-        except OSError:
-            pass
-
-        # Refresh minion configuration to make sure all installed formulas are included
-        self.run_command(['qubesctl', 'saltutil.clear_cache'])
-        self.run_command(['qubesctl', 'saltutil.sync_all'])
-
-        for state in QubesChoice.get_states():
-            print("Setting up state: {}".format(state))
-            if state.startswith('pillar.'):
-                self.run_command(['qubesctl', 'top.enable',
-                    state[len('pillar.'):], 'pillar=True'])
-            else:
-                self.run_command(['qubesctl', 'top.enable', state])
-
-        try:
-            self.run_command(['qubesctl', 'state.highstate'])
-            # After successful call disable all the states to not leave them
-            # enabled, to not interfere with later user changes (like assigning
-            # additional PCI devices)
-            for state in QubesChoice.get_states():
-                if not state.startswith('pillar.'):
-                    self.run_command(['qubesctl', 'top.disable', state])
-        except Exception:
-            raise Exception(
-                    ("Qubes initial configuration failed. Login to the system and " +
-                     "check /var/log/salt/minion for details. " +
-                     "You can retry configuration by calling " +
-                     "'sudo qubesctl state.highstate' in dom0 (you will get " +
-                     "detailed state there)."))
-
-    def configure_default_template(self):
-        self.set_stage('Setting default template')
-        self.run_command(['/usr/bin/qubes-prefs', 'default-template', self.default_template])
-
-    def configure_default_dvm(self):
-        self.set_stage("Creating default DisposableVM")
-
-        dispvm_name = self.default_template + '-dvm'
-        self.run_command(['/usr/bin/qubes-prefs', 'default-dispvm',
-            dispvm_name])
-
-    def configure_network(self):
-        self.set_stage('Setting up networking')
-
-        default_netvm = 'sys-firewall'
-        updatevm = default_netvm
-        if self.choice_whonix_updates.get_selected():
-            updatevm = 'sys-whonix'
-
-        self.run_command(['/usr/bin/qvm-prefs', 'sys-firewall', 'netvm', 'sys-net'])
-        self.run_command(['/usr/bin/qubes-prefs', 'default-netvm', default_netvm])
-        self.run_command(['/usr/bin/qubes-prefs', 'updatevm', updatevm])
-        self.run_command(['/usr/bin/qubes-prefs', 'clockvm', 'sys-net'])
-        self.run_command(['/usr/bin/qvm-start', default_netvm])
-
-    def configure_template(self, template, path):
-        self.set_stage("Configuring TemplateVM {}".format(template))
-        self.run_command(['qvm-template-postprocess', '--really', 'post-install', template, path])
-
-    def showErrorMessage(self, text):
-        self.thread_dialog.run_in_ui_thread(self.showErrorMessageHelper, text)
-
-    def showErrorMessageHelper(self, text):
-        dlg = Gtk.MessageDialog(title="Error", message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.OK, text=text)
-        dlg.set_position(Gtk.WindowPosition.CENTER)
-        dlg.set_modal(True)
-        dlg.set_transient_for(self.thread_dialog)
-        dlg.run()
-        dlg.destroy()
-
-class ThreadDialog(Gtk.Dialog):
-    def __init__(self, title, fun, args, transient_for=None):
-        Gtk.Dialog.__init__(self, title=title, transient_for=transient_for)
-
-        self.set_modal(True)
-        self.set_default_size(500, 100)
-
-        self.connect('delete-event', self.on_delete_event)
-
-        self.progress = Gtk.ProgressBar()
-        self.progress.set_pulse_step(100)
-        self.progress.set_text("")
-        self.progress.set_show_text(False)
-
-        self.label = Gtk.Label()
-        self.label.set_line_wrap(True)
-        self.label.set_text("")
-
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box.pack_start(self.progress, True, True, 0)
-        self.box.pack_start(self.label, True, True, 0)
-
-        self.get_content_area().pack_start(self.box, True, True, 0)
-
-        self.fun = fun
-        self.args = args
-
-        self.logger = logging.getLogger("anaconda")
-
-        self.thread = threading.Thread(target=self.fun, args=self.args)
-
-    def on_delete_event(self, widget=None, *args):
-        # Ignore the clicks on the close button by returning True.
-        self.logger.info("Caught delete-event")
-        return True
-
-    def set_text(self, text):
-        Gdk.threads_add_timeout(GLib.PRIORITY_DEFAULT, 0, self.label.set_text, text)
-
-    def done(self):
-        Gdk.threads_add_timeout(GLib.PRIORITY_DEFAULT, 100, self.done_helper, ())
-
-    def done_helper(self, *args):
-        self.logger.info("Joining thread.")
-        self.thread.join()
-
-        self.logger.info("Stopping self.")
-        self.response(Gtk.ResponseType.ACCEPT)
-
-    def run_in_ui_thread(self, fun, *args):
-        Gdk.threads_add_timeout(GLib.PRIORITY_DEFAULT, 0, fun, *args)
-
-    def run(self):
-        self.thread.start()
-        self.progress.pulse()
-        self.show_all()
-
-        ret = None
-        while ret in (None, Gtk.ResponseType.DELETE_EVENT):
-            ret = super(ThreadDialog, self).run()
-
-        return ret
-
-if __name__ == "__main__":
-    import time
-
-    def hello_fun(*args):
-        global thread_dialog
-        thread_dialog.set_text("Hello, world! " * 30)
-        time.sleep(2)
-        thread_dialog.set_text("Goodbye, world!")
-        time.sleep(1)
-        thread_dialog.done()
-        return
-
-    logger = logging.getLogger("anaconda")
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
-
-    thread_dialog = ThreadDialog("Hello", hello_fun, ())
-    thread_dialog.run()
+        pass
