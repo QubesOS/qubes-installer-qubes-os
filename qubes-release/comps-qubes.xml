@@ -1398,7 +1398,7 @@
       <packagereq type="mandatory">qubes-gui-dom0</packagereq>
       <packagereq type="mandatory">qubes-desktop-linux-manager</packagereq>
       <packagereq type="mandatory">qubes-mgmt-salt-dom0</packagereq>
-      <packagereq type="mandatory">qubes-template-fedora-29</packagereq>
+      <packagereq type="mandatory">qubes-template-fedora-30</packagereq>
       <packagereq type="default">qubes-gpg-split-dom0</packagereq>
       <packagereq type="default">qubes-img-converter-dom0</packagereq>
       <packagereq type="default">qubes-input-proxy</packagereq>
@@ -1422,7 +1422,7 @@
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
-      <packagereq>qubes-template-debian-9</packagereq>
+      <packagereq>qubes-template-debian-10</packagereq>
     </packagelist>
   </group>
 
@@ -1433,8 +1433,8 @@
     <description>Whonix templates (gateway and workstation)</description>
     <uservisible>true</uservisible>
     <packagelist>
-      <packagereq>qubes-template-whonix-gw-14</packagereq>
-      <packagereq>qubes-template-whonix-ws-14</packagereq>
+      <packagereq>qubes-template-whonix-gw-15</packagereq>
+      <packagereq>qubes-template-whonix-ws-15</packagereq>
     </packagelist>
   </group>
 
