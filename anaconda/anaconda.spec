@@ -74,6 +74,7 @@ Patch53: 0053-anaconda-require-user-password-being-set.patch
 Patch54: 0054-anaconda-abort-installation-on-X-startup-fail.patch
 Patch55: 0055-anaconda-fix-encryption-passphrase-check.patch
 Patch56: 0056-anaconda-disable-os-prober.patch
+Patch57: 0057-Add-plymouth.ignore-serial-consoles-boot-option-by-d.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
