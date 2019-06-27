@@ -92,4 +92,7 @@ get-sources:
 
 verify-sources:
 	$(MAKE) -C livecd-tools verify-sources
+else
+verify-sources:
+	@true
 endif
