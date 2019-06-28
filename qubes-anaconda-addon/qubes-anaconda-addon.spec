@@ -1,5 +1,5 @@
 Name:           qubes-anaconda-addon
-Version:        4.0.9
+Version:        4.0.10
 Release:        1%{?dist}
 Summary:        Anaconda addon useful for Qubes OS specific setup procedures
 
