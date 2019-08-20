@@ -21,6 +21,9 @@ Patch3: 0003-Revert-Adapt-to-logging-module-name-change.patch
 Patch4: 0004-Backport-lvm-thin-pool-metadata-size-functions-from-.patch
 Patch5: 0005-Use-local-backport-of-BlockDev-2.0-interface.patch
 
+# Qubes patches
+Patch100: 0001-Double-recommended-LVM-thin-pool-metadata-space.patch
+
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
 %global pykickstartver 1.99.22
@@ -75,6 +78,8 @@ configuration.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+
+%patch100 -p1
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}
