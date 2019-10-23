@@ -1,7 +1,7 @@
 Summary:  A python module for system storage configuration
 Name: python-blivet
 Url: http://fedoraproject.org/wiki/blivet
-Version: 2.1.6
+Version: 2.1.11
 
 #%%global prerelease .b1
 # prerelease, if defined, should be something like .a1, .b1, .b2.dev1, or .c2
@@ -13,15 +13,13 @@ Group: System Environment/Libraries
 %global realversion %{version}%{?prerelease}
 Source0: http://github.com/rhinstaller/blivet/archive/%{realname}-%{realversion}.tar.gz
 
-Patch0: 0001-Use-correct-type-for-port-in-GVariant-tuple.patch
-Patch1: 0002-iSCSI-Store-auth-info-in-NodeInfo-tuples.patch
-Patch2: 0003-iSCSI-turn-iscsi.initiator_set-into-a-property.patch
-Patch3: 0004-Add-device-symlinks-to-the-PVs-dictionary-for-MD-RAI.patch
-Patch4: 0001-Fix-detection-of-macefi-partitions-1393846.patch
-Patch5: 0001-Fix-unknown-SAS-device-sysfs-parsing.patch
-Patch6: 0001-Change-how-we-run-e2fsck-to-check-ext-filesystems.patch
-Patch7: 0002-Do-not-run-FS-check-as-part-of-updating-re-size-info.patch
-Patch8: 0001-Fix-AttributeError-in-fsminsize-1502587.patch
+Patch0: 0001-Fix-AttributeError-in-fsminsize-1502587.patch
+# make it compatible with fc25
+Patch1: 0001-Revert-FBA-DASD-should-use-the-msdos-disk-label-type.patch
+Patch2: 0002-Revert-Require-BlockDev-2.0-in-the-gi.require_versio.patch
+Patch3: 0003-Revert-Adapt-to-logging-module-name-change.patch
+Patch4: 0004-Backport-lvm-thin-pool-metadata-size-functions-from-.patch
+Patch5: 0005-Use-local-backport-of-BlockDev-2.0-interface.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
@@ -77,9 +75,6 @@ configuration.
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}

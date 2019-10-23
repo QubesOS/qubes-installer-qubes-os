@@ -1,0 +1,36 @@
+From 2aeba92531b6146a760440f857d526ca7c19053e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Wed, 23 Oct 2019 00:23:10 +0200
+Subject: [PATCH 2/2] Use local backport of BlockDev 2.0 interface
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ blivet/devices/lvm.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/blivet/devices/lvm.py b/blivet/devices/lvm.py
+index 15ddef74..da3dc853 100644
+--- a/blivet/devices/lvm.py
++++ b/blivet/devices/lvm.py
+@@ -1541,10 +1541,10 @@ class LVMThinPoolMixin(object):
+ 
+         # we need to know chunk size to calculate recommended metadata size
+         if self._chunk_size == 0:
+-            self._chunk_size = Size(blockdev.LVM_DEFAULT_CHUNK_SIZE)
++            self._chunk_size = Size(LVM_DEFAULT_CHUNK_SIZE)
+             log.debug("Using default chunk size: %s", self._chunk_size)
+ 
+-        self._metadata_size = Size(blockdev.lvm.get_thpool_meta_size(self._size,
++        self._metadata_size = Size(             get_thpool_meta_size(self._size,
+                                                                      self._chunk_size,
+                                                                      100))  # snapshots
+         log.debug("Recommended metadata size: %s", self._metadata_size)
+-- 
+2.20.1
+

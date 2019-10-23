@@ -1,0 +1,34 @@
+From 42d465514031eb083cac591327436ed6bca2b94c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Tue, 22 Oct 2019 15:07:01 +0200
+Subject: [PATCH] Revert "Adapt to logging module name change"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+This reverts commit c367d62a516e541ad28636c8259321f1c53417ce.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ blivet/__init__.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/blivet/__init__.py b/blivet/__init__.py
+index d5105842..ecaedad8 100644
+--- a/blivet/__init__.py
++++ b/blivet/__init__.py
+@@ -124,7 +124,7 @@ def enable_installer_mode():
+         from pyanaconda.constants import ROOT_PATH  # pylint: disable=redefined-outer-name,no-name-in-module
+         _storage_root = _sysroot = ROOT_PATH
+ 
+-    from pyanaconda.anaconda_logging import program_log_lock
++    from pyanaconda.anaconda_log import program_log_lock
+     util.program_log_lock = program_log_lock
+ 
+     flags.installer_mode = True
+-- 
+2.20.1
+

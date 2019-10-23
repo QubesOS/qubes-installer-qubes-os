@@ -1,0 +1,497 @@
+From cbf2890b7be57e159e0890da4fded5062152f191 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Tue, 22 Oct 2019 14:52:36 +0200
+Subject: [PATCH 2/2] Revert "Require BlockDev 2.0 in the gi.require_version()
+ call"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+This reverts commit 778ca84050289f4a4c27857d923d6e3aea4919fc.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ blivet/__init__.py                           | 2 +-
+ blivet/devicefactory.py                      | 2 +-
+ blivet/devicelibs/lvm.py                     | 2 +-
+ blivet/devices/btrfs.py                      | 2 +-
+ blivet/devices/disk.py                       | 2 +-
+ blivet/devices/dm.py                         | 2 +-
+ blivet/devices/loop.py                       | 2 +-
+ blivet/devices/lvm.py                        | 2 +-
+ blivet/devices/md.py                         | 2 +-
+ blivet/devices/partition.py                  | 2 +-
+ blivet/devicetree.py                         | 2 +-
+ blivet/formats/__init__.py                   | 2 +-
+ blivet/formats/luks.py                       | 2 +-
+ blivet/formats/lvmpv.py                      | 2 +-
+ blivet/formats/mdraid.py                     | 2 +-
+ blivet/formats/swap.py                       | 2 +-
+ blivet/osinstall.py                          | 2 +-
+ blivet/partitioning.py                       | 2 +-
+ blivet/populator/helpers/disk.py             | 2 +-
+ blivet/populator/helpers/dmraid.py           | 2 +-
+ blivet/populator/helpers/loop.py             | 2 +-
+ blivet/populator/helpers/luks.py             | 2 +-
+ blivet/populator/helpers/lvm.py              | 2 +-
+ blivet/populator/helpers/mdraid.py           | 2 +-
+ blivet/populator/helpers/partition.py        | 2 +-
+ blivet/populator/populator.py                | 2 +-
+ blivet/static_data/lvm_info.py               | 2 +-
+ blivet/static_data/mpath_info.py             | 2 +-
+ blivet/tasks/availability.py                 | 2 +-
+ blivet/tasks/lukstasks.py                    | 2 +-
+ blivet/tasks/pvtask.py                       | 2 +-
+ blivet/util.py                               | 2 +-
+ blivet/zfcp.py                               | 2 +-
+ python-blivet.spec                           | 2 +-
+ 34 files changed, 34 insertions(+), 34 deletions(-)
+
+diff --git a/blivet/__init__.py b/blivet/__init__.py
+index 1325e540..d5105842 100644
+--- a/blivet/__init__.py
++++ b/blivet/__init__.py
+@@ -75,7 +75,7 @@ log_bd_message = lambda level, msg: program_log.info(msg)
+ 
+ import gi
+ gi.require_version("GLib", "2.0")
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ # initialize the libblockdev library
+ from gi.repository import GLib
+diff --git a/blivet/devicefactory.py b/blivet/devicefactory.py
+index 5b680668..5f486aab 100644
+--- a/blivet/devicefactory.py
++++ b/blivet/devicefactory.py
+@@ -38,7 +38,7 @@ from .size import Size
+ from .static_data import luks_data
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devicelibs/lvm.py b/blivet/devicelibs/lvm.py
+index 24adf9a0..352f67a2 100644
+--- a/blivet/devicelibs/lvm.py
++++ b/blivet/devicelibs/lvm.py
+@@ -27,7 +27,7 @@ from collections import namedtuple
+ import itertools
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/btrfs.py b/blivet/devices/btrfs.py
+index c5cb21f7..35a2b099 100644
+--- a/blivet/devices/btrfs.py
++++ b/blivet/devices/btrfs.py
+@@ -24,7 +24,7 @@ import copy
+ import tempfile
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/disk.py b/blivet/devices/disk.py
+index 1136a535..acf31eed 100644
+--- a/blivet/devices/disk.py
++++ b/blivet/devices/disk.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/dm.py b/blivet/devices/dm.py
+index a0350b24..e7efddfb 100644
+--- a/blivet/devices/dm.py
++++ b/blivet/devices/dm.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/loop.py b/blivet/devices/loop.py
+index 78f88d7d..fcef161d 100644
+--- a/blivet/devices/loop.py
++++ b/blivet/devices/loop.py
+@@ -20,7 +20,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/lvm.py b/blivet/devices/lvm.py
+index 72a2d395..39c6f342 100644
+--- a/blivet/devices/lvm.py
++++ b/blivet/devices/lvm.py
+@@ -30,7 +30,7 @@ from functools import wraps
+ from enum import Enum
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/md.py b/blivet/devices/md.py
+index 891805aa..3006236e 100644
+--- a/blivet/devices/md.py
++++ b/blivet/devices/md.py
+@@ -23,7 +23,7 @@ import os
+ import six
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devices/partition.py b/blivet/devices/partition.py
+index 4c175403..66f768d2 100644
+--- a/blivet/devices/partition.py
++++ b/blivet/devices/partition.py
+@@ -24,7 +24,7 @@ import parted
+ import _ped
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/devicetree.py b/blivet/devicetree.py
+index 805f6a04..8057f7e7 100644
+--- a/blivet/devicetree.py
++++ b/blivet/devicetree.py
+@@ -25,7 +25,7 @@ import pprint
+ import re
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/formats/__init__.py b/blivet/formats/__init__.py
+index f60402fe..6d4eaf39 100644
+--- a/blivet/formats/__init__.py
++++ b/blivet/formats/__init__.py
+@@ -22,7 +22,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/formats/luks.py b/blivet/formats/luks.py
+index d8db8dd5..4ad8252a 100644
+--- a/blivet/formats/luks.py
++++ b/blivet/formats/luks.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/formats/lvmpv.py b/blivet/formats/lvmpv.py
+index 260cc0bd..b2f70cdc 100644
+--- a/blivet/formats/lvmpv.py
++++ b/blivet/formats/lvmpv.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/formats/mdraid.py b/blivet/formats/mdraid.py
+index 383160a3..ee7e887a 100644
+--- a/blivet/formats/mdraid.py
++++ b/blivet/formats/mdraid.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/formats/swap.py b/blivet/formats/swap.py
+index 46dc980f..185fda53 100644
+--- a/blivet/formats/swap.py
++++ b/blivet/formats/swap.py
+@@ -29,7 +29,7 @@ from . import DeviceFormat, register_device_format
+ from ..size import Size
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/osinstall.py b/blivet/osinstall.py
+index a4f9535f..485e774c 100644
+--- a/blivet/osinstall.py
++++ b/blivet/osinstall.py
+@@ -26,7 +26,7 @@ import stat
+ import time
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/partitioning.py b/blivet/partitioning.py
+index dcc7ce80..b7b2617c 100644
+--- a/blivet/partitioning.py
++++ b/blivet/partitioning.py
+@@ -25,7 +25,7 @@ from decimal import Decimal
+ import functools
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ import parted
+ 
+diff --git a/blivet/populator/helpers/disk.py b/blivet/populator/helpers/disk.py
+index e937128b..9313f766 100644
+--- a/blivet/populator/helpers/disk.py
++++ b/blivet/populator/helpers/disk.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/populator/helpers/dmraid.py b/blivet/populator/helpers/dmraid.py
+index 5db42196..987caec3 100644
+--- a/blivet/populator/helpers/dmraid.py
++++ b/blivet/populator/helpers/dmraid.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/populator/helpers/loop.py b/blivet/populator/helpers/loop.py
+index 99fc4bb5..33bb3423 100644
+--- a/blivet/populator/helpers/loop.py
++++ b/blivet/populator/helpers/loop.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ from gi.repository import BlockDev as blockdev
+ 
+ from ... import udev
+diff --git a/blivet/populator/helpers/luks.py b/blivet/populator/helpers/luks.py
+index 433cc06e..d27089a6 100644
+--- a/blivet/populator/helpers/luks.py
++++ b/blivet/populator/helpers/luks.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/populator/helpers/lvm.py b/blivet/populator/helpers/lvm.py
+index 10ef1646..2a985adc 100644
+--- a/blivet/populator/helpers/lvm.py
++++ b/blivet/populator/helpers/lvm.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/populator/helpers/mdraid.py b/blivet/populator/helpers/mdraid.py
+index 998e8de9..5542cc4d 100644
+--- a/blivet/populator/helpers/mdraid.py
++++ b/blivet/populator/helpers/mdraid.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/populator/helpers/partition.py b/blivet/populator/helpers/partition.py
+index 73b15f11..d977ea49 100644
+--- a/blivet/populator/helpers/partition.py
++++ b/blivet/populator/helpers/partition.py
+@@ -23,7 +23,7 @@
+ import copy
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ from gi.repository import BlockDev as blockdev
+ 
+ from ... import udev
+diff --git a/blivet/populator/populator.py b/blivet/populator/populator.py
+index 7a6a4ae9..84c1d33d 100644
+--- a/blivet/populator/populator.py
++++ b/blivet/populator/populator.py
+@@ -26,7 +26,7 @@ import copy
+ import parted
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/static_data/lvm_info.py b/blivet/static_data/lvm_info.py
+index 89e1b8e1..f8965f15 100644
+--- a/blivet/static_data/lvm_info.py
++++ b/blivet/static_data/lvm_info.py
+@@ -21,7 +21,7 @@
+ #
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/static_data/mpath_info.py b/blivet/static_data/mpath_info.py
+index 71bf17e1..c9ca8a30 100644
+--- a/blivet/static_data/mpath_info.py
++++ b/blivet/static_data/mpath_info.py
+@@ -20,7 +20,7 @@
+ 
+ import os
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/tasks/availability.py b/blivet/tasks/availability.py
+index 354a9ee1..c7f58b87 100644
+--- a/blivet/tasks/availability.py
++++ b/blivet/tasks/availability.py
+@@ -25,7 +25,7 @@ from distutils.spawn import find_executable
+ from six import add_metaclass
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/tasks/lukstasks.py b/blivet/tasks/lukstasks.py
+index d32fe978..7814454f 100644
+--- a/blivet/tasks/lukstasks.py
++++ b/blivet/tasks/lukstasks.py
+@@ -20,7 +20,7 @@
+ # Red Hat Author(s): Anne Mulhern <amulhern@redhat.com>
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/tasks/pvtask.py b/blivet/tasks/pvtask.py
+index a96d380d..2cb07a34 100644
+--- a/blivet/tasks/pvtask.py
++++ b/blivet/tasks/pvtask.py
+@@ -21,7 +21,7 @@
+ # Red Hat Author(s): Vojtěch Trefný <vtrefny@redhat.com>
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/util.py b/blivet/util.py
+index 57f6372f..ba81bb6e 100644
+--- a/blivet/util.py
++++ b/blivet/util.py
+@@ -22,7 +22,7 @@ from enum import Enum
+ from .errors import DependencyError
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/blivet/zfcp.py b/blivet/zfcp.py
+index 2381599c..0074c5dc 100644
+--- a/blivet/zfcp.py
++++ b/blivet/zfcp.py
+@@ -26,7 +26,7 @@ from .i18n import _
+ from .util import stringize, unicodeize
+ 
+ import gi
+-gi.require_version("BlockDev", "2.0")
++gi.require_version("BlockDev", "1.0")
+ 
+ from gi.repository import BlockDev as blockdev
+ 
+diff --git a/python-blivet.spec b/python-blivet.spec
+index 0c3392c9..5e7bf8a1 100644
+--- a/python-blivet.spec
++++ b/python-blivet.spec
+@@ -19,7 +19,7 @@ Source0: http://github.com/storaged-project/blivet/archive/%{realname}-%{realver
+ %global partedver 1.8.1
+ %global pypartedver 3.10.4
+ %global utillinuxver 2.15.1
+-%global libblockdevver 2.1
++%global libblockdevver 1.9
+ %global libbytesizever 0.3
+ %global pyudevver 0.18
+ 
+-- 
+2.20.1
+

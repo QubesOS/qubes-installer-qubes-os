@@ -1,0 +1,52 @@
+From 7a4cfbeb1f971d4968248a6002a365835f11c72e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Wed, 23 Oct 2019 00:21:02 +0200
+Subject: [PATCH] Backport lvm thin pool metadata size functions from BlockDev
+ 2.0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+Those are included only in BlockDev >= 2.0 API (libblockdev>=2.1), but
+we don't have luxury of such new version. Since it's just one short
+function and two constants, "copy" (translating from C) them directly
+into blivet/devices/lvm.py.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ blivet/devices/lvm.py | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/blivet/devices/lvm.py b/blivet/devices/lvm.py
+index 39c6f342..94894272 100644
+--- a/blivet/devices/lvm.py
++++ b/blivet/devices/lvm.py
+@@ -56,6 +56,22 @@ from .dm import DMDevice
+ from .md import MDRaidArrayDevice
+ from .cache import Cache, CacheStats, CacheRequest
+ 
++# loose backport from BlockDev 2.0 interface
++LVM_DEFAULT_CHUNK_SIZE = 65536
++LVM_MIN_THPOOL_MD_SIZE = 2 * 2**20  # 2 MiB
++
++def get_thpool_meta_size(pool_size, block_size, max_thins):
++
++    command = ["thin_metadata_size",
++               "-ub", "-n",
++               "-b", str(int(block_size)),
++               "-s", str(int(pool_size)),
++               "-m", str(int(max_thins))]
++    (rc, out) = util.run_program_and_capture_output(command)
++    if rc:
++        raise Exception("thin_metadata_size failed with %d" % rc)
++    return max(int(out), LVM_MIN_THPOOL_MD_SIZE)
++
+ 
+ class LVPVSpec(object):
+     """ Class for specifying how much space on a PV should be allocated for some LV """
+-- 
+2.20.1
+
