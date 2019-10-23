@@ -1,0 +1,47 @@
+From 1ce66b58907e229e21a0012a7a36ae93e9e32054 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Tue, 22 Oct 2019 16:15:31 +0200
+Subject: [PATCH] Avoid mounting pre-existing disks
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+This operation may be harmfull in many ways:
+ - may unintentionally modify a disk not selected as installation target
+   (mounting even read only replays journal for example)
+ - if previous system was compromised, it may try to exploit some of the
+   parsing code (filesystem driver etc) to survive across
+   re-installation
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ blivet/osinstall.py | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/blivet/osinstall.py b/blivet/osinstall.py
+index 485e774c..f46388cd 100644
+--- a/blivet/osinstall.py
++++ b/blivet/osinstall.py
+@@ -211,14 +211,8 @@ def find_existing_installations(devicetree, teardown_all=True):
+     :rtype: list of :class:`Root`
+ 
+     """
+-    try:
+-        roots = _find_existing_installations(devicetree)
+-        return roots
+-    except Exception:  # pylint: disable=broad-except
+-        log_exception_info(log.info, "failure detecting existing installations")
+-    finally:
+-        if teardown_all:
+-            devicetree.teardown_all()
++    if teardown_all:
++        devicetree.teardown_all()
+ 
+     return []
+ 
+-- 
+2.20.1
+

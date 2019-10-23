@@ -23,6 +23,7 @@ Patch5: 0005-Use-local-backport-of-BlockDev-2.0-interface.patch
 
 # Qubes patches
 Patch100: 0001-Double-recommended-LVM-thin-pool-metadata-space.patch
+Patch101: 0001-Avoid-mounting-pre-existing-disks.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
@@ -80,6 +81,7 @@ configuration.
 %patch5 -p1
 
 %patch100 -p1
+%patch101 -p1
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}
