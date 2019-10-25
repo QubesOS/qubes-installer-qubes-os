@@ -1,0 +1,79 @@
+From 0f181e582ff47bb216f0f334a77518197d05f0fb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Thu, 24 Oct 2019 18:11:46 +0200
+Subject: [PATCH] Report 20% space needed for LVM thin provisioning
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+blivet reserver 20% free space if thin pool is created. Anaconda/blivet
+interface for reporting metadata/reserved space is lacking. As a
+workaround add 20% at GUI layer.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pyanaconda/ui/gui/spokes/lib/resize.py | 7 +++++++
+ pyanaconda/ui/gui/spokes/storage.py    | 5 +++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/pyanaconda/ui/gui/spokes/lib/resize.py b/pyanaconda/ui/gui/spokes/lib/resize.py
+index 73be5e23e..2626bec0d 100644
+--- a/pyanaconda/ui/gui/spokes/lib/resize.py
++++ b/pyanaconda/ui/gui/spokes/lib/resize.py
+@@ -31,6 +31,7 @@ from pyanaconda.ui.gui import GUIObject
+ from pyanaconda.ui.gui.utils import blockedHandler, escape_markup, timed_action
+ from blivet.size import Size
+ from blivet.formats.fs import FS
++from pykickstart.constants import AUTOPART_TYPE_LVM_THINP
+ 
+ __all__ = ["ResizeDialog"]
+ 
+@@ -84,6 +85,9 @@ class ResizeDialog(GUIObject):
+         self._required_label = self.builder.get_object("requiredSpaceLabel")
+         markup = _("Installation requires a total of <b>%s</b> for system data.")
+         required_dev_size = self.payload.requiredDeviceSize(FS.biggest_overhead_FS())
++        if self.storage.autopart_type == AUTOPART_TYPE_LVM_THINP:
++            # blivet reserve 20% free space in volume group if thin pool is created
++            required_dev_size /= 0.8
+         self._required_label.set_markup(markup % escape_markup(str(required_dev_size)))
+ 
+         self._reclaimDescLabel = self.builder.get_object("reclaimDescLabel")
+@@ -315,6 +319,9 @@ class ResizeDialog(GUIObject):
+ 
+     def _update_reclaim_button(self, got):
+         required_dev_size = self.payload.requiredDeviceSize(FS.biggest_overhead_FS())
++        if self.storage.autopart_type == AUTOPART_TYPE_LVM_THINP:
++            # blivet reserve 20% free space in volume group if thin pool is created
++            required_dev_size /= 0.8
+         self._resizeButton.set_sensitive(got+self._initialFreeSpace >= required_dev_size)
+ 
+     # pylint: disable=arguments-differ
+diff --git a/pyanaconda/ui/gui/spokes/storage.py b/pyanaconda/ui/gui/spokes/storage.py
+index a75f1dfc9..0c6000f2e 100644
+--- a/pyanaconda/ui/gui/spokes/storage.py
++++ b/pyanaconda/ui/gui/spokes/storage.py
+@@ -874,6 +874,9 @@ class StorageSpoke(NormalSpoke, StorageChecker):
+ 
+         disks_size = sum((d.size for d in disks), Size(0))
+         required_space = self.payload.spaceRequired
++        if self.storage.autopart_type == AUTOPART_TYPE_LVM_THINP:
++            # blivet reserve 20% free space in volume group if thin pool is created
++            required_space /= 0.8
+         auto_swap = sum((r.size for r in self.storage.autopart_requests
+                                 if r.fstype == "swap"), Size(0))
+         if self.autopart and auto_swap == Size(0):
+@@ -1021,6 +1024,8 @@ class StorageSpoke(NormalSpoke, StorageChecker):
+             dialog = ResizeDialog(self.data, self.storage, self.payload)
+             dialog.refresh(disks)
+         else:
++            # respect disk selection and other choices in the ReclaimDialog
++            self.apply()
+             dialog = self._check_space_and_get_dialog(disks)
+ 
+         if dialog:
+-- 
+2.20.1
+
