@@ -5,7 +5,7 @@ Version: 2.1.11
 
 #%%global prerelease .b1
 # prerelease, if defined, should be something like .a1, .b1, .b2.dev1, or .c2
-Release: 5%{?prerelease}%{?dist}
+Release: 6%{?prerelease}%{?dist}
 Epoch: 2
 License: LGPLv2+
 Group: System Environment/Libraries
