@@ -2,6 +2,7 @@
 # The Qubes OS Project, http://www.qubes-os.org
 #
 # Copyright (C) 2011  Tomasz Sterna <tomek@xiaoka.com>
+# Copyright (C) 2019  Frédéric Pierret <frederic.pierret@qubes-os.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,22 +19,48 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
+DIST ?= fc31
+DIST_VER = $(subst fc,,$(DIST))
+
+INSTALLER_DIR ?= $(PWD)
 
 ISO_INSTALLER ?= 1
-ISO_LIVEUSB ?= 0
+INSTALLER_KICKSTART ?= $(INSTALLER_DIR)/conf/qubes-kickstart.cfg
 
-PUNGI_OPTS := --nosource --nodebuginfo --nogreedy --all-stages
+ISO_LIVEUSB ?= 0
+LIVE_KICKSTART ?= $(INSTALLER_DIR)/conf/liveusb.ks
+
+CREATEREPO := /usr/bin/createrepo
+
+PUNGI := /usr/bin/pungi-gather
+PUNGI_OPTS := --selfhosting --arch=x86_64 --greedy=build
+
+LORAX := /usr/sbin/lorax
+LORAX_OPTS := --product Qubes --macboot --force --rootfs-size=4
+
 ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
-    PUNGI_OPTS += --isfinal
+    LORAX_OPTS += --isfinal
 else
     ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
-PUNGI_OPTS += --ver="$(ISO_VERSION)"
-PUNGI_OPTS += --rootfs-size=4
+ISO_VOLID := Qubes-$(ISO_VERSION)-x86_64
+BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
-INSTALLER_KICKSTART ?= $(PWD)/conf/qubes-kickstart.cfg
-LIVE_KICKSTART ?= $(PWD)/conf/liveusb.ks
+LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes $(ISO_VERSION)" --volid $(ISO_VOLID)
+LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
+LORAX_OPTS += --source http://download.fedoraproject.org/pub/fedora/linux/releases/$(DIST_VER)/Everything/x86_64/os/
+LORAX_OPTS += --source http://download.fedoraproject.org/pub/fedora/linux/updates/$(DIST_VER)/Everything/x86_64/
+LORAX_OPTS += --source $(BASE_DIR)/os/
+
+MKISOFS := /usr/bin/xorriso -as mkisofs
+# common mkisofs flags
+MKISOFS_OPTS := -v -U -J --joliet-long -R -T -m repoview -m boot.iso
+# x86 boot args
+MKISOFS_OPTS += -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table
+# efi boot args
+MKISOFS_OPTS += -eltorito-alt-boot -e images/efiboot.img -no-emul-boot
+
 
 help:
 	@echo "make iso              <== \o/";\
@@ -52,15 +79,29 @@ iso: iso-liveusb
 endif
 
 iso-prepare:
-	ln -nsf `pwd` /tmp/qubes-installer
-	createrepo -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
+	rm -rf && mkdir work
+	ln -nsf $(INSTALLER_DIR) /tmp/qubes-installer
+	$(CREATEREPO) -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
 
-iso-installer: iso-prepare
-	mkdir -p work
-	umask 022; pushd work && pungi --name=Qubes  $(PUNGI_OPTS) -c $(INSTALLER_KICKSTART) && popd
+iso-installer-gather:
+	mkdir -p $(BASE_DIR)/os/Packages
+	umask 022; $(PUNGI) $(PUNGI_OPTS) --config $(INSTALLER_KICKSTART) --download-to=$(BASE_DIR)/os/Packages
+	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q .
+
+iso-installer-lorax:
+	$(LORAX) $(LORAX_OPTS) $(BASE_DIR)/os
+
+iso-installer-mkisofs:
+	mkdir -p $(BASE_DIR)/iso/
+	$(MKISOFS) $(MKISOFS_OPTS) -V $(ISO_VOLID) -o $(BASE_DIR)/iso/$(ISO_VOLID).iso $(BASE_DIR)/os/
+	/usr/bin/isohybrid -u $(BASE_DIR)/iso/$(ISO_VOLID).iso
+	/usr/bin/implantisomd5  $(BASE_DIR)/iso/$(ISO_VOLID).iso
+
+
+iso-installer: iso-prepare iso-installer-gather iso-installer-lorax iso-installer-mkisofs
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso
-	mv work/$(ISO_VERSION)/x86_64/iso/*-DVD*.iso build/ISO/qubes-x86_64/iso/Qubes-$(ISO_VERSION)-x86_64.iso
+	mv $(BASE_DIR)/iso/$(ISO_VOLID).iso build/ISO/qubes-x86_64/iso/
 	echo $(ISO_VERSION) > build/ISO/qubes-x86_64/iso/build_latest
 	rm -rf build/work
 	mv work build/work
@@ -68,7 +109,6 @@ iso-installer: iso-prepare
 	rm -rf work
 
 iso-liveusb: $(LIVE_KICKSTART) iso-prepare
-	mkdir -p work
 	pushd work && ../livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config $(LIVE_KICKSTART) && popd
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
