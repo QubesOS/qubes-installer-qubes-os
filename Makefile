@@ -44,7 +44,8 @@ ifdef QUBES_RELEASE
 else
     ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
-ISO_VOLID := Qubes-$(ISO_VERSION)-x86_64
+ISO_NAME := Qubes-$(ISO_VERSION)-x86_64
+ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' -)
 BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes $(ISO_VERSION)" --volid $(ISO_VOLID)
@@ -92,14 +93,14 @@ iso-installer-lorax:
 
 iso-installer-mkisofs:
 	mkdir -p $(BASE_DIR)/iso/
-	$(MKISOFS) $(MKISOFS_OPTS) -V $(ISO_VOLID) -o $(BASE_DIR)/iso/$(ISO_VOLID).iso $(BASE_DIR)/os/
-	/usr/bin/isohybrid -u $(BASE_DIR)/iso/$(ISO_VOLID).iso
-	/usr/bin/implantisomd5  $(BASE_DIR)/iso/$(ISO_VOLID).iso
+	$(MKISOFS) $(MKISOFS_OPTS) -V $(ISO_VOLID) -o $(BASE_DIR)/iso/$(ISO_NAME).iso $(BASE_DIR)/os/
+	/usr/bin/isohybrid -u $(BASE_DIR)/iso/$(ISO_NAME).iso
+	/usr/bin/implantisomd5  $(BASE_DIR)/iso/$(ISO_NAME).iso
 
 iso-installer: iso-prepare iso-installer-gather iso-installer-lorax iso-installer-mkisofs
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso
-	mv $(BASE_DIR)/iso/$(ISO_VOLID).iso build/ISO/qubes-x86_64/iso/
+	mv $(BASE_DIR)/iso/$(ISO_NAME).iso build/ISO/qubes-x86_64/iso/
 	echo $(ISO_VERSION) > build/ISO/qubes-x86_64/iso/build_latest
 	rm -rf build/work
 	mv work build/work
