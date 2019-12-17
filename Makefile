@@ -85,7 +85,7 @@ iso-prepare:
 iso-installer-gather:
 	mkdir -p $(BASE_DIR)/os/Packages
 	umask 022; $(PUNGI) $(PUNGI_OPTS) --config $(INSTALLER_KICKSTART) --download-to=$(BASE_DIR)/os/Packages
-	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q .
+	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-qubes.xml .
 
 iso-installer-lorax:
 	sed -e "s/%FCREL%/$(DIST_VER)/g" $(INSTALLER_DIR)/conf/dnf-lorax.repo.in > $(INSTALLER_DIR)/conf/dnf-lorax.repo
