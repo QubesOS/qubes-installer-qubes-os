@@ -36,7 +36,7 @@ PUNGI := /usr/bin/pungi-gather
 PUNGI_OPTS := --selfhosting --arch=x86_64 --greedy=none
 
 LORAX := /usr/sbin/lorax
-LORAX_OPTS := --product Qubes --macboot --force --rootfs-size=4
+LORAX_OPTS := --product QubesOS --macboot --force --rootfs-size=4
 
 ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
