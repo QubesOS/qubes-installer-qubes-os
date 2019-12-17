@@ -49,9 +49,7 @@ BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes $(ISO_VERSION)" --volid $(ISO_VOLID)
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
-LORAX_OPTS += --source http://download.fedoraproject.org/pub/fedora/linux/releases/$(DIST_VER)/Everything/x86_64/os/
-LORAX_OPTS += --source http://download.fedoraproject.org/pub/fedora/linux/updates/$(DIST_VER)/Everything/x86_64/
-LORAX_OPTS += --source $(BASE_DIR)/os/
+LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
 # common mkisofs flags
@@ -89,6 +87,7 @@ iso-installer-gather:
 	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q .
 
 iso-installer-lorax:
+	sed -e "s/%FCREL%/$(DIST_VER)/g" $(INSTALLER_DIR)/conf/dnf-lorax.repo.in > $(INSTALLER_DIR)/conf/dnf-lorax.repo
 	$(LORAX) $(LORAX_OPTS) $(BASE_DIR)/os
 
 iso-installer-mkisofs:
@@ -96,7 +95,6 @@ iso-installer-mkisofs:
 	$(MKISOFS) $(MKISOFS_OPTS) -V $(ISO_VOLID) -o $(BASE_DIR)/iso/$(ISO_VOLID).iso $(BASE_DIR)/os/
 	/usr/bin/isohybrid -u $(BASE_DIR)/iso/$(ISO_VOLID).iso
 	/usr/bin/implantisomd5  $(BASE_DIR)/iso/$(ISO_VOLID).iso
-
 
 iso-installer: iso-prepare iso-installer-gather iso-installer-lorax iso-installer-mkisofs
 	# Move result files to known-named directories
