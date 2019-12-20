@@ -93,6 +93,7 @@ iso-installer-lorax:
 
 iso-installer-mkisofs:
 	mkdir -p $(BASE_DIR)/iso/
+	chmod og+rX -R $(BASE_DIR)/os/
 	$(MKISOFS) $(MKISOFS_OPTS) -V $(ISO_VOLID) -o $(BASE_DIR)/iso/$(ISO_NAME).iso $(BASE_DIR)/os/
 	/usr/bin/isohybrid -u $(BASE_DIR)/iso/$(ISO_NAME).iso
 	/usr/bin/implantisomd5  $(BASE_DIR)/iso/$(ISO_NAME).iso
