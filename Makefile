@@ -88,7 +88,7 @@ iso-installer-gather:
 	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-qubes.xml .
 
 iso-installer-lorax:
-	$(INSTALLER_DIR)/ksparser --ks $(INSTALLER_KICKSTART) --extract-repo-conf-to $(INSTALLER_DIR)/conf/dnf-lorax.repo
+	$(INSTALLER_DIR)/scripts/ksparser --ks $(INSTALLER_KICKSTART) --extract-repo-conf-to $(INSTALLER_DIR)/conf/dnf-lorax.repo
 	$(LORAX) $(LORAX_OPTS) $(BASE_DIR)/os
 
 iso-installer-mkisofs:
@@ -109,7 +109,7 @@ iso-installer: iso-prepare iso-installer-gather iso-installer-lorax iso-installe
 	rm -rf work
 
 iso-liveusb: $(LIVE_KICKSTART) iso-prepare
-	pushd work && ../livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config $(LIVE_KICKSTART) && popd
+	pushd work && $(INSTALLER_DIR)/scripts/livecd-creator-qubes --debug --product='Qubes OS' --title="Qubes OS $(ISO_VERSION)" --fslabel="Qubes-$(ISO_VERSION)-x86_64-LIVE" --config $(LIVE_KICKSTART) && popd
 	# Move result files to known-named directories
 	mkdir -p build/ISO/qubes-x86_64/iso build/work
 	mv work/*.iso build/ISO/qubes-x86_64/iso/
