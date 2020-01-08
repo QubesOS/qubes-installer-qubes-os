@@ -76,6 +76,7 @@ Patch55: 0055-anaconda-fix-encryption-passphrase-check.patch
 Patch56: 0056-anaconda-disable-os-prober.patch
 Patch57: 0057-Add-plymouth.ignore-serial-consoles-boot-option-by-d.patch
 Patch58: 0058-Report-20-space-needed-for-LVM-thin-provisioning.patch
+Patch59: 0059-Do-not-require-user-setup-during-automated-kickseede.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).

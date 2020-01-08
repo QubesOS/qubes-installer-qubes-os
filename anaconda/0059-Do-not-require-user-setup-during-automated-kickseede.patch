@@ -1,0 +1,35 @@
+From 2bccfe3f8c5e7ce18f4c4208914a1ea865072481 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Wed, 8 Jan 2020 20:28:25 +0100
+Subject: [PATCH] Do not require user setup during automated (kickseeded)
+ install
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+OEM installation may prefer to setup it during initial-setup phase.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pyanaconda/ui/gui/spokes/user.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pyanaconda/ui/gui/spokes/user.py b/pyanaconda/ui/gui/spokes/user.py
+index 7db7e44..2bb110d 100644
+--- a/pyanaconda/ui/gui/spokes/user.py
++++ b/pyanaconda/ui/gui/spokes/user.py
+@@ -338,7 +338,7 @@ class UserSpoke(NormalSpoke, GUISpokeInputCheckHandler):
+ 
+     @property
+     def mandatory(self):
+-        return True
++        return not flags.automatedInstall
+ 
+     def apply(self):
+         # set the password only if the user enters anything to the text entry
+-- 
+2.21.0
+
