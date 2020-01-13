@@ -33,7 +33,7 @@ LIVE_KICKSTART ?= $(INSTALLER_DIR)/conf/liveusb.ks
 CREATEREPO := $(shell which createrepo_c createrepo 2>/dev/null |head -1)
 
 PUNGI := /usr/bin/pungi-gather
-PUNGI_OPTS := --arch=x86_64 --greedy=none
+PUNGI_OPTS := --arch=x86_64 --greedy=none --exclude-debug --exclude-source
 
 LORAX := /usr/sbin/lorax
 LORAX_OPTS := --product QubesOS --macboot --force --rootfs-size=4
