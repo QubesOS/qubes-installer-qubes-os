@@ -30,7 +30,7 @@ INSTALLER_KICKSTART ?= $(INSTALLER_DIR)/conf/qubes-kickstart.cfg
 ISO_LIVEUSB ?= 0
 LIVE_KICKSTART ?= $(INSTALLER_DIR)/conf/liveusb.ks
 
-CREATEREPO := /usr/bin/createrepo
+CREATEREPO := $(shell which createrepo_c createrepo 2>/dev/null |head -1)
 
 PUNGI := /usr/bin/pungi-gather
 PUNGI_OPTS := --arch=x86_64 --greedy=none

@@ -1,5 +1,6 @@
 #!/bin/sh
 
+createrepo=$(which createrepo_c createrepo 2>/dev/null |head -1)
 
 # $1 -- path to rpm dir
 check_repo()
@@ -17,7 +18,7 @@ check_repo()
 
 update_repo()
 {
-    createrepo -q -g ../../conf/comps-qubes.xml --update $1
+    $createrepo -q -g ../../conf/comps-qubes.xml --update $1
 }
 
 
