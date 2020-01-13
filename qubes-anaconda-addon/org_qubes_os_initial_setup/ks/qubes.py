@@ -315,7 +315,7 @@ class QubesData(AddonData):
                 self.run_command(['qubesctl', 'top.enable', state])
 
         try:
-            self.run_command(['qubesctl', 'state.highstate'])
+            self.run_command(['qubesctl', '--all', 'state.highstate'])
             # After successful call disable all the states to not leave them
             # enabled, to not interfere with later user changes (like assigning
             # additional PCI devices)
