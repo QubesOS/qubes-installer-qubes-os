@@ -36,7 +36,7 @@ PUNGI := /usr/bin/pungi-gather
 PUNGI_OPTS := --arch=x86_64 --greedy=none --exclude-debug --exclude-source
 
 LORAX := /usr/sbin/lorax
-LORAX_OPTS := --product QubesOS --macboot --force --rootfs-size=4
+LORAX_OPTS := --product "Qubes OS" --variant "qubes" --macboot --force --rootfs-size=4
 
 ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
@@ -48,7 +48,7 @@ ISO_NAME := Qubes-$(ISO_VERSION)-x86_64
 ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' -)
 BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
-LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes $(ISO_VERSION)" --volid $(ISO_VOLID)
+LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes OS $(ISO_VERSION)" --volid $(ISO_VOLID)
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
 LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo
 
