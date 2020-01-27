@@ -37,6 +37,14 @@ PUNGI_OPTS := --arch=x86_64 --greedy=none --exclude-debug --exclude-source
 
 LORAX := /usr/sbin/lorax
 LORAX_OPTS := --product "Qubes OS" --variant "qubes" --macboot --force --rootfs-size=4
+LORAX_OPTS += --dracut-arg="--xz"
+LORAX_OPTS += --dracut-arg="--install /.buildstamp"
+LORAX_OPTS += --dracut-arg="--no-early-microcode"
+LORAX_OPTS += --dracut-arg="--no-hostonly"
+LORAX_OPTS += --dracut-arg="--debug"
+LORAX_OPTS += --dracut-arg="--omit plymouth"
+LORAX_OPTS += --dracut-arg="--add fips livenet dmsquash-live convertfs pollcdrom qemu qemu-net"
+LORAX_OPTS += --dracut-arg="--add-drivers intel_lpss intel_lpss_pci spi_pxa2xx_platform spi_pxa2xx_pci applespi apple_ib_tb"
 
 ifdef QUBES_RELEASE
     ISO_VERSION := $(QUBES_RELEASE)
