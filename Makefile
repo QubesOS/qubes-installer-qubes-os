@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
-DIST ?= fc31
+DIST ?= fc32
 DIST_VER = $(subst fc,,$(DIST))
 
 INSTALLER_DIR ?= $(PWD)
@@ -63,10 +63,10 @@ MKISOFS_OPTS += -eltorito-alt-boot -e images/efiboot.img -no-emul-boot
 
 help:
 	@echo "make iso              <== \o/";\
-	    echo; \
-		echo "make clean";\
-	    echo; \
-	    exit 0;
+	echo; \
+	echo "make clean";\
+	echo; \
+	exit 0;
 
 .PHONY:	clean clean-repos iso iso-prepare iso-installer iso-liveusb
 
