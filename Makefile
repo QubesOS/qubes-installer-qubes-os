@@ -50,7 +50,7 @@ BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes OS $(ISO_VERSION)" --volid $(ISO_VOLID)
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
-LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo --system-release qubes-release
+LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo --skip-branding
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
 # common mkisofs flags
