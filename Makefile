@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
-DIST ?= fc31
+DIST ?= fc32
 DIST_VER = $(subst fc,,$(DIST))
 
 INSTALLER_DIR ?= $(PWD)
@@ -50,7 +50,7 @@ BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes OS $(ISO_VERSION)" --volid $(ISO_VOLID)
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
-LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo
+LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo --skip-branding
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
 # common mkisofs flags
@@ -63,10 +63,10 @@ MKISOFS_OPTS += -eltorito-alt-boot -e images/efiboot.img -no-emul-boot
 
 help:
 	@echo "make iso              <== \o/";\
-	    echo; \
-		echo "make clean";\
-	    echo; \
-	    exit 0;
+	echo; \
+	echo "make clean";\
+	echo; \
+	exit 0;
 
 .PHONY:	clean clean-repos iso iso-prepare iso-installer iso-liveusb
 
