@@ -18,7 +18,7 @@ check_repo()
 
 update_repo()
 {
-    $createrepo -q -g ../../conf/comps-qubes.xml --update $1
+    $createrepo -q -g ../../conf/comps-dom0.xml --update $1
 }
 
 

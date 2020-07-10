@@ -1,3 +1,6 @@
 [submodule "qubes-release"]
 	path = qubes-release
 	url = https://github.com/QubesOS/qubes-qubes-release
+[submodule "meta-packages"]
+	path = meta-packages
+	url = https://github.com/QubesOS/qubes-meta-packages

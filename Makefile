@@ -80,12 +80,12 @@ endif
 iso-prepare:
 	rm -rf && mkdir work
 	ln -nsf $(INSTALLER_DIR) /tmp/qubes-installer
-	$(CREATEREPO) -q -g ../../conf/comps-qubes.xml --update yum/qubes-dom0
+	$(CREATEREPO) -q -g ../../conf/comps-dom0.xml --update yum/qubes-dom0
 
 iso-installer-gather:
 	mkdir -p $(BASE_DIR)/os/Packages
 	umask 022; $(PUNGI) $(PUNGI_OPTS) --config $(INSTALLER_KICKSTART) --download-to=$(BASE_DIR)/os/Packages
-	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-qubes.xml .
+	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-dom0.xml .
 
 iso-installer-lorax:
 	$(INSTALLER_DIR)/scripts/ksparser --ks $(INSTALLER_KICKSTART) --extract-repo-conf-to $(INSTALLER_DIR)/conf/dnf-lorax.repo
