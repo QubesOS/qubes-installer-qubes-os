@@ -85,6 +85,7 @@ iso-prepare:
 iso-installer-gather:
 	mkdir -p $(BASE_DIR)/os/Packages
 	umask 022; $(PUNGI) $(PUNGI_OPTS) --config $(INSTALLER_KICKSTART) --download-to=$(BASE_DIR)/os/Packages
+	scripts/rpm_verify $(BASE_DIR)/os/Packages/*.rpm
 	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-dom0.xml .
 
 iso-installer-lorax:
