@@ -39,7 +39,9 @@ fi
 
 if [ -w /var/lib/rpm ]; then
     # Make sure that the right Qubes release key is imported (in chroot)
-    rpm --import `dirname $0`/qubes-release/RPM-GPG-KEY-qubes-*-primary
+    rpm --import `dirname $0`/../qubes-release/RPM-GPG-KEY-qubes-*-primary
+    # installation image includes community templates too
+    rpm --import `dirname $0`/../qubes-release/RPM-GPG-KEY-qubes-*-templates-community
 fi
 
 for FILE in "$@"; do
