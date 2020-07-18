@@ -32,25 +32,29 @@ LIVE_KICKSTART ?= $(INSTALLER_DIR)/conf/liveusb.ks
 
 CREATEREPO := $(shell which createrepo_c createrepo 2>/dev/null |head -1)
 
-PUNGI := /usr/bin/pungi-gather
-PUNGI_OPTS := --arch=x86_64 --greedy=none --exclude-debug --exclude-source
-
-LORAX := /usr/sbin/lorax
-LORAX_OPTS := --product "Qubes OS" --variant "qubes" --macboot --force --rootfs-size=4
-
 ifdef QUBES_RELEASE
-    ISO_VERSION := $(QUBES_RELEASE)
-    LORAX_OPTS += --isfinal
+	ISO_VERSION := $(QUBES_RELEASE)
+	LORAX_OPTS += --isfinal
 else
-    ISO_VERSION ?= $(shell date +%Y%m%d)
+	ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
 ISO_NAME := Qubes-$(ISO_VERSION)-x86_64
 ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' -)
 BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
+DNF := /usr/bin/dnf
+DNF_ROOT := /tmp/dnfroot
+DNF_REPO := $(DNF_ROOT)/etc/yum.repos.d/installer.repo
+DNF_PACKAGES := $(DNF_ROOT)/tmp/packages.list
+DNF_OPTS := -y --releasever=$(DIST_VER) --installroot=$(DNF_ROOT)
+DNF_OPTS += --downloaddir=$(BASE_DIR)/os/Packages --downloadonly install
+
+LORAX := /usr/sbin/lorax
+LORAX_OPTS := --product "Qubes OS" --variant "qubes" --macboot --force --rootfs-size=4
+
 LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes OS $(ISO_VERSION)" --volid $(ISO_VOLID)
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
-LORAX_OPTS += --repo $(INSTALLER_DIR)/conf/dnf-lorax.repo --skip-branding
+LORAX_OPTS += --repo $(DNF_REPO) --skip-branding
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
 # common mkisofs flags
@@ -78,17 +82,35 @@ iso: iso-liveusb
 endif
 
 iso-prepare:
-	rm -rf && mkdir work
-	ln -nsf $(INSTALLER_DIR) /tmp/qubes-installer
+	rm -rf work && mkdir work
+	rm -rf $(DNF_ROOT)
+
+	# Update installer repo
 	$(CREATEREPO) -q -g ../../conf/comps-dom0.xml --update yum/qubes-dom0
 
-iso-installer-gather:
+	# Destination directory for RPM
 	mkdir -p $(BASE_DIR)/os/Packages
-	umask 022; $(PUNGI) $(PUNGI_OPTS) --config $(INSTALLER_KICKSTART) --download-to=$(BASE_DIR)/os/Packages
+
+	# Copy Fedora key to DNF installroot
+	mkdir -p $(DNF_ROOT)/etc/pki/rpm-gpg
+	cp $(INSTALLER_DIR)/qubes-release/RPM-GPG-KEY-fedora-$(DIST_VER)-primary $(DNF_ROOT)/etc/pki/rpm-gpg
+
+	# Provide qubes-release/conf for Qubes keys
+	mkdir -p $(DNF_ROOT)/tmp/qubes-installer
+	ln -nsf $(INSTALLER_DIR) $(DNF_ROOT)/tmp/qubes-installer
+
+	# Legacy conf using this folder
+	ln -nsf $(INSTALLER_DIR) /tmp/qubes-installer
+
+	# Extract repos conf and packages from kickstart
+	mkdir -p $(DNF_ROOT)/etc/yum.repos.d
+	$(INSTALLER_DIR)/scripts/ksparser --ks $(INSTALLER_KICKSTART) --extract-repo-conf-to $(DNF_REPO) --extract-packages-to $(DNF_PACKAGES)
+
+iso-installer-gather:
+	umask 022; $(DNF) $(DNF_OPTS) $(shell cat $(DNF_PACKAGES))
 	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-dom0.xml .
 
 iso-installer-lorax:
-	$(INSTALLER_DIR)/scripts/ksparser --ks $(INSTALLER_KICKSTART) --extract-repo-conf-to $(INSTALLER_DIR)/conf/dnf-lorax.repo
 	$(LORAX) $(LORAX_OPTS) $(BASE_DIR)/os
 
 iso-installer-mkisofs:
@@ -121,6 +143,7 @@ clean-repos:
 	@(cd yum && ./clean_repos.sh)
 
 clean:
+	sudo rm -rf $(DNF_ROOT)
 	sudo rm -fr build/*
 
 get-sources:
