@@ -12,13 +12,15 @@ name={{ks_repo.name}}
 enabled=1
 {%- if ks_repo.baseurl %}
 baseurl={{ks_repo.baseurl}}
-{% endif -%}
+{%- endif -%}
 {%- if ks_repo.metalink %}
 metalink={{ks_repo.metalink}}
 {%- endif -%}
 {%- if ks_repo.gpgkey %}
 gpgcheck=1
 gpgkey={{ks_repo.gpgkey}}
+{% else %}
+gpgcheck=0
 {% endif -%}
 """
 
@@ -35,16 +37,21 @@ def get_args():
         metavar='PATH',
         required=False
     )
-
+    parser.add_argument(
+        "--extract-packages-to",
+        metavar='PATH',
+        required=False
+    )
     return parser.parse_args()
 
 
 def main():
     args = get_args()
     if args.ks:
+        ksparser = pungi.ks.get_ksparser(args.ks)
+        repo_content = ''
+
         if args.extract_repo_conf_to:
-            ksparser = pungi.ks.get_ksparser(args.ks)
-            repo_content = ''
             for ks_repo in ksparser.handler.repo.repoList:
                 repo_content += Environment().from_string(REPO_TEMPLATE).render(
                     ks_repo=ks_repo.__dict__)
@@ -53,8 +60,22 @@ def main():
                 with open(args.extract_repo_conf_to, 'w') as repo_fd:
                     repo_fd.write(repo_content)
             except EnvironmentError:
-                print(
-                    "Cannot write repo file to %s" % args.extract_repo_conf_to)
+                print("Cannot write repo file to %s" % args.extract_repo_conf_to)
+                return 1
+
+        if args.extract_packages_to:
+            packages = []
+            for group in ksparser.handler.packages.groupList:
+                packages.append('@%s' % group.name)
+
+            for pkg in ksparser.handler.packages.packageList:
+                packages.append('%s' % pkg)
+
+            try:
+                with open(args.extract_packages_to, 'w') as pkgs_fd:
+                    pkgs_fd.write(' '.join(packages))
+            except EnvironmentError:
+                print("Cannot write packages list to %s" % args.extract_packages_to)
                 return 1
 
 
