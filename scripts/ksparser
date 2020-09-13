@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
-import sys
-import pungi.ks
+
+from pykickstart.parser import *
+from pykickstart.version import makeVersion
 
 from jinja2 import Environment
 
@@ -48,7 +49,10 @@ def get_args():
 def main():
     args = get_args()
     if args.ks:
-        ksparser = pungi.ks.get_ksparser(args.ks)
+        handler = makeVersion()
+        ksparser = KickstartParser(handler)
+        ksparser.readKickstart(args.ks)
+
         repo_content = ''
 
         if args.extract_repo_conf_to:
