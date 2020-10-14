@@ -39,7 +39,7 @@ else
 	ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
 ISO_NAME := Qubes-$(ISO_VERSION)-x86_64
-ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' -)
+ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' - | head -c 30)
 BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 DNF := /usr/bin/dnf
