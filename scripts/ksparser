@@ -75,6 +75,12 @@ def main():
             for pkg in ksparser.handler.packages.packageList:
                 packages.append('%s' % pkg)
 
+            # for group in ksparser.handler.packages.excludedGroupList:
+            #     packages.append('--exclude=@%s' % group.name)
+
+            for pkg in ksparser.handler.packages.excludedList:
+                packages.append('--exclude=%s' % pkg)
+
             try:
                 with open(args.extract_packages_to, 'w') as pkgs_fd:
                     pkgs_fd.write(' '.join(packages))
