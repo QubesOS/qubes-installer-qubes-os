@@ -22,6 +22,9 @@ gpgcheck=1
 gpgkey={{ks_repo.gpgkey}}
 {% else %}
 gpgcheck=0
+{%- endif -%}
+{%- if ks_repo.ignoregroups %}
+enablegroups=0
 {% endif -%}
 """
 
