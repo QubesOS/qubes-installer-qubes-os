@@ -1,0 +1,55 @@
+include:
+  - project: 'QubesOS/qubes-continuous-integration'
+    file: '/r4.1/gitlab-base.yml'
+
+default:
+  tags:
+    - vm-runner
+    - long-living-job
+
+after_script:
+  - tail -n 100 ~/qubes-builder/build-logs/installer-qubes-os-iso-*.log
+  - ls -l ~/qubes-builder/iso
+
+variables:
+  COMPONENTS: installer-qubes-os
+  BUILDERCONF: "scripts/travis-builder.conf"
+
+build:iso-full:
+  extends: .iso_build
+  variables:
+    DIST_DOM0: fc32
+    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_TESTING: "1"
+    RPM_BUILD_DEFINES: "--nocheck"
+    INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-full.ks"
+
+build:iso-unsigned:
+  extends: .iso_build
+  variables:
+    DIST_DOM0: fc32
+    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_TESTING: "1"
+    RPM_BUILD_DEFINES: "--nocheck"
+    INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unsigned.ks"
+    EXPECT_FAILURE: "./scripts/expected-failure"
+
+build:iso-unsigned2:
+  extends: .iso_build
+  variables:
+    DIST_DOM0: fc32
+    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_TESTING: "1"
+    RPM_BUILD_DEFINES: "--nocheck"
+    INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unsigned2.ks"
+    EXPECT_FAILURE: "./scripts/expected-failure"
+
+build:iso-unknown-key:
+  extends: .iso_build
+  variables:
+    DIST_DOM0: fc32
+    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_TESTING: "1"
+    RPM_BUILD_DEFINES: "--nocheck"
+    INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unknown-key.ks"
+    EXPECT_FAILURE: "./scripts/expected-failure"
