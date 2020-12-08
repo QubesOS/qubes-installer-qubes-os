@@ -1,0 +1,27 @@
+From 08f5001b216a81675aaca24fd5d6bbe557875c96 Mon Sep 17 00:00:00 2001
+From: Rusty Bird <rustybird@net-c.com>
+Date: Thu, 13 Feb 2020 18:15:31 +0000
+Subject: [PATCH] Create any XFS filesystems with reflink support
+
+This means that if the user selects XFS for the root filesystem,
+/var/lib/qubes will use 'file-reflink' as its storage driver.
+---
+ blivet/tasks/fsmkfs.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/blivet/tasks/fsmkfs.py b/blivet/tasks/fsmkfs.py
+index ad166aa0..9388af5f 100644
+--- a/blivet/tasks/fsmkfs.py
++++ b/blivet/tasks/fsmkfs.py
+@@ -295,7 +295,7 @@ class XFSMkfs(FSMkfs):
+ 
+     @property
+     def args(self):
+-        return ["-f"]
++        return ["-f", "-m", "reflink=1"]
+ 
+ 
+ class UnimplementedFSMkfs(task.UnimplementedTask, FSMkfsTask):
+-- 
+2.21.1
+

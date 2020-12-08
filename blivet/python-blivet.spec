@@ -24,6 +24,7 @@ Patch5: 0005-Use-local-backport-of-BlockDev-2.0-interface.patch
 # Qubes patches
 Patch100: 0001-Double-recommended-LVM-thin-pool-metadata-space.patch
 Patch101: 0001-Avoid-mounting-pre-existing-disks.patch
+Patch102: 0001-Create-any-XFS-filesystems-with-reflink-support.patch
 
 # Versions of required components (done so we make sure the buildrequires
 # match the requires versions of things).
