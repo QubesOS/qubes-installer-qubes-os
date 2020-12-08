@@ -69,7 +69,7 @@ A tool to create anaconda based installation trees/isos of a set of rpms.
 
 %package utils
 Summary:    Utilities for working with finished composes
-Requires:   pungi = %{version}-%{release}
+Requires:   pungi = %{epoch}:%{version}-%{release}
 
 %description utils
 These utilities work with finished composes produced by Pungi. They can be used
