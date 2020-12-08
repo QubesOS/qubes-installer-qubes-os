@@ -10,6 +10,7 @@ License:	GPLv2
 Group:		System Environment/Base
 Source0:	%{name}-%{version}.tar.bz2
 Obsoletes:	fedora-release
+Obsoletes:	fedora-repos
 Obsoletes:	redhat-release
 Provides:	fedora-release = %{fedora_base_version}-%{release}
 Provides:	redhat-release = %{fedora_base_version}-%{release}
