@@ -23,6 +23,7 @@ Patch0: 0001-Ignore-errors-from-coverage-tests-138.patch
 Patch1: 0001-Fix-error-message-in-autopart-command.patch
 Patch2: repo-gpgkey-option.patch
 Patch3: standard-xgettext.patch
+Patch4: 0001-round-part-size-parameter.patch
 BuildArch: noarch
 
 
@@ -79,6 +80,7 @@ the pykickstart package.
 %patch1 -p1
 %patch2 -p1
 %patch3 -p1
+%patch4 -p1
 
 rm -rf %{py3dir}
 mkdir %{py3dir}

@@ -1,0 +1,38 @@
+From ca22bdea170cdb178a75a6952f309a1bca775d3a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Marek=20Marczykowski-G=C3=B3recki?=
+ <marmarek@invisiblethingslab.com>
+Date: Wed, 13 Jan 2021 04:36:00 +0100
+Subject: [PATCH] round part --size parameter
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Organization: Invisible Things Lab
+Cc: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+
+On some hardware anaconda/blivet sets size to float values like
+1023.99MB instead of 1024MB. While the difference is quite small, it
+prevents the resulting kickstart file to be loaded by initial-setup
+later.
+Workaround the issue by rounding the value on save.
+
+Signed-off-by: Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>
+---
+ pykickstart/commands/partition.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pykickstart/commands/partition.py b/pykickstart/commands/partition.py
+index 11da5971..75732909 100644
+--- a/pykickstart/commands/partition.py
++++ b/pykickstart/commands/partition.py
+@@ -80,7 +80,7 @@ class FC3_PartData(BaseData):
+         if self.recommended:
+             retval += " --recommended"
+         if self.size and self.size != 0:
+-            retval += " --size=%s" % self.size
++            retval += " --size=%d" % round(self.size)
+         if hasattr(self, "start") and self.start != 0:
+             retval += " --start=%s" % self.start
+ 
+-- 
+2.25.4
+
