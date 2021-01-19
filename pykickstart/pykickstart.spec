@@ -2,7 +2,7 @@
 
 Name:      pykickstart
 Version:   2.32
-Release:   4%{?dist}
+Release:   5%{?dist}
 Epoch: 1000
 License:   GPLv2 and MIT
 Group:     System Environment/Libraries
