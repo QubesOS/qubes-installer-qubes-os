@@ -120,12 +120,7 @@ Lorax templates for creating the boot.iso and live isos are placed in
 /usr/share/lorax/templates.d/99-generic
 
 %prep
-%setup -q -n %{name}-%{version}
-
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
+%autosetup -p1 -n %{name}-%{version}
 
 %build
 

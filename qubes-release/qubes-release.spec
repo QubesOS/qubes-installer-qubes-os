@@ -36,7 +36,7 @@ Qubes release notes package.
 
 
 %prep
-%setup -q
+%autosetup -p1
 
 %install
 rm -rf $RPM_BUILD_ROOT

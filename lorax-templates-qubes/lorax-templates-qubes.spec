@@ -16,7 +16,7 @@ BuildArch:      noarch
 Lorax templates for Qubes installation ISO.
 
 %prep
-%setup -q
+%autosetup -p1
 
 %install
 rm -rf $RPM_BUILD_ROOT

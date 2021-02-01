@@ -73,17 +73,7 @@ The python3-%{realname} is a python3 package for examining and modifying storage
 configuration.
 
 %prep
-%setup -q -n %{realname}-%{realversion}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
+%autosetup -p1 -n %{realname}-%{realversion}
 
 rm -rf %{py3dir}
 cp -a . %{py3dir}

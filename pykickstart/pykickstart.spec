@@ -74,13 +74,7 @@ Python 3 library for manipulating kickstart files.  The binaries are found in
 the pykickstart package.
 
 %prep
-%setup -q
-
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
+%autosetup -p1
 
 rm -rf %{py3dir}
 mkdir %{py3dir}

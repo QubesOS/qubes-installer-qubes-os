@@ -20,7 +20,7 @@ This is an addon that makes available Qubes OS specific setup functionality
 at first boot time.
 
 %prep
-%setup -q
+%autosetup -p1
 
 %install
 rm -rf $RPM_BUILD_ROOT

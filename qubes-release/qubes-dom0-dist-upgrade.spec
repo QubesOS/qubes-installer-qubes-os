@@ -14,7 +14,7 @@ BuildArch:	noarch
 Qubes dom0 upgrade transitional package.
 
 %prep
-%setup -q
+%autosetup -p1
 
 %install
 rm -rf $RPM_BUILD_ROOT

@@ -19,6 +19,7 @@ Requires(post): kernel
 Various fixes for Qubes Live edition
 
 %prep
+%autosetup -p1
 
 %build
 

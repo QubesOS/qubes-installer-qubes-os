@@ -79,11 +79,7 @@ like live image or appliances.
 
 
 %prep
-%setup -q
-
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+%autosetup -p1
 
 %build
 make
