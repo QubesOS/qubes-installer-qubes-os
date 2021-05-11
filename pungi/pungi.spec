@@ -1,3 +1,5 @@
+%define __python %__python2
+
 Name:           pungi
 Version:        4.1.14
 Release:        3%{?dist}
