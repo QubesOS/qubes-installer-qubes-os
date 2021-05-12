@@ -9,9 +9,13 @@ endif
 
 get-sources: $(SRC_FILE)
 
+ifeq ($(FETCH_CMD),)
+$(error "You can not run this Makefile without having FETCH_CMD defined")
+endif
+
 $(SRC_FILE):
 ifneq ($(SRC_FILE), None)
-	@wget -q $(URL)
+	@$(FETCH_CMD) $(SRC_FILE) $(URL)
 endif
 
 .PHONY: verify-sources
