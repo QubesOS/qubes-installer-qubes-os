@@ -56,6 +56,10 @@ LORAX_OPTS += --version "$(ISO_VERSION)" --release "Qubes OS $(ISO_VERSION)" --v
 LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_DIR)/work/logs/lorax-x86_64.log
 LORAX_OPTS += --repo $(DNF_REPO) --skip-branding
 
+ifeq ($(ISO_USE_KERNEL_LATEST),1)
+LORAX_OPTS += --installpkgs kernel-latest
+endif
+
 MKISOFS := /usr/bin/xorriso -as mkisofs
 # common mkisofs flags
 MKISOFS_OPTS := -v -U -J --joliet-long -R -T -m repoview -m boot.iso
@@ -85,8 +89,14 @@ iso-prepare:
 	rm -rf work && mkdir work
 	rm -rf $(DNF_ROOT)
 
+	# Copy the comps file
+	cp $(INSTALLER_DIR)/conf/comps-dom0.xml /tmp/comps.xml
+	if [ "$(ISO_USE_KERNEL_LATEST)" == 1 ]; then \
+		sed -i 's#optional">kernel-latest#mandatory">kernel-latest#g' /tmp/comps.xml; \
+	fi;
+
 	# Update installer repo
-	$(CREATEREPO) -q -g ../../conf/comps-dom0.xml --update yum/qubes-dom0
+	$(CREATEREPO) -q -g /tmp/comps.xml --update yum/qubes-dom0
 
 	# Destination directory for RPM
 	mkdir -p $(BASE_DIR)/os/Packages
@@ -108,7 +118,7 @@ iso-prepare:
 
 iso-installer-gather:
 	umask 022; $(DNF) $(DNF_OPTS) $(shell cat $(DNF_PACKAGES))
-	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g $(INSTALLER_DIR)/conf/comps-dom0.xml .
+	pushd $(BASE_DIR)/os/ && $(CREATEREPO) -q -g /tmp/comps.xml .
 
 iso-installer-lorax:
 	$(LORAX) $(LORAX_OPTS) $(BASE_DIR)/os
