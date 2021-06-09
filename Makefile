@@ -38,8 +38,13 @@ ifdef QUBES_RELEASE
 else
 	ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
+
+ifneq (,$(ISO_FLAVOR))
+ISO_NAME := Qubes-$(ISO_VERSION)-$(ISO_FLAVOR)-x86_64
+else
 ISO_NAME := Qubes-$(ISO_VERSION)-x86_64
-ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' - | head -c 30)
+endif
+ISO_VOLID := $(shell echo $(ISO_NAME) | tr a-z A-Z | tr -s -c [:alnum:]'\n' - | head -c 32)
 BASE_DIR := $(INSTALLER_DIR)/work/$(ISO_VERSION)/x86_64
 
 DNF := /usr/bin/dnf
@@ -57,7 +62,7 @@ LORAX_OPTS += --workdir $(INSTALLER_DIR)/work/work/x86_64 --logfile $(INSTALLER_
 LORAX_OPTS += --repo $(DNF_REPO) --skip-branding
 
 ifeq ($(ISO_USE_KERNEL_LATEST),1)
-LORAX_OPTS += --installpkgs kernel-latest
+LORAX_OPTS += --installpkgs kernel-latest --excludepkgs kernel
 endif
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
