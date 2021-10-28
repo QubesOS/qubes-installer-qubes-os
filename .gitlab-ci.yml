@@ -17,6 +17,9 @@ variables:
   COMPONENTS: installer-qubes-os
   BUILDERCONF: "scripts/travis-builder.conf"
   TRAVIS_INSTALL_EXCLUDE: "lorax-lmc-virt"
+  POST_OPENQA:
+    value: "0"
+    description: "Should the result be posted to openQA for testing? Use '1' to enable"
 
 build:iso-full:
   extends: .iso_build
