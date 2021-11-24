@@ -1417,8 +1417,8 @@
 
   <group>
     <id>debian</id>
-    <name>Debian 10 (buster) template</name>
-    <description>Debian 10 (buster) template</description>
+    <name>Debian 11 (bullseye) template</name>
+    <description>Debian 11 (bullseye) template</description>
     <default>true</default>
     <uservisible>true</uservisible>
     <packagelist>
