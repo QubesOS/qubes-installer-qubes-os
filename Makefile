@@ -34,7 +34,6 @@ CREATEREPO := $(shell which createrepo_c createrepo 2>/dev/null |head -1)
 
 ifdef QUBES_RELEASE
 	ISO_VERSION := $(QUBES_RELEASE)
-	LORAX_OPTS += --isfinal
 else
 	ISO_VERSION ?= $(shell date +%Y%m%d)
 endif
@@ -63,6 +62,10 @@ LORAX_OPTS += --repo $(DNF_REPO) --skip-branding
 
 ifeq ($(ISO_USE_KERNEL_LATEST),1)
 LORAX_OPTS += --installpkgs kernel-latest --excludepkgs kernel
+endif
+
+ifdef QUBES_RELEASE
+	LORAX_OPTS += --isfinal
 endif
 
 MKISOFS := /usr/bin/xorriso -as mkisofs
