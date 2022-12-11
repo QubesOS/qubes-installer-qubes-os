@@ -19,7 +19,7 @@ build:iso-full:
   extends: .iso_build
   variables:
     DIST_DOM0: fc32
-    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_VERSION: "4.2"
     USE_QUBES_REPO_TESTING: "1"
     RPM_BUILD_DEFINES: "--nocheck"
     INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-full.ks"
@@ -28,7 +28,7 @@ build:iso-unsigned:
   extends: .iso_build
   variables:
     DIST_DOM0: fc32
-    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_VERSION: "4.2"
     USE_QUBES_REPO_TESTING: "1"
     RPM_BUILD_DEFINES: "--nocheck"
     INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unsigned.ks"
@@ -38,7 +38,7 @@ build:iso-unsigned2:
   extends: .iso_build
   variables:
     DIST_DOM0: fc32
-    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_VERSION: "4.2"
     USE_QUBES_REPO_TESTING: "1"
     RPM_BUILD_DEFINES: "--nocheck"
     INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unsigned2.ks"
@@ -48,7 +48,7 @@ build:iso-unknown-key:
   extends: .iso_build
   variables:
     DIST_DOM0: fc32
-    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_VERSION: "4.2"
     USE_QUBES_REPO_TESTING: "1"
     RPM_BUILD_DEFINES: "--nocheck"
     INSTALLER_KICKSTART: "/tmp/qubes-installer/conf/travis-iso-unknown-key.ks"
@@ -58,7 +58,7 @@ build:iso-full-kernel-latest:
   extends: .iso_build
   variables:
     DIST_DOM0: fc32
-    USE_QUBES_REPO_VERSION: "4.1"
+    USE_QUBES_REPO_VERSION: "4.2"
     USE_QUBES_REPO_TESTING: "1"
     ISO_USE_KERNEL_LATEST: "1"
     RPM_BUILD_DEFINES: "--nocheck"
