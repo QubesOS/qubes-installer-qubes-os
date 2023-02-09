@@ -4,3 +4,4 @@ lorax-templates-qubes
 livecd-tools
 dracut-live
 python3-jinja2
+createrepo_c

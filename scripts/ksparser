@@ -2,10 +2,9 @@
 
 import argparse
 
+from jinja2 import Environment
 from pykickstart.parser import *
 from pykickstart.version import makeVersion
-
-from jinja2 import Environment
 
 REPO_TEMPLATE = """
 [{{ks_repo.name}}]
