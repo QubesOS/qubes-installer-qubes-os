@@ -152,7 +152,6 @@ iso-installer-mkisofs:
 		-R -J -V $(ISO_VOLID) \
 		--grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
 		-partition_offset 16 \
-		-appended_part_as_gpt \
 		-append_partition 2 C12A7328-F81F-11D2-BA4B-00A0C93EC93B $(BASE_DIR)/os/images/efiboot.img \
 		-iso_mbr_part_type EBD0A0A2-B9E5-4433-87C0-68B6B72699C7 \
 		-c boot.cat --boot-catalog-hide \
